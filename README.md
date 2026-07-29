@@ -2,6 +2,8 @@
 
 Venture Flow is an AI-assisted due-diligence workspace for reviewing companies, analyzing uploaded pitch materials, identifying risks, and exploring investment questions through a web dashboard.
 
+**Live demo:** [venture-flow-w8hf.vercel.app](https://venture-flow-w8hf.vercel.app/)
+
 The repository contains two deployable parts:
 
 - `frontend/` — React, TypeScript, Vite, and Tailwind web application.
