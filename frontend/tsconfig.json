@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+      "target": "ESNext",
+      "useDefineForClassFields": true,
+      "lib": ["DOM", "DOM.Iterable", "ESNext"],
+      "module": "ESNext",
+      "skipLibCheck": true,
+  
+      /* IMPORTANT */
+      "moduleResolution": "bundler",
+      "jsx": "react-jsx",
+  
+      "allowImportingTsExtensions": true,
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "noEmit": true,
+  
+      "strict": true
+    },
+    "include": ["src"]
+  }

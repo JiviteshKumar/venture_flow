@@ -1,0 +1,37 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Python environments, caches, and generated files
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.checkpoints/
+
+# JavaScript dependencies and build output
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+*.tsbuildinfo
+
+# Local tooling and operating-system files
+.vscode/
+.DS_Store
+*.log
+
+# Downloaded/training datasets and local reports
+data/
+TAT-QA/
+due_diligence_report.json
+AGENT_LOG.md
+VALIDATION_LOG.md
+
+# Preserved metadata from the formerly nested frontend repository
+.frontend-git-backup/
