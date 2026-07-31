@@ -7,6 +7,7 @@ import logging
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import psycopg
@@ -42,6 +43,27 @@ def healthcheck() -> bool:
         return cur.fetchone()["ok"] == 1
 
 
+def ensure_schema() -> None:
+    """Apply the repository's idempotent Neon schema migrations.
+
+    Render starts the API directly, so a separate migration command is easy to
+    miss.  Taking a transaction-scoped advisory lock makes startup safe when a
+    service is scaled beyond one process.
+    """
+    migration_dir = Path(__file__).resolve().parent / "migrations"
+    migrations = sorted(
+        path
+        for path in migration_dir.glob("*.sql")
+        if not path.name.endswith(".down.sql")
+    )
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT pg_advisory_xact_lock(%s)", (724420221,))
+        for migration in migrations:
+            cur.execute(migration.read_text(encoding="utf-8"))
+        conn.commit()
+    logger.info("Applied %s Neon schema migration(s)", len(migrations))
+
+
 def find_similar_companies(
     name: str, domain: str | None, sector: str | None
 ) -> list[dict[str, Any]]:
@@ -52,7 +74,7 @@ def find_similar_companies(
             SELECT DISTINCT c.id, c.name, c.domain, c.sector,
                 CASE
                     WHEN lower(c.name) = lower(%(name)s) THEN 1.0
-                    ELSE greatest(similarity(c.name, %(name)s), similarity(coalesce(c.domain, ''), coalesce(%(domain)s, '')))
+                    ELSE greatest(similarity(c.name, %(name)s), similarity(coalesce(c.domain, ''), coalesce(%(domain)s::text, '')))
                 END AS similarity
             FROM companies c
             LEFT JOIN portfolio_investments pi ON pi.company_id = c.id
@@ -60,9 +82,9 @@ def find_similar_companies(
             WHERE c.name <> %(name)s
               AND (pi.id IS NOT NULL OR dr.id IS NOT NULL)
               AND (
-                    ( %(sector)s IS NOT NULL AND c.sector = %(sector)s )
+                    ( %(sector)s::text IS NOT NULL AND c.sector = %(sector)s::text )
                     OR similarity(c.name, %(name)s) >= 0.35
-                    OR (%(domain)s IS NOT NULL AND similarity(coalesce(c.domain, ''), %(domain)s) >= 0.5)
+                    OR (%(domain)s::text IS NOT NULL AND similarity(coalesce(c.domain, ''), %(domain)s::text) >= 0.5)
               )
             ORDER BY similarity DESC, c.name
             LIMIT 5

@@ -47,3 +47,13 @@ def test_analyze_returns_a_clear_error_when_persistence_fails(monkeypatch):
     response = client.post("/analyze", json={"company_name": "New Co"})
     assert response.status_code == 503
     assert response.json()["detail"] == "Analysis completed but could not be saved. Please retry."
+
+
+def test_startup_attempts_idempotent_schema_migration(monkeypatch):
+    calls = []
+    monkeypatch.setattr(api, "ensure_schema", lambda: calls.append(True))
+
+    with TestClient(api.app):
+        pass
+
+    assert calls == [True]

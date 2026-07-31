@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import find_similar_companies, persist_report, stats
+from db import ensure_schema, find_similar_companies, persist_report, stats
 from db import healthcheck as neon_healthcheck
 from pdf_extractor import (
     extract_claims_from_text,
@@ -48,6 +48,17 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.on_event("startup")
+async def initialize_database_schema() -> None:
+    """Bring Neon to the application schema before accepting analysis jobs."""
+    try:
+        await run_in_threadpool(ensure_schema)
+    except Exception:
+        # Keep health diagnostics available if Neon is temporarily unreachable.
+        # Analysis persistence will still return its existing clear 503 response.
+        logger.exception("Neon schema migration unavailable during startup")
 
 
 @app.middleware("http")
