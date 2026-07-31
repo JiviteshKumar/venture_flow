@@ -298,6 +298,10 @@ const Analysis = () => {
 
   // Real claims from backend
   const claimsDetails = report.sections?.claims?.details ?? [];
+  const market = report.sections?.market;
+  const team = report.sections?.team;
+  const bullCase = report.sections?.bull_case;
+  const bearCase = report.sections?.bear_case;
 
   // DD questions generated from key concerns
   const ddQuestions = [
@@ -307,8 +311,11 @@ const Analysis = () => {
   ];
 
   // Bull & Bear from real report
-  const bullItems = report.positive_factors.slice(0, 3).map(f => ({ text: f, tip: "From AI analysis" }));
-  const bearItems = report.red_flags.slice(0, 3).map(f => ({ text: f, tip: "Risk signal detected" }));
+  const bullItems = (bullCase?.signals ?? report.positive_factors.map(f => ({ finding: f, evidence: "Risk analysis" }))).slice(0, 3).map(item => ({ text: item.finding, tip: item.evidence }));
+  const bearItems = (bearCase?.signals ?? report.red_flags.map(f => ({ finding: f, evidence: "Risk analysis" }))).slice(0, 3).map(item => ({ text: item.finding, tip: item.evidence }));
+  const teamRadarData = team?.capabilities?.length
+    ? team.capabilities.map(item => ({ subject: item.area, value: Math.max(0, Math.min(100, Number(item.score) || 0)), evidence: item.evidence }))
+    : [];
 
   // Claims table from real claim details
   const claimsTableData = claimsDetails.slice(0, 5).map(c => ({
@@ -550,7 +557,7 @@ const Analysis = () => {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
                   {[
                     { label: "Overall Score", value: `${Math.round(score)} / 100`, color: scoreColor, bg: `${scoreColor}14`, border: `${scoreColor}30`, tip: "Composite investment readiness" },
-                    { label: "Market Signal", value: score >= 70 ? "Strong" : score >= 50 ? "Moderate" : "Weak", color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)", tip: "Market timing & size" },
+                    { label: "Market Evidence", value: `${Math.round((market?.confidence ?? 0) * 100)}%`, color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)", tip: "Evidence confidence from the market agent" },
                     { label: "Claims Verified", value: `${report.claims_supported}/${report.claims_verified}`, color: "#1D6FE8", bg: "rgba(29,111,232,0.08)", border: "rgba(29,111,232,0.2)", tip: "Web-verified claims" },
                     { label: "Risk Level", value: riskLabel, color: riskColor, bg: `${riskColor}14`, border: `${riskColor}30`, tip: "Blended risk assessment" },
                   ].map((s, i) => (
@@ -645,37 +652,21 @@ const Analysis = () => {
             {activeTab === "Market Validation" && (
               <div className="tab-content-enter">
                 <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                  <SLabel>TAM / SAM / SOM Projection (USD Billions)</SLabel>
-                  <div style={{ display: "flex", gap: "16px", marginBottom: "16px", alignItems: "center" }}>
-                    {[{ key: "TAM", color: "#1D6FE8" }, { key: "SAM", color: "#0EA66A" }, { key: "SOM", color: "#C47A0A" }].map((l) => (
-                      <div key={l.key} style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                        <div style={{ width: "20px", height: "2.5px", background: l.color, borderRadius: "2px" }} />
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "10px", color: "#94A3B8" }}>{l.key}</span>
-                      </div>
-                    ))}
-                    <div style={{ marginLeft: "auto", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#0EA66A", background: "rgba(14,166,106,0.08)", border: "1px solid rgba(14,166,106,0.2)", padding: "3px 10px", borderRadius: 20 }}>
-                      18.4% CAGR
-                    </div>
+                  <SLabel>Market Validation — Evidence-Grounded</SLabel>
+                  <p style={{ fontSize: "13.5px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
+                    {market?.market_definition || "No market assessment was returned for this report."}
+                  </p>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+                    <span className="verdict-tag" style={{ color: "#0EA66A", background: "rgba(14,166,106,0.08)", border: "1px solid rgba(14,166,106,0.2)" }}>
+                      {Math.round((market?.confidence ?? 0) * 100)}% EVIDENCE CONFIDENCE
+                    </span>
                   </div>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <AreaChart data={marketData} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
-                      <defs>
-                        {[{ id: "tamG", color: "#1D6FE8" }, { id: "samG", color: "#0EA66A" }, { id: "somG", color: "#C47A0A" }].map(({ id, color }) => (
-                          <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={color} stopOpacity={0.12} />
-                            <stop offset="100%" stopColor={color} stopOpacity={0} />
-                          </linearGradient>
-                        ))}
-                      </defs>
-                      <CartesianGrid stroke="rgba(15,23,42,0.05)" vertical={false} />
-                      <XAxis dataKey="year" tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}B`} />
-                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(15,23,42,0.07)", strokeWidth: 1 }} />
-                      <Area type="monotone" dataKey="TAM" stroke="#1D6FE8" strokeWidth={2.5} fill="url(#tamG)" dot={false} />
-                      <Area type="monotone" dataKey="SAM" stroke="#0EA66A" strokeWidth={2.5} fill="url(#samG)" dot={false} />
-                      <Area type="monotone" dataKey="SOM" stroke="#C47A0A" strokeWidth={2.5} fill="url(#somG)" dot={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  {(market?.signals ?? []).length > 0 ? market!.signals.map((signal, i) => (
+                    <div key={i} className="an-case-item" data-tip={signal.evidence}>
+                      <CheckCircle size={14} color="#0EA66A" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span className="an-case-text">{signal.finding}</span>
+                    </div>
+                  )) : <div className="an-case-text" style={{ color: "#94A3B8" }}>Insufficient market evidence in the submitted deck.</div>}
                 </Panel>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: "12px" }}>
@@ -721,11 +712,11 @@ const Analysis = () => {
                   <Panel accentColor="#C47A0A">
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚡ AI Signal</div>
                     <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
-                      {report.sections?.risk?.ai_reasoning || "Market signals analysed from submitted document."}
+                      {market?.recommendation || "Validate market size, buyer demand, and competition with primary evidence."}
                     </p>
                     <div style={{ padding: "12px", background: "rgba(196,122,10,0.06)", borderRadius: "8px", border: "1px solid rgba(196,122,10,0.15)" }}>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", marginBottom: "4px" }}>RISK LEVEL</div>
-                      <div style={{ fontSize: "12.5px", color: "#0B1120", fontWeight: "600" }}>{report.risk_level}</div>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
+                      <div style={{ fontSize: "12.5px", color: "#0B1120", fontWeight: "600" }}>{market?.gaps?.[0] || "None identified."}</div>
                     </div>
                   </Panel>
                 </div>
@@ -738,16 +729,16 @@ const Analysis = () => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 250px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     <SLabel>Team Capability Radar</SLabel>
-                    <ResponsiveContainer width="100%" height={280}>
-                      <RadarChart data={radarData}>
+                    {teamRadarData.length > 0 ? <ResponsiveContainer width="100%" height={280}>
+                      <RadarChart data={teamRadarData}>
                         <PolarGrid stroke="rgba(15,23,42,0.07)" />
                         <PolarAngleAxis dataKey="subject" tick={{ fill: "#64748B", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
                         <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
                         <Radar dataKey="value" stroke="#1D6FE8" fill="#1D6FE8" fillOpacity={0.09} strokeWidth={2.5} dot={{ fill: "#1D6FE8", r: 4, strokeWidth: 0 } as any} />
                       </RadarChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer> : <p style={{ color: "#94A3B8", fontSize: 13 }}>Insufficient team evidence in this deck.</p>}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-                      {radarData.map((r, i) => (
+                      {teamRadarData.map((r, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#94A3B8" }}>{r.subject}</span>
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
@@ -759,12 +750,12 @@ const Analysis = () => {
                   <Panel accentColor="#D93025">
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#D93025", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
                     <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 16px" }}>
-                      {report.key_concerns[0] || "Team analysis based on submitted document. Verify founder credentials independently."}
+                      {team?.gaps?.[0] || "Insufficient team evidence. Verify founder credentials independently."}
                     </p>
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "14px", marginBottom: 14 }}>
                       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#94A3B8", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
                       <div style={{ fontSize: "13.5px", color: "#0B1120", fontWeight: "700", letterSpacing: "-0.01em" }}>
-                        {report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding"}
+                        {team?.questions?.[0] || (report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding")}
                       </div>
                     </div>
                   </Panel>

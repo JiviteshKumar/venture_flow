@@ -11,6 +11,7 @@ import json
 from groq import Groq
 from agents.claim_verifier import verify_claim
 from agents.risk_detector import score_risk
+from agents.investment_agents import run_investment_agents
 from rag_engine import build_context, format_context_for_llm
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -232,8 +233,17 @@ def run_due_diligence(
     risk_result["total_signals"] = risk_result.get("total_signals", 0)
     report["sections"]["risk"] = risk_result
 
+    print("\n[3/6] Running market, bull, bear and team analysis agents...")
+    specialist_results = run_investment_agents(
+        company=company_name,
+        document=risk_text,
+        claims=claim_results,
+        risk=risk_result,
+    )
+    report["sections"].update(specialist_results)
+
     # ── 3. RAG Retrieval ───────────────────────────────────────
-    print("\n[3/4] Retrieving database evidence...")
+    print("\n[4/6] Retrieving database evidence...")
     query = f"{company_name} {company_description[:200]} financial performance"
     try:
         rag_context       = build_context(query)
@@ -257,7 +267,7 @@ def run_due_diligence(
     report["sections"]["rag_context"] = rag_stats
 
     # ── 4. Groq Synthesis ──────────────────────────────────────
-    print("\n[4/4] Groq AI synthesizing report...")
+    print("\n[5/6] Groq AI synthesizing report...")
 
     # Build structured evidence summary for Groq
     metrics_str = "FINANCIAL METRICS:\n"
@@ -308,6 +318,9 @@ COMPANY DESCRIPTION:
 {risk_str}
 
 {quality_str}
+
+SPECIALIST ANALYSES (evidence-grounded):
+{json.dumps(specialist_results, default=str)}
 
 DATABASE EVIDENCE (similar companies from our financial database):
 {formatted_context}

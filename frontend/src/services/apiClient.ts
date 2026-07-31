@@ -68,6 +68,23 @@ export interface AnalyzeResponse {
     rag_context?: {
       reports_retrieved: number;
     };
+    market?: {
+      confidence: number;
+      market_definition: string;
+      signals: Array<{ finding: string; evidence: string }>;
+      gaps: string[];
+      recommendation: string;
+    };
+    team?: {
+      confidence: number;
+      overall_assessment: string;
+      capabilities: Array<{ area: string; score: number; evidence: string }>;
+      strengths: string[];
+      gaps: string[];
+      questions: string[];
+    };
+    bull_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; conditions_to_invest: string[] };
+    bear_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; diligence_required: string[] };
   };
 }
 
