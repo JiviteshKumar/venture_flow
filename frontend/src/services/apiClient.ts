@@ -66,9 +66,7 @@ export interface AnalyzeResponse {
     };
     ai_analysis?: string;
     rag_context?: {
-      claims_retrieved: number;
-      docs_retrieved: number;
-      sentiment_retrieved: number;
+      reports_retrieved: number;
     };
   };
 }

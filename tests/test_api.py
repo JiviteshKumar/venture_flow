@@ -33,3 +33,17 @@ def test_analyze_returns_persisted_report(monkeypatch):
     assert response.status_code == 200
     assert response.json()["report_id"] == "report-id"
     assert response.json()["similar_companies"][0]["name"] == "Existing Co"
+
+
+def test_analyze_returns_a_clear_error_when_persistence_fails(monkeypatch):
+    monkeypatch.setattr(api, "find_similar_companies", lambda *_: [])
+    monkeypatch.setattr(api, "run_due_diligence", lambda *_: {"sections": {}})
+
+    def fail_persist(**_):
+        raise RuntimeError("schema is missing dd_reports.raw_output")
+
+    monkeypatch.setattr(api, "persist_report", fail_persist)
+    client = TestClient(api.app)
+    response = client.post("/analyze", json={"company_name": "New Co"})
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Analysis completed but could not be saved. Please retry."

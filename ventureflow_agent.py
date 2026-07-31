@@ -238,10 +238,13 @@ def run_due_diligence(
     try:
         rag_context       = build_context(query)
         formatted_context = format_context_for_llm(rag_context)
+        # ``rag_engine.build_context`` returns completed diligence reports, not
+        # the legacy claim/document/sentiment collections.  Keeping this mapping
+        # aligned avoids a KeyError which used to turn every successful context
+        # lookup into a misleading "RAG error" in the analysis logs.
+        relevant_reports = rag_context.get("relevant_reports", [])
         rag_stats = {
-            "claims_retrieved":    len(rag_context["relevant_claims"]),
-            "docs_retrieved":      len(rag_context["relevant_documents"]),
-            "sentiment_retrieved": len(rag_context["relevant_sentiment"]),
+            "reports_retrieved": len(relevant_reports),
         }
     except Exception as e:
         print(f"  RAG error: {e}")
