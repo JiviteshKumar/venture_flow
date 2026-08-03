@@ -41,13 +41,6 @@ const threatData = [
   { name: "Low",    value: 25, color: "#0EA66A" },
 ];
 
-const fundingTimelineData = [
-  { name: "Viz.ai",   value: 100, stage: "Series D", color: "#D93025" },
-  { name: "Aidoc",    value: 110, stage: "Series C", color: "#D93025" },
-  { name: "Caption",  value: 53,  stage: "Series B", color: "#C47A0A" },
-  { name: "Lunit",    value: 98,  stage: "Series D", color: "#C47A0A" },
-  { name: "Company",  value: 12,  stage: "Series A (ask)", color: "#1D6FE8" },
-];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -326,10 +319,7 @@ const Analysis = () => {
     delta: `${Math.round(c.confidence * 100)}%`,
   }));
 
-  // Update company name in funding chart
-  const fundingData = fundingTimelineData.map(d =>
-    d.name === "Company" ? { ...d, name: report.company.slice(0, 7) } : d
-  );
+  const competitors = report.similar_companies ?? [];
 
   const exportReport = () => {
     const lines = [
@@ -769,47 +759,29 @@ const Analysis = () => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     <SLabel>Competitive Landscape</SLabel>
-                    <table className="an-comp-table">
+                    {competitors.length ? <table className="an-comp-table">
                       <thead>
                         <tr>
-                          {["Company", "Funding", "Stage", "Focus", "Last Round", "Threat"].map((h) => (
+                          {["Company", "Domain", "Sector", "Similarity"].map((h) => (
                             <th key={h} className="an-comp-th">{h}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {[
-                          ["Viz.ai", "$100M", "Series D", "Stroke AI", "Mar 2023", "High", "#D93025"],
-                          ["Aidoc", "$110M", "Series C", "Radiology AI", "Jan 2023", "High", "#D93025"],
-                          ["Caption Health", "$53M", "Series B", "Echo AI", "Aug 2022", "Medium", "#C47A0A"],
-                          ["Lunit", "$98M", "Series D", "Cancer Detection", "Nov 2022", "Medium", "#C47A0A"],
-                          ["Enlitai", "$18M", "Series A", "Neuroimaging", "Feb 2024", "Low", "#0EA66A"],
-                        ].map((row, i) => (
+                        {competitors.map((competitor, i) => (
                           <tr key={i} className="an-comp-tr">
-                            {row.slice(0, 6).map((cell, j) => (
-                              <td key={j} className="an-comp-td" style={{
-                                color: j === 0 ? "#0B1120" : j === 5 ? (row[6] as string) : "#64748B",
-                                fontWeight: j === 0 ? "600" : "400",
-                              }}>
-                                {j === 5 ? (
-                                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "10px", padding: "3px 9px", borderRadius: "20px", background: `${row[6]}12`, border: `1px solid ${row[6]}30`, fontWeight: "600", color: row[6] as string }}>
-                                    {cell}
-                                  </span>
-                                ) : (
-                                  <span style={{ fontFamily: j === 0 ? "'Figtree', sans-serif" : "'IBM Plex Mono', monospace", fontSize: j === 0 ? "13px" : "11px" }}>
-                                    {cell}
-                                  </span>
-                                )}
-                              </td>
-                            ))}
+                            <td className="an-comp-td" style={{ fontWeight: 600 }}>{competitor.name}</td>
+                            <td className="an-comp-td">{competitor.domain || "—"}</td>
+                            <td className="an-comp-td">{competitor.sector || "—"}</td>
+                            <td className="an-comp-td">{typeof competitor.similarity === "number" ? `${Math.round(competitor.similarity * 100)}%` : "—"}</td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </table> : <p style={{ color: "#64748B", fontSize: 13, margin: "16px 0" }}>No comparable companies were found in the portfolio database for this analysis.</p>}
                   </Panel>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    <Panel className="vf-panel-neutral" accentColor="var(--border)">
+                    {competitors.length > 0 && <Panel className="vf-panel-neutral" accentColor="var(--border)">
                       <SLabel>Threat Distribution</SLabel>
                       <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", position: "relative" }}>
                         <PieChart width={160} height={160}>
@@ -831,7 +803,7 @@ const Analysis = () => {
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: d.color, fontWeight: "600" }}>{d.value}%</span>
                         </div>
                       ))}
-                    </Panel>
+                    </Panel>}
 
                     <Panel accentColor="#C47A0A">
                       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
@@ -842,22 +814,6 @@ const Analysis = () => {
                   </div>
                 </div>
 
-                <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                  <SLabel>Competitor Funding Comparison (Total Raised, $M)</SLabel>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={fundingData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} layout="vertical">
-                      <CartesianGrid stroke="rgba(15,23,42,0.05)" horizontal={false} />
-                      <XAxis type="number" tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}M`} />
-                      <YAxis type="category" dataKey="name" tick={{ fill: "#64748B", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} axisLine={false} tickLine={false} width={80} />
-                      <Tooltip formatter={(v: any) => [`$${v}M`, "Total Raised"]} contentStyle={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, borderRadius: 10, border: "1px solid rgba(15,23,42,0.09)" }} />
-                      <Bar dataKey="value" radius={[0, 5, 5, 0]}>
-                        {fundingData.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} fillOpacity={entry.color === "#1D6FE8" ? 1 : 0.55} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </Panel>
               </div>
             )}
           </div>

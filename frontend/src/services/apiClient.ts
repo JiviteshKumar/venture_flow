@@ -46,6 +46,9 @@ export interface AnalyzeResponse {
   red_flags: string[];
   positive_factors: string[];
   session_id: string;
+  report_id?: string | null;
+  incomplete_analysis?: boolean;
+  similar_companies?: Array<{ name: string; domain?: string | null; sector?: string | null; similarity?: number }>;
   // full nested sections from backend
   sections?: {
     claims?: {
@@ -139,6 +142,9 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
     red_flags: asArray(raw?.red_flags ?? risk.red_flags),
     positive_factors: asArray(raw?.positive_factors ?? risk.positive_factors),
     session_id: String(raw?.session_id || ""),
+    report_id: raw?.report_id ? String(raw.report_id) : null,
+    incomplete_analysis: Boolean(raw?.incomplete_analysis),
+    similar_companies: Array.isArray(raw?.similar_companies) ? raw.similar_companies : [],
     sections: {
       ...sections,
       claims: {
@@ -163,6 +169,21 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
   };
 };
 
+export interface ReportSummary {
+  report_id: string;
+  company: string;
+  final_score: number;
+  recommendation: string;
+  created_at: string;
+}
+
+export interface AnalysisJob {
+  job_id: string;
+  status: "pending" | "running" | "complete" | "failed";
+  report?: AnalyzeResponse | null;
+  error?: string | null;
+}
+
 // ─── API CALLS ──────────────────────────────────────────────────────────────
 
 export const api = {
@@ -178,7 +199,7 @@ export const api = {
   },
 
   /** Run full due diligence pipeline — claim verify + risk + RAG + Groq */
-  analyze: async (payload: {
+  startAnalysis: async (payload: {
     company_name: string;
     company_description: string;
     claims: string[];
@@ -186,8 +207,23 @@ export const api = {
     revenue: number | null;
     burn_rate: number | null;
     runway_months: number | null;
-  }): Promise<AnalyzeResponse> => {
-    const res = await apiClient.post<AnalyzeResponse>("/analyze", payload);
+  }): Promise<AnalysisJob> => {
+    const res = await apiClient.post<AnalysisJob>("/analyze", payload, { timeout: 30_000 });
+    return res.data;
+  },
+
+  getAnalysisStatus: async (jobId: string): Promise<AnalysisJob> => {
+    const res = await apiClient.get<AnalysisJob>(`/analyze/status/${jobId}`, { timeout: 30_000 });
+    return { ...res.data, report: res.data.report ? normalizeAnalyzeResponse(res.data.report) : null };
+  },
+
+  listReports: async (): Promise<ReportSummary[]> => {
+    const res = await apiClient.get<ReportSummary[]>("/reports");
+    return res.data;
+  },
+
+  getReport: async (reportId: string): Promise<AnalyzeResponse> => {
+    const res = await apiClient.get<AnalyzeResponse>(`/reports/${reportId}`);
     return normalizeAnalyzeResponse(res.data);
   },
 
