@@ -35,11 +35,7 @@ const radarData = [
   { subject: "Network",     value: 70 },
 ];
 
-const threatData = [
-  { name: "High",   value: 40, color: "#D93025" },
-  { name: "Medium", value: 35, color: "#C47A0A" },
-  { name: "Low",    value: 25, color: "#0EA66A" },
-];
+const threatData: { name: string; value: number; color: string }[] = [];
 
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -795,7 +791,7 @@ const Analysis = () => {
                           </Pie>
                         </PieChart>
                         <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: "#0B1120", lineHeight: 1 }}>5</div>
+                          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: "#0B1120", lineHeight: 1 }}>{competitors.length}</div>
                           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: "#94A3B8" }}>competitors</div>
                         </div>
                       </div>
