@@ -167,6 +167,7 @@ def run_due_diligence(
 
     if not quality["can_proceed"]:
         report["final_score"]    = 0
+        report["incomplete_analysis"] = True
         report["recommendation"] = "INSUFFICIENT DATA — Please provide more company information"
         report["risk_level"]     = "UNKNOWN"
         report["sections"]["ai_analysis"] = (
@@ -405,8 +406,22 @@ If data quality is LOW, confidence must be below 60%.
     quality_bonus = (quality["score"] - 50) * 0.2
     raw_score     = 100 - (risk_score * 0.5) - claim_penalty - financial_penalty + quality_bonus
     final_score   = max(0, min(100, raw_score))
+    specialist_confidences = [
+        float(result.get("confidence", 0) or 0)
+        for result in specialist_results.values()
+        if isinstance(result, dict)
+    ]
+    all_specialists_failed = bool(specialist_confidences) and all(
+        confidence <= 0 for confidence in specialist_confidences
+    )
+    all_claims_uncertain = not claim_results or all(
+        result.get("verdict") == "NOT_ENOUGH_INFO" for result in claim_results
+    )
+    incomplete_analysis = all_specialists_failed or all_claims_uncertain
+    if incomplete_analysis:
+        final_score = min(final_score, 30)
 
-    if len(claim_results) == 0 or supported < 2 or quality["quality"] == "LOW":
+    if incomplete_analysis or len(claim_results) == 0 or supported < 2 or quality["quality"] == "LOW":
         recommendation = "NEEDS MORE DILIGENCE"
     elif final_score >= 75 and refuted == 0:
         recommendation = "INVEST"
@@ -418,6 +433,7 @@ If data quality is LOW, confidence must be below 60%.
     report["final_score"]    = round(final_score, 1)
     report["recommendation"] = recommendation
     report["risk_level"]     = risk_level
+    report["incomplete_analysis"] = incomplete_analysis
 
     print(f"\n{'='*60}")
     print(f"SCORE:          {final_score:.0f}/100")

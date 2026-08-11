@@ -139,6 +139,7 @@ class DiligenceResponse(BaseModel):
     sections: dict[str, Any] = Field(default_factory=dict)
     data_quality: dict[str, Any] = Field(default_factory=dict)
     similar_companies: list[dict[str, Any]] = Field(default_factory=list)
+    incomplete_analysis: bool = False
     report_id: str | None = None
     session_id: str
 
@@ -239,6 +240,7 @@ def _normalize_report(report: Any, company_name: str) -> dict[str, Any]:
             "data_quality": report.get("data_quality")
             if isinstance(report.get("data_quality"), dict)
             else {},
+            "incomplete_analysis": bool(report.get("incomplete_analysis", False)),
         }
     )
     return report
@@ -332,6 +334,7 @@ async def analyze_company(request: DiligenceRequest):
         sections=report["sections"],
         data_quality=report["data_quality"],
         similar_companies=similar_companies,
+        incomplete_analysis=report["incomplete_analysis"],
         report_id=report_id,
         session_id=session_id,
     )

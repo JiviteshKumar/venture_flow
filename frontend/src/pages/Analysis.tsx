@@ -540,6 +540,11 @@ const Analysis = () => {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 0 }}>
           <div className="an-body">
+            {report.incomplete_analysis && (
+              <div role="alert" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F5C2C2", borderRadius: 10, background: "#FFF5F5", color: "#9B1C1C", fontSize: 13 }}>
+                Analysis is incomplete: key verification or specialist-agent results were unavailable. The score is capped and should not be used as an investment recommendation.
+              </div>
+            )}
 
             {/* ── SUMMARY ── */}
             {activeTab === "Summary" && (
