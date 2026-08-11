@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
@@ -11,6 +12,7 @@ from groq import Groq
 
 MODEL = "llama-3.3-70b-versatile"
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+logger = logging.getLogger(__name__)
 
 
 def _json_agent(role: str, task: str, evidence: str, fallback: dict[str, Any]) -> dict[str, Any]:
@@ -44,6 +46,7 @@ EVIDENCE:
         parsed = json.loads(raw)
         return parsed if isinstance(parsed, dict) else fallback
     except Exception:
+        logger.exception("Specialist agent failed: %s", role)
         return fallback
 
 

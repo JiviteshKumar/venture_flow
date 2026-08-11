@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
 
-import json, time
+import json, logging, time
 import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
@@ -12,6 +12,7 @@ from groq import Groq
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 MODEL  = "llama-3.3-70b-versatile"
+logger = logging.getLogger(__name__)
 
 def search_web(query: str, max_results: int = 8) -> list:
     results = []
@@ -170,12 +171,12 @@ Respond with ONLY valid JSON, no other text:
             "key_evidence": "",
         }
 
-    except Exception as e:
-        print(f"  Groq error: {e}")
+    except Exception:
+        logger.exception("Groq claim-verification request failed")
         return {
             "verdict":      "NOT_ENOUGH_INFO",
             "confidence":   0.0,
-            "reasoning":    f"API error: {e}",
+            "reasoning":    "Claim verification is temporarily unavailable.",
             "key_evidence": "",
         }
 

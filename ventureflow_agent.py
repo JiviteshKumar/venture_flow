@@ -1,3 +1,4 @@
+import logging
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -16,6 +17,7 @@ from rag_engine import build_context, format_context_for_llm
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 MODEL  = "llama-3.3-70b-versatile"
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are VentureFlow AI, a senior VC due diligence analyst at a top-tier firm.
 
@@ -53,7 +55,12 @@ def _fallback_ai_analysis(
     positive_lines = risk_result.get("positive_factors") or ["No independently verified positive factors found."]
     red_flag_lines = risk_result.get("red_flags") or ["None identified from available evidence."]
 
-    error_note = f"\n\nSynthesis note: Groq report generation failed ({synthesis_error}). This fallback memo uses deterministic pipeline outputs only." if synthesis_error else ""
+    error_note = (
+        "\n\nSynthesis note: AI synthesis is temporarily unavailable. "
+        "This preliminary memo uses the evidence collected so far."
+        if synthesis_error
+        else ""
+    )
 
     return f"""1. EXECUTIVE SUMMARY
 {company_name} has been reviewed with {quality.get('quality', 'UNKNOWN')} data quality ({quality.get('score', 0)}/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.
@@ -176,13 +183,13 @@ def run_due_diligence(
         for claim in claims_to_verify[:5]:
             try:
                 result = verify_claim(claim, verbose=True)
-            except Exception as e:
-                print(f"  Claim verification error: {e}")
+            except Exception:
+                logger.exception("Claim verification failed")
                 result = {
                     "claim": claim,
                     "verdict": "NOT_ENOUGH_INFO",
                     "confidence": 0.0,
-                    "reasoning": f"Verification failed: {e}",
+                    "reasoning": "Claim verification was temporarily unavailable.",
                     "key_evidence": "",
                     "sources": [],
                     "total_sources": 0,
@@ -213,13 +220,13 @@ def run_due_diligence(
     risk_text   = filing_text or company_description
     try:
         risk_result = score_risk(risk_text, company=company_name)
-    except Exception as e:
-        print(f"  Risk analysis error: {e}")
+    except Exception:
+        logger.exception("Risk analysis failed")
         risk_result = {
             "risk_level": "UNKNOWN",
             "overall_risk_level": "UNKNOWN",
             "overall_score": 30,
-            "key_concerns": [f"Risk analysis failed: {e}"],
+            "key_concerns": ["Risk analysis was temporarily unavailable."],
             "positive_factors": [],
             "ai_reasoning": "Risk analysis unavailable.",
             "red_flags": [],
@@ -256,8 +263,8 @@ def run_due_diligence(
         rag_stats = {
             "reports_retrieved": len(relevant_reports),
         }
-    except Exception as e:
-        print(f"  RAG error: {e}")
+    except Exception:
+        logger.exception("Report context retrieval failed")
         formatted_context = "Database context unavailable"
         rag_stats = {
             "claims_retrieved": 0,
@@ -372,7 +379,7 @@ If data quality is LOW, confidence must be below 60%.
         )
         ai_analysis = response.choices[0].message.content
     except Exception as e:
-        print(f"  Groq synthesis error: {e}")
+        logger.exception("Groq report synthesis failed")
         ai_analysis = _fallback_ai_analysis(
             company_name=company_name,
             quality=quality,
