@@ -6,14 +6,14 @@ from collections import defaultdict, deque
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import ensure_schema, find_similar_companies, get_report, list_reports, persist_report, stats
+from db import create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, list_reports, persist_report, stats, update_analysis_job
 from db import healthcheck as neon_healthcheck
 from pdf_extractor import (
     extract_claims_from_text,
@@ -144,6 +144,13 @@ class DiligenceResponse(BaseModel):
     session_id: str
 
 
+class AnalysisJobResponse(BaseModel):
+    job_id: str
+    status: str
+    report: DiligenceResponse | None = None
+    error: str | None = None
+
+
 class ChatRequest(BaseModel):
     session_id: str = Field(min_length=1, max_length=100)
     question: str = Field(min_length=1, max_length=2_000)
@@ -271,8 +278,7 @@ def health():
         return {"status": "degraded", "database": "unavailable"}
 
 
-@app.post("/analyze", response_model=DiligenceResponse)
-async def analyze_company(request: DiligenceRequest):
+async def _perform_analysis(request: DiligenceRequest):
     session_id = str(uuid.uuid4())
     similar_companies: list[dict[str, Any]] = []
     try:
@@ -426,6 +432,46 @@ def saved_report(report_id: str):
         similar_companies=report.get("similar_companies", []), incomplete_analysis=report["incomplete_analysis"],
         report_id=report_id, session_id="",
     )
+
+
+async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:
+    try:
+        await run_in_threadpool(update_analysis_job, job_id, "running")
+        report = await _perform_analysis(DiligenceRequest(**request_data))
+        await run_in_threadpool(update_analysis_job, job_id, "complete", report.model_dump())
+    except Exception:
+        logger.exception("Analysis job %s failed", job_id)
+        try:
+            await run_in_threadpool(
+                update_analysis_job, job_id, "failed", None,
+                "Analysis could not be completed. Please retry.",
+            )
+        except Exception:
+            logger.exception("Could not mark analysis job %s as failed", job_id)
+
+
+@app.post("/analyze", response_model=AnalysisJobResponse, status_code=202)
+async def analyze_company(request: DiligenceRequest, background_tasks: BackgroundTasks):
+    try:
+        job_id = await run_in_threadpool(create_analysis_job, request.model_dump())
+    except Exception as exc:
+        logger.exception("Could not create analysis job")
+        raise HTTPException(status_code=503, detail="Analysis queue is currently unavailable.") from exc
+    background_tasks.add_task(_run_analysis_job, job_id, request.model_dump())
+    return AnalysisJobResponse(job_id=job_id, status="pending")
+
+
+@app.get("/analyze/status/{job_id}", response_model=AnalysisJobResponse)
+async def analysis_status(job_id: str):
+    try:
+        job = await run_in_threadpool(get_analysis_job, job_id)
+    except Exception as exc:
+        logger.exception("Could not load analysis job status")
+        raise HTTPException(status_code=503, detail="Analysis status is currently unavailable.") from exc
+    if not job:
+        raise HTTPException(status_code=404, detail="Analysis job not found.")
+    report = DiligenceResponse(**job["result"]) if job["status"] == "complete" and job.get("result") else None
+    return AnalysisJobResponse(job_id=job["job_id"], status=job["status"], report=report, error=job.get("error_message"))
 
 
 @app.get("/database/stats")

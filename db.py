@@ -166,6 +166,38 @@ def get_report(report_id: str) -> dict[str, Any] | None:
         return cur.fetchone()
 
 
+def create_analysis_job(payload: dict[str, Any]) -> str:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO analysis_jobs (request_payload) VALUES (%s::jsonb) RETURNING id::text",
+            (json.dumps(payload, default=str),),
+        )
+        job_id = cur.fetchone()["id"]
+        conn.commit()
+        return job_id
+
+
+def update_analysis_job(job_id: str, status: str, result: dict[str, Any] | None = None, error_message: str | None = None) -> None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE analysis_jobs SET status = %s,
+                result = COALESCE(%s::jsonb, result), error_message = %s,
+                started_at = CASE WHEN %s = 'running' THEN now() ELSE started_at END,
+                completed_at = CASE WHEN %s IN ('complete', 'failed') THEN now() ELSE completed_at END
+            WHERE id::text = %s
+            """,
+            (status, json.dumps(result, default=str) if result is not None else None, error_message, status, status, job_id),
+        )
+        conn.commit()
+
+
+def get_analysis_job(job_id: str) -> dict[str, Any] | None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT id::text AS job_id, status, result, error_message FROM analysis_jobs WHERE id::text = %s", (job_id,))
+        return cur.fetchone()
+
+
 def stats() -> dict[str, int]:
     with connection() as conn, conn.cursor() as cur:
         cur.execute(

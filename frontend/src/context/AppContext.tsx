@@ -127,7 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
 
         // ── STEP 3: Call /analyze ───────────────────────────────────────────
-        const report = await api.analyze({
+        const job = await api.startAnalysis({
           company_name: companyName,
           company_description: upload.company_description,
           claims: upload.detected_claims,
@@ -136,6 +136,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           burn_rate: null,
           runway_months: upload.runway_months,
         });
+
+        let jobStatus = job;
+        while (jobStatus.status === "pending" || jobStatus.status === "running") {
+          setState((s) => ({
+            ...s,
+            currentStage: jobStatus.status === "pending" ? "Analysis queued…" : "AI agents are analyzing the deck…",
+            progressPct: jobStatus.status === "pending" ? 25 : 60,
+          }));
+          await new Promise((resolve) => setTimeout(resolve, 3_000));
+          jobStatus = await api.getAnalysisStatus(job.job_id);
+        }
+        if (jobStatus.status !== "complete" || !jobStatus.report) {
+          throw new Error(jobStatus.error || "Analysis could not be completed. Please retry.");
+        }
+        const report = jobStatus.report;
 
         // Clear pending stage timers
         timers.forEach(clearTimeout);

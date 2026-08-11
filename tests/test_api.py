@@ -10,6 +10,9 @@ def test_analyze_rejects_invalid_payload():
 
 
 def test_analyze_returns_persisted_report(monkeypatch):
+    monkeypatch.setattr(api, "create_analysis_job", lambda _: "job-id")
+    updates = []
+    monkeypatch.setattr(api, "update_analysis_job", lambda *args: updates.append(args))
     monkeypatch.setattr(api, "find_similar_companies", lambda *_: [{"name": "Existing Co", "similarity": 0.8}])
     monkeypatch.setattr(api, "persist_report", lambda **_: "report-id")
     monkeypatch.setattr(
@@ -30,12 +33,15 @@ def test_analyze_returns_persisted_report(monkeypatch):
     )
     client = TestClient(api.app)
     response = client.post("/analyze", json={"company_name": "New Co", "company_description": "Test"})
-    assert response.status_code == 200
-    assert response.json()["report_id"] == "report-id"
-    assert response.json()["similar_companies"][0]["name"] == "Existing Co"
+    assert response.status_code == 202
+    assert response.json() == {"job_id": "job-id", "status": "pending", "report": None, "error": None}
+    assert updates[-1][1] == "complete"
 
 
 def test_analyze_returns_a_clear_error_when_persistence_fails(monkeypatch):
+    monkeypatch.setattr(api, "create_analysis_job", lambda _: "job-id")
+    updates = []
+    monkeypatch.setattr(api, "update_analysis_job", lambda *args: updates.append(args))
     monkeypatch.setattr(api, "find_similar_companies", lambda *_: [])
     monkeypatch.setattr(api, "run_due_diligence", lambda *_: {"sections": {}})
 
@@ -45,8 +51,15 @@ def test_analyze_returns_a_clear_error_when_persistence_fails(monkeypatch):
     monkeypatch.setattr(api, "persist_report", fail_persist)
     client = TestClient(api.app)
     response = client.post("/analyze", json={"company_name": "New Co"})
-    assert response.status_code == 503
-    assert response.json()["detail"] == "Analysis completed but could not be saved. Please retry."
+    assert response.status_code == 202
+    assert updates[-1][1] == "failed"
+
+
+def test_analysis_status_returns_completed_report(monkeypatch):
+    monkeypatch.setattr(api, "get_analysis_job", lambda _: {"job_id": "job-id", "status": "complete", "error_message": None, "result": {"company": "New Co", "final_score": 20, "recommendation": "PASS", "risk_level": "LOW", "ai_analysis": "memo", "claims_verified": 0, "claims_supported": 0, "claims_refuted": 0, "claims_uncertain": 0, "risk_signals_found": 0, "key_concerns": [], "red_flags": [], "positive_factors": [], "sections": {}, "data_quality": {}, "session_id": "s"}})
+    response = TestClient(api.app).get("/analyze/status/job-id")
+    assert response.status_code == 200
+    assert response.json()["report"]["company"] == "New Co"
 
 
 def test_startup_attempts_idempotent_schema_migration(monkeypatch):
