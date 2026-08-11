@@ -219,6 +219,9 @@ export const api = {
 
   listReports: async (): Promise<ReportSummary[]> => {
     const res = await apiClient.get<ReportSummary[]>("/reports");
+    if (!Array.isArray(res.data)) {
+      throw new Error("Saved reports response was not a list.");
+    }
     return res.data;
   },
 
