@@ -57,3 +57,13 @@ def test_startup_attempts_idempotent_schema_migration(monkeypatch):
         pass
 
     assert calls == [True]
+
+
+def test_saved_report_endpoints(monkeypatch):
+    monkeypatch.setattr(api, "list_reports", lambda: [{"report_id": "r1", "company": "Saved Co", "final_score": 42, "recommendation": "PASS", "created_at": "2026-08-01T00:00:00Z"}])
+    monkeypatch.setattr(api, "get_report", lambda _: {"report_id": "r1", "company": "Saved Co", "raw_output": {"sections": {"claims": {}, "risk": {}}, "final_score": 42, "recommendation": "PASS"}})
+    client = TestClient(api.app)
+    assert client.get("/reports").json()[0]["company"] == "Saved Co"
+    detail = client.get("/reports/r1")
+    assert detail.status_code == 200
+    assert detail.json()["report_id"] == "r1"

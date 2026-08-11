@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import ensure_schema, find_similar_companies, persist_report, stats
+from db import ensure_schema, find_similar_companies, get_report, list_reports, persist_report, stats
 from db import healthcheck as neon_healthcheck
 from pdf_extractor import (
     extract_claims_from_text,
@@ -393,6 +393,39 @@ async def chat(request: ChatRequest):
         chat_with_document, request.session_id, request.question, False
     )
     return ChatResponse(**result)
+
+
+@app.get("/reports")
+def saved_reports():
+    try:
+        return list_reports()
+    except Exception as exc:
+        logger.exception("Could not list saved reports")
+        raise HTTPException(status_code=503, detail="Saved reports are currently unavailable.") from exc
+
+
+@app.get("/reports/{report_id}", response_model=DiligenceResponse)
+def saved_report(report_id: str):
+    try:
+        stored = get_report(report_id)
+    except Exception as exc:
+        logger.exception("Could not load saved report")
+        raise HTTPException(status_code=503, detail="Saved report is currently unavailable.") from exc
+    if not stored:
+        raise HTTPException(status_code=404, detail="Saved report not found.")
+    report = _normalize_report(stored.get("raw_output"), stored["company"])
+    report["report_id"] = stored["report_id"]
+    report["session_id"] = ""
+    claims, risk = report["sections"]["claims"], report["sections"]["risk"]
+    return DiligenceResponse(
+        company=report["company"], final_score=report["final_score"], recommendation=report["recommendation"],
+        risk_level=report["risk_level"], ai_analysis=report["sections"]["ai_analysis"],
+        claims_verified=claims["checked"], claims_supported=claims["supported"], claims_refuted=claims["refuted"], claims_uncertain=claims["uncertain"],
+        risk_signals_found=risk["total_signals"], key_concerns=risk["key_concerns"], red_flags=risk["red_flags"],
+        positive_factors=risk["positive_factors"], sections=report["sections"], data_quality=report["data_quality"],
+        similar_companies=report.get("similar_companies", []), incomplete_analysis=report["incomplete_analysis"],
+        report_id=report_id, session_id="",
+    )
 
 
 @app.get("/database/stats")

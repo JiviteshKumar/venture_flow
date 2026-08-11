@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, AreaChart, Area,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import { api, ReportSummary } from "../services/apiClient";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,25 @@ const EmptyDashboard = () => {
   );
 };
 
+const PastAnalyses = () => {
+  const [reports, setReports] = useState<ReportSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { loadSavedReport } = useApp();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api.listReports().then(setReports).catch(() => setReports([])).finally(() => setLoading(false));
+  }, []);
+
+  if (loading || !reports.length) return null;
+  return <div style={{ width: "min(620px, 100%)", marginTop: 28, textAlign: "left" }}>
+    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#64748B", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Past analyses</div>
+    {reports.map((saved) => <button key={saved.report_id} type="button" onClick={async () => { await loadSavedReport(saved.report_id); navigate("/analysis"); }} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(15,23,42,0.08)", background: "#fff", borderRadius: 8, marginBottom: 6, padding: "10px 12px", cursor: "pointer" }}>
+      <strong>{saved.company}</strong><span style={{ float: "right", color: "#64748B" }}>{Math.round(saved.final_score)}/100 · {saved.recommendation}</span>
+    </button>)}
+  </div>;
+};
+
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
@@ -128,6 +148,7 @@ const Dashboard = () => {
         </div>
       </div>
       <EmptyDashboard />
+      <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 40px" }}><PastAnalyses /></div>
     </div>
   );
 

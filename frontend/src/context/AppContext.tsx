@@ -35,6 +35,7 @@ interface AppState {
 interface AppContextValue extends AppState {
   setCompanyName: (name: string) => void;
   runAnalysis: (file: File, companyName: string) => Promise<void>;
+  loadSavedReport: (reportId: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -66,6 +67,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const reset = useCallback(() => {
     setState(INITIAL);
+  }, []);
+
+  const loadSavedReport = useCallback(async (reportId: string) => {
+    const report = await api.getReport(reportId);
+    setState((s) => ({ ...s, status: "done", report, sessionId: report.session_id || null, companyName: report.company, error: null }));
   }, []);
 
   /**
@@ -164,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ ...state, setCompanyName, runAnalysis, reset }}
+      value={{ ...state, setCompanyName, runAnalysis, loadSavedReport, reset }}
     >
       {children}
     </AppContext.Provider>

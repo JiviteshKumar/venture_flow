@@ -134,6 +134,38 @@ def persist_report(
         return report_id
 
 
+def list_reports(limit: int = 20) -> list[dict[str, Any]]:
+    """Return compact saved-report metadata for the history view."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT dr.id::text AS report_id, c.name AS company,
+                   COALESCE((dr.raw_output ->> 'final_score')::float, 0) AS final_score,
+                   COALESCE(dr.verdict, 'NEEDS MORE DILIGENCE') AS recommendation,
+                   dr.created_at
+            FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
+            ORDER BY dr.created_at DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        return list(cur.fetchall())
+
+
+def get_report(report_id: str) -> dict[str, Any] | None:
+    """Load the persisted raw report by its externally supplied identifier."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT dr.id::text AS report_id, c.name AS company, dr.raw_output
+            FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
+            WHERE dr.id::text = %s
+            """,
+            (report_id,),
+        )
+        return cur.fetchone()
+
+
 def stats() -> dict[str, int]:
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
