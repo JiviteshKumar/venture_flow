@@ -46,6 +46,14 @@ Tested on 2026-07-31 against the checked-out `main` branch and the deployed Verc
 
 Vite reports a 908 kB minified JavaScript chunk (260 kB gzip). No behavior is blocked; consider route-level code splitting after the current reliability fixes deploy.
 
+## Remediation
+
+- **QA-004:** Replaced fabricated competitor/funding rows with API-backed comparable companies and an explicit empty state. (`74c6e97c0`)
+- **QA-001:** Provider exceptions are logged server-side and replaced with generic user-facing fallback messages. (`23559fdb3`)
+- **QA-003:** Incomplete evidence runs are flagged and their scores are capped at 30; the UI shows a warning. (`b222f0760`)
+- **QA-005:** Added saved-report list/detail endpoints and a dashboard history list that reopens reports. (`6476cc2eb`)
+- **QA-002:** Added persistent FastAPI background jobs with polling status endpoints to remove the long-running client request. (`a8aad5647`)
+
 ## Risks and remaining coverage
 
 - No authentication, admin, or payment flow exists in the current route/API inventory.
