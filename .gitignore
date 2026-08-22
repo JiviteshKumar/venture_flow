@@ -28,6 +28,16 @@ frontend/.env.*
 
 # Downloaded/training datasets and local reports
 data/
+# ml/data/outcome_dataset.jsonl is a RUNTIME dependency, not a build artefact:
+# comparables.py reads it on every analysis to find comparable companies, so a
+# fresh clone without it silently reports comparables as unavailable. Git will
+# not re-include a file whose parent directory is excluded, hence unexcluding
+# ml/data/ first and then re-excluding its contents. The 10 MB raw yc-oss dump
+# and the derived training set stay out: both are only needed to retrain, and
+# ml/README.md documents the one-command refresh from the public source.
+!ml/data/
+ml/data/*
+!ml/data/outcome_dataset.jsonl
 TAT-QA/
 due_diligence_report.json
 AGENT_LOG.md
