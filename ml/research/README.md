@@ -232,18 +232,23 @@ of the shipped model:
 
 | Predicted | Observed | n |
 |---|---|---|
-| 0.173 | 0.273 | 77 |
-| 0.264 | 0.299 | 395 |
-| 0.348 | 0.349 | 1,536 |
-| 0.450 | 0.454 | 1,228 |
-| 0.538 | 0.529 | 662 |
-| 0.640 | 0.583 | 271 |
-| 0.745 | 0.790 | 119 |
-| 0.956 | 0.923 | 299 |
+| 0.166 | 0.185 | 54 |
+| 0.258 | 0.288 | 417 |
+| 0.347 | 0.347 | 1,537 |
+| 0.446 | 0.464 | 1,162 |
+| 0.542 | 0.520 | 688 |
+| 0.642 | 0.569 | 304 |
+| 0.743 | 0.803 | 127 |
+| 0.848 | 0.780 | 109 |
+| 0.954 | 0.911 | 282 |
 
-Well-behaved through the middle of the range, where almost all mass sits.
-Calibration is weakest at the extremes, which is where the least data is —
-worth knowing before trusting a very high or very low score.
+Well-behaved through the middle of the range, where almost all mass sits —
+the 0.347 bin holds 1,537 of 4,680 predictions and is calibrated to three
+decimal places. The two visible deviations are the 0.642 bin (predicted
+0.642, observed 0.569) and 0.848 (predicted 0.848, observed 0.780), both of
+which are *over*-confident, and both in the upper-middle range on a few
+hundred samples. Calibration is weakest where the least data is, which is
+worth knowing before trusting an unusually high score.
 
 **A negative result worth recording:** calibration was first attempted on
 LightGBM with the contaminated feature set, and cost 0.045 AUC (0.7063 →
