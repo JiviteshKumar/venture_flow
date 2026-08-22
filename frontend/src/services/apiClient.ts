@@ -20,13 +20,6 @@ export interface UploadResponse {
   page_count: number;
 }
 
-// Bundled sandbox/onboarding deck (p4) — shape mirrors UploadResponse plus
-// the fields a real upload wouldn't have (company_name, founders).
-export interface DemoSample extends UploadResponse {
-  company_name: string;
-  founders: string[];
-}
-
 export interface ClaimDetail {
   claim: string;
   verdict: "SUPPORTS" | "REFUTES" | "NOT_ENOUGH_INFO";
@@ -256,11 +249,5 @@ export const api = {
     } catch {
       return false;
     }
-  },
-
-  /** Bundled sandbox/onboarding deck (p4) — no file upload required */
-  getDemoSample: async (): Promise<DemoSample> => {
-    const res = await apiClient.get<DemoSample>("/demo/sample");
-    return res.data;
   },
 };

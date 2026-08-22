@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
 from db import add_comment, count_decisions, create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_decision, stats, update_analysis_job
-from demo_data import DEMO_SAMPLE
 from db import healthcheck as neon_healthcheck
 from pdf_extractor import extract_text_from_pdf
 from rate_limiter import is_allowed as rate_limit_is_allowed
@@ -272,16 +271,6 @@ def health():
         }
     except Exception:  # noqa: BLE001 - health must not expose connection failures
         return {"status": "degraded", "database": "unavailable"}
-
-
-@app.get("/demo/sample")
-def demo_sample():
-    """Sandbox/onboarding mode (p4). Returns a bundled, clearly-fictional
-    example deck so a first-time user can run the real pipeline -- claim
-    verification, risk model, RAG, Groq synthesis, comparables -- without
-    having a pitch deck or Neon data of their own yet. Static, no DB or
-    network call, so this always succeeds."""
-    return DEMO_SAMPLE
 
 
 async def _perform_analysis(request: DiligenceRequest):
