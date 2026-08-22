@@ -6,6 +6,7 @@ lightgbm
 pdfplumber
 pgvector
 psycopg[binary]
+psycopg_pool
 python-dotenv
 python-multipart
 reportlab

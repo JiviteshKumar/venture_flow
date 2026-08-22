@@ -154,10 +154,109 @@ export interface DBStats {
   portfolio_investments: number;
 }
 
+/**
+ * Coerce one LLM-authored value into renderable text.
+ *
+ * `String({finding: "x"})` yields "[object Object]", and handing the raw object
+ * to JSX crashes React outright with "Objects are not valid as a React child".
+ * That is not hypothetical: it took the whole application down. Stored reports
+ * contain `team.gaps` as `{description, evidence}`, `team.questions` as
+ * `{question, evidence}`, `team.strengths` as `{description, evidence}` and
+ * `market.gaps` as `{area, evidence}` -- four different shapes for fields the
+ * prompt asks for as plain lists, because nothing constrains what the model
+ * returns.
+ *
+ * So the known text-bearing keys are unwrapped in preference order, and
+ * anything unrecognised degrades to readable JSON rather than "[object
+ * Object]" or a crash.
+ */
+const asText = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(asText).filter(Boolean).join("; ");
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    for (const key of ["finding", "description", "question", "area", "text", "title", "name", "claim", "concern", "gap", "strength"]) {
+      if (typeof o[key] === "string" && o[key]) return o[key] as string;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "";
+    }
+  }
+  return String(value);
+};
+
 const asArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value.filter(Boolean).map(String);
-  if (value) return [String(value)];
-  return [];
+  if (Array.isArray(value)) return value.map(asText).filter(Boolean);
+  const single = asText(value);
+  return single ? [single] : [];
+};
+
+/**
+ * Fields inside `sections.*` that the UI renders as plain text lists. Any
+ * object arriving in one of these is a render crash, so they are flattened
+ * once here, at the boundary, rather than defended at each of the ~20 render
+ * sites -- which is the version of this fix that silently misses one.
+ */
+const TEXT_LIST_FIELDS = [
+  "gaps", "questions", "strengths", "conditions_to_invest",
+  "diligence_required", "key_concerns", "red_flags", "positive_factors",
+];
+
+/**
+ * Single-value fields the UI renders as text. These need the same treatment as
+ * the list fields and are just as unreliable: `market.market_definition` is an
+ * object in 8 of the last 30 stored reports, arriving variously as
+ * `{finding, evidence}` and `{evidence, assessment}`. It renders inside a
+ * <p> on the Market Validation tab, which is exactly where React reported
+ * "Objects are not valid as a React child (found: object with keys
+ * {finding, evidence})".
+ */
+const TEXT_SCALAR_FIELDS = [
+  "market_definition", "recommendation", "thesis", "overall_assessment",
+  "ai_reasoning", "risk_level", "summary", "verdict",
+];
+
+const normalizeSections = (sections: Record<string, any>): Record<string, any> => {
+  const out: Record<string, any> = {};
+  for (const [name, section] of Object.entries(sections)) {
+    if (!section || typeof section !== "object" || Array.isArray(section)) {
+      out[name] = section;
+      continue;
+    }
+    const copy: Record<string, any> = { ...section };
+    for (const field of TEXT_LIST_FIELDS) {
+      if (Array.isArray(copy[field])) copy[field] = copy[field].map(asText).filter(Boolean);
+      else if (copy[field] !== undefined && copy[field] !== null) copy[field] = asArray(copy[field]);
+    }
+    for (const field of TEXT_SCALAR_FIELDS) {
+      if (copy[field] !== undefined && copy[field] !== null && typeof copy[field] !== "string") {
+        copy[field] = asText(copy[field]);
+      }
+    }
+    // `signals` keeps its {finding, evidence} shape -- the UI reads both parts
+    // deliberately (evidence becomes a tooltip) -- but each half is coerced so
+    // a nested object cannot reach JSX.
+    if (Array.isArray(copy.signals)) {
+      copy.signals = copy.signals.map((s: any) =>
+        s && typeof s === "object" && !Array.isArray(s)
+          ? { finding: asText(s.finding ?? s), evidence: asText(s.evidence ?? "") }
+          : { finding: asText(s), evidence: "" }
+      );
+    }
+    if (Array.isArray(copy.capabilities)) {
+      copy.capabilities = copy.capabilities.map((c: any) =>
+        c && typeof c === "object" && !Array.isArray(c)
+          ? { area: asText(c.area ?? c), score: Number(c.score) || 0, evidence: asText(c.evidence ?? "") }
+          : { area: asText(c), score: 0, evidence: "" }
+      );
+    }
+    out[name] = copy;
+  }
+  return out;
 };
 
 const asNumber = (value: unknown, fallback = 0): number => {
@@ -192,7 +291,8 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
     score_source: raw?.score_source ? String(raw.score_source) : null,
     similar_companies: Array.isArray(raw?.similar_companies) ? raw.similar_companies : [],
     sections: {
-      ...sections,
+      // Flatten LLM-shaped values before anything renders them. See asText().
+      ...normalizeSections(sections),
       claims: {
         checked: asNumber(claims.checked),
         supported: asNumber(claims.supported),

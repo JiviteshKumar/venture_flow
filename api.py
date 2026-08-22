@@ -63,6 +63,14 @@ async def initialize_database_schema() -> None:
         logger.exception("Neon schema migration unavailable during startup")
 
 
+@app.on_event("shutdown")
+async def close_database_pool() -> None:
+    """Release pooled Neon connections cleanly on shutdown."""
+    from db import close_pool
+
+    await run_in_threadpool(close_pool)
+
+
 @app.middleware("http")
 async def rate_limit(request: Request, call_next):
     if request.url.path in {"/health", "/"}:

@@ -29,22 +29,91 @@ def _database_url() -> str:
     )
 
 
+_pool = None
+
+
+def _configure(conn: psycopg.Connection) -> None:
+    """Per-connection setup, run once when the pool opens a connection rather
+    than on every query."""
+    try:
+        from pgvector.psycopg import register_vector
+
+        register_vector(conn)
+    except Exception:
+        # pgvector extension/migration not applied yet, or the optional
+        # `pgvector` package isn't installed -- vector features degrade
+        # gracefully (see persist_report / find_similar_reports_by_vector),
+        # everything else in this module is unaffected.
+        pass
+
+
+def _get_pool():
+    """Lazily build a connection pool.
+
+    Every call to `connection()` used to open a brand-new psycopg connection.
+    Against Neon that is not cheap: measured on this deployment, connecting
+    takes ~1.57s and a trivial `SELECT 1` a further ~0.58s, while the actual
+    query -- listing 20 reports -- takes 0.23s. So the dashboard's report list
+    took 7.2s end-to-end, of which almost none was the database doing work.
+    Every endpoint and every pipeline step paid that toll separately.
+
+    A pool keeps connections warm, so only the first request per worker pays
+    the handshake. `min_size=1` keeps one alive without holding open
+    connections a free-tier Neon project would rather not spare; `max_size=8`
+    covers the pipeline's concurrent steps.
+
+    Falls back to direct connections if psycopg_pool is unavailable, so the
+    module keeps working without the optional dependency.
+    """
+    global _pool
+    if _pool is None:
+        from psycopg_pool import ConnectionPool
+
+        _pool = ConnectionPool(
+            conninfo=_database_url(),
+            min_size=1,
+            max_size=8,
+            timeout=30,
+            max_idle=300,
+            kwargs={"row_factory": dict_row, "connect_timeout": 10},
+            configure=_configure,
+            open=True,
+        )
+    return _pool
+
+
 @contextmanager
 def connection() -> Iterator[psycopg.Connection]:
-    with psycopg.connect(
-        _database_url(), connect_timeout=10, row_factory=dict_row
-    ) as conn:
-        try:
-            from pgvector.psycopg import register_vector
+    try:
+        pool = _get_pool()
+    except Exception:
+        # psycopg_pool missing or the pool could not be built -- fall back to
+        # the original one-connection-per-call behaviour rather than failing.
+        logger.debug("Connection pool unavailable; using a direct connection", exc_info=True)
+        with psycopg.connect(_database_url(), connect_timeout=10, row_factory=dict_row) as conn:
+            _configure(conn)
+            yield conn
+        return
 
-            register_vector(conn)
-        except Exception:
-            # pgvector extension/migration not applied yet, or the optional
-            # `pgvector` package isn't installed -- vector features degrade
-            # gracefully (see persist_report / find_similar_reports_by_vector),
-            # everything else in this module is unaffected.
-            pass
+    with pool.connection() as conn:
         yield conn
+
+
+def close_pool() -> None:
+    """Close pooled connections on shutdown.
+
+    Without this the pool's worker threads outlive the interpreter's attempt to
+    join them and psycopg_pool prints "couldn't stop thread ... within 5.0
+    seconds" on exit. Harmless, but it looks like a fault in the logs and is
+    trivial to avoid.
+    """
+    global _pool
+    if _pool is not None:
+        try:
+            _pool.close()
+        except Exception:
+            logger.debug("Error closing the connection pool", exc_info=True)
+        _pool = None
 
 
 def healthcheck() -> bool:
