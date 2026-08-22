@@ -3,6 +3,66 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 22 Aug 2026, ninth pass: the UI crash, and the first fully-working run
+
+### "Something went wrong" on every page — Rules of Hooks
+
+Reported as random breakage while navigating. Root cause in `Analysis.tsx`:
+
+```
+const Analysis = () => {
+  const [activeTab, ...] = useState("Summary");
+  const [ddOpen, ...]    = useState(false);
+  const { report } = useApp();
+  if (!report) { return <EmptyAnalysis /> }      // early return
+  ...
+  const [pdfExporting, ...] = useState(false);   // ~85 lines below
+```
+
+React identifies hooks by call order. With a report loaded this rendered five
+hooks; the instant `report` became null the early return fired first and only
+four ran, so React threw *"Rendered fewer hooks than expected"* — unrecoverable,
+so the root ErrorBoundary replaced the whole application. `report` goes null on
+several paths, most easily the sidebar's Settings button, which calls `reset()`.
+That is why it looked navigation-related: what mattered was the report vanishing
+underneath a mounted Analysis page.
+
+**`tsc -b` and `vite build` passed for this bug's entire lifetime.** Neither has
+any concept of hook ordering. Added ESLint with `react-hooks/rules-of-hooks` as
+an **error**, wired into `npm run build`. Proved the guard works by
+reintroducing the bug — ESLint reported *"React Hook useState is called
+conditionally … Did you accidentally call a React Hook after an early return?"*
+— then restoring the fix.
+
+The ErrorBoundary itself was also part of the problem: it rendered a bare
+"Reload to try again" and deliberately hid details. That is right for a public
+product and wrong here, where the person seeing it is the person who can fix it.
+It now shows the error, stack and component stack with a copy button.
+
+### First fully-working end-to-end run
+
+Live, against real Neon and real Groq, on `RouteIQ.pdf` — **210s, every stage
+working simultaneously for the first time in this project**:
+
+| | Result |
+|---|---|
+| Extraction | `llm_schema`, 4 claims (not the regex fallback) |
+| Claim verification | 4 checked — 1 supported, 3 NOT_ENOUGH_INFO |
+| Risk analysis | **MEDIUM** — worked at all, having failed 100% of runs before the Unicode fix |
+| Specialist agents | market 0.30, team 0.20, bull 0.32, bear 0.32 — real confidences, previously all 0 |
+| VentureFlow Score | 47/100, range 34–56, medium confidence |
+| Memo | 6,505 chars, and it explains the model's score |
+| RAG | 5 prior reports retrieved via pgvector |
+| Persistence | report 58, chat session attached |
+
+Verified in the browser afterwards: the report renders, the score panel shows
+47/100 with its interval, chat is enabled, no console errors.
+
+**Every stage in that table was broken or degraded before this pass and the
+one before it.** The reason they all looked fine is that each failure is caught
+and degraded individually, so the product kept producing reports that were
+quietly empty.
+
 ## Update — 22 Aug 2026, eighth pass: first run against live credentials, and what that exposed
 
 This is the first pass executed with a working `DATABASE_URL`, a working
