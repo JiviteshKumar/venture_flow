@@ -174,11 +174,20 @@ turning arbitrary text (a company description, a pitch-deck excerpt, a RAG
 query) into a fixed 64-dimensional vector for real similarity search —
 pgvector retrieval in `rag_engine.py` and comparable-company matching in
 `comparables.py`. Same reasoning as the Outcome Model for why TF-IDF and not
-a pretrained sentence-transformer: `huggingface.co` is still blocked in this
-sandbox. `embeddings.py` is the thin, lazy-loading wrapper both callers use;
-it returns `None` (never a zero vector) on any failure, so a missing or
-corrupt model file degrades to "vector search unavailable," not a crash or
-silently-wrong result.
+a pretrained sentence-transformer: `huggingface.co` was blocked in the sandbox
+this was built in (it is reachable now). `embeddings.py` is the thin,
+lazy-loading wrapper both callers use; it returns `None` (never a zero vector)
+on any failure, so a missing or corrupt model file degrades to "vector search
+unavailable," not a crash or silently-wrong result.
+
+**Correction (22 Aug 2026):** the pgvector half of that sentence was aspirational
+until this date. The embedder was real and `comparables.py` did use it, but the
+`rag_engine.py` vector path **never once executed successfully** — the SQL passed
+a Python list, psycopg adapted it to `double precision[]`, and pgvector defines
+no `vector <=> double precision[]` operator, so every call raised
+`UndefinedFunction` and silently fell back to keyword `LIKE` search. Fixed by
+adding explicit `::vector` casts in `db.find_similar_reports_by_vector`, and
+verified returning real cosine-ranked neighbours against the live database.
 
 ### Claim Model & Risk/Tone Model — RUN AT LAST, results below
 

@@ -3,6 +3,161 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 22 Aug 2026, eighth pass: first run against live credentials, and what that exposed
+
+This is the first pass executed with a working `DATABASE_URL`, a working
+`GROQ_API_KEY` and real network access. Every prior pass ran in a sandbox that
+could reach none of those, which is why a set of bugs that break the product on
+every single run survived several "all green" passes. **Automated tests,
+`tsc -b` and `vite build` were passing throughout — none of them exercise the
+live app, and that gap is the entire story of this pass.**
+
+### The reported failure, root-caused
+
+The user's symptom was an analysis that ran for minutes, sat at roughly 60%,
+then failed with the generic "Analysis could not be completed. Please retry."
+Two separate bugs were bundled in that.
+
+**Bug 1 — the failure was never reported.** `_run_analysis_job` caught every
+exception and wrote a fixed string into the job's `error` field, discarding the
+actual exception. An exhausted API quota, an unreachable database and a genuine
+code bug were indistinguishable on screen, and "retry" was actively wrong
+advice for two of the three. Fixed first, deliberately, because without it the
+real cause could not be seen. `_describe_failure()` now translates known causes
+into an action and falls through to the real exception type and message
+otherwise. `tests/test_job_error_reporting.py` covers this; nothing previously
+exercised the failure path at all.
+
+**Bug 2 — the actual crash**, which the fix above immediately surfaced:
+
+```
+File "ventureflow_agent.py", line 236, in _evidence_penalty
+    penalty += max(0.0, min(0.20, (risk_score / 100.0) * 0.20))
+TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'
+```
+
+`risk_score` came from `risk_result.get("overall_score", 30)`. That idiom is
+not a null guard — the default applies only when the key is *absent*, and the
+risk agent emits the key with a null value whenever its own LLM call fails.
+The arithmetic raised, and the exception escaped every try/except in the
+pipeline and failed the whole job after minutes of real work. This was code
+added in the sixth pass, and it is exactly the degradation contract the rest of
+`ventureflow_agent.py` follows and this did not. Fixed with `_coerce_number()`,
+applied to every numeric input of both scoring functions rather than only the
+one that happened to raise first.
+
+### Three more bugs that were silently destroying report content
+
+**`UnicodeEncodeError` from debug prints was deleting the product's output.**
+
+```
+File "agents/risk_detector.py", line 164, in score_risk
+    print(f"\n\U0001f50d Running risk analysis for: {company}")
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f50d'
+```
+
+Windows stdout is cp1252. `risk_detector` prints a hardcoded emoji, so **risk
+analysis raised on every single run** and degraded to `available: false`.
+`claim_verifier` prints the model's reasoning, which routinely contains
+typographic characters (U+2011, U+202F), so individual claim verifications
+failed at random. Both are caught by the pipeline's try/except, so the app
+looked healthy while shipping reports with no risk assessment and missing
+claims. `console_safety.py` forces UTF-8 on stdout/stderr at import, covering
+all 58 print sites and any added later — fixing the three known call sites
+individually would have left the next one to be found in production.
+
+**pgvector retrieval had never worked.** See the correction inserted into the
+fourth-pass section above. `vector <=> double precision[]` does not exist;
+every call fell back to keyword search while the product reported vector
+retrieval. Fixed with `::vector` casts and verified returning real
+cosine-ranked neighbours.
+
+**The document-chat panel was dead on every saved report.** `store_document`
+files the deck text under a session id, but that id was never written into the
+report, and `_normalize_report` hardcoded `session_id=""`. Chat worked only in
+the browser tab that had just run the analysis; any report opened from the
+Dashboard showed a disabled "Run analysis first" box while its text sat in the
+database. Now persisted and read back.
+
+**Specialist agents were failing on JSON parsing** — truncated objects and
+empty completions, because `max_tokens=1000` was tuned for Llama 3.3 and the
+current model spends part of its budget on an internal reasoning trace. Now
+uses Groq's constrained `json_object` output (verified supported for this
+model), a larger budget, and logs what actually happened.
+
+### Performance: 262s → 99-117s, measured
+
+Profiled rather than guessed. Claim evidence collection ran five DuckDuckGo
+queries and five page fetches sequentially per claim: **16.8s + 5.5s measured
+per claim**, roughly half of a four-minute analysis spent waiting on I/O with
+no ordering requirement. Now concurrent, capped at 5 workers: **24s → 9.3s per
+claim**. Full timed runs went from 262s to 99-117s. Some DuckDuckGo queries get
+throttled under concurrency and return no results; evidence still came back
+complete in every observed run, but that trade is real and worth knowing.
+
+### Progress reporting is now honest
+
+The frontend advanced its labels on fixed 30/60/90/120s `setTimeout`s that had
+nothing to do with the backend, so a slow-but-working run looked identical to a
+hung one — which is what the user was actually looking at. Migration 008 adds
+`analysis_jobs.stage`, the pipeline reports its real current step, and the UI
+shows that plus elapsed seconds. Observed stage transitions on a live run:
+41s claims → 89s risk → 101s agents → 126s evidence → 138s memo → 149s done.
+
+### Step 4 verification: what was real and what was not
+
+- **The VentureFlow Score model is real.** The file loads, it is a 12-member
+  calibrated RandomForest ensemble, and its stored metrics (ROC-AUC 0.6772,
+  ECE 0.0219, n=1298) **match `ml/research/venturescore_experiments.json`
+  exactly**, checked programmatically rather than by eye. It is genuinely
+  wired into the score a user sees: live runs report
+  `score_source=venturescore_model`.
+- **`openai/gpt-oss-120b` is real** and reachable on this key.
+- **"SEC EDGAR filings" was fabricated.** It appeared twice in the UI and
+  nowhere in the backend — no sec.gov call, no CIK lookup, no EDGAR client.
+  It had also survived an earlier cleanup that removed a neighbouring
+  Crunchbase/PitchBook fabrication from the same sentence, which is a useful
+  reminder that removing one false claim from a string does not validate the
+  rest of it. Removed.
+- **"in under 60 seconds" was false** — measured runs are 99-262s. Now says
+  2-4 minutes. **"cross-references every claim with live databases"** likewise
+  overstated a single web-search call. Corrected.
+
+### Still blocked, and not worked around
+
+**A full-fidelity live run could not be demonstrated, because the Groq free
+tier's 200,000 tokens/day is exhausted.** One analysis costs roughly 30-50k
+tokens, so a handful of runs consumes the day. Under that limit every LLM step
+degrades: extraction falls back to regex, specialists return confidence 0, and
+the memo is a 1.2KB stub. What *was* verified:
+
+- A live run against real Neon and real Groq **completes** (status `complete`,
+  report persisted, `score_source=venturescore_model`, chat session attached)
+  rather than failing — the reported crash is genuinely fixed.
+- With the Groq calls stubbed and everything else real, **all 14 report
+  sections populate** and specialists report real confidences, so the pipeline
+  itself is correct.
+
+This is a billing limit, not a code limit, and it is recorded here rather than
+papered over. Re-running the deck batch on a day with quota, or on a paid tier,
+is what remains to produce full-fidelity output.
+
+**Also still open:** the demo-deck path referenced in the brief no longer
+exists — it was deleted in commit `d348b32` at the user's explicit request in
+an earlier session, so it could not be tested. And `pdf_extractor`'s
+multi-column handling still interleaves text on some decks, which is
+pre-existing and unchanged.
+
+### Verified by running
+
+`pytest tests/` → **65 passed** (55 before this pass's additions), `tsc -b`
+clean, `vite build` succeeds. Manual QA against the live backend: all four
+Analysis tabs render real content with no placeholders; PDF export returns a
+genuine 2-page, 2,445-character PDF (opened and read, not just status-checked);
+comments POST and reload correctly; score history returns real multi-point
+series (AgroPulse 4 points, Calmwell 3, ShelfSight 2); `/database/stats`
+returns real counts; unknown chat sessions and unknown routes degrade cleanly.
+
 ## Update — same-day, seventh pass: fixed report persistence, surfaced the score in the UI
 
 **The "Analysis could not be completed" error is fixed. It was three bugs
@@ -281,6 +436,16 @@ Nothing in Foundation Hardening or "Make the model real" changed this pass.
 
 **Evidence depth (4/4)**
 
+- **[CORRECTED 22 Aug 2026, seventh pass — this claim was false.** The
+  vector search described below never once executed successfully. The query
+  passed a Python list, psycopg adapted it to `double precision[]`, and
+  pgvector has no `vector <=> double precision[]` operator, so every call
+  raised `UndefinedFunction` and fell through to the keyword `LIKE` branch.
+  The claim that a `"method"` field meant this was "never silently degraded
+  without a trace" was itself wrong in practice: the fallback logged at INFO
+  and the product reported vector retrieval while doing keyword matching
+  100% of the time. Fixed by adding `::vector` casts; verified returning real
+  cosine-ranked neighbours. The rest of this entry is accurate.]**
 - **Real pgvector retrieval.** Trained a second, general-purpose TF-IDF+SVD
   embedder (`ml/scripts/train_text_embedder.py`, 64 dims, same free YC
   dataset the Outcome Model uses — `huggingface.co` is still blocked in this
