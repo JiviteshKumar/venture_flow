@@ -145,6 +145,7 @@ def run_due_diligence(
     sector:               str  = None,
     team_size:            int  = None,
     github_url:            str  = None,
+    founders:             list = None,
 ) -> dict:
 
     print(f"\n{'='*60}")
@@ -284,6 +285,30 @@ def run_due_diligence(
     else:
         technical_score = {"available": False, "reason": "No GitHub URL was provided."}
     report["sections"]["technical_score"] = technical_score
+
+    # ── Founder/team verification — additive, evidence-grounded ──
+    # See agents/founder_verifier.py. Active only when founder names are
+    # supplied (optional DiligenceRequest field, not yet in the upload form).
+    if founders:
+        try:
+            from agents.founder_verifier import verify_founders as _verify_founders
+            founder_verification = _verify_founders(founders, company=company_name, deck_context=company_description)
+        except Exception:
+            logger.exception("Founder verification unavailable")
+            founder_verification = []
+    else:
+        founder_verification = []
+    report["sections"]["founder_verification"] = founder_verification
+
+    # ── Real comparable-company benchmarking ─────────────────────
+    # See comparables.py / market_data.py. Additive, never blocks the report.
+    try:
+        from market_data import get_market_data_provider
+        market_comparables = get_market_data_provider().comparables(company_description or filing_text or "")
+    except Exception:
+        logger.exception("Market comparables unavailable")
+        market_comparables = {"available": False, "reason": "Comparable-company lookup raised an unexpected error."}
+    report["sections"]["market_comparables"] = market_comparables
 
     # ── 3. RAG Retrieval ───────────────────────────────────────
     print("\n[4/6] Retrieving database evidence...")

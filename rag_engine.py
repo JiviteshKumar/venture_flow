@@ -5,20 +5,43 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from db import connection
+from db import connection, find_similar_reports_by_vector
 
 logger = logging.getLogger(__name__)
 
 
 def build_context(query: str, top_k: int = 5) -> dict[str, Any]:
-    """Retrieve prior diligence reports by simple, dependency-free text matching.
+    """Retrieve prior diligence reports for `query`.
 
-    The current Neon schema intentionally avoids an embedding service. Search failure is
+    Tries real vector retrieval first (embeddings.py's TF-IDF+SVD embedder +
+    pgvector cosine distance, migrations/006_pgvector_retrieval.sql) and
+    falls back to the original dependency-free keyword LIKE match if the
+    embedder isn't trained, the pgvector migration hasn't been applied yet,
+    or no report has an embedding stored yet. Either way, search failure is
     non-fatal: synthesis must be able to finish from supplied evidence alone.
     """
+    try:
+        from embeddings import embed_text
+
+        query_embedding = embed_text(query)
+    except Exception:
+        query_embedding = None
+
+    if query_embedding is not None:
+        try:
+            results = find_similar_reports_by_vector(query_embedding, top_k=top_k)
+            if results:
+                return {"query": query, "relevant_reports": results, "method": "vector"}
+        except Exception:
+            logger.info("Vector retrieval unavailable, falling back to keyword search", exc_info=True)
+
+    return _build_context_keyword(query, top_k)
+
+
+def _build_context_keyword(query: str, top_k: int) -> dict[str, Any]:
     terms = [term for term in query.lower().split() if len(term) >= 4][:5]
     if not terms:
-        return {"query": query, "relevant_reports": []}
+        return {"query": query, "relevant_reports": [], "method": "keyword"}
     try:
         with connection() as conn, conn.cursor() as cur:
             predicates = " OR ".join(
@@ -34,10 +57,10 @@ def build_context(query: str, top_k: int = 5) -> dict[str, Any]:
                 """,
                 [f"%{term}%" for term in terms] + [top_k],
             )
-            return {"query": query, "relevant_reports": list(cur.fetchall())}
+            return {"query": query, "relevant_reports": list(cur.fetchall()), "method": "keyword"}
     except Exception:
         logger.warning("Neon context retrieval unavailable", exc_info=True)
-        return {"query": query, "relevant_reports": []}
+        return {"query": query, "relevant_reports": [], "method": "unavailable"}
 
 
 def format_context_for_llm(context: dict[str, Any]) -> str:

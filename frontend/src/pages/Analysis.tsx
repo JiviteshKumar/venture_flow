@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis,
@@ -197,6 +197,93 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
   );
 }
 
+type Comment = { id: string; author_name: string; body: string; created_at: string };
+
+// Team collaboration on a report (p3). No accounts exist yet, so
+// `authorName` is a free-text field, not a verified identity -- this is
+// shared commenting on one Neon database, honestly short of real per-user
+// collaboration until Section 3 (auth) of the Ship List happens.
+function CommentsPanel({ reportId }: { reportId: string | null }) {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [authorName, setAuthorName] = useState("");
+  const [body, setBody] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const refresh = () => {
+    if (!reportId) return;
+    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${reportId}/comments`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setComments)
+      .catch(() => setComments([]));
+  };
+
+  useEffect(refresh, [reportId]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reportId || !body.trim() || posting) return;
+    setPosting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${reportId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author_name: authorName || "Anonymous", body }),
+      });
+      if (res.ok) {
+        setBody("");
+        refresh();
+      }
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  return (
+    <div style={{
+      background: "#fff", border: "1px solid rgba(15,23,42,0.08)",
+      borderRadius: 14, marginTop: 14, boxShadow: "0 1px 4px rgba(15,23,42,0.06)",
+    }}>
+      <div style={{
+        padding: "12px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)",
+        fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600,
+        color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
+      }}>
+        Notes {!reportId && <span style={{ color: "#94A3B8", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
+      </div>
+      <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
+        {comments.length === 0 && <div style={{ fontSize: 12, color: "#94A3B8", fontFamily: "'Figtree', sans-serif" }}>No notes yet.</div>}
+        {comments.map((c) => (
+          <div key={c.id} style={{ fontSize: 12.5, fontFamily: "'Figtree', sans-serif", color: "#374151" }}>
+            <span style={{ fontWeight: 600, color: "#0B1120" }}>{c.author_name}</span>
+            <span style={{ color: "#94A3B8", fontSize: 10.5, marginLeft: 6 }}>{new Date(c.created_at).toLocaleString()}</span>
+            <div style={{ marginTop: 2 }}>{c.body}</div>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={submit} style={{ padding: "10px 14px", borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", flexDirection: "column", gap: 6 }}>
+        <input
+          value={authorName} onChange={(e) => setAuthorName(e.target.value)}
+          placeholder="Your name (optional)" disabled={!reportId}
+          style={{ background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontFamily: "'Figtree', sans-serif", outline: "none" }}
+        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={body} onChange={(e) => setBody(e.target.value)}
+            placeholder={reportId ? "Add a note for the deal team…" : "Run analysis first"}
+            disabled={!reportId || posting}
+            style={{ flex: 1, background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, fontFamily: "'Figtree', sans-serif", outline: "none" }}
+          />
+          <button type="submit" disabled={!reportId || posting || !body.trim()} style={{
+            background: "#1D6FE8", border: "none", borderRadius: 8, padding: "8px 14px",
+            fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer",
+            opacity: (!reportId || posting || !body.trim()) ? 0.4 : 1,
+          }}>Post</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ─── EMPTY STATE ─────────────────────────────────────────────────────────────
 
 function EmptyAnalysis() {
@@ -351,6 +438,29 @@ const Analysis = () => {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const exportReportPdf = async () => {
+    if (!report.report_id) return;
+    setPdfExporting(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${report.report_id}/pdf`);
+      if (!res.ok) throw new Error("PDF export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${report.company.replace(/[^a-z0-9]+/gi, "-").replace(/(^-|-$)/g, "").toLowerCase() || "ventureflow"}-due-diligence.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      exportReport(); // fall back to the plain-text export if the PDF endpoint is unavailable
+    } finally {
+      setPdfExporting(false);
+    }
   };
 
   return (
@@ -518,9 +628,9 @@ const Analysis = () => {
               <div className="an-confidence-chip">
                 ✓ {Math.round(score)}% data confidence
               </div>
-              <button className="an-export-btn" type="button" onClick={exportReport} aria-label="Export due diligence report as text">
+              <button className="an-export-btn" type="button" onClick={exportReportPdf} disabled={pdfExporting} aria-label="Export due diligence report as PDF">
                 <Download size={12} strokeWidth={2} />
-                Export
+                {pdfExporting ? "Exporting…" : "Export PDF"}
               </button>
             </div>
           </div>
@@ -822,6 +932,7 @@ const Analysis = () => {
           {/* CHAT PANEL - always visible on analysis page */}
           <div style={{ borderLeft: "1px solid rgba(15,23,42,0.08)", padding: "16px", background: "#F7F8FA" }}>
             <ChatPanel sessionId={sessionId} />
+            <CommentsPanel reportId={report.report_id ?? null} />
           </div>
         </div>
       </div>

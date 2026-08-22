@@ -7,11 +7,12 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import count_decisions, create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, list_reports, persist_report, record_decision, stats, update_analysis_job
+from db import add_comment, count_decisions, create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_decision, stats, update_analysis_job
+from demo_data import DEMO_SAMPLE
 from db import healthcheck as neon_healthcheck
 from pdf_extractor import extract_text_from_pdf
 from rate_limiter import is_allowed as rate_limit_is_allowed
@@ -92,6 +93,7 @@ class DiligenceRequest(BaseModel):
     sector: str | None = Field(default=None, max_length=100)
     team_size: int | None = Field(default=None, ge=0, le=100_000)
     github_url: str | None = Field(default=None, max_length=300)
+    founders: list[str] = Field(default_factory=list, max_length=5)
 
     @field_validator(
         "company_name",
@@ -272,6 +274,16 @@ def health():
         return {"status": "degraded", "database": "unavailable"}
 
 
+@app.get("/demo/sample")
+def demo_sample():
+    """Sandbox/onboarding mode (p4). Returns a bundled, clearly-fictional
+    example deck so a first-time user can run the real pipeline -- claim
+    verification, risk model, RAG, Groq synthesis, comparables -- without
+    having a pitch deck or Neon data of their own yet. Static, no DB or
+    network call, so this always succeeds."""
+    return DEMO_SAMPLE
+
+
 async def _perform_analysis(request: DiligenceRequest):
     session_id = str(uuid.uuid4())
     similar_companies: list[dict[str, Any]] = []
@@ -293,6 +305,7 @@ async def _perform_analysis(request: DiligenceRequest):
         request.sector,
         request.team_size,
         request.github_url,
+        request.founders,
     )
     report = _normalize_report(report, request.company_name)
     report["similar_companies"] = similar_companies
@@ -302,6 +315,14 @@ async def _perform_analysis(request: DiligenceRequest):
             "matches": similar_companies,
         }
     try:
+        from embeddings import embed_text
+
+        embed_source = request.company_description or request.filing_text or ""
+        report_embedding = await run_in_threadpool(embed_text, embed_source) if embed_source else None
+    except Exception:
+        logger.warning("Report embedding unavailable", exc_info=True)
+        report_embedding = None
+    try:
         report_id = await run_in_threadpool(
             persist_report,
             name=request.company_name,
@@ -309,6 +330,7 @@ async def _perform_analysis(request: DiligenceRequest):
             sector=request.sector,
             domain=request.domain,
             report=report,
+            embedding=report_embedding,
         )
     except Exception as exc:
         logger.exception("Failed to persist completed report")
@@ -437,6 +459,28 @@ class DecisionRequest(BaseModel):
     notes: str = Field(default="", max_length=2000)
 
 
+@app.get("/companies/{company_name}/history")
+async def company_score_history(company_name: str):
+    """Real historical score data for one company (p2 on the Ship List) --
+    powers Dashboard.tsx's score-trend chart once 2+ analyses exist."""
+    try:
+        history = await run_in_threadpool(get_score_history, company_name)
+    except Exception:
+        logger.warning("Score history unavailable for %s", company_name, exc_info=True)
+        history = []
+    return {
+        "company": company_name,
+        "history": [
+            {
+                "date": row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else str(row["created_at"]),
+                "score": row["final_score"],
+                "recommendation": row["recommendation"],
+            }
+            for row in history
+        ],
+    }
+
+
 @app.post("/reports/{report_id}/decision")
 async def record_report_decision(report_id: str, request: DecisionRequest):
     """Record the user's own invest/pass call on a report. This is the
@@ -450,6 +494,65 @@ async def record_report_decision(report_id: str, request: DecisionRequest):
         logger.exception("Could not record decision for report %s", report_id)
         raise HTTPException(status_code=503, detail="Could not save this decision. Please retry.") from exc
     return {"recorded": True, "total_decisions": decided}
+
+
+@app.get("/reports/{report_id}/pdf")
+async def saved_report_pdf(report_id: str):
+    """A real PDF, not the frontend's plain-text export -- see report_pdf.py."""
+    try:
+        stored = await run_in_threadpool(get_report, report_id)
+    except Exception as exc:
+        logger.exception("Could not load report for PDF export")
+        raise HTTPException(status_code=503, detail="Saved report is currently unavailable.") from exc
+    if not stored:
+        raise HTTPException(status_code=404, detail="Saved report not found.")
+
+    import datetime
+
+    from report_pdf import build_report_pdf
+
+    report = _normalize_report(stored.get("raw_output"), stored["company"])
+    try:
+        pdf_bytes = await run_in_threadpool(
+            build_report_pdf, report, datetime.date.today().isoformat()
+        )
+    except Exception as exc:
+        logger.exception("PDF generation failed")
+        raise HTTPException(status_code=500, detail="Could not generate the PDF.") from exc
+
+    safe_name = "".join(c if c.isalnum() else "-" for c in stored["company"]).strip("-").lower() or "ventureflow"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}-due-diligence.pdf"'},
+    )
+
+
+class CommentRequest(BaseModel):
+    author_name: str = Field(default="Anonymous", max_length=80)
+    body: str = Field(min_length=1, max_length=4000)
+
+
+@app.post("/reports/{report_id}/comments")
+async def create_comment(report_id: str, request: CommentRequest):
+    """No accounts exist yet (Section 3 of the Ship List) -- author_name is
+    free text, not a verified identity. This is shared commenting on one
+    Neon database, honestly short of real per-user team collaboration."""
+    try:
+        comment = await run_in_threadpool(add_comment, report_id, request.author_name, request.body)
+    except Exception as exc:
+        logger.exception("Could not save comment for report %s", report_id)
+        raise HTTPException(status_code=503, detail="Could not save this comment. Please retry.") from exc
+    return comment
+
+
+@app.get("/reports/{report_id}/comments")
+async def get_comments(report_id: str):
+    try:
+        return await run_in_threadpool(list_comments, report_id)
+    except Exception:
+        logger.warning("Comments unavailable for report %s", report_id, exc_info=True)
+        return []
 
 
 async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:

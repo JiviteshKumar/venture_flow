@@ -182,7 +182,7 @@ const MiniPreviewCard = ({ card, delay }: { card: typeof miniPreviewCards[0]; de
 
 const UploadDeck = () => {
   const navigate = useNavigate();
-  const { status, currentStage, progressPct, runAnalysis, report, error, reset } = useApp();
+  const { status, currentStage, progressPct, runAnalysis, runDemoAnalysis, report, error, reset } = useApp();
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
@@ -249,6 +249,14 @@ const UploadDeck = () => {
   const handleAnalyze = async () => {
     if (!fileObj || isAnalyzing) return;
     await runAnalysis(fileObj, companyInput || fileName || "Unknown Company");
+  };
+
+  // Sandbox/onboarding mode (p4) — runs the real pipeline on a bundled,
+  // clearly-fictional deck, no upload required.
+  const handleTryDemo = async () => {
+    if (isAnalyzing) return;
+    if (status === "done") reset();
+    await runDemoAnalysis();
   };
 
   const currentStep = analysisSteps[analysisStep];
@@ -886,6 +894,23 @@ const UploadDeck = () => {
                   </>
                 )}
               </motion.button>
+
+              {/* SANDBOX / DEMO MODE (p4) — no deck required */}
+              {!isAnalyzing && !fileName && (
+                <button
+                  type="button"
+                  onClick={handleTryDemo}
+                  style={{
+                    width: "100%", marginTop: "10px", background: "transparent",
+                    border: "1px dashed rgba(29,111,232,0.35)", borderRadius: "10px",
+                    padding: "9px 12px", fontSize: "12px", fontWeight: 600,
+                    color: "#1D6FE8", cursor: "pointer", display: "flex",
+                    alignItems: "center", justifyContent: "center", gap: "6px",
+                  }}
+                >
+                  <Zap size={13} /> Try a demo deck — no upload needed
+                </button>
+              )}
 
               {/* ANIMATED PROCESSING */}
               <AnimatePresence>

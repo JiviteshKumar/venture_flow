@@ -35,6 +35,7 @@ interface AppState {
 interface AppContextValue extends AppState {
   setCompanyName: (name: string) => void;
   runAnalysis: (file: File, companyName: string) => Promise<void>;
+  runDemoAnalysis: () => Promise<void>;
   loadSavedReport: (reportId: string) => Promise<void>;
   reset: () => void;
 }
@@ -183,9 +184,104 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  /**
+   * Sandbox/onboarding mode (p4). Same pipeline as runAnalysis, but skips
+   * the PDF upload step and runs the bundled fictional demo deck instead
+   * -- for a first-time user with no deck or Neon data of their own yet.
+   */
+  const runDemoAnalysis = useCallback(async () => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    setState((s) => ({
+      ...s,
+      status: "uploading",
+      currentStage: "Loading sandbox demo deck…",
+      progressPct: 10,
+      error: null,
+      companyName: "Solstice Robotics (Demo)",
+    }));
+
+    try {
+      const sample = await api.getDemoSample();
+
+      setState((s) => ({
+        ...s,
+        companyName: sample.company_name,
+        status: "analyzing",
+        currentStage: "Verifying claims with web search…",
+        progressPct: 20,
+      }));
+
+      const stages: [number, string][] = [
+        [30_000, "Detecting risk signals…"],
+        [60_000, "Retrieving database evidence…"],
+        [90_000, "Groq AI synthesising report…"],
+        [120_000, "Finalising due diligence memo…"],
+      ];
+      const pcts = [40, 60, 75, 90];
+      stages.forEach(([delay, label], i) => {
+        const t = setTimeout(() => {
+          setState((s) => ({ ...s, currentStage: label, progressPct: pcts[i] }));
+        }, delay);
+        timers.push(t);
+      });
+
+      const job = await api.startAnalysis({
+        company_name: sample.company_name,
+        company_description: sample.company_description,
+        claims: sample.detected_claims,
+        filing_text: sample.extracted_text,
+        revenue: sample.revenue,
+        burn_rate: null,
+        runway_months: sample.runway_months,
+      });
+
+      let jobStatus = job;
+      while (jobStatus.status === "pending" || jobStatus.status === "running") {
+        setState((s) => ({
+          ...s,
+          currentStage: jobStatus.status === "pending" ? "Analysis queued…" : "AI agents are analyzing the deck…",
+          progressPct: jobStatus.status === "pending" ? 25 : 60,
+        }));
+        await new Promise((resolve) => setTimeout(resolve, 3_000));
+        jobStatus = await api.getAnalysisStatus(job.job_id);
+      }
+      if (jobStatus.status !== "complete" || !jobStatus.report) {
+        throw new Error(jobStatus.error || "Demo analysis could not be completed. Please retry.");
+      }
+      const report = jobStatus.report;
+
+      timers.forEach(clearTimeout);
+
+      setState((s) => ({
+        ...s,
+        status: "done",
+        currentStage: "Analysis complete",
+        progressPct: 100,
+        report,
+        sessionId: report.session_id,
+      }));
+    } catch (err: unknown) {
+      timers.forEach(clearTimeout);
+      const msg =
+        (err as { response?: { data?: { detail?: string } }; message?: string })
+          ?.response?.data?.detail ||
+        (err as { message?: string })?.message ||
+        "Demo analysis failed — check that api.py is running";
+
+      setState((s) => ({
+        ...s,
+        status: "error",
+        currentStage: "",
+        progressPct: 0,
+        error: msg,
+      }));
+    }
+  }, []);
+
   return (
     <AppContext.Provider
-      value={{ ...state, setCompanyName, runAnalysis, loadSavedReport, reset }}
+      value={{ ...state, setCompanyName, runAnalysis, runDemoAnalysis, loadSavedReport, reset }}
     >
       {children}
     </AppContext.Provider>

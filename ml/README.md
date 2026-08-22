@@ -69,6 +69,20 @@ changes were made — the frontend already reads `sections` optional keys
 tolerantly, so this is available to wire into a UI panel later without any
 backend changes.
 
+### General-purpose text embedder — `models/text_embedder.pkl`
+
+A second, separate TF-IDF+SVD model (`ml/scripts/train_text_embedder.py`),
+fit on the same 1,560-company dataset above but built for a different job:
+turning arbitrary text (a company description, a pitch-deck excerpt, a RAG
+query) into a fixed 64-dimensional vector for real similarity search —
+pgvector retrieval in `rag_engine.py` and comparable-company matching in
+`comparables.py`. Same reasoning as the Outcome Model for why TF-IDF and not
+a pretrained sentence-transformer: `huggingface.co` is still blocked in this
+sandbox. `embeddings.py` is the thin, lazy-loading wrapper both callers use;
+it returns `None` (never a zero vector) on any failure, so a missing or
+corrupt model file degrades to "vector search unavailable," not a crash or
+silently-wrong result.
+
 ### Claim Model & Risk/Tone Model — written, not yet run
 
 `ml/scripts/train_claim_model.py` (fine-tunes on SciFact — the same

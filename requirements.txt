@@ -4,9 +4,11 @@ fastapi
 groq
 lightgbm
 pdfplumber
+pgvector
 psycopg[binary]
 python-dotenv
 python-multipart
+reportlab
 requests
 scikit-learn
 uvicorn[standard]

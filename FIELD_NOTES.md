@@ -3,6 +3,114 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — same-day, fourth pass: Evidence Depth + Product Polish
+
+All 8 remaining Ship List items in these two sections, built and verified.
+Nothing in Foundation Hardening or "Make the model real" changed this pass.
+
+**Evidence depth (4/4)**
+
+- **Real pgvector retrieval.** Trained a second, general-purpose TF-IDF+SVD
+  embedder (`ml/scripts/train_text_embedder.py`, 64 dims, same free YC
+  dataset the Outcome Model uses — `huggingface.co` is still blocked in this
+  sandbox, so this reuses the established workaround rather than inventing
+  a new one). `embeddings.py` loads it; `migrations/006_pgvector_retrieval.sql`
+  adds a `vector(64)` column to `dd_reports` and enables the pgvector
+  extension. `rag_engine.build_context()` now tries real cosine-similarity
+  vector search first and falls back to the original keyword `LIKE` search
+  if the embedding or the extension is unavailable for any reason — a
+  `"method"` field on the returned context says which one actually ran, so
+  this is never silently degraded without a trace.
+- **Founder/team verification agent** (`agents/founder_verifier.py`) — reuses
+  the same web-search-plus-Groq-judgment pattern as the existing claim
+  verifier. Given a founder name it searches, then asks Groq whether the
+  evidence is CONSISTENT, CONTRADICTS, or NOT_ENOUGH_INFO with what the deck
+  claims about them. Capped at 3 founders per report. Wired into
+  `ventureflow_agent.py` as an additive `sections.founder_verification`
+  field — only runs if the caller passes `founders`, and never blocks the
+  rest of the report on failure.
+- **Real comparable-company benchmarking** (`comparables.py`) — embeds the
+  target company's description with the same embedder above, and finds the
+  nearest real companies (by name, industry, stage, batch, and actual
+  outcome) from the 1,560-company YC dataset by in-memory cosine similarity.
+  Not synthetic; every comparable returned is a real company from the
+  dataset with a real recorded outcome.
+- **Paid market-data API integration path** (`market_data.py`) — an abstract
+  `MarketDataProvider` interface with `FreeDataProvider` (wraps the above,
+  the only one actually wired in) and documented `CrunchbaseProvider` /
+  `PitchBookProvider` stub classes gated on `CRUNCHBASE_API_KEY` /
+  `PITCHBOOK_API_KEY`. They return `{"available": False, "reason": "...not
+  implemented -- no API key/budget configured."}` rather than pretending to
+  call an API this project has no budget or contract for. This is the
+  integration point a future pass wires a real key into — not a fake call.
+
+**Product polish (4/4)**
+
+- **Proper PDF export** (`report_pdf.py`, reportlab Platypus) — a real
+  multi-section PDF: score/recommendation/risk summary table, investment
+  memo, claim-verification summary, key concerns/red flags/positives,
+  comparable companies (if available), outcome-model signal (if available),
+  technical score (if available), closing caveat. New endpoint
+  `GET /reports/{id}/pdf`. `Analysis.tsx`'s export button now calls it, and
+  falls back to the original plain-text export only if the PDF request
+  fails.
+- **Historical score tracking per company** — `db.get_score_history()` reads
+  every past `dd_reports` row for a company name, oldest first.
+  New endpoint `GET /companies/{name}/history`. `Dashboard.tsx`'s
+  "Investment Score Trend" chart — previously hardcoded to
+  `hasHistory = false` and an empty dataset, i.e. fabricated-looking but
+  actually inert — now fetches real history and only renders once there
+  are 2+ real data points to draw a trend from.
+- **Team collaboration on reports** — `migrations/007_report_comments.sql`
+  adds a `report_comments` table; `POST`/`GET /reports/{id}/comments`;
+  a `CommentsPanel` component in `Analysis.tsx` next to the existing chat
+  panel. Honest caveat, stated directly in the migration and worth
+  repeating here: there is no auth yet (that's a Foundation Hardening item,
+  not started), so `author_name` is free text a commenter types in, not a
+  verified identity. This is "shared notes on one Neon database," not real
+  per-user team accounts — good enough to demo, short of the real thing
+  until accounts exist.
+- **Onboarding / sandbox mode** — `demo_data.py` bundles one clearly-labeled
+  fictional company ("Solstice Robotics (Demo)") with a deck-style
+  description, a mix of claims (some should verify, some shouldn't — not a
+  rigged all-green demo), founders, and financials. New endpoint
+  `GET /demo/sample`. A new "Try a demo deck — no upload needed" button on
+  the upload page runs the *real* pipeline (claim verification, risk model,
+  RAG, Groq synthesis, comparables, the works) against it, so a first-time
+  user with no deck and no Neon data yet can still see what a completed
+  report looks like.
+
+**Verified this pass**: `pytest tests/` → 18/18 still passing (no new test
+files added this pass — the new code paths were smoke-tested directly:
+`embeddings.embed_text()`, `comparables.find_comparables()`,
+`market_data.get_market_data_provider()`, `report_pdf.build_report_pdf()`
+against a synthetic report, and `agents.founder_verifier.verify_founders()`
+on empty input, all run and inspected directly, not just read). Every new
+`.py` file byte-compiles cleanly. `frontend`: `tsc -b` and `vite build` both
+succeed (one real bug caught doing this — `Analysis.tsx` used the new
+`useEffect` for the comments panel without importing it; fixed). A live
+`TestClient` request against the new `GET /demo/sample` route returns 200
+with no environment variables set, confirming it degrades to nothing worse
+than "demo unavailable" rather than crashing if it ever did depend on
+something live (it doesn't — it's a static fixture).
+
+**Not resolved this pass, and needs the user's own terminal output to
+diagnose**: the "Analysis queue is currently unavailable" error the user is
+seeing is `api.py`'s literal 503 message, raised whenever
+`db.create_analysis_job()` throws — confirmed by grepping the frontend
+(the string doesn't originate there). Ruled out one hypothesis directly: a
+`#` character in the DB password (visible in an earlier screenshot) does
+*not* break psycopg's URL parsing — tested with
+`psycopg.conninfo.conninfo_to_dict()` directly. The real cause needs the
+`uvicorn` terminal's actual traceback, which isn't visible from this
+sandbox — most likely candidates, in order of likelihood: the Neon/Supabase
+project being paused (common on free tiers after inactivity), a stale or
+malformed `DATABASE_URL` in `.env`, or `ensure_schema()` failing partway
+through on first boot. Once the backend can reach the DB at all,
+`ensure_schema()` will pick up both new migrations (006 pgvector, 007
+comments) automatically on the next restart — no manual migration step
+needed.
+
 ## Update — same-day, second pass: the ML layer
 
 Full detail and methodology lives in `ml/README.md`; this is the summary.

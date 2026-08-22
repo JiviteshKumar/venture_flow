@@ -134,8 +134,24 @@ const PastAnalyses = () => {
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
+type ScoreHistoryPoint = { date: string; score: number; recommendation: string };
+
 const Dashboard = () => {
   const { report, status, currentStage, progressPct } = useApp();
+  const [scoreHistory, setScoreHistory] = useState<ScoreHistoryPoint[]>([]);
+
+  // Real per-company score history (p2 on the Ship List) -- hook must run
+  // unconditionally, before the early-return below, per the Rules of Hooks.
+  useEffect(() => {
+    if (!report?.company) {
+      setScoreHistory([]);
+      return;
+    }
+    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/companies/${encodeURIComponent(report.company)}/history`)
+      .then((res) => (res.ok ? res.json() : { history: [] }))
+      .then((data) => setScoreHistory(data.history || []))
+      .catch(() => setScoreHistory([]));
+  }, [report?.company]);
 
   // If no report yet, show empty / analyzing state
   if (!report) return (
@@ -166,10 +182,15 @@ const Dashboard = () => {
     ? (report.claims_supported / Math.max(report.claims_verified, 1) * 2.8).toFixed(1)
     : "—";
 
-  // No historical score series exists yet (that lands with the "historical
-  // score tracking per company" ship-list item) — showing a single real point
-  // beats a chart shaped like a trend when only one number is real.
-  const hasHistory = false;
+  // Real history once this company has been analyzed 2+ times
+  // (GET /companies/{name}/history, backed by every persisted dd_reports
+  // row for it) -- a single point still shows the honest "first analysis"
+  // state below, same as before this was wired up.
+  const hasHistory = scoreHistory.length >= 2;
+  const trendData = scoreHistory.map((point) => ({
+    name: new Date(point.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    value: point.score,
+  }));
 
   const metrics = [
     {
@@ -664,7 +685,7 @@ const Dashboard = () => {
 
               {hasHistory ? (
                 <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={[]} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
+                  <AreaChart data={trendData} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
                     <defs>
                       <linearGradient id="arrGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#1D6FE8" stopOpacity={0.14} />

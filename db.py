@@ -34,6 +34,16 @@ def connection() -> Iterator[psycopg.Connection]:
     with psycopg.connect(
         _database_url(), connect_timeout=10, row_factory=dict_row
     ) as conn:
+        try:
+            from pgvector.psycopg import register_vector
+
+            register_vector(conn)
+        except Exception:
+            # pgvector extension/migration not applied yet, or the optional
+            # `pgvector` package isn't installed -- vector features degrade
+            # gracefully (see persist_report / find_similar_reports_by_vector),
+            # everything else in this module is unaffected.
+            pass
         yield conn
 
 
@@ -101,6 +111,7 @@ def persist_report(
     sector: str | None,
     domain: str | None,
     report: dict[str, Any],
+    embedding: list[float] | None = None,
 ) -> str:
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
@@ -116,22 +127,56 @@ def persist_report(
             (name, domain, sector, description),
         )
         company_id = cur.fetchone()["id"]
-        cur.execute(
-            """
-            INSERT INTO dd_reports (company_id, summary, verdict, raw_output)
-            VALUES (%s, %s, %s, %s::jsonb)
-            RETURNING id
-            """,
-            (
-                company_id,
-                report.get("sections", {}).get("ai_analysis", ""),
-                report.get("recommendation", "NEEDS MORE DILIGENCE"),
-                json.dumps(report, default=str),
-            ),
-        )
+        summary = report.get("sections", {}).get("ai_analysis", "")
+        verdict = report.get("recommendation", "NEEDS MORE DILIGENCE")
+        raw = json.dumps(report, default=str)
+        try:
+            cur.execute(
+                """
+                INSERT INTO dd_reports (company_id, summary, verdict, raw_output, embedding)
+                VALUES (%s, %s, %s, %s::jsonb, %s)
+                RETURNING id
+                """,
+                (company_id, summary, verdict, raw, embedding),
+            )
+        except Exception:
+            # The embedding column/extension may not be present yet (migration
+            # not applied), or `embedding` may be None -- persistence must
+            # never fail because of the optional vector-retrieval feature.
+            logger.warning("Storing report without embedding", exc_info=True)
+            conn.rollback()
+            cur.execute(
+                """
+                INSERT INTO dd_reports (company_id, summary, verdict, raw_output)
+                VALUES (%s, %s, %s, %s::jsonb)
+                RETURNING id
+                """,
+                (company_id, summary, verdict, raw),
+            )
         report_id = str(cur.fetchone()["id"])
         conn.commit()
         return report_id
+
+
+def find_similar_reports_by_vector(embedding: list[float], top_k: int = 5) -> list[dict[str, Any]]:
+    """Real vector retrieval over prior reports' embeddings (pgvector cosine
+    distance), replacing the SQL LIKE keyword match in rag_engine.py's
+    original build_context. Returns [] (never raises) if the embedding
+    column/extension isn't available yet -- the caller falls back to keyword
+    search in that case."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT c.name, c.sector, dr.summary, dr.verdict, dr.created_at,
+                   1 - (dr.embedding <=> %s) AS similarity
+            FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
+            WHERE dr.embedding IS NOT NULL
+            ORDER BY dr.embedding <=> %s
+            LIMIT %s
+            """,
+            (embedding, embedding, top_k),
+        )
+        return list(cur.fetchall())
 
 
 def list_reports(limit: int = 20) -> list[dict[str, Any]]:
@@ -268,6 +313,54 @@ def count_decisions() -> int:
     with connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT count(*) AS n FROM investment_decisions")
         return cur.fetchone()["n"]
+
+
+def add_comment(report_id: str, author_name: str, body: str) -> dict[str, Any]:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO report_comments (report_id, author_name, body)
+            VALUES (%s, %s, %s)
+            RETURNING id::text, author_name, body, created_at
+            """,
+            (report_id, author_name or "Anonymous", body),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        return row
+
+
+def list_comments(report_id: str) -> list[dict[str, Any]]:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id::text, author_name, body, created_at
+            FROM report_comments WHERE report_id = %s ORDER BY created_at ASC
+            """,
+            (report_id,),
+        )
+        return list(cur.fetchall())
+
+
+def get_score_history(company_name: str, limit: int = 20) -> list[dict[str, Any]]:
+    """Every persisted report's score/verdict/date for one company, oldest
+    first -- the real data behind the "historical score tracking per
+    company" ship-list item. Empty (not raised) if the company/DB isn't
+    reachable, so a caller can treat that the same as "no history yet"."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT dr.created_at,
+                   COALESCE((dr.raw_output ->> 'final_score')::float, 0) AS final_score,
+                   COALESCE(dr.verdict, 'NEEDS MORE DILIGENCE') AS recommendation
+            FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
+            WHERE lower(c.name) = lower(%s)
+            ORDER BY dr.created_at ASC
+            LIMIT %s
+            """,
+            (company_name, limit),
+        )
+        return list(cur.fetchall())
 
 
 def stats() -> dict[str, int]:
