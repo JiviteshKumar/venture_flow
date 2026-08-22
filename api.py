@@ -1,8 +1,6 @@
 import logging
 import os
-import time
 import uuid
-from collections import defaultdict, deque
 from typing import Any
 
 from dotenv import load_dotenv
@@ -13,13 +11,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, list_reports, persist_report, stats, update_analysis_job
+from db import count_decisions, create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, list_reports, persist_report, record_decision, stats, update_analysis_job
 from db import healthcheck as neon_healthcheck
-from pdf_extractor import (
-    extract_claims_from_text,
-    extract_company_info,
-    extract_text_from_pdf,
-)
+from pdf_extractor import extract_text_from_pdf
+from rate_limiter import is_allowed as rate_limit_is_allowed
+from structured_extractor import extract_structured
 from ventureflow_agent import run_due_diligence
 
 load_dotenv()
@@ -29,7 +25,6 @@ logger = logging.getLogger("ventureflow.api")
 MAX_TEXT_CHARS = 50_000
 MAX_CLAIMS = 12
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
-request_windows: dict[str, deque[float]] = defaultdict(deque)
 
 app = FastAPI(
     title="VentureFlow AI",
@@ -66,16 +61,11 @@ async def rate_limit(request: Request, call_next):
     if request.url.path in {"/health", "/"}:
         return await call_next(request)
     client = request.client.host if request.client else "unknown"
-    now = time.monotonic()
-    window = request_windows[client]
-    while window and now - window[0] >= 60:
-        window.popleft()
-    if len(window) >= RATE_LIMIT:
+    if not rate_limit_is_allowed(client, RATE_LIMIT):
         return JSONResponse(
             status_code=429,
             content={"detail": "Too many requests. Please retry in a minute."},
         )
-    window.append(now)
     return await call_next(request)
 
 
@@ -100,6 +90,8 @@ class DiligenceRequest(BaseModel):
     runway_months: float | None = Field(default=None, ge=0, le=600)
     domain: str | None = Field(default=None, max_length=253)
     sector: str | None = Field(default=None, max_length=100)
+    team_size: int | None = Field(default=None, ge=0, le=100_000)
+    github_url: str | None = Field(default=None, max_length=300)
 
     @field_validator(
         "company_name",
@@ -107,6 +99,7 @@ class DiligenceRequest(BaseModel):
         "filing_text",
         "domain",
         "sector",
+        "github_url",
         mode="before",
     )
     @classmethod
@@ -171,6 +164,7 @@ class PDFExtractResponse(BaseModel):
     revenue: float | None
     runway_months: float | None
     page_count: int
+    extraction_method: str = "regex_fallback"
 
 
 def _as_list(value: Any) -> list[str]:
@@ -296,6 +290,9 @@ async def _perform_analysis(request: DiligenceRequest):
         request.revenue,
         request.burn_rate,
         request.runway_months,
+        request.sector,
+        request.team_size,
+        request.github_url,
     )
     report = _normalize_report(report, request.company_name)
     report["similar_companies"] = similar_companies
@@ -366,7 +363,7 @@ async def upload_pdf(
             raise HTTPException(
                 status_code=422, detail="Could not extract readable text from this PDF."
             )
-        info = extract_company_info(text)
+        info = await run_in_threadpool(extract_structured, text)
         session_id = str(uuid.uuid4())
         store_document(session_id, text, company_name)
         import io
@@ -378,11 +375,12 @@ async def upload_pdf(
         return PDFExtractResponse(
             session_id=session_id,
             extracted_text=text[:5000],
-            detected_claims=extract_claims_from_text(text)[:MAX_CLAIMS],
+            detected_claims=info.get("claims", [])[:MAX_CLAIMS],
             company_description=info.get("description", ""),
             revenue=info.get("revenue"),
             runway_months=info.get("runway_months"),
             page_count=page_count,
+            extraction_method=info.get("_method", "regex_fallback"),
         )
     except HTTPException:
         raise
@@ -432,6 +430,26 @@ def saved_report(report_id: str):
         similar_companies=report.get("similar_companies", []), incomplete_analysis=report["incomplete_analysis"],
         report_id=report_id, session_id="",
     )
+
+
+class DecisionRequest(BaseModel):
+    decision: str = Field(pattern="^(invest|pass)$")
+    notes: str = Field(default="", max_length=2000)
+
+
+@app.post("/reports/{report_id}/decision")
+async def record_report_decision(report_id: str, request: DecisionRequest):
+    """Record the user's own invest/pass call on a report. This is the
+    feedback signal the firm-personalization ranking layer trains against
+    (see ml/personalization.py) -- it accumulates from here, one decision
+    at a time, and is worth nothing until there's real usage behind it."""
+    try:
+        await run_in_threadpool(record_decision, report_id, request.decision, request.notes)
+        decided = await run_in_threadpool(count_decisions)
+    except Exception as exc:
+        logger.exception("Could not record decision for report %s", report_id)
+        raise HTTPException(status_code=503, detail="Could not save this decision. Please retry.") from exc
+    return {"recorded": True, "total_decisions": decided}
 
 
 async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:

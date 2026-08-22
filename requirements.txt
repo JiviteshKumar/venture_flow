@@ -2,9 +2,15 @@ beautifulsoup4
 ddgs
 fastapi
 groq
+lightgbm
 pdfplumber
 psycopg[binary]
 python-dotenv
 python-multipart
 requests
+scikit-learn
 uvicorn[standard]
+
+# Optional: only imported if REDIS_URL is set (rate_limiter.py falls back to
+# in-memory limiting without it). Uncomment if you're running >1 instance.
+# redis

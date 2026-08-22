@@ -198,6 +198,78 @@ def get_analysis_job(job_id: str) -> dict[str, Any] | None:
         return cur.fetchone()
 
 
+def upsert_chat_session(
+    session_id: str, company: str, document_text: str, history: list[dict[str, Any]]
+) -> None:
+    """Persist (or refresh) a chat session's document text and Q&A history."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO chat_sessions (session_id, company, document_text, history, updated_at)
+            VALUES (%s, %s, %s, %s::jsonb, now())
+            ON CONFLICT (session_id) DO UPDATE SET
+                company = EXCLUDED.company,
+                document_text = EXCLUDED.document_text,
+                history = EXCLUDED.history,
+                updated_at = now()
+            """,
+            (session_id, company, document_text, json.dumps(history, default=str)),
+        )
+        conn.commit()
+
+
+def get_chat_session(session_id: str) -> dict[str, Any] | None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT session_id, company, document_text, history FROM chat_sessions WHERE session_id = %s",
+            (session_id,),
+        )
+        return cur.fetchone()
+
+
+def delete_chat_session(session_id: str) -> None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM chat_sessions WHERE session_id = %s", (session_id,))
+        conn.commit()
+
+
+def record_decision(report_id: str, decision: str, notes: str = "") -> None:
+    """Record (or update) the user's own invest/pass call on a report -- the
+    feedback signal ml/personalization.py trains against."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO investment_decisions (report_id, decision, notes)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (report_id) DO UPDATE SET
+                decision = EXCLUDED.decision, notes = EXCLUDED.notes, decided_at = now()
+            """,
+            (report_id, decision, notes),
+        )
+        conn.commit()
+
+
+def list_decisions_with_reports() -> list[dict[str, Any]]:
+    """Return every recorded decision joined to its report's raw_output, for
+    training the personalization model."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT d.decision, dr.raw_output
+            FROM investment_decisions d
+            JOIN dd_reports dr ON dr.id = d.report_id
+            ORDER BY d.decided_at
+            """
+        )
+        return list(cur.fetchall())
+
+
+def count_decisions() -> int:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT count(*) AS n FROM investment_decisions")
+        return cur.fetchone()["n"]
+
+
 def stats() -> dict[str, int]:
     with connection() as conn, conn.cursor() as cur:
         cur.execute(

@@ -5,30 +5,66 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import json
-from groq import Groq
+import logging
 from rag_engine import build_context, format_context_for_llm
+from groq_client import MODEL, get_client
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-MODEL  = "llama-3.3-70b-versatile"
+logger = logging.getLogger(__name__)
 
-# In-memory store for document context per session
-# In production this would be Redis or a database
+# In-process cache for document context per session, backed by the
+# `chat_sessions` Neon table (migrations/004_chat_sessions.sql) so a session
+# survives a server restart. The DB write is best-effort: if Neon isn't
+# configured or is briefly unreachable, chat still works for the lifetime of
+# this process -- it just won't survive a restart, same as before.
 _document_store = {}
 
+
+def _persist_session(session_id: str, entry: dict) -> None:
+    try:
+        from db import upsert_chat_session
+        upsert_chat_session(session_id, entry["company"], entry["text"], entry["history"])
+    except Exception as exc:
+        logger.warning("Chat session %s not persisted to DB (in-memory only): %s", session_id, exc)
+
+
 def store_document(session_id: str, text: str, company_name: str):
-    """Store extracted document text for a session."""
-    _document_store[session_id] = {
+    """Store extracted document text for a session, in-memory and in Neon."""
+    entry = {
         "text":    text[:15000],  # cap at 15K chars
         "company": company_name,
         "history": [],
     }
+    _document_store[session_id] = entry
+    _persist_session(session_id, entry)
 
 def get_document(session_id: str) -> dict:
-    return _document_store.get(session_id)
+    entry = _document_store.get(session_id)
+    if entry is not None:
+        return entry
+    # Not cached in this process (e.g. after a restart) -- fall back to Neon.
+    try:
+        from db import get_chat_session
+        row = get_chat_session(session_id)
+    except Exception as exc:
+        logger.warning("Chat session %s DB lookup unavailable: %s", session_id, exc)
+        return None
+    if not row:
+        return None
+    entry = {
+        "text":    row["document_text"],
+        "company": row["company"],
+        "history": row["history"] or [],
+    }
+    _document_store[session_id] = entry
+    return entry
 
 def clear_document(session_id: str):
-    if session_id in _document_store:
-        del _document_store[session_id]
+    _document_store.pop(session_id, None)
+    try:
+        from db import delete_chat_session
+        delete_chat_session(session_id)
+    except Exception as exc:
+        logger.warning("Chat session %s DB delete unavailable: %s", session_id, exc)
 
 def chat_with_document(
     session_id: str,
@@ -37,7 +73,7 @@ def chat_with_document(
 ) -> dict:
     """
     Answer a question about the uploaded document.
-    Uses both the document text AND Supabase database evidence.
+    Uses both the document text AND Neon database evidence.
     Returns NOT_ENOUGH_INFO if evidence is insufficient.
     """
     doc = get_document(session_id)
@@ -56,7 +92,7 @@ def chat_with_document(
     if verbose:
         print(f"  Chatbot question: {question[:80]}...")
 
-    # Get relevant context from Supabase database
+    # Get relevant context from the Neon database (rag_engine.py -> db.py)
     try:
         rag_context       = build_context(f"{company_name} {question}")
         db_context        = format_context_for_llm(rag_context)
@@ -98,7 +134,7 @@ STRICT RULES — these are non-negotiable:
 Answer (cite document section if possible):"""
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {
@@ -138,12 +174,13 @@ Answer (cite document section if possible):"""
             "answer":   answer,
         })
         doc["history"] = history[-10:]  # keep last 10 turns
+        _persist_session(session_id, doc)
 
         result = {
             "answer":     answer,
             "confidence": 0.9 if has_data else 0.1,
             "has_data":   has_data,
-            "sources":    ["pitch_deck", "supabase_database"],
+            "sources":    ["pitch_deck", "neon_database"],
         }
 
         if verbose:

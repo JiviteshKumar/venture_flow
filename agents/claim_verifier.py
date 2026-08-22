@@ -8,10 +8,8 @@ import json, logging, time
 import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
-from groq import Groq
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-MODEL  = "llama-3.3-70b-versatile"
+from groq_client import MODEL, get_client
 logger = logging.getLogger(__name__)
 
 def search_web(query: str, max_results: int = 8) -> list:
@@ -117,7 +115,7 @@ Respond with ONLY valid JSON, no other text:
 }}"""
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {

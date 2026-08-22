@@ -6,10 +6,8 @@ load_dotenv()
 
 import json
 from ddgs import DDGS
-from groq import Groq
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-MODEL  = "llama-3.3-70b-versatile"
+from groq_client import MODEL, get_client
 
 # ----------------------------
 # Risk keyword dictionary
@@ -127,7 +125,7 @@ Respond with ONLY valid JSON:
 }}"""
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": "Strict risk analysis. JSON only."},

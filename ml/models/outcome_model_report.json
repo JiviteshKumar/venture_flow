@@ -1,0 +1,54 @@
+{
+  "dataset": {
+    "n_total": 1560,
+    "n_train": 1248,
+    "n_test": 312,
+    "n_positive": 726,
+    "n_negative": 834,
+    "min_age_years_filter": 3.5
+  },
+  "ablation": [
+    {
+      "variant": "text_only",
+      "n_test": 312,
+      "accuracy": 0.5545,
+      "roc_auc": 0.5721,
+      "precision": 0.5341,
+      "recall": 0.3241,
+      "f1": 0.4034,
+      "brier_score": 0.2589,
+      "baseline_positive_rate": 0.4647
+    },
+    {
+      "variant": "structured_only",
+      "n_test": 312,
+      "accuracy": 0.6442,
+      "roc_auc": 0.7001,
+      "precision": 0.6466,
+      "recall": 0.5172,
+      "f1": 0.5747,
+      "brier_score": 0.2187,
+      "baseline_positive_rate": 0.4647
+    },
+    {
+      "variant": "combined",
+      "n_test": 312,
+      "accuracy": 0.6699,
+      "roc_auc": 0.7038,
+      "precision": 0.7059,
+      "recall": 0.4966,
+      "f1": 0.583,
+      "brier_score": 0.2287,
+      "baseline_positive_rate": 0.4647
+    }
+  ],
+  "combined_model_structured_feature_importance_gain": {
+    "industry": 327.8826981782913,
+    "stage": 360.87809640169144,
+    "team_size": 2043.4083864688873,
+    "num_tags": 16.77848994731903,
+    "nonprofit": 0.0,
+    "age_years": 253.80617916584015
+  },
+  "combined_model_text_feature_importance_gain_total": 11575.308447659016
+}

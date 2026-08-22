@@ -9,14 +9,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import json
-from groq import Groq
 from agents.claim_verifier import verify_claim
 from agents.risk_detector import score_risk
 from agents.investment_agents import run_investment_agents
 from rag_engine import build_context, format_context_for_llm
+from groq_client import MODEL, get_client
 
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-MODEL  = "llama-3.3-70b-versatile"
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are VentureFlow AI, a senior VC due diligence analyst at a top-tier firm.
@@ -144,6 +142,9 @@ def run_due_diligence(
     revenue:             float = None,
     burn_rate:           float = None,
     runway_months:       float = None,
+    sector:               str  = None,
+    team_size:            int  = None,
+    github_url:            str  = None,
 ) -> dict:
 
     print(f"\n{'='*60}")
@@ -249,6 +250,40 @@ def run_due_diligence(
         risk=risk_result,
     )
     report["sections"].update(specialist_results)
+
+    # ── Outcome Model — trained signal, additive only ───────────
+    # This is the first real trained-and-evaluated model in the pipeline
+    # (see ml/models/outcome_model_report.json for methodology and metrics).
+    # It never blocks or overrides the rest of the analysis: if the model
+    # file is missing/untrained, ml.inference returns available=False and
+    # the report simply omits this section, same defensive pattern as every
+    # other optional signal in this function.
+    try:
+        from ml.inference import score_company as _score_company
+        ml_outcome = _score_company(
+            text=(company_description or filing_text or "")[:2000],
+            industry=sector or "unknown",
+            team_size=team_size or 0,
+        )
+    except Exception:
+        logger.exception("Outcome model unavailable")
+        ml_outcome = {"available": False, "reason": "Outcome model raised an unexpected error."}
+    report["sections"]["ml_outcome_model"] = ml_outcome
+
+    # ── Technical/GitHub score — rule-based rubric, not a model ─
+    # See technical_scoring.py's module docstring for why this is a
+    # transparent rubric rather than a trained model. Additive and
+    # never blocking, same defensive pattern as every other optional signal.
+    if github_url:
+        try:
+            from technical_scoring import score_repo as _score_repo
+            technical_score = _score_repo(github_url)
+        except Exception:
+            logger.exception("Technical/GitHub scoring unavailable")
+            technical_score = {"available": False, "reason": "Technical scoring raised an unexpected error."}
+    else:
+        technical_score = {"available": False, "reason": "No GitHub URL was provided."}
+    report["sections"]["technical_score"] = technical_score
 
     # ── 3. RAG Retrieval ───────────────────────────────────────
     print("\n[4/6] Retrieving database evidence...")
@@ -369,7 +404,7 @@ If data quality is LOW, confidence must be below 60%.
 ---"""
 
     try:
-        response = client.chat.completions.create(
+        response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -434,6 +469,19 @@ If data quality is LOW, confidence must be below 60%.
     report["recommendation"] = recommendation
     report["risk_level"]     = risk_level
     report["incomplete_analysis"] = incomplete_analysis
+
+    # ── Firm-personalization ranking — mechanism, not yet active ─
+    # See ml/personalization.py: this stays unavailable, honestly, until
+    # enough of the user's own invest/pass decisions exist to fit on. Placed
+    # here deliberately, after final_score is set, so it scores the report
+    # that's actually returned rather than an in-progress one.
+    try:
+        from ml.personalization import personalize as _personalize
+        personalized_ranking = _personalize(report)
+    except Exception:
+        logger.exception("Personalization layer unavailable")
+        personalized_ranking = {"available": False, "reason": "Personalization layer raised an unexpected error."}
+    report["sections"]["personalized_ranking"] = personalized_ranking
 
     print(f"\n{'='*60}")
     print(f"SCORE:          {final_score:.0f}/100")

@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
-from groq import Groq
+from groq_client import MODEL, get_client
 
-MODEL = "llama-3.3-70b-versatile"
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +29,7 @@ EVIDENCE:
 {evidence[:14000]}
 """
     try:
-        result = client.chat.completions.create(
+        result = get_client().chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": "Return strict JSON only; do not use markdown."},
@@ -55,9 +52,12 @@ def _evidence_block(document: str, claims: list[dict[str, Any]], risk: dict[str,
         f"- {claim.get('verdict', 'UNKNOWN')}: {claim.get('claim', '')}"
         for claim in claims
     ]
+    # Python < 3.12 does not allow a backslash inside an f-string expression,
+    # so the join has to happen on its own line before the f-string is built.
+    claims_block = "\n".join(claim_lines) or "No claims were extracted."
     return (
         f"PITCH DECK TEXT:\n{document or 'No readable deck text.'}\n\n"
-        f"CLAIM RESULTS:\n{'\n'.join(claim_lines) or 'No claims were extracted.'}\n\n"
+        f"CLAIM RESULTS:\n{claims_block}\n\n"
         f"RISK SIGNALS:\n{json.dumps(risk, default=str)[:3000]}"
     )
 

@@ -98,16 +98,12 @@ export interface ChatResponse {
   sources: string[];
 }
 
+// Matches db.py's stats() — the query counts against the live Neon schema,
+// not the legacy Supabase tables this type used to describe (QA-007).
 export interface DBStats {
-  documents: number;
-  claims: number;
-  sentiment_records: number;
-  visual_assets: number;
-  qa_pairs: number;
-  tables_structured: number;
-  summaries: number;
-  contracts: number;
-  total: number;
+  companies: number;
+  dd_reports: number;
+  portfolio_investments: number;
 }
 
 const asArray = (value: unknown): string[] => {

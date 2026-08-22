@@ -16,11 +16,8 @@ def test_claim_judge_does_not_expose_provider_error(monkeypatch):
         def create(self, **_):
             raise RuntimeError("private provider details")
 
-    monkeypatch.setattr(
-        claim_verifier,
-        "client",
-        type("Client", (), {"chat": type("Chat", (), {"completions": BrokenCompletions()})()})(),
-    )
+    fake_client = type("Client", (), {"chat": type("Chat", (), {"completions": BrokenCompletions()})()})()
+    monkeypatch.setattr(claim_verifier, "get_client", lambda: fake_client)
     result = claim_verifier.groq_judge("test claim", {"snippets": [], "full_texts": []})
     assert "private provider details" not in result["reasoning"]
     assert result["verdict"] == "NOT_ENOUGH_INFO"

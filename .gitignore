@@ -35,3 +35,8 @@ VALIDATION_LOG.md
 
 # Preserved metadata from the formerly nested frontend repository
 .frontend-git-backup/
+
+# Runtime score logs (drift-check input) -- not source, don't commit
+ml/logs/*.jsonl
+ml/models/personalization_model.pkl
+ml/models/personalization_model_report.json

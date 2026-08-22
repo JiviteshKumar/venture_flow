@@ -15,14 +15,16 @@ The repository contains two deployable parts:
 - PDF upload and extraction for pitch-deck review.
 - Conversational analysis endpoint for follow-up questions.
 - Dashboard views for risks, team, market, and competitor information.
-- PostgreSQL/Neon-compatible database helpers and optional Supabase integration.
+- PostgreSQL/Neon database helpers -- all persistence is Neon. (A legacy
+  Supabase ingestion pipeline is quarantined in
+  `legacy/supabase_ingestion/README.md` and not wired into the live app.)
 
 ## Tech stack
 
 - Frontend: React 18, TypeScript, Vite, Tailwind CSS, Recharts, Framer Motion
 - Backend: Python, FastAPI, Uvicorn
 - AI: Groq
-- Data: PostgreSQL/Neon and optional Supabase
+- Data: PostgreSQL/Neon only
 
 ## Local setup
 
@@ -84,7 +86,8 @@ See `.env.example` and `frontend/.env.example` for the complete template.
 - `GROQ_API_KEY` — Groq API key for AI-powered analysis.
 - `ALLOWED_ORIGINS` — Comma-separated URLs allowed to call the API.
 - `RATE_LIMIT_PER_MINUTE` — API rate limit, default `30`.
-- `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` — optional Supabase configuration.
+- `REDIS_URL` — optional; enables the multi-instance-safe rate limiter (see `rate_limiter.py`). Without it, rate limiting is in-memory and per-process, which is correct for local single-instance use.
+- `GITHUB_TOKEN` — optional; raises the GitHub API rate limit for the technical/repo scoring rubric (`technical_scoring.py`) from 60/hour to 5,000/hour.
 - `VITE_API_BASE_URL` — public backend URL used by the frontend.
 
 ## API endpoints

@@ -23,19 +23,16 @@ def test_due_diligence_uses_report_context_shape(monkeypatch, tmp_path):
             "total_signals": 0,
         },
     )
-    monkeypatch.setattr(
-        ventureflow_agent,
-        "client",
-        SimpleNamespace(
-            chat=SimpleNamespace(
-                completions=SimpleNamespace(
-                    create=lambda **_: SimpleNamespace(
-                        choices=[SimpleNamespace(message=SimpleNamespace(content="memo"))]
-                    )
+    fake_client = SimpleNamespace(
+        chat=SimpleNamespace(
+            completions=SimpleNamespace(
+                create=lambda **_: SimpleNamespace(
+                    choices=[SimpleNamespace(message=SimpleNamespace(content="memo"))]
                 )
             )
-        ),
+        )
     )
+    monkeypatch.setattr(ventureflow_agent, "get_client", lambda: fake_client)
 
     report = ventureflow_agent.run_due_diligence(
         "Test Co", company_description="A" * 120, claims_to_verify=[]
@@ -54,15 +51,10 @@ def test_due_diligence_caps_score_when_specialists_and_claims_fail(monkeypatch, 
     completion = SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content="memo"))]
     )
-    monkeypatch.setattr(
-        ventureflow_agent,
-        "client",
-        SimpleNamespace(
-            chat=SimpleNamespace(
-                completions=SimpleNamespace(create=lambda **_: completion)
-            )
-        ),
+    fake_client = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: completion))
     )
+    monkeypatch.setattr(ventureflow_agent, "get_client", lambda: fake_client)
 
     report = ventureflow_agent.run_due_diligence("Test Co", "A" * 120, ["unverified"], revenue=1)
     assert report["incomplete_analysis"] is True

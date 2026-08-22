@@ -135,7 +135,6 @@ const PastAnalyses = () => {
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
-  const [activeTime, setActiveTime] = useState("1Y");
   const { report, status, currentStage, progressPct } = useApp();
 
   // If no report yet, show empty / analyzing state
@@ -167,24 +166,10 @@ const Dashboard = () => {
     ? (report.claims_supported / Math.max(report.claims_verified, 1) * 2.8).toFixed(1)
     : "—";
 
-  // Build ARR-style chart from score trend (synthetic but score-derived)
-  const arrData = [
-    { name: "Aug", value: parseFloat((score * 0.012).toFixed(2)) },
-    { name: "Sep", value: parseFloat((score * 0.014).toFixed(2)) },
-    { name: "Oct", value: parseFloat((score * 0.016).toFixed(2)) },
-    { name: "Nov", value: parseFloat((score * 0.019).toFixed(2)) },
-    { name: "Dec", value: parseFloat((score * 0.021).toFixed(2)) },
-    { name: "Jan", value: parseFloat((score * 0.024).toFixed(2)) },
-    { name: "Feb", value: parseFloat((score * 0.026).toFixed(2)) },
-    { name: "Mar", value: parseFloat((score * 0.028).toFixed(2)) },
-  ];
-
-  const sparkData = [
-    [score * 0.012, score * 0.014, score * 0.016, score * 0.019, score * 0.021, score * 0.024, score * 0.026, score * 0.028],
-    [score * 0.88, score * 0.9, score * 0.89, score * 0.92, score * 0.91, score * 0.94, score * 0.93, score],
-    [riskValue * 0.95, riskValue * 0.93, riskValue, riskValue * 0.98, riskValue * 1.01, riskValue, riskValue, riskValue],
-    arrData.map(d => d.value * 120),
-  ];
+  // No historical score series exists yet (that lands with the "historical
+  // score tracking per company" ship-list item) — showing a single real point
+  // beats a chart shaped like a trend when only one number is real.
+  const hasHistory = false;
 
   const metrics = [
     {
@@ -217,8 +202,15 @@ const Dashboard = () => {
   }));
   const signals = [...bullSignals, ...bearSignals];
 
-  const bullScore = Math.round(score * 1.05);
-  const bearScore = Math.round((100 - score) * 0.8);
+  // Grounded in the actual counts of independently-detected positive factors
+  // vs. red flags for this report — not a rescaling of the single final score.
+  const totalConvictionSignals = report.positive_factors.length + report.red_flags.length;
+  const bullScore = totalConvictionSignals
+    ? Math.round((report.positive_factors.length / totalConvictionSignals) * 100)
+    : 50;
+  const bearScore = totalConvictionSignals
+    ? Math.round((report.red_flags.length / totalConvictionSignals) * 100)
+    : 50;
 
   const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const deckId = `#${report.company.slice(0, 3).toUpperCase()}-${new Date().getFullYear()}-001`;
@@ -621,7 +613,6 @@ const Dashboard = () => {
         <div className="metric-grid">
           {metrics.map((m, i) => {
             const Icon = m.icon;
-            const sparkColors = [scoreColor, "#0EA66A", riskColor, "#C47A0A"];
             return (
               <motion.div
                 key={i}
@@ -644,7 +635,6 @@ const Dashboard = () => {
                 <div className="metric-value" style={{ color: m.color }}>{m.value}</div>
                 <div className="metric-bottom-row">
                   <span className="metric-sub">{m.sub}</span>
-                  <MiniSparkline data={sparkData[i] || sparkData[0]} color={sparkColors[i]} />
                 </div>
               </motion.div>
             );
@@ -663,31 +653,46 @@ const Dashboard = () => {
             >
               <div className="chart-header">
                 <div>
-                  <div className="panel-title">Investment Score Trend</div>
-                  <div className="panel-sub">Derived from verified claims · composite index</div>
-                </div>
-                <div className="time-filters">
-                  {["1M", "3M", "6M", "1Y"].map((t) => (
-                    <button key={t} className={`time-btn ${activeTime === t ? "time-btn-active" : ""}`} onClick={() => setActiveTime(t)}>{t}</button>
-                  ))}
+                  <div className="panel-title">Investment Score</div>
+                  <div className="panel-sub">
+                    {hasHistory
+                      ? "Derived from verified claims · composite index"
+                      : "First analysis on file for this company"}
+                  </div>
                 </div>
               </div>
 
-              <ResponsiveContainer width="100%" height={220}>
-                <AreaChart data={arrData} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="arrGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1D6FE8" stopOpacity={0.14} />
-                      <stop offset="100%" stopColor="#1D6FE8" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(15,23,42,0.05)" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(15,23,42,0.08)", strokeWidth: 1 }} />
-                  <Area type="monotone" dataKey="value" stroke="#1D6FE8" strokeWidth={2.5} fill="url(#arrGrad)" dot={false} isAnimationActive animationDuration={1400} animationEasing="ease-out" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {hasHistory ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={[]} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="arrGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#1D6FE8" stopOpacity={0.14} />
+                        <stop offset="100%" stopColor="#1D6FE8" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid stroke="rgba(15,23,42,0.05)" vertical={false} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(15,23,42,0.08)", strokeWidth: 1 }} />
+                    <Area type="monotone" dataKey="value" stroke="#1D6FE8" strokeWidth={2.5} fill="url(#arrGrad)" dot={false} isAnimationActive animationDuration={1400} animationEasing="ease-out" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{
+                  height: 220, display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: 6,
+                  border: "1px dashed rgba(15,23,42,0.12)", borderRadius: 12,
+                  background: "rgba(15,23,42,0.015)",
+                }}>
+                  <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 40, color: scoreColor }}>
+                    {Math.round(score)}
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, color: "#94A3B8", textAlign: "center", maxWidth: 260 }}>
+                    Today&rsquo;s score. Re-run analysis on this company later to build a real trend line here.
+                  </div>
+                </div>
+              )}
 
               <div className="stats-row">
                 {[
