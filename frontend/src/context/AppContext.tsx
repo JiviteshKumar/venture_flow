@@ -105,28 +105,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           progressPct: 20,
         }));
 
-        // ── STEP 2: Staged progress labels while backend runs ───────────────
-        // The backend takes 2–4 minutes. We advance labels every 30s
-        // so the user sees something happening on every page.
-        const stages: [number, string][] = [
-          [30_000, "Detecting risk signals…"],
-          [60_000, "Retrieving database evidence…"],
-          [90_000, "Groq AI synthesising report…"],
-          [120_000, "Finalising due diligence memo…"],
-        ];
-        const pcts = [40, 60, 75, 90];
-        stages.forEach(([delay, label], i) => {
-          const t = setTimeout(() => {
-            setState((s) => ({
-              ...s,
-              currentStage: label,
-              progressPct: pcts[i],
-            }));
-          }, delay);
-          timers.push(t);
-        });
-
-        // ── STEP 3: Call /analyze ───────────────────────────────────────────
+        // ── STEP 2: Call /analyze ───────────────────────────────────────────
+        // There is deliberately no timer-driven stage ladder here any more.
+        // It used to advance labels on fixed 30/60/90/120s setTimeouts that
+        // had nothing to do with what the backend was doing, so a genuinely
+        // slow analysis and a hung one looked identical -- and the label on
+        // screen was frequently just wrong about the current step. The
+        // backend now reports its real stage on the job row, and the polling
+        // loop below reads it.
         const job = await api.startAnalysis({
           company_name: companyName,
           company_description: upload.company_description,
@@ -137,14 +123,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
           runway_months: upload.runway_months,
         });
 
+        // Percentages are derived from which real stage the backend reports,
+        // so the bar only moves when the pipeline actually moves. They are
+        // ordinal markers, not a time estimate -- the steps take very
+        // different amounts of time, and pretending otherwise is what the
+        // old timer did.
+        const STAGE_PROGRESS: Array<[string, number]> = [
+          ["Verifying claims", 30],
+          ["Detecting risk signals", 45],
+          ["Running market", 60],
+          ["Retrieving evidence", 75],
+          ["Writing the investment memo", 88],
+        ];
+        const progressForStage = (stage: string | null | undefined): number => {
+          if (!stage) return 20;
+          const hit = STAGE_PROGRESS.find(([prefix]) => stage.startsWith(prefix));
+          return hit ? hit[1] : 20;
+        };
+
         let jobStatus = job;
+        let elapsed = 0;
         while (jobStatus.status === "pending" || jobStatus.status === "running") {
+          const queued = jobStatus.status === "pending";
+          const label = queued
+            ? "Queued — waiting for a worker…"
+            : jobStatus.stage
+              ? `${jobStatus.stage}…`
+              : "Starting analysis…";
           setState((s) => ({
             ...s,
-            currentStage: jobStatus.status === "pending" ? "Analysis queued…" : "AI agents are analyzing the deck…",
-            progressPct: jobStatus.status === "pending" ? 25 : 60,
+            // Elapsed time is shown because this legitimately takes minutes.
+            // Telling the user how long it has actually been running is more
+            // useful, and more honest, than an invented percentage.
+            currentStage: elapsed > 20 ? `${label} (${Math.floor(elapsed)}s elapsed)` : label,
+            progressPct: queued ? 10 : progressForStage(jobStatus.stage),
           }));
           await new Promise((resolve) => setTimeout(resolve, 3_000));
+          elapsed += 3;
           jobStatus = await api.getAnalysisStatus(job.job_id);
         }
         if (jobStatus.status !== "complete" || !jobStatus.report) {

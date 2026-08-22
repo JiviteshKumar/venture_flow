@@ -228,6 +228,13 @@ export interface AnalysisJob {
   status: "pending" | "running" | "complete" | "failed";
   report?: AnalyzeResponse | null;
   error?: string | null;
+  /**
+   * The pipeline step the backend is actually executing right now, e.g.
+   * "Verifying claims against live web search". Drives the progress display,
+   * which previously advanced on a fixed timer unrelated to real work.
+   * Null for queued jobs and for jobs created before stage tracking existed.
+   */
+  stage?: string | null;
 }
 
 // ─── API CALLS ──────────────────────────────────────────────────────────────

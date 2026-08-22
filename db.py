@@ -214,13 +214,27 @@ def find_similar_reports_by_vector(embedding: list[float], top_k: int = 5) -> li
     column/extension isn't available yet -- the caller falls back to keyword
     search in that case."""
     with connection() as conn, conn.cursor() as cur:
+        # The ::vector casts are required, and their absence meant this
+        # function had never once succeeded. A Python list parameter is adapted
+        # by psycopg to double precision[], and pgvector defines no
+        # `vector <=> double precision[]` operator, so every call raised:
+        #
+        #   psycopg.errors.UndefinedFunction: operator does not exist:
+        #   vector <=> double precision[]
+        #
+        # rag_engine catches that and falls back to keyword search, logging at
+        # INFO, so the failure was invisible in normal operation and the app
+        # reported "vector retrieval" while doing LIKE matching every single
+        # time. register_vector() on the connection is not sufficient on its
+        # own here -- it teaches psycopg how to *read* vector columns, but the
+        # bare parameter still adapts to an array without an explicit cast.
         cur.execute(
             """
             SELECT c.name, c.sector, dr.summary, dr.verdict, dr.created_at,
-                   1 - (dr.embedding <=> %s) AS similarity
+                   1 - (dr.embedding <=> %s::vector) AS similarity
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
             WHERE dr.embedding IS NOT NULL
-            ORDER BY dr.embedding <=> %s
+            ORDER BY dr.embedding <=> %s::vector
             LIMIT %s
             """,
             (embedding, embedding, top_k),
@@ -288,8 +302,28 @@ def update_analysis_job(job_id: str, status: str, result: dict[str, Any] | None 
 
 def get_analysis_job(job_id: str) -> dict[str, Any] | None:
     with connection() as conn, conn.cursor() as cur:
-        cur.execute("SELECT id::text AS job_id, status, result, error_message FROM analysis_jobs WHERE id::text = %s", (job_id,))
+        cur.execute(
+            "SELECT id::text AS job_id, status, result, error_message, stage "
+            "FROM analysis_jobs WHERE id::text = %s",
+            (job_id,),
+        )
         return cur.fetchone()
+
+
+def set_analysis_job_stage(job_id: str, stage: str) -> None:
+    """Record which pipeline step a running job is on, for real progress
+    reporting. Best-effort by design: this is telemetry for a progress bar,
+    and a failure to write it must never interfere with the analysis that is
+    actually running."""
+    try:
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE analysis_jobs SET stage = %s WHERE id::text = %s",
+                (stage, job_id),
+            )
+            conn.commit()
+    except Exception:
+        logger.debug("Could not record stage for job %s", job_id, exc_info=True)
 
 
 def upsert_chat_session(

@@ -1,0 +1,1 @@
+ALTER TABLE analysis_jobs DROP COLUMN IF EXISTS stage;

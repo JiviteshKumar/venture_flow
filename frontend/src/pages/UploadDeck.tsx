@@ -63,7 +63,15 @@ const howItWorksSteps = [
     // Claiming a paid data source this product does not have, to an audience
     // of investors who would check, is exactly the sort of thing that
     // destroys the credibility the rest of this system is built on.
-    desc: "Every claim checked against live web search and public SEC EDGAR filings, with the verdict and its evidence shown per claim.",
+    // "SEC EDGAR filings" was removed from this line because it was false.
+    // A grep of the entire backend finds no code that queries sec.gov, no CIK
+    // lookup, and no EDGAR client -- the only source claim verification
+    // actually queries is DuckDuckGo web search (agents/claim_verifier.py).
+    // The claim survived an earlier cleanup that removed a neighbouring
+    // Crunchbase/PitchBook fabrication from this same string, which is a good
+    // reminder that removing one false claim from a sentence does not
+    // validate the rest of it.
+    desc: "Every claim is checked against live web search, with the verdict and the supporting evidence shown per claim.",
     color: "#C47A0A", bg: "rgba(196,122,10,0.07)",
   },
   {
@@ -777,10 +785,17 @@ const UploadDeck = () => {
                 <h2 className="up-illus-heading">
                   Instant VC-grade<br /><em>deal intelligence</em>
                 </h2>
+                {/* Two claims were corrected here against measured behaviour.
+                    "in under 60 seconds" was false: timed end-to-end runs
+                    against the live backend take 117s in the best observed
+                    case and 262s before the search layer was parallelised.
+                    "live databases" (plural) overstated it -- the only
+                    external source is web search, plus this workspace's own
+                    Neon store of prior reports. */}
                 <p className="up-illus-body">
                   VentureFlow runs your pitch deck through independent Bull &amp; Bear agents,
-                  cross-references every claim with live databases, and surfaces founder signals,
-                  market gaps, and risk vectors — in under 60 seconds.
+                  checks every claim against live web search, and surfaces founder signals,
+                  market gaps, and risk vectors — typically in 2–4 minutes.
                 </p>
                 <div className="up-agent-pills">
                   <span className="up-agent-pill up-pill-bull"><span className="up-pill-dot" style={{ background: "#0EA66A" }} />Bull Agent</span>
@@ -1078,9 +1093,13 @@ const UploadDeck = () => {
                 // decommissioned that model and groq_client.py now uses
                 // openai/gpt-oss-120b. If the MODEL constant changes again,
                 // change this too.
+                // "SEC EDGAR filings" was removed: no code in this repository
+                // queries sec.gov. Every entry below corresponds to a call the
+                // backend genuinely makes -- Neon via db.py, DuckDuckGo via
+                // agents/claim_verifier.py, the score model via
+                // ml/venturescore.py, and Groq via groq_client.py.
                 { name: "Neon report database", icon: Database, color: "#1D6FE8" },
                 { name: "DuckDuckGo web search", icon: Globe, color: "#0EA66A" },
-                { name: "SEC EDGAR filings", icon: Shield, color: "#D93025" },
                 { name: "VentureFlow Score model", icon: Target, color: "#7C3AED" },
                 { name: "Groq gpt-oss-120b", icon: Activity, color: "#C47A0A" },
               ].map((src, i) => {

@@ -2,6 +2,11 @@ import logging
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Must precede the agent imports below: forces stdout/stderr to UTF-8 so their
+# progress prints cannot raise UnicodeEncodeError on Windows. See
+# console_safety.py -- this was silently killing risk analysis on every run.
+import console_safety  # noqa: F401  (imported for side effect)
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -273,6 +278,7 @@ def run_due_diligence(
     team_size:            int  = None,
     github_url:            str  = None,
     founders:             list = None,
+    on_stage=None,
 ) -> dict:
 
     print(f"\n{'='*60}")
@@ -283,6 +289,21 @@ def run_due_diligence(
         "company":  company_name,
         "sections": {}
     }
+
+    def _stage(label: str) -> None:
+        """Report the pipeline's real current step to the caller.
+
+        api._run_analysis_job passes a callback that writes this to the job
+        row, so the frontend can show what is actually happening instead of
+        advancing labels on an unrelated fixed timer. Best-effort: a progress
+        callback must never be able to fail an analysis.
+        """
+        print(f"[stage] {label}")
+        if on_stage is not None:
+            try:
+                on_stage(label)
+            except Exception:
+                logger.debug("Stage callback failed for %r", label, exc_info=True)
 
     # ── Pre-flight data quality check ──────────────────────────
     quality = assess_data_quality(
@@ -307,7 +328,7 @@ def run_due_diligence(
         return report
 
     # ── 1. Claim Verification ──────────────────────────────────
-    print("[1/4] Verifying claims with web search + Groq AI...")
+    _stage("Verifying claims against live web search")
     claim_results = []
     if claims_to_verify:
         for claim in claims_to_verify[:5]:
@@ -346,7 +367,7 @@ def run_due_diligence(
     }
 
     # ── 2. Risk Detection ──────────────────────────────────────
-    print("\n[2/4] Detecting risk signals...")
+    _stage("Detecting risk signals in the deck")
     risk_text   = filing_text or company_description
     try:
         risk_result = score_risk(risk_text, company=company_name)
@@ -370,7 +391,7 @@ def run_due_diligence(
     risk_result["total_signals"] = risk_result.get("total_signals", 0)
     report["sections"]["risk"] = risk_result
 
-    print("\n[3/6] Running market, bull, bear and team analysis agents...")
+    _stage("Running market, team, bull and bear agents")
     specialist_results = run_investment_agents(
         company=company_name,
         document=risk_text,
@@ -438,7 +459,7 @@ def run_due_diligence(
     report["sections"]["market_comparables"] = market_comparables
 
     # ── 3. RAG Retrieval ───────────────────────────────────────
-    print("\n[4/6] Retrieving database evidence...")
+    _stage("Retrieving evidence from prior reports")
     query = f"{company_name} {company_description[:200]} financial performance"
     try:
         rag_context       = build_context(query)
@@ -462,7 +483,7 @@ def run_due_diligence(
     report["sections"]["rag_context"] = rag_stats
 
     # ── 4. Groq Synthesis ──────────────────────────────────────
-    print("\n[5/6] Groq AI synthesizing report...")
+    _stage("Writing the investment memo")
 
     # Build structured evidence summary for Groq
     metrics_str = "FINANCIAL METRICS:\n"

@@ -34,7 +34,15 @@ def test_analyze_returns_persisted_report(monkeypatch):
     client = TestClient(api.app)
     response = client.post("/analyze", json={"company_name": "New Co", "company_description": "Test"})
     assert response.status_code == 202
-    assert response.json() == {"job_id": "job-id", "status": "pending", "report": None, "error": None}
+    # Assert on the fields this test is about rather than exact dict equality,
+    # so an additive field on AnalysisJobResponse (e.g. `stage`, added for real
+    # progress reporting) does not fail a test that is really about the 202
+    # accept-and-queue behaviour.
+    body = response.json()
+    assert body["job_id"] == "job-id"
+    assert body["status"] == "pending"
+    assert body["report"] is None
+    assert body["error"] is None
     assert updates[-1][1] == "complete"
 
 

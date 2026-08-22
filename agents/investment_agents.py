@@ -37,6 +37,23 @@ EVIDENCE:
     # JSON dump of the risk object, which is mostly structure the agent does
     # not need. Four agents times 14,000 chars was ~14k tokens of input per
     # report against an 8,000-token-per-minute ceiling, spent on padding.
+    # response_format=json_object, and a larger token budget, because both
+    # specialist agents were failing on real runs in two distinct ways:
+    #
+    #   json.decoder.JSONDecodeError: Expecting ',' delimiter: line 8 column 6
+    #   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+    #
+    # The first is a truncated object -- max_tokens=1000 cut the JSON off
+    # mid-structure. The current model (openai/gpt-oss-120b) is a reasoning
+    # model that spends part of its completion budget on an internal reasoning
+    # trace before emitting content, so a budget tuned for Llama 3.3 no longer
+    # leaves room for the answer. The second is an empty completion, the same
+    # cause taken to its limit. Both degraded to a confidence-0 fallback, so
+    # bull and bear analysis silently vanished from finished reports.
+    #
+    # Groq supports constrained JSON output for this model (verified against
+    # the live API), which removes the malformed-output class entirely rather
+    # than parsing around it.
     try:
         result = get_client().chat.completions.create(
             model=MODEL,
@@ -44,11 +61,24 @@ EVIDENCE:
                 {"role": "system", "content": "Return strict JSON only; do not use markdown."},
                 {"role": "user", "content": prompt},
             ],
+            response_format={"type": "json_object"},
             temperature=0.1,
-            max_tokens=1000,
+            max_tokens=2000,
         )
-        raw = result.choices[0].message.content.strip()
-        raw = raw[raw.find("{") : raw.rfind("}") + 1]
+        choice = result.choices[0]
+        raw = (choice.message.content or "").strip()
+        if not raw:
+            logger.warning(
+                "Specialist agent %s returned empty content (finish_reason=%s); using fallback",
+                role, choice.finish_reason,
+            )
+            return fallback
+        if choice.finish_reason == "length":
+            # Truncated despite the larger budget -- the object is unparseable
+            # by definition, so say so plainly rather than logging a confusing
+            # JSONDecodeError for what is really a budget problem.
+            logger.warning("Specialist agent %s hit the token limit; using fallback", role)
+            return fallback
         parsed = json.loads(raw)
         return parsed if isinstance(parsed, dict) else fallback
     except Exception:

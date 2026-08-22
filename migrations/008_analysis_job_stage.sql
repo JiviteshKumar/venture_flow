@@ -1,0 +1,14 @@
+-- Real progress reporting for a running analysis.
+--
+-- The frontend's progress label used to advance on a fixed setTimeout ladder
+-- (30s "Detecting risk signals", 60s "Retrieving database evidence", ...) that
+-- had no connection to what the backend was doing. A genuinely slow-but-
+-- working analysis therefore looked identical to a hung one, and a user
+-- watching it sit at "Evaluating team profile" had no way to tell whether
+-- anything was happening. That is the wrong failure mode for a job that
+-- legitimately takes minutes.
+--
+-- `stage` carries the pipeline's actual current step, written as the job runs.
+-- Nullable, because every job that predates this column has no stage and the
+-- frontend must keep working for those.
+ALTER TABLE analysis_jobs ADD COLUMN IF NOT EXISTS stage TEXT;

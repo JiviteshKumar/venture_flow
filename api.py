@@ -3,6 +3,13 @@ import os
 import uuid
 from typing import Any
 
+# Imported first, for its import-time side effect: it forces stdout/stderr to
+# UTF-8 so the pipeline's progress prints cannot raise UnicodeEncodeError on
+# Windows. That exception was killing risk analysis on every run and claim
+# verification intermittently -- see console_safety.py for the full write-up.
+# This has to happen before any module that prints is imported.
+import console_safety  # noqa: F401  (imported for side effect)
+
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
@@ -11,7 +18,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import add_comment, count_decisions, create_analysis_job, ensure_schema, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_decision, stats, update_analysis_job
+from db import add_comment, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_decision, stats, update_analysis_job
 from db import healthcheck as neon_healthcheck
 from pdf_extractor import extract_text_from_pdf
 from rate_limiter import is_allowed as rate_limit_is_allowed
@@ -155,6 +162,9 @@ class AnalysisJobResponse(BaseModel):
     status: str
     report: DiligenceResponse | None = None
     error: str | None = None
+    # The pipeline step currently executing, for honest progress reporting.
+    # None for jobs that predate stage tracking, and for queued jobs.
+    stage: str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -285,7 +295,7 @@ def health():
         return {"status": "degraded", "database": "unavailable"}
 
 
-async def _perform_analysis(request: DiligenceRequest):
+async def _perform_analysis(request: DiligenceRequest, on_stage=None):
     session_id = str(uuid.uuid4())
     similar_companies: list[dict[str, Any]] = []
     try:
@@ -307,6 +317,7 @@ async def _perform_analysis(request: DiligenceRequest):
         request.team_size,
         request.github_url,
         request.founders,
+        on_stage,
     )
     report = _normalize_report(report, request.company_name)
     report["similar_companies"] = similar_companies
@@ -361,6 +372,15 @@ async def _perform_analysis(request: DiligenceRequest):
         data_quality=report["data_quality"],
         similar_companies=similar_companies,
         incomplete_analysis=report["incomplete_analysis"],
+        # These two are set by run_due_diligence and were being dropped here.
+        # There are two places that build a DiligenceResponse -- this one, for
+        # a freshly-run analysis, and _normalize_report for a report reloaded
+        # from the database -- and a field added to only one of them silently
+        # disappears on whichever path the caller happens to take. That is how
+        # score_source ended up reading None on every live run while looking
+        # correct on reloaded reports.
+        score_source=report.get("score_source"),
+        claims_unverified=bool(report.get("claims_unverified")),
         report_id=report_id,
         session_id=session_id,
     )
@@ -558,19 +578,85 @@ async def get_comments(report_id: str):
         return []
 
 
+def _describe_failure(exc: BaseException) -> str:
+    """Turn an exception into something a VC reading the screen can act on.
+
+    The previous version of the failure path stored a fixed string --
+    "Analysis could not be completed. Please retry." -- for every possible
+    cause, discarding the actual exception. So a rate-limited API key, an
+    unreachable database and a genuine bug in the pipeline were
+    indistinguishable to the user, and "retry" was actively wrong advice for
+    two of the three. This is a due-diligence product; it should never fail
+    without saying why.
+
+    Known causes are translated into an action the user can actually take.
+    Anything unrecognised falls through to the exception type and message,
+    truncated -- which is still far more useful than a fixed string, and keeps
+    this function from needing to anticipate every failure mode.
+    """
+    text = str(exc)
+    name = type(exc).__name__
+
+    if "rate_limit_exceeded" in text or "RateLimitError" in name:
+        if "tokens per day" in text or "TPD" in text:
+            return (
+                "The Groq API daily token quota is exhausted, so the AI analysis "
+                "steps could not run. This resets every 24 hours, or the tier can "
+                "be upgraded at console.groq.com/settings/billing. Retrying now "
+                "will fail the same way."
+            )
+        return (
+            "The Groq API rate limit was hit and did not clear after retries. "
+            "Wait a minute and retry, or upgrade the API tier for more headroom."
+        )
+    if "model_not_found" in text or "does not exist or you do not have access" in text:
+        return (
+            "The configured Groq model is unavailable on this API key. Check the "
+            "MODEL constant in groq_client.py against the models the key can actually reach."
+        )
+    if "AuthenticationError" in name or "invalid_api_key" in text:
+        return "The Groq API key was rejected. Check GROQ_API_KEY in .env."
+    if "OperationalError" in name or "could not translate host name" in text or "connection" in text.lower():
+        return (
+            "The database could not be reached while saving this analysis. "
+            "Check DATABASE_URL in .env and that the Neon project is not paused."
+        )
+    if "APITimeoutError" in name or "timeout" in text.lower():
+        return (
+            "An external call timed out during analysis (LLM or web search). "
+            "This is usually transient -- retrying often works."
+        )
+    return f"Analysis failed: {name}: {text[:300]}"
+
+
 async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:
     try:
         await run_in_threadpool(update_analysis_job, job_id, "running")
-        report = await _perform_analysis(DiligenceRequest(**request_data))
+
+        # Real progress, written from the pipeline as it advances. The
+        # frontend polls this instead of advancing labels on a fixed timer,
+        # so a slow-but-working analysis is distinguishable from a hung one.
+        # run_due_diligence executes in a worker thread, so this callback is
+        # invoked from that thread -- set_analysis_job_stage opens its own
+        # short-lived connection rather than sharing one, which keeps that
+        # safe.
+        def record_stage(label: str) -> None:
+            set_analysis_job_stage(job_id, label)
+
+        report = await _perform_analysis(
+            DiligenceRequest(**request_data), on_stage=record_stage
+        )
         await run_in_threadpool(update_analysis_job, job_id, "complete", report.model_dump())
-    except Exception:
+    except Exception as exc:
         logger.exception("Analysis job %s failed", job_id)
+        message = _describe_failure(exc)
         try:
             await run_in_threadpool(
-                update_analysis_job, job_id, "failed", None,
-                "Analysis could not be completed. Please retry.",
+                update_analysis_job, job_id, "failed", None, message,
             )
         except Exception:
+            # If even recording the failure fails, the job would sit in
+            # "running" forever and the frontend would poll indefinitely.
             logger.exception("Could not mark analysis job %s as failed", job_id)
 
 
@@ -595,7 +681,7 @@ async def analysis_status(job_id: str):
     if not job:
         raise HTTPException(status_code=404, detail="Analysis job not found.")
     report = DiligenceResponse(**job["result"]) if job["status"] == "complete" and job.get("result") else None
-    return AnalysisJobResponse(job_id=job["job_id"], status=job["status"], report=report, error=job.get("error_message"))
+    return AnalysisJobResponse(job_id=job["job_id"], status=job["status"], report=report, error=job.get("error_message"), stage=job.get("stage"))
 
 
 @app.get("/database/stats")
