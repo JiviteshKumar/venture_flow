@@ -28,9 +28,31 @@ MODEL = "openai/gpt-oss-120b"
 
 _client: Groq | None = None
 
+# Groq's free tier allows 8,000 tokens per MINUTE (confirmed from the live
+# x-ratelimit-limit-tokens header on this account). A single due-diligence run
+# spends far more than that: five claim verifications, four specialist agents
+# and a 2,500-token memo add up to roughly 30-50k tokens. Without retries the
+# SDK gives up after two attempts, every call past the first few in a burst
+# returns 429, and each one silently degrades to a fallback -- regex extraction
+# instead of schema-validated extraction, canned specialist results with
+# confidence 0, and a stub memo. The report still renders, so nothing looks
+# broken; it is just empty. That was the actual cause of twenty decks all
+# scoring 30/100, and it presented as a scoring bug rather than a quota one.
+#
+# The SDK honours the Retry-After header on 429s, so raising max_retries lets a
+# run ride out the per-minute window instead of collapsing into fallbacks. This
+# trades latency for actually producing a report, which is the right trade for
+# a tool whose output takes minutes anyway.
+MAX_RETRIES = int(os.environ.get("GROQ_MAX_RETRIES", "6"))
+REQUEST_TIMEOUT_S = float(os.environ.get("GROQ_TIMEOUT_S", "90"))
+
 
 def get_client() -> Groq:
     global _client
     if _client is None:
-        _client = Groq(api_key=os.environ.get("GROQ_API_KEY", ""))
+        _client = Groq(
+            api_key=os.environ.get("GROQ_API_KEY", ""),
+            max_retries=MAX_RETRIES,
+            timeout=REQUEST_TIMEOUT_S,
+        )
     return _client

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
@@ -29,8 +30,13 @@ RULES:
   percentage string, and never omit it.
 
 EVIDENCE:
-{evidence[:14000]}
+{evidence[:5000]}
 """
+    # 5,000 chars, not the 14,000 this used to send. A real pitch deck's
+    # extracted text is 1,300-1,500 chars; the rest of the old budget was the
+    # JSON dump of the risk object, which is mostly structure the agent does
+    # not need. Four agents times 14,000 chars was ~14k tokens of input per
+    # report against an 8,000-token-per-minute ceiling, spent on padding.
     try:
         result = get_client().chat.completions.create(
             model=MODEL,
@@ -91,8 +97,23 @@ def run_investment_agents(company: str, document: str, claims: list[dict[str, An
             {"confidence": 0, "thesis": "Insufficient evidence for a complete bear case", "signals": [], "diligence_required": ["Validate financials, market demand and team execution."]},
         ),
     }
+    # Run the specialists with limited concurrency rather than all four at once.
+    #
+    # These are independent analyses, so firing them in parallel is the obvious
+    # design and was the original one. It does not survive Groq's free-tier
+    # limit of 8,000 tokens per minute: four agents times a large evidence
+    # block plus 1,000 output tokens each is roughly 18,000 tokens arriving in
+    # the same instant, so most of the batch is rejected and falls back to
+    # confidence-0 stubs. Because every agent degrades quietly, the report
+    # still renders -- with nothing in it.
+    #
+    # Two workers keeps some overlap for latency while spreading the token
+    # spend over the rate-limit window, and the SDK's Retry-After handling
+    # (see groq_client.MAX_RETRIES) absorbs what still collides. Raise
+    # GROQ_AGENT_CONCURRENCY if you move to a paid tier with real headroom.
+    concurrency = max(1, int(os.environ.get("GROQ_AGENT_CONCURRENCY", "2")))
     results: dict[str, dict[str, Any]] = {}
-    with ThreadPoolExecutor(max_workers=len(jobs)) as executor:
+    with ThreadPoolExecutor(max_workers=min(concurrency, len(jobs))) as executor:
         futures = {executor.submit(_json_agent, role, task, evidence, fallback): name for name, (role, task, fallback) in jobs.items()}
         for future in as_completed(futures):
             results[futures[future]] = future.result()
