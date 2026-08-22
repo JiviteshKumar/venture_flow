@@ -349,8 +349,23 @@ function EmptyAnalysis() {
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 const Analysis = () => {
+  // EVERY hook must be declared here, above the `if (!report)` early return
+  // below. React identifies hooks by call order, so a hook declared after a
+  // conditional return is called on some renders and not others.
+  //
+  // `pdfExporting` used to live ~85 lines further down, next to the export
+  // handler that uses it. That read tidily and crashed the whole application:
+  // with a report loaded this component called five hooks, and the moment
+  // `report` became null -- which happens when the sidebar's Settings button
+  // fires reset(), among other paths -- the early return fired first and only
+  // four ran. React then threw "Rendered fewer hooks than expected", which is
+  // unrecoverable, so the root ErrorBoundary replaced the entire UI with
+  // "Something went wrong". It presented as random breakage while navigating
+  // between pages, because what actually mattered was the report going away
+  // underneath a mounted Analysis page.
   const [activeTab, setActiveTab] = useState("Summary");
   const [ddOpen, setDdOpen] = useState(false);
+  const [pdfExporting, setPdfExporting] = useState(false);
   const { report, sessionId } = useApp();
   const navigate = useNavigate();
 
@@ -441,7 +456,6 @@ const Analysis = () => {
     URL.revokeObjectURL(url);
   };
 
-  const [pdfExporting, setPdfExporting] = useState(false);
   const exportReportPdf = async () => {
     if (!report.report_id) return;
     setPdfExporting(true);
