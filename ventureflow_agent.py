@@ -202,6 +202,39 @@ def _coerce_confidence(value: object) -> float:
     return max(0.0, min(1.0, confidence))
 
 
+def _coerce_number(value: object, default: float) -> float:
+    """Return a usable float from an LLM-authored numeric field.
+
+    This exists because of the exact failure the product was shipping:
+
+        File "ventureflow_agent.py", line 236, in _evidence_penalty
+            penalty += max(0.0, min(0.20, (risk_score / 100.0) * 0.20))
+        TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'
+
+    `risk_score` came from `risk_result.get("overall_score", 30)`, and that
+    idiom does not do what it looks like it does here. The default applies only
+    when the key is *absent*; when the risk agent returns the key with a null
+    value -- which it does whenever its own LLM call fails, e.g. under a rate
+    limit -- `.get` faithfully returns None, and the arithmetic downstream
+    raises. The exception escaped every try/except in the pipeline and failed
+    the whole job, which is exactly the degradation contract this codebase
+    otherwise follows everywhere.
+
+    Any number that originated in a model response has to be coerced rather
+    than trusted; `.get(key, default)` is not a null guard.
+    """
+    if isinstance(value, bool) or value is None:
+        return default
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip().rstrip("%"))
+        except ValueError:
+            return default
+    return default
+
+
 def _evidence_penalty(
     refuted: int,
     supported: int,
@@ -227,6 +260,15 @@ def _evidence_penalty(
     every report, and should be replaced by a fitted layer once enough
     outcome-labelled reports accumulate to fit one honestly.
     """
+    # Every argument here can originate in a model response, so all of them
+    # are coerced. Guarding only risk_score -- the one that actually raised --
+    # would leave the same landmine under the other three.
+    refuted = int(_coerce_number(refuted, 0))
+    supported = int(_coerce_number(supported, 0))
+    n_claims = int(_coerce_number(n_claims, 0))
+    risk_score = _coerce_number(risk_score, 30)
+    quality_score = _coerce_number(quality_score, 50)
+
     penalty = 0.0
     penalty += min(0.30, refuted * 0.10)          # each refuted claim is direct negative evidence
     if n_claims == 0:
@@ -255,6 +297,12 @@ def _legacy_formula_score(
     hand and never validated against an outcome -- but a working approximate
     score beats failing the report outright, which is why it stays.
     """
+    refuted = int(_coerce_number(refuted, 0))
+    supported = int(_coerce_number(supported, 0))
+    n_claims = int(_coerce_number(n_claims, 0))
+    risk_score = _coerce_number(risk_score, 30)
+    quality_score = _coerce_number(quality_score, 50)
+
     claim_penalty = refuted * 15
     if n_claims == 0:
         claim_penalty += 20
@@ -384,7 +432,7 @@ def run_due_diligence(
             "total_signals": 0,
         }
     risk_result["risk_level"] = risk_result.get("risk_level") or risk_result.get("overall_risk_level") or "UNKNOWN"
-    risk_result["overall_score"] = risk_result.get("overall_score", 30)
+    risk_result["overall_score"] = _coerce_number(risk_result.get("overall_score"), 30)
     risk_result["key_concerns"] = risk_result.get("key_concerns") or []
     risk_result["positive_factors"] = risk_result.get("positive_factors") or []
     risk_result["red_flags"] = risk_result.get("red_flags") or []
@@ -506,7 +554,7 @@ def run_due_diligence(
         claims_str += "  No claims provided for verification.\n"
 
     risk_level = risk_result.get("risk_level") or risk_result.get("overall_risk_level") or "MEDIUM"
-    risk_score = risk_result.get("overall_score", 30)
+    risk_score = _coerce_number(risk_result.get("overall_score"), 30)
 
     risk_str = (
         f"RISK ANALYSIS:\n"

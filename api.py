@@ -334,6 +334,17 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
     except Exception:
         logger.warning("Report embedding unavailable", exc_info=True)
         report_embedding = None
+    # Persist the chat session id INSIDE the report, before saving it.
+    #
+    # Without this the document-chat panel is permanently dead on every saved
+    # report. The chat keys off session_id, `store_document` files the deck
+    # text under that id in chat_sessions, but the id was never written into
+    # the report -- and _normalize_report, which rebuilds a reloaded report,
+    # hardcoded session_id="". So chat worked only in the browser tab that had
+    # just run the analysis, and any report opened from the Dashboard showed a
+    # permanently disabled "Run analysis first" input, with no indication that
+    # the deck text was in fact still sitting in the database.
+    report["session_id"] = session_id
     try:
         report_id = await run_in_threadpool(
             persist_report,
@@ -462,7 +473,13 @@ def saved_report(report_id: str):
         raise HTTPException(status_code=404, detail="Saved report not found.")
     report = _normalize_report(stored.get("raw_output"), stored["company"])
     report["report_id"] = stored["report_id"]
-    report["session_id"] = ""
+    # Carry the original chat session id through so the document-chat panel
+    # keeps working on a reloaded report. This used to be forced to "", which
+    # disabled chat on every saved report even though the deck text was still
+    # in chat_sessions. Reports written before this change have no stored
+    # session id and correctly fall back to "" -- chat stays disabled for
+    # those, which is honest rather than broken.
+    stored_session = (stored.get("raw_output") or {}).get("session_id") or ""
     claims, risk = report["sections"]["claims"], report["sections"]["risk"]
     return DiligenceResponse(
         company=report["company"], final_score=report["final_score"], recommendation=report["recommendation"],
@@ -473,7 +490,7 @@ def saved_report(report_id: str):
         similar_companies=report.get("similar_companies", []), incomplete_analysis=report["incomplete_analysis"],
         score_source=report.get("score_source"),
         claims_unverified=bool(report.get("claims_unverified")),
-        report_id=report_id, session_id="",
+        report_id=report_id, session_id=stored_session,
     )
 
 

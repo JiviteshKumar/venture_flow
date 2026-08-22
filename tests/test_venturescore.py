@@ -155,6 +155,53 @@ def test_specialist_string_confidence_does_not_crash_the_report(monkeypatch, tmp
     assert 0 <= report["final_score"] <= 100
 
 
+@pytest.mark.parametrize("bad", [None, "not a number", [], True, {}])
+def test_evidence_penalty_survives_null_llm_numbers(bad):
+    """Regression guard for the crash that failed real analyses end-to-end:
+
+        TypeError: unsupported operand type(s) for /: 'NoneType' and 'float'
+
+    The risk agent returns `overall_score: null` when its own LLM call fails,
+    and `risk_result.get("overall_score", 30)` returns None for a key that is
+    present-but-null. The arithmetic then raised, and the exception escaped
+    every try/except in the pipeline and failed the whole job.
+    """
+    penalty = ventureflow_agent._evidence_penalty(
+        refuted=bad, supported=bad, n_claims=bad,
+        risk_score=bad, has_revenue=True, quality_score=bad,
+    )
+    assert 0.0 <= penalty <= 0.60
+
+
+@pytest.mark.parametrize("bad", [None, "not a number", [], {}])
+def test_legacy_formula_survives_null_llm_numbers(bad):
+    """The fallback scorer takes the same LLM-derived inputs, so it needs the
+    same guard -- otherwise the fallback path crashes exactly when it is most
+    needed."""
+    score = ventureflow_agent._legacy_formula_score(
+        refuted=bad, supported=bad, n_claims=bad,
+        risk_score=bad, has_revenue=False, quality_score=bad,
+    )
+    assert 0.0 <= score <= 100.0
+
+
+def test_null_risk_score_does_not_fail_the_whole_report(monkeypatch, tmp_path):
+    """End-to-end version of the same regression: a risk agent that returns a
+    null score must degrade that section, not take the report down."""
+    monkeypatch.chdir(tmp_path)
+    _patch_pipeline(monkeypatch)
+    monkeypatch.setattr(ventureflow_agent, "score_risk", lambda *_a, **_k: {
+        "risk_level": None, "overall_score": None, "key_concerns": [],
+        "positive_factors": [], "red_flags": [], "total_signals": None,
+    })
+    report = ventureflow_agent.run_due_diligence(
+        "Null Risk Co", company_description="A" * 200,
+        claims_to_verify=["a claim"], revenue=1_000, sector="B2B",
+    )
+    assert 0 <= report["final_score"] <= 100
+    assert report["recommendation"] in ("INVEST", "PASS", "NEEDS MORE DILIGENCE")
+
+
 def test_evidence_penalty_is_bounded_and_monotonic_in_refuted_claims():
     penalties = [
         ventureflow_agent._evidence_penalty(
