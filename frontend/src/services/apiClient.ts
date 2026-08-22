@@ -48,6 +48,14 @@ export interface AnalyzeResponse {
   session_id: string;
   report_id?: string | null;
   incomplete_analysis?: boolean;
+  /** Which mechanism produced final_score: the trained model or the fallback formula. */
+  score_source?: string | null;
+  /**
+   * Claims were extracted and checked, but nothing public corroborated them.
+   * Expected for an early-stage company, and deliberately NOT the same as
+   * incomplete_analysis (which means the pipeline itself failed).
+   */
+  claims_unverified?: boolean;
   similar_companies?: Array<{ name: string; domain?: string | null; sector?: string | null; similarity?: number }>;
   // full nested sections from backend
   sections?: {
@@ -180,6 +188,8 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
     session_id: String(raw?.session_id || ""),
     report_id: raw?.report_id ? String(raw.report_id) : null,
     incomplete_analysis: Boolean(raw?.incomplete_analysis),
+    claims_unverified: Boolean(raw?.claims_unverified),
+    score_source: raw?.score_source ? String(raw.score_source) : null,
     similar_companies: Array.isArray(raw?.similar_companies) ? raw.similar_companies : [],
     sections: {
       ...sections,

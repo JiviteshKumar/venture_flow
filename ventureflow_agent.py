@@ -685,10 +685,35 @@ If data quality is LOW, confidence must be below 60%.
     all_specialists_failed = bool(specialist_confidences) and all(
         confidence <= 0 for confidence in specialist_confidences
     )
-    all_claims_uncertain = not claim_results or all(
+
+    # "Nothing could be corroborated" and "the analysis did not run" are
+    # different things, and conflating them made the product useless on the
+    # deals it exists to evaluate.
+    #
+    # Found by running 20 real seed-stage decks through the pipeline. For an
+    # early-stage company, public web search legitimately cannot corroborate
+    # deck claims -- there is nothing written about the company yet, and the
+    # verifier correctly refuses to credit same-name evidence about a
+    # different business (checked directly: searching AgroPulse's claims
+    # surfaces a real, unrelated agropulse.in). So every genuinely early deck
+    # returned all-NOT_ENOUGH_INFO, which flipped `incomplete_analysis` and
+    # hard-capped the score at 30. Twenty different startups scored 30/100
+    # with the identical recommendation, and the trained model's estimate was
+    # computed and then discarded every time. A due-diligence tool that
+    # cannot rank one seed deck above another is not doing its job.
+    #
+    # The cap is therefore reserved for a genuine pipeline failure -- the
+    # specialists all errored, or no claim was extractable at all. Claims that
+    # were checked but could not be verified are reported as exactly that:
+    # an honest confidence signal, already priced into the score through
+    # _evidence_penalty() and reflected in the model's own confidence label,
+    # and still blocked from producing an INVEST verdict by the `supported < 2`
+    # rule below. Nothing here lets an unverified deck look verified.
+    analysis_failed = all_specialists_failed or not claim_results
+    claims_unverified = bool(claim_results) and all(
         result.get("verdict") == "NOT_ENOUGH_INFO" for result in claim_results
     )
-    incomplete_analysis = all_specialists_failed or all_claims_uncertain
+    incomplete_analysis = analysis_failed
 
     if venture_score_result.get("available"):
         final_score = float(venture_score_result["venture_score"])
@@ -723,6 +748,11 @@ If data quality is LOW, confidence must be below 60%.
     report["recommendation"] = recommendation
     report["risk_level"]     = risk_level
     report["incomplete_analysis"] = incomplete_analysis
+    # Reported separately from incomplete_analysis so the UI can say which of
+    # the two actually happened. "We searched and found nothing conclusive"
+    # is a finding a VC should see stated plainly; "our pipeline broke" is a
+    # different message entirely.
+    report["claims_unverified"] = claims_unverified
 
     # ── Firm-personalization ranking — mechanism, not yet active ─
     # See ml/personalization.py: this stays unavailable, honestly, until

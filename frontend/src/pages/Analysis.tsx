@@ -703,9 +703,22 @@ const Analysis = () => {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 0 }}>
           <div className="an-body">
+            {/* Two different situations that used to share one alarming
+                message. A pipeline failure and "this company is too early for
+                anyone to have written about it" call for very different
+                reactions from an investor, so they say different things. */}
             {report.incomplete_analysis && (
               <div role="alert" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F5C2C2", borderRadius: 10, background: "#FFF5F5", color: "#9B1C1C", fontSize: 13 }}>
                 Analysis is incomplete: key verification or specialist-agent results were unavailable. The score is capped and should not be used as an investment recommendation.
+              </div>
+            )}
+            {!report.incomplete_analysis && report.claims_unverified && (
+              <div role="status" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F0D9A8", borderRadius: 10, background: "#FFFBF0", color: "#7A5514", fontSize: 13, lineHeight: 1.55 }}>
+                <strong>No deck claim could be independently corroborated.</strong> Every claim was
+                searched, but public sources had nothing specific enough to confirm or contradict
+                it — normal for a company this early, and not a sign the analysis failed. The score
+                already reflects this, and an INVEST verdict is withheld until at least two claims
+                verify. Treat the numbers below as founder-reported.
               </div>
             )}
 

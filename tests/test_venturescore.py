@@ -205,6 +205,64 @@ def test_model_failure_falls_back_to_legacy_formula_without_failing_the_report(m
     assert report["recommendation"] in ("INVEST", "PASS", "NEEDS MORE DILIGENCE")
 
 
+def test_unverifiable_claims_do_not_cap_the_score(monkeypatch, tmp_path):
+    """Regression guard for the finding from the 20-deck batch run.
+
+    An early-stage company that nobody has written about yet will legitimately
+    return NOT_ENOUGH_INFO on every claim. That used to flip
+    `incomplete_analysis` and hard-cap the score at 30, so twenty different
+    seed decks all scored identically and the trained model's estimate was
+    discarded. Unverifiable is not the same as failed.
+    """
+    monkeypatch.chdir(tmp_path)
+    _patch_pipeline(monkeypatch, verdict="NOT_ENOUGH_INFO")
+    report = ventureflow_agent.run_due_diligence(
+        "Unknown Seed Co",
+        company_description="An AI-powered SaaS platform for enterprise developer teams. " * 3,
+        claims_to_verify=["claim one", "claim two"],
+        sector="B2B", revenue=500_000,
+    )
+    assert report["claims_unverified"] is True
+    assert report["incomplete_analysis"] is False, "unverifiable claims must not read as a failed analysis"
+    if report["sections"]["venture_score"]["available"]:
+        # The score must still be the model's, not the 30-point cap.
+        assert report["final_score"] == report["sections"]["venture_score"]["venture_score"]
+    # Honesty is still enforced at the recommendation layer.
+    assert report["recommendation"] == "NEEDS MORE DILIGENCE"
+
+
+def test_genuine_pipeline_failure_still_caps_the_score(monkeypatch, tmp_path):
+    """The other half of the same distinction: when the specialist agents all
+    fail, that IS an incomplete analysis and the cap must still apply."""
+    monkeypatch.chdir(tmp_path)
+    _patch_pipeline(monkeypatch)
+    monkeypatch.setattr(ventureflow_agent, "run_investment_agents", lambda **_k: {
+        "market": {"confidence": 0}, "team": {"confidence": 0}, "bull": {"confidence": 0},
+    })
+    report = ventureflow_agent.run_due_diligence(
+        "Broken Pipeline Co",
+        company_description="An AI-powered SaaS platform for enterprise developer teams. " * 3,
+        claims_to_verify=["claim one"], sector="B2B", revenue=500_000,
+    )
+    assert report["incomplete_analysis"] is True
+    assert report["final_score"] <= 30
+
+
+def test_no_extractable_claims_counts_as_a_failed_analysis(monkeypatch, tmp_path):
+    """No claims at all means nothing was checked -- that is a failure to
+    analyse, not a verification result, and must still cap."""
+    monkeypatch.chdir(tmp_path)
+    _patch_pipeline(monkeypatch)
+    report = ventureflow_agent.run_due_diligence(
+        "No Claims Co",
+        company_description="An AI-powered SaaS platform. " * 5,
+        claims_to_verify=[], sector="B2B", revenue=500_000,
+    )
+    assert report["incomplete_analysis"] is True
+    assert report["claims_unverified"] is False
+    assert report["final_score"] <= 30
+
+
 def test_low_model_confidence_blocks_a_decisive_recommendation(monkeypatch, tmp_path):
     """A score the model itself says is poorly supported must not turn into a
     confident INVEST or PASS."""

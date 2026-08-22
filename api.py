@@ -134,6 +134,18 @@ class DiligenceResponse(BaseModel):
     data_quality: dict[str, Any] = Field(default_factory=dict)
     similar_companies: list[dict[str, Any]] = Field(default_factory=list)
     incomplete_analysis: bool = False
+    # Which mechanism produced final_score: "venturescore_model" when the
+    # trained model ran, "legacy_formula_fallback" when it could not be loaded.
+    # Declared here because Pydantic drops any key the response model does not
+    # know about -- run_due_diligence() has been setting this since the model
+    # landed, and it was being silently discarded on the way out of the API,
+    # so no caller could tell a model-produced score from the fallback.
+    score_source: str | None = None
+    # True when claims were extracted and checked but public evidence could
+    # not corroborate any of them -- the normal case for an early-stage
+    # company nobody has written about yet. Distinct from
+    # incomplete_analysis, which means the pipeline itself did not run.
+    claims_unverified: bool = False
     report_id: str | None = None
     session_id: str
 
@@ -439,6 +451,8 @@ def saved_report(report_id: str):
         risk_signals_found=risk["total_signals"], key_concerns=risk["key_concerns"], red_flags=risk["red_flags"],
         positive_factors=risk["positive_factors"], sections=report["sections"], data_quality=report["data_quality"],
         similar_companies=report.get("similar_companies", []), incomplete_analysis=report["incomplete_analysis"],
+        score_source=report.get("score_source"),
+        claims_unverified=bool(report.get("claims_unverified")),
         report_id=report_id, session_id="",
     )
 
