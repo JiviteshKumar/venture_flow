@@ -3,6 +3,101 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — same-day, seventh pass: fixed report persistence, surfaced the score in the UI
+
+**The "Analysis could not be completed" error is fixed. It was three bugs
+stacked, not one**, and the analysis itself was never the problem — every
+report was being generated correctly and then thrown away on save.
+
+1. **Migrations 005 and 007 could never apply to this database.** Both
+   declared `report_id UUID REFERENCES dd_reports(id)`, but this Neon instance
+   is the legacy integer-key schema that `002_repair_legacy_neon_schema.sql`
+   exists specifically to support — `dd_reports.id` is `integer`. Postgres
+   raised `DatatypeMismatch: foreign key constraint cannot be implemented`.
+   Both migrations now resolve the referencing column's type from
+   `information_schema` at run time, so they work on either schema.
+2. **`ensure_schema()` ran every migration inside one transaction**, so that
+   single failure silently rolled back 004, 006 and 007 as well. The database
+   looked migrated — the base tables were all present from earlier runs —
+   while `chat_sessions`, `report_comments` and the pgvector `embedding`
+   column were all quietly missing. Each migration now runs in its own
+   savepoint and a failure is logged and skipped rather than taking the
+   others with it.
+3. **`persist_report()` called `conn.rollback()` inside its fallback path.**
+   When the embedding insert failed (because of #2), that rollback undid the
+   *entire* transaction including the `companies` INSERT immediately above
+   it. The retry then wrote a `dd_reports` row pointing at a company that no
+   longer existed: `ForeignKeyViolation: Key (company_id)=(33) is not present
+   in table "companies"`. Now a `SAVEPOINT`, which undoes only the failed
+   statement. Caught a follow-on bug while fixing it, too: `RELEASE SAVEPOINT`
+   replaces the cursor's result set, so the `RETURNING id` has to be fetched
+   *before* the release or psycopg raises "the last operation didn't produce
+   records".
+
+**Verified**: all 7 tables now exist, pgvector is enabled, `ensure_schema()`
+reports zero skipped migrations, and a live end-to-end `_perform_analysis()`
+run persisted successfully as report 36 with the VentureFlow Score attached.
+
+**The score is now visible in the product.** Until this pass the trained model
+existed only in the API response — the UI never rendered it, which made the
+whole sixth pass invisible to a user. New `VentureScorePanel` component on the
+Analysis summary tab shows the score with its 5th–95th percentile range, the
+confidence label, the split between the model's prior and this report's
+evidence adjustment, input coverage, ensemble agreement, and an expandable
+methodology section quoting ROC-AUC with its CI, calibration error, and the
+deliberately-excluded contaminated features.
+
+**One contradiction found by looking at the rendered page rather than the
+code**: the panel showed 57 while the stat card below it showed 30, with
+nothing explaining the difference — the pipeline caps `final_score` at 30 when
+verification is incomplete. Two unexplained scores on one page is worse than
+either alone, so the panel now states the cap and why it applies.
+
+**Frontend audit — what was actually wrong.**
+
+- **Two false claims in the UI, both now corrected.** The "Live Fact-Check"
+  step advertised cross-referencing against "Crunchbase, PitchBook signals";
+  neither is used, and `market_data.py` holds both as documented stubs
+  returning `available: false` because there is no budget for either
+  contract. Telling investors the product queries paid data sources it does
+  not have is precisely the sort of claim this codebase refuses to make
+  anywhere else. The Data Sources list also still advertised "Groq Llama 3.3
+  70B", decommissioned in the previous pass.
+- **`styles/tailwind.css` was never imported by anything.** Tailwind has
+  therefore never been active in this app; every page styles itself with an
+  inline `<style>` block. Worth correcting an assumption made earlier in this
+  session: the dark `body` gradient in that file was *not* causing the dark
+  edges visible in the app, because the file was never loaded at all. It is
+  now imported and carries the theme tokens, focus-visible rings,
+  reduced-motion handling and the responsive breakpoints. Verified after
+  wiring it up that Tailwind Preflight does not disturb the existing pages —
+  the Dashboard `h1` still computes to 28px with no injected margin.
+- **The app had zero media queries.** Below ~1100px the fixed `1fr 320px`
+  rail and `repeat(4, 1fr)` stat grids simply crushed. Added breakpoints;
+  verified in a real browser at 768px (stat grid 4→2 columns, rail collapsed,
+  no horizontal overflow) and at 375px (single column, no overflow).
+- **`* { transition: all 0.2s ease }`** applied a transition to every property
+  of every element, including layout properties, fighting Framer Motion and
+  animating things that should be instant. Removed.
+- **A mislabelled header chip** rendered the final score as "30% data
+  confidence" — two different quantities. Now reads "30/100 overall score".
+- **Accessibility was near-absent** (2 aria attributes across ~3,400 lines of
+  page code). The new panel is properly labelled, and a global
+  `:focus-visible` ring plus `prefers-reduced-motion` support now exist.
+
+**Not addressed, and worth being explicit about**: 24 of the 49 files under
+`frontend/src/` are 0 bytes — empty scaffolding for components, hooks, types
+and services that were never written. The real application is ~3,400 lines
+crammed into four files (`Analysis.tsx` 943, `UploadDeck.tsx` 1097,
+`Dashboard.tsx` 867, `Sidebar.tsx` 483) with 223 inline `style={{}}` blocks
+and no shared design system. That is the real frontend debt here, and
+splitting it apart is a dedicated pass, not something to bolt onto a bug fix.
+There is also still no dark mode, no loading skeletons, and no toast system.
+
+**Verified this pass**: `pytest tests/` → 44 passed, `tsc -b` clean,
+`vite build` succeeds, zero browser console errors, and the panel confirmed
+rendering real model output in a live browser against report 36.
+
 ## Update — same-day, sixth pass: the VentureFlow Score replaces the hand-tuned formula
 
 The headline number a VC sees is no longer arithmetic somebody made up. It

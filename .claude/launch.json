@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "venture-flow-api",
+      "runtimeExecutable": "C:/Users/jivit/Downloads/Venture_Flow/venture_flow/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "api:app", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "venture-flow-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "port": 5173
+    }
+  ]
+}

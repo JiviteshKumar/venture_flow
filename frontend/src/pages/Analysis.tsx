@@ -8,6 +8,7 @@ import { CheckCircle, AlertTriangle, ChevronDown, ChevronUp, Download, ExternalL
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import VentureScorePanel from "../components/analysis/VentureScorePanel";
 
 const tabs = ["Summary", "Market Validation", "Founder Analysis", "Competitor Insights"];
 
@@ -488,6 +489,58 @@ const Analysis = () => {
 
         .an-root { font-family: 'Figtree', sans-serif; color: var(--text-primary); min-height: 100vh; background: var(--bg); }
 
+        /* ── VentureFlow Score panel ─────────────────────────────────── */
+        .vs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; }
+        .vs-card-muted { background: var(--surface-2); }
+        .vs-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .vs-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-secondary); margin: 0; font-weight: 600; }
+        .vs-sub { font-size: 11.5px; color: var(--text-secondary); margin: 4px 0 0; }
+        .vs-conf { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; padding: 5px 11px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+        .vs-score-row { display: flex; align-items: baseline; gap: 18px; margin: 16px 0 6px; flex-wrap: wrap; }
+        .vs-score-main { display: flex; align-items: baseline; gap: 3px; }
+        .vs-score { font-size: 46px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+        .vs-score-of { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
+        .vs-score-meta { display: flex; flex-direction: column; gap: 3px; }
+        .vs-range { font-size: 12.5px; color: var(--text-secondary); }
+        .vs-range strong { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        .vs-band { font-size: 11.5px; font-weight: 600; }
+        .vs-track { margin: 14px 0 18px; }
+        .vs-track-bar { position: relative; height: 7px; background: var(--surface-2); border-radius: 4px; border: 1px solid var(--border); }
+        .vs-track-range { position: absolute; top: 0; bottom: 0; background: rgba(29,111,232,0.16); border-radius: 4px; }
+        .vs-track-base { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text-secondary); opacity: 0.5; }
+        .vs-track-point { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
+        .vs-track-labels { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-secondary); margin-top: 6px; }
+        .vs-breakdown { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+        .vs-bd-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
+        .vs-bd-row:last-child { border-bottom: none; }
+        .vs-bd-row span { color: var(--text-secondary); }
+        .vs-bd-row strong { font-variant-numeric: tabular-nums; font-size: 13px; }
+        .vs-bd-total { background: var(--surface-2); }
+        .vs-bd-total span { color: var(--text-primary); font-weight: 600; }
+        .vs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .vs-stat { background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; display: flex; flex-direction: column; gap: 4px; }
+        .vs-stat-k { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+        .vs-stat-v { font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+        .vs-warn { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; color: #8A2018; background: rgba(217,48,37,0.06); border: 1px solid rgba(217,48,37,0.18); border-radius: 9px; padding: 10px 12px; margin: 14px 0 0; }
+        .vs-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary); }
+        .vs-unavailable strong { color: var(--text-primary); display: block; margin-bottom: 3px; font-size: 13px; }
+        .vs-unavailable p { margin: 0; line-height: 1.5; }
+        .vs-details { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+        .vs-details summary { cursor: pointer; font-size: 11.5px; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 5px; user-select: none; }
+        .vs-details summary:hover { color: var(--text-primary); }
+        .vs-details summary:focus-visible { outline: 2px solid var(--accent, #1D6FE8); outline-offset: 3px; border-radius: 4px; }
+        .vs-dl { margin: 11px 0 0; display: flex; flex-direction: column; gap: 8px; }
+        .vs-dl > div { display: grid; grid-template-columns: 148px 1fr; gap: 12px; font-size: 12px; }
+        .vs-dl dt { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding-top: 2px; }
+        .vs-dl dd { margin: 0; line-height: 1.55; }
+        .vs-caveat { font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--border); }
+
+        @media (max-width: 720px) {
+          .vs-stats { grid-template-columns: 1fr; }
+          .vs-dl > div { grid-template-columns: 1fr; gap: 2px; }
+          .vs-score { font-size: 38px; }
+        }
+
         .an-header { padding: 22px 32px 0; background: var(--surface); border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
 
         .an-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--blue), var(--green), var(--amber), var(--blue)); background-size: 300% 100%; animation: hdr-shimmer 5s linear infinite; }
@@ -625,8 +678,12 @@ const Analysis = () => {
               <p className="an-subtitle">Analyzed {today} · {report.claims_verified} claims checked</p>
             </div>
             <div className="an-header-actions">
+              {/* This chip rendered the final score but labelled it "data
+                  confidence", which are different quantities -- a 30/100
+                  investment score was being presented as "30% data
+                  confidence". Label it as what it actually is. */}
               <div className="an-confidence-chip">
-                ✓ {Math.round(score)}% data confidence
+                {Math.round(score)}/100 overall score
               </div>
               <button className="an-export-btn" type="button" onClick={exportReportPdf} disabled={pdfExporting} aria-label="Export due diligence report as PDF">
                 <Download size={12} strokeWidth={2} />
@@ -655,7 +712,18 @@ const Analysis = () => {
             {/* ── SUMMARY ── */}
             {activeTab === "Summary" && (
               <div className="tab-content-enter">
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+                {/* The trained model's score leads the summary. It is the one
+                    number on this page that came from a fitted, calibrated
+                    model rather than from an LLM or a hand-tuned formula, so
+                    it sits above the derived stat cards rather than among
+                    them. */}
+                <VentureScorePanel
+                  data={report.sections?.venture_score}
+                  reportedScore={Math.round(score)}
+                  incompleteAnalysis={report.incomplete_analysis}
+                />
+
+                <div className="an-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
                   {[
                     { label: "Overall Score", value: `${Math.round(score)} / 100`, color: scoreColor, bg: `${scoreColor}14`, border: `${scoreColor}30`, tip: "Composite investment readiness" },
                     { label: "Market Evidence", value: `${Math.round((market?.confidence ?? 0) * 100)}%`, color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)", tip: "Evidence confidence from the market agent" },

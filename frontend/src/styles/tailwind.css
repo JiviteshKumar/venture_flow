@@ -2,13 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background: radial-gradient(circle at top, #0f172a, #020617);
-  color: white;
-  font-family: Inter, sans-serif;
+/* ─────────────────────────────────────────────────────────────────────────
+   Base layer.
+
+   Two things were previously wrong here and both were visible in the running
+   app:
+
+   1. `body` carried a dark radial gradient and `color: white`, while every
+      page in this app renders a light surface. The result was a dark band
+      around the application chrome and white-on-white text anywhere a page
+      did not explicitly set a colour. The app is a light-theme product; the
+      body now says so.
+
+   2. `* { transition: all 0.2s ease; }` applied a transition to every
+      property of every element on the page, including layout properties like
+      width, height and top. That animates things which should be
+      instantaneous (focus rings, dropdown open/close, scroll-linked
+      positions), fights Framer Motion's own animations, and forces the
+      compositor to watch every property on every node. Transitions now
+      belong to the components that actually want them.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F2F4F7;
+  --border: #E4E7EC;
+  --text-primary: #0B1120;
+  --text-secondary: #667085;
+  --accent: #1D6FE8;
 }
 
-/* smooth UI */
-* {
-  transition: all 0.2s ease;
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: Figtree, Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Keyboard users need to see where they are. The app previously relied on the
+   browser default, which several components suppressed via `outline: none`. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect the OS-level motion preference. Framer Motion animations are
+   decorative here, and vestibular-disorder guidance is to honour this. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Responsive layout ────────────────────────────────────────────────────
+   The app shipped with zero media queries and fixed multi-column grids, so
+   below roughly 1100px the columns crushed and the page scrolled sideways.
+   These rules collapse the fixed grids progressively. They are written
+   against the existing class names and inline grids rather than replacing the
+   page layouts, so they add responsiveness without rewriting three 900-line
+   page components.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Tablet and small laptop: drop the right-hand rail below the main column. */
+@media (max-width: 1100px) {
+  .an-root [style*="1fr 320px"],
+  .up-root [style*="1fr 320px"],
+  .db-root [style*="1fr 320px"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Narrow: four-across stat grids become two-across. */
+@media (max-width: 900px) {
+  .an-stat-grid,
+  .an-root [style*="repeat(4, 1fr)"],
+  .db-root [style*="repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Phone: everything is a single column, and nothing may scroll sideways. */
+@media (max-width: 640px) {
+  .an-stat-grid,
+  .an-root [style*="repeat(4, 1fr)"],
+  .an-root [style*="repeat(3, 1fr)"],
+  .an-root [style*="repeat(2, 1fr)"],
+  .db-root [style*="repeat(4, 1fr)"],
+  .db-root [style*="repeat(3, 1fr)"],
+  .up-root [style*="repeat(2, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* Wide tables and code blocks scroll inside their own container rather than
+   pushing the page sideways. */
+.an-root table,
+.db-root table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }

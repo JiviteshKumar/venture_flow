@@ -57,7 +57,13 @@ const howItWorksSteps = [
   },
   {
     number: "03", icon: Globe, title: "Live Fact-Check",
-    desc: "Cross-referenced against real-time databases: Crunchbase, PitchBook signals, SEC filings, and news.",
+    // Previously claimed "Crunchbase, PitchBook signals". Neither is used:
+    // market_data.py holds both as documented stubs that return
+    // {available: false} because there is no budget for either contract.
+    // Claiming a paid data source this product does not have, to an audience
+    // of investors who would check, is exactly the sort of thing that
+    // destroys the credibility the rest of this system is built on.
+    desc: "Every claim checked against live web search and public SEC EDGAR filings, with the verdict and its evidence shown per claim.",
     color: "#C47A0A", bg: "rgba(196,122,10,0.07)",
   },
   {
@@ -1067,10 +1073,16 @@ const UploadDeck = () => {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
               <div className="up-section-label">Data Sources</div>
               {[
+                // Keep this list honest -- it is a claim about what the
+                // backend actually calls. "Groq Llama 3.3 70B" was wrong: Groq
+                // decommissioned that model and groq_client.py now uses
+                // openai/gpt-oss-120b. If the MODEL constant changes again,
+                // change this too.
                 { name: "Neon report database", icon: Database, color: "#1D6FE8" },
                 { name: "DuckDuckGo web search", icon: Globe, color: "#0EA66A" },
                 { name: "SEC EDGAR filings", icon: Shield, color: "#D93025" },
-                { name: "Groq Llama 3.3 70B", icon: Activity, color: "#C47A0A" },
+                { name: "VentureFlow Score model", icon: Target, color: "#7C3AED" },
+                { name: "Groq gpt-oss-120b", icon: Activity, color: "#C47A0A" },
               ].map((src, i) => {
                 const Icon = src.icon;
                 return (

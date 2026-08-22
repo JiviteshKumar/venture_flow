@@ -88,6 +88,46 @@ export interface AnalyzeResponse {
     };
     bull_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; conditions_to_invest: string[] };
     bear_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; diligence_required: string[] };
+    /**
+     * Output of the trained VentureFlow Score model (ml/venturescore.py) --
+     * the source of the headline score. Every field after `venture_score` is
+     * there so the UI can show how much to trust the number, which is the
+     * whole point of the model: `score_range` is the 5th-95th percentile
+     * across the bootstrap ensemble, `feature_coverage` is the fraction of
+     * inputs actually observed rather than imputed, and `model_only_score`
+     * vs `evidence_penalty` separates the population prior from what THIS
+     * report's claim verification found.
+     *
+     * Optional, and `available` may be false: the backend returns
+     * `{available: false, reason}` when the model file is missing, and the
+     * report then falls back to the legacy formula. The UI must handle that.
+     */
+    venture_score?: {
+      available: boolean;
+      reason?: string;
+      venture_score?: number;
+      score_range?: [number, number];
+      probability_exit_or_survive?: number;
+      confidence?: "low" | "medium" | "high";
+      ensemble_std?: number;
+      feature_coverage?: number;
+      imputed_features?: string[];
+      base_rate?: number;
+      lift_over_base_rate?: number;
+      model_only_score?: number;
+      evidence_penalty?: number;
+      model?: {
+        family?: string;
+        calibration?: string;
+        cv_roc_auc?: number;
+        cv_roc_auc_ci95?: [number, number];
+        cv_ece?: number;
+        cv_brier?: number;
+        trained_n?: number;
+        excluded_contaminated_features?: string[];
+      };
+      caveat?: string;
+    };
   };
 }
 

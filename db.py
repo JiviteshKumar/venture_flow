@@ -59,6 +59,17 @@ def ensure_schema() -> None:
     Render starts the API directly, so a separate migration command is easy to
     miss.  Taking a transaction-scoped advisory lock makes startup safe when a
     service is scaled beyond one process.
+
+    Each migration runs in its own savepoint. That is deliberate and was a
+    real outage: this function used to apply every migration inside one
+    transaction, so a single failing migration silently rolled back all the
+    others. In practice migration 005 declared ``report_id UUID`` against a
+    legacy database whose ``dd_reports.id`` is ``integer``, and that one
+    DatatypeMismatch discarded migrations 004, 006 and 007 as well. The
+    database then looked migrated -- the base tables were all there from an
+    earlier run -- while silently missing chat_sessions, report_comments and
+    the pgvector embedding column, which in turn broke report persistence at
+    runtime. One bad migration must never be able to hide three good ones.
     """
     migration_dir = Path(__file__).resolve().parent / "migrations"
     migrations = sorted(
@@ -66,12 +77,29 @@ def ensure_schema() -> None:
         for path in migration_dir.glob("*.sql")
         if not path.name.endswith(".down.sql")
     )
+    applied, failed = 0, []
     with connection() as conn, conn.cursor() as cur:
         cur.execute("SELECT pg_advisory_xact_lock(%s)", (724420221,))
         for migration in migrations:
-            cur.execute(migration.read_text(encoding="utf-8"))
+            savepoint = f"mig_{migration.stem.split('_')[0]}"
+            cur.execute(f'SAVEPOINT "{savepoint}"')
+            try:
+                cur.execute(migration.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001 - one bad migration must not block the rest
+                cur.execute(f'ROLLBACK TO SAVEPOINT "{savepoint}"')
+                failed.append(migration.name)
+                logger.error("Migration %s failed and was skipped: %s", migration.name, exc)
+            else:
+                cur.execute(f'RELEASE SAVEPOINT "{savepoint}"')
+                applied += 1
         conn.commit()
-    logger.info("Applied %s Neon schema migration(s)", len(migrations))
+    if failed:
+        logger.warning(
+            "Applied %s of %s Neon migration(s); skipped: %s",
+            applied, len(migrations), ", ".join(failed),
+        )
+    else:
+        logger.info("Applied %s Neon schema migration(s)", applied)
 
 
 def find_similar_companies(
@@ -130,6 +158,22 @@ def persist_report(
         summary = report.get("sections", {}).get("ai_analysis", "")
         verdict = report.get("recommendation", "NEEDS MORE DILIGENCE")
         raw = json.dumps(report, default=str)
+        # SAVEPOINT, not conn.rollback(). The previous version called
+        # conn.rollback() in the except branch, which undid the ENTIRE
+        # transaction -- including the companies INSERT immediately above.
+        # The retry below then inserted a dd_reports row pointing at a
+        # company_id that no longer existed, so Postgres raised
+        #
+        #   ForeignKeyViolation: dd_reports_company_id_fkey
+        #   Key (company_id)=(33) is not present in table "companies"
+        #
+        # and the API turned that into "Analysis completed but could not be
+        # saved." Every report failed to persist on any database missing the
+        # pgvector embedding column -- i.e. every database where migration 006
+        # had not applied, which was all of them while ensure_schema() was
+        # rolling migrations back (see the note there). A savepoint undoes only
+        # the failed statement and leaves the company row intact.
+        cur.execute("SAVEPOINT before_report_insert")
         try:
             cur.execute(
                 """
@@ -139,12 +183,17 @@ def persist_report(
                 """,
                 (company_id, summary, verdict, raw, embedding),
             )
+            # Read the id BEFORE releasing the savepoint: RELEASE is itself a
+            # statement and replaces the cursor's result set, so fetching after
+            # it raises "the last operation didn't produce records".
+            report_id = str(cur.fetchone()["id"])
+            cur.execute("RELEASE SAVEPOINT before_report_insert")
         except Exception:
             # The embedding column/extension may not be present yet (migration
             # not applied), or `embedding` may be None -- persistence must
             # never fail because of the optional vector-retrieval feature.
             logger.warning("Storing report without embedding", exc_info=True)
-            conn.rollback()
+            cur.execute("ROLLBACK TO SAVEPOINT before_report_insert")
             cur.execute(
                 """
                 INSERT INTO dd_reports (company_id, summary, verdict, raw_output)
@@ -153,7 +202,7 @@ def persist_report(
                 """,
                 (company_id, summary, verdict, raw),
             )
-        report_id = str(cur.fetchone()["id"])
+            report_id = str(cur.fetchone()["id"])
         conn.commit()
         return report_id
 
