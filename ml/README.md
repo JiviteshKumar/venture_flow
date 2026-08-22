@@ -13,24 +13,58 @@ confidence intervals, calibration analysis and limitations live in
 [`ml/research/README.md`](research/README.md), with every variant tried —
 including the losers — in [`ml/research/EXPERIMENT_LOG.md`](research/EXPERIMENT_LOG.md).
 
-**Data**: the same 1,560 resolved-outcome Y Combinator companies as the
-Outcome Model below, rebuilt by `ml/scripts/prepare_venturescore_dataset.py`
-with 30 features instead of 6 — YC's second-level `subindustry` taxonomy, 12
-technology tag indicators (SaaS / AI-ML / devtools / fintech / infra / ...),
-remote-work posture, Bay Area and US geography, a normalised rebrand signal,
-and description/one-liner length.
+**Data**: **1,298 resolved-outcome Y Combinator companies, filtered to tech
+startups only.** Built by `ml/scripts/prepare_venturescore_dataset.py` with
+30 features — YC's second-level `subindustry` taxonomy, 12 technology tag
+indicators (SaaS / AI-ML / devtools / fintech / infra / ...), remote-work
+posture, Bay Area and US geography, a normalised rebrand signal, and
+description/one-liner length.
+
+**Scope filter (this product evaluates tech startups and nothing else).**
+The YC directory is not tech-only — it spans food and beverage, apparel, home
+goods, therapeutics, medical devices and construction. Training on all of it
+was a real scope mismatch, and not a cosmetic one: sector is among the
+strongest signals the model learns, so an out-of-scope population changes what
+the model predicts. The cut is on **software-core, not sector label**, because
+those differ: a satellite-analytics company for farms is "agritech" in the
+taxonomy and a software company in reality, while a meal-kit brand is
+"Consumer" and not a tech startup at all. Three tiers — software sectors
+included outright (B2B verticals, fintech, edtech, govtech, health IT,
+consumer software); physically/biologically manufactured products excluded
+outright (food, apparel, home goods, therapeutics, drug discovery, medical
+devices, diagnostics); and everything hardware-adjacent (robotics, energy,
+agriculture, automotive, space, proptech, contech) admitted **only** on
+positive evidence of a software core, from the company's tags or its own
+description.
+
+The description check exists because tag data is unreliable for exactly the
+ambiguous cases: PlanGrid — construction *software*, acquired by Autodesk for
+$875M — carries the single tag "Construction" and a tags-only filter discarded
+it. Spot-checked after the fix: PlanGrid, MyVR, 42Floors and Cruise are kept;
+iCracked (phone repair), 99dresses (fashion) and Grouper (dating) are dropped.
+
+**262 companies removed, 1,560 → 1,298.** Rebuild the unfiltered version for
+comparison with `VENTUREFLOW_ALL_SECTORS=1`.
 
 **Method**: calibrated Random Forest (isotonic), served as a 12-member
 bootstrap ensemble so every prediction carries an interval. Selected over
 LightGBM, XGBoost and logistic regression under repeated stratified 5-fold CV
 with bootstrap confidence intervals.
 
-**Headline results** (pooled out-of-fold, n=4,680; base rate 0.465):
+**Headline results** (tech-only population, pooled out-of-fold n=3,894;
+base rate 0.489):
 
 | | ROC-AUC | 95% CI | Brier | ECE |
 |---|---|---|---|---|
-| Shipped model (RF, isotonic, deployable features) | 0.6739 | [0.658, 0.689] | 0.2226 | **0.0210** |
-| Same model *with* hindsight features | 0.7243 | [0.709, 0.738] | 0.2088 | 0.0382 |
+| Shipped model (RF, isotonic, deployable features) | 0.6772 | [0.661, 0.693] | 0.2223 | **0.0219** |
+| Same model *with* hindsight features | 0.7340 | [0.718, 0.749] | 0.2088 | 0.0453 |
+
+**The scope filter cost nothing.** Restricting to tech startups removed 17% of
+the data and AUC still moved slightly *up* (0.6739 → 0.6772 against the
+unfiltered population), with overlapping intervals — so this is "no measurable
+loss", not "an improvement". The base rate also moved from 0.465 to 0.489,
+i.e. the tech-only population is closer to balanced, which makes the
+calibration numbers easier to interpret.
 
 **The most important number in this repository is the gap between those two
 rows.** `team_size` (mean |SHAP| 0.72, 3x the next feature) records *current*

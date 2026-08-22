@@ -44,6 +44,43 @@ continuously-updated public mirror of Y Combinator's own company directory.
 No API key, no scraping, no paid data. The snapshot in this repository holds
 **6,189 companies**.
 
+**Scope: tech startups only.** VentureFlow evaluates software companies, and
+the YC directory does not restrict itself to them — it spans food and
+beverage, apparel, home goods, therapeutics, medical devices and construction.
+An earlier version of this model trained on the unfiltered directory, which
+was a substantive error rather than a labelling one: sector is among the
+strongest signals the model learns (§5.5), so an out-of-scope population
+changes the predictions themselves.
+
+The inclusion test is **software-core, not sector label**, because the two
+disagree in both directions. A satellite-analytics company serving farms is
+"agritech" in YC's taxonomy and a software business in fact; a meal-kit brand
+is "Consumer" and not a tech startup at all. Three tiers:
+
+| Tier | Treatment | Members |
+|---|---|---|
+| Software by construction | include | all `B2B -> *` verticals, all `Fintech -> *`, Education, Government, Healthcare IT, and consumer software (Social, Content, Gaming, VR/AR, Job & Career) |
+| Physical or biological product | exclude | Food & Beverage, Apparel & Cosmetics, Home & Personal, Therapeutics, Drug Discovery, Medical Devices, Industrial Bio, Diagnostics |
+| Hardware-adjacent / deep tech | conditional | Robotics, Energy, Agriculture, Automotive, Aviation & Space, Drones, Consumer Electronics, Transport, Real Estate & Construction — admitted only on positive evidence of a software core |
+
+The conditional tier checks the company's curated tags **and** its own
+description. The description check is load-bearing, not belt-and-braces: YC's
+tag data is sparsest precisely on the ambiguous cases the tier exists to
+adjudicate. PlanGrid — construction *software*, acquired by Autodesk for
+$875M — carries the single tag `Construction`, and a tags-only filter
+discarded it. After adding the description check, spot-checks resolve
+correctly: PlanGrid, MyVR, 42Floors (proptech software) and Cruise
+(self-driving software) are kept; iCracked (phone repair), 99dresses
+(fashion), Grouper (dating) and Momentus (in-space propulsion hardware) are
+dropped.
+
+**Effect: 1,560 → 1,298 companies (262 removed, 17%).** The unfiltered
+dataset can be rebuilt for comparison with `VENTUREFLOW_ALL_SECTORS=1`.
+
+The filter is a heuristic over an imperfect taxonomy and will have residual
+errors in both directions. It is documented here in full so a reader can
+judge it rather than take it on trust.
+
 **Label.** A binary survived-or-exited proxy:
 
 | Directory status | Label | Reasoning |
@@ -63,10 +100,11 @@ description are dropped as unusable.
 | Dropped — younger than 3.5 years | 2,197 |
 | Dropped — still `Active` (censored) | 2,229 |
 | Dropped — no usable description | 203 |
-| **Retained** | **1,560** |
-| — positive (exited/acquired) | 726 |
-| — negative (shut down) | 834 |
-| Base rate | 0.465 |
+| Dropped — not a tech startup (scope filter) | 262 |
+| **Retained** | **1,298** |
+| — positive (exited/acquired) | 635 |
+| — negative (shut down) | 663 |
+| Base rate | 0.489 |
 
 Treating still-active companies as failures would have roughly tripled the
 dataset and produced much better-looking numbers. It would also have been
@@ -145,77 +183,64 @@ below rather than hidden.
 
 ## 5. Results
 
-All figures are pooled out-of-fold predictions, n = 4,680 (1,560 × 3 repeats).
-Chance is 0.5; base rate is 0.465.
+All figures are pooled out-of-fold predictions, n = 3,894 (1,298 x 3 repeats).
+Chance is 0.5; base rate is 0.4892.
 
 ### 5.1 Model families and feature sets
 
-| Variant | ROC-AUC | 95% CI | Brier | ECE | F1 |
-|---|---|---|---|---|---|
-| logreg, new structured | 0.6845 | [0.669, 0.699] | 0.2220 | 0.0436 | 0.5827 |
-| lgbm, new structured | 0.7063 | [0.691, 0.721] | 0.2211 | 0.0785 | 0.6092 |
-| xgb, new structured | 0.7156 | [0.700, 0.730] | 0.2142 | 0.0516 | 0.6154 |
-| **rf, new structured** | **0.7243** | [0.709, 0.738] | 0.2088 | 0.0382 | 0.6060 |
-| logreg, legacy 6 features | 0.6840 | [0.669, 0.699] | 0.2184 | 0.0331 | 0.5247 |
-| lgbm, legacy 6 features | 0.6948 | [0.680, 0.711] | 0.2223 | 0.0687 | 0.5904 |
-
-**Feature engineering helped, modestly and within noise.** LightGBM on the new
-30-feature set reaches 0.7063 vs 0.6948 on the legacy six — a gain of 0.0115
-with heavily overlapping intervals. Reported as a real but unproven
-improvement, not a win.
+| Variant | ROC-AUC | 95% CI | Brier | ECE |
+|---|---|---|---|---|
+| logreg, new structured | 0.6834 | [0.666, 0.699] | 0.2239 | 0.0417 |
+| lgbm, new structured | 0.7131 | [0.696, 0.728] | 0.2219 | 0.0897 |
+| xgb, new structured | 0.7237 | [0.707, 0.739] | 0.2141 | 0.0561 |
+| **rf, new structured** | 0.7340 | [0.718, 0.749] | 0.2088 | 0.0453 |
+| logreg, legacy 6 features | 0.6741 | [0.657, 0.690] | 0.2219 | 0.0311 |
+| lgbm, legacy 6 features | 0.7049 | [0.688, 0.720] | 0.2214 | 0.0758 |
 
 **Random Forest beat the incumbent LightGBM on every metric.** This was not
-expected — LightGBM was the existing project default — and RF wins on AUC,
+expected -- LightGBM was the existing project default -- and RF wins on AUC,
 Brier *and* calibration simultaneously.
+
+The 30-feature set beats the legacy six for the tree models
+(0.7131 vs 0.7049 for LightGBM) with partially
+overlapping intervals: a real but not decisive improvement.
 
 ### 5.2 Text ablation
 
 | Variant | ROC-AUC | 95% CI |
 |---|---|---|
-| Text only (TF-IDF+SVD, 128d) | 0.5792 | [0.562, 0.596] |
-| Structured only (lgbm) | 0.7063 | [0.691, 0.721] |
-| Combined, 32 text dims | 0.7135 | [0.698, 0.728] |
-| Combined, 128 text dims | 0.7176 | [0.702, 0.731] |
+| Text only (TF-IDF+SVD, 128d) | 0.5787 | [0.561, 0.597] |
+| Structured only (lgbm) | 0.7131 | [0.696, 0.728] |
+| Combined, 32 text dims | 0.7087 | [0.693, 0.725] |
+| Combined, 128 text dims | 0.7268 | [0.711, 0.743] |
 
-This **replicates and sharpens the earlier Outcome Model finding**. Text alone
-is barely above chance. Adding 128 text dimensions to the structured set moves
-AUC by +0.011 with fully overlapping intervals.
+Text alone is barely above chance (0.5787) and this replicates on the
+tech-only population. The text block is excluded from the production model.
 
-The sharper version of the finding comes from feature importances on the
-earlier model: text SVD features carried total gain 11,575 against 3,003 for
-all structured features combined, while contributing ~0.004 AUC. The text
-features are not merely uninformative — they *absorb most of the model's
-capacity to fit noise*. That is an argument for aggressive regularisation or
-dropping text entirely at this data volume, not for a better text encoder.
-
-### 5.3 The leakage ablation — the load-bearing result
+### 5.3 The leakage ablation -- the load-bearing result
 
 Removing `team_size`, `age_years` and `batch_year`:
 
 | Variant | ROC-AUC | 95% CI | Brier | ECE |
 |---|---|---|---|---|
-| logreg, deployable | 0.6649 | [0.649, 0.680] | 0.2283 | 0.0514 |
-| lgbm, deployable | 0.6462 | [0.631, 0.661] | 0.2398 | 0.0924 |
-| xgb, deployable | 0.6571 | [0.642, 0.672] | 0.2317 | 0.0655 |
-| **rf, deployable** | **0.6759** | [0.660, 0.691] | 0.2220 | 0.0301 |
-| lgbm + text, deployable | 0.6510 | [0.635, 0.667] | 0.2361 | 0.0853 |
+| logreg, deployable | 0.6685 | [0.650, 0.684] | 0.2289 | 0.0458 |
+| lgbm, deployable | 0.6424 | [0.624, 0.659] | 0.2451 | 0.1036 |
+| xgb, deployable | 0.6559 | [0.639, 0.673] | 0.2340 | 0.0715 |
+| **rf, deployable** | 0.6757 | [0.659, 0.691] | 0.2224 | 0.0316 |
+| lgbm + text, deployable | 0.6543 | [0.636, 0.671] | 0.2380 | 0.0917 |
 
-Random Forest drops from **0.7243 → 0.6759**, a loss of 0.0484 AUC with
+Random Forest drops from **0.7340 -> 0.6757**, a loss of 0.0583 AUC with
 non-overlapping confidence intervals. Measured as signal above chance, that is
-0.2243 → 0.1759: **roughly 22% of the model's apparent predictive power was
-hindsight**, not foresight.
+0.2340 -> 0.1757: **roughly 25% of the model's apparent predictive
+power was hindsight**, not foresight.
 
-This matters beyond this project. Published work on structured startup-outcome
-data commonly reports AUC in the 0.70 range, and directory-sourced features
-like current headcount are an obvious thing to include. Our result suggests
-that a meaningful share of such figures may not be available at the decision
-point they are implicitly claimed to inform. We do not claim this generalises
-to any specific published result — only that the ablation is cheap, and that
-we have not seen it reported.
+On the tech-only population this effect is *larger* than on the unfiltered one
+(25% vs 22%), which is consistent with headcount growth being an even
+stronger post-outcome tell among software companies that scale.
 
 Note also that **LightGBM degrades furthest** under the clean feature set
-(0.6462, below even logistic regression at 0.6649). The incumbent model choice
-was the one most dependent on the contaminated features.
+(0.6424, below logistic regression at 0.6685). The incumbent
+model choice was the one most dependent on the contaminated features.
 
 ### 5.4 Calibration
 
@@ -223,40 +248,37 @@ Random Forest on the deployable feature set:
 
 | Calibration | ROC-AUC | ECE | Brier |
 |---|---|---|---|
-| None | 0.6759 | 0.0301 | 0.2220 |
-| Sigmoid (Platt) | 0.6755 | 0.0225 | 0.2225 |
-| **Isotonic (shipped)** | 0.6739 | **0.0210** | 0.2226 |
+| None | 0.6757 | 0.0316 | 0.2224 |
+| Sigmoid (Platt) | 0.6783 | 0.0244 | 0.2222 |
+| **Isotonic (shipped)** | 0.6772 | **0.0219** | 0.2223 |
 
-Isotonic regression reduces ECE by 30% for 0.002 AUC — accepted. Reliability
-of the shipped model:
+Isotonic reduces ECE from 0.0316 to 0.0219 for -0.0015 AUC. Reliability of
+the shipped model:
 
 | Predicted | Observed | n |
 |---|---|---|
-| 0.166 | 0.185 | 54 |
-| 0.258 | 0.288 | 417 |
-| 0.347 | 0.347 | 1,537 |
-| 0.446 | 0.464 | 1,162 |
-| 0.542 | 0.520 | 688 |
-| 0.642 | 0.569 | 304 |
-| 0.743 | 0.803 | 127 |
-| 0.848 | 0.780 | 109 |
-| 0.954 | 0.911 | 282 |
+| 0.077 | 0.200 | 5 |
+| 0.168 | 0.222 | 45 |
+| 0.264 | 0.344 | 314 |
+| 0.355 | 0.357 | 1,131 |
+| 0.445 | 0.466 | 1,108 |
+| 0.538 | 0.519 | 597 |
+| 0.645 | 0.631 | 160 |
+| 0.759 | 0.772 | 127 |
+| 0.864 | 0.826 | 167 |
+| 0.953 | 0.912 | 240 |
 
-Well-behaved through the middle of the range, where almost all mass sits —
-the 0.347 bin holds 1,537 of 4,680 predictions and is calibrated to three
-decimal places. The two visible deviations are the 0.642 bin (predicted
-0.642, observed 0.569) and 0.848 (predicted 0.848, observed 0.780), both of
-which are *over*-confident, and both in the upper-middle range on a few
-hundred samples. Calibration is weakest where the least data is, which is
-worth knowing before trusting an unusually high score.
+Well-behaved through the middle of the range, where almost all mass sits.
+Calibration is weakest at the extremes, which is where the least data is --
+worth knowing before trusting an unusually high or low score.
 
 **A negative result worth recording:** calibration was first attempted on
-LightGBM with the contaminated feature set, and cost 0.045 AUC (0.7063 →
-0.6613) to gain 0.038 ECE. `CalibratedClassifierCV` refits each base model on
-a fraction of the fold, and a model that depends on a few strong features
-suffers more from that reduction. The final selection procedure therefore
-rejects any calibration method costing more than 0.02 AUC — a guard added
-because the naive choice was wrong, not anticipated in advance.
+LightGBM with the contaminated feature set, and cost 0.045 AUC to gain 0.038
+ECE. `CalibratedClassifierCV` refits each base model on a fraction of the
+fold, and a model that depends on a few strong features suffers more from that
+reduction. The final selection procedure therefore rejects any calibration
+method costing more than 0.02 AUC -- a guard added because the naive choice
+was wrong, not anticipated in advance.
 
 ### 5.5 Feature importance (SHAP)
 

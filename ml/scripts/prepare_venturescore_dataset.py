@@ -71,6 +71,7 @@ Run:  python ml/scripts/prepare_venturescore_dataset.py
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -80,6 +81,107 @@ RAW_PATH = DATA_DIR / "yc_companies_raw.json"
 OUT_PATH = DATA_DIR / "venturescore_dataset.jsonl"
 
 MIN_AGE_YEARS = 3.5
+
+# ── Tech-startup-only scope filter ───────────────────────────────────────
+# VentureFlow evaluates tech startups and nothing else. The YC directory does
+# not: it spans food and beverage, apparel, home goods, therapeutics, medical
+# devices and construction alongside software. Training on the whole directory
+# was a real scope mismatch, and not a cosmetic one -- sector is among the
+# strongest signals the model learns (B2B exits at 0.54, Consumer at 0.35), so
+# an out-of-scope population changes what the model predicts, not just what it
+# is labelled.
+#
+# The cut is on SOFTWARE-CORE, not on sector name, because those are different
+# questions. A satellite-analytics company for farms is an agritech by YC's
+# taxonomy and a software company in reality; a meal-kit brand is Consumer in
+# the taxonomy and not a tech startup at all. Three tiers:
+#
+#   INCLUDE outright  -- sectors that are software by construction (all B2B
+#                        SaaS verticals, fintech, edtech, govtech, health IT,
+#                        and consumer software like social/content/gaming/XR).
+#   EXCLUDE outright  -- sectors whose product is physical or biological:
+#                        food, apparel, home goods, therapeutics, drug
+#                        discovery, medical devices, diagnostics, real estate,
+#                        construction, and in-person health services.
+#   CONDITIONAL       -- deep-tech and hardware-adjacent sectors (robotics,
+#                        energy, agriculture, automotive, space, drones,
+#                        consumer electronics, transport). These qualify only
+#                        when the company's own tags show a software core, so
+#                        a robotics-software company is kept and a contract
+#                        manufacturer is not.
+#
+# Set VENTUREFLOW_ALL_SECTORS=1 to rebuild the unfiltered dataset for
+# comparison; ml/research/ reports both.
+SOFTWARE_SECTOR_PREFIXES = (
+    "B2B",
+    "Fintech",
+    "Education",
+    "Government",
+)
+SOFTWARE_SUBINDUSTRIES = {
+    "Healthcare -> Healthcare IT",
+    "Consumer -> Social",
+    "Consumer -> Content",
+    "Consumer -> Gaming",
+    "Consumer -> Virtual and Augmented Reality",
+    "Consumer -> Job and Career Services",
+}
+# Product is physically or biologically manufactured -- never software-core,
+# regardless of what the company says about itself.
+NON_SOFTWARE_SUBINDUSTRIES = {
+    "Consumer -> Home and Personal",
+    "Consumer -> Food and Beverage",
+    "Consumer -> Apparel and Cosmetics",
+    "Healthcare -> Therapeutics",
+    "Healthcare -> Drug Discovery and Delivery",
+    "Healthcare -> Medical Devices",
+    "Healthcare -> Industrial Bio",
+    "Healthcare -> Diagnostics",
+    "Unspecified",
+}
+# Tags that evidence a software core, used to adjudicate the conditional tier.
+SOFTWARE_CORE_TAGS = {
+    "saas", "b2b saas", "artificial intelligence", "ai", "machine learning",
+    "generative ai", "deep learning", "computer vision", "nlp",
+    "developer tools", "devops", "open source", "api", "no-code", "low-code",
+    "analytics", "data engineering", "big data", "data science", "database",
+    "cloud computing", "infrastructure", "security", "cybersecurity",
+    "software", "platform", "automation", "marketplace", "mobile app",
+    "digital health", "healthcare it", "edtech", "fintech", "iot", "proptech",
+    "construction tech", "insurtech", "legaltech", "hrtech",
+}
+# Description phrases that evidence a software core. Needed because YC's tag
+# data is sparse and unreliable for exactly the ambiguous cases this tier
+# exists to adjudicate: PlanGrid, construction *software* later acquired by
+# Autodesk for $875M, carries the single tag "Construction" and would
+# otherwise be discarded as a building company.
+SOFTWARE_CORE_PHRASES = (
+    "software", "platform", "app ", "mobile app", "saas", "api",
+    "dashboard", "cloud", "algorithm", "machine learning", "artificial intelligence",
+    "data analytics", "automate", "automation", "online marketplace", "web-based",
+)
+
+
+def _is_tech_startup(company: dict) -> bool:
+    """Software-core inclusion test. See the block comment above for the
+    reasoning behind the three tiers."""
+    subindustry = (company.get("subindustry") or "").strip()
+    industry = (company.get("industry") or "").strip()
+
+    if subindustry in NON_SOFTWARE_SUBINDUSTRIES:
+        return False
+    if subindustry in SOFTWARE_SUBINDUSTRIES:
+        return True
+    if any(subindustry.startswith(p) or industry == p for p in SOFTWARE_SECTOR_PREFIXES):
+        return True
+
+    # Conditional tier: keep only with positive evidence of a software core,
+    # from either the curated tags or the company's own description.
+    tags = {str(t).strip().lower() for t in (company.get("tags") or [])}
+    if tags & SOFTWARE_CORE_TAGS:
+        return True
+    text = f"{company.get('one_liner') or ''} {company.get('long_description') or ''}".lower()
+    return any(phrase in text for phrase in SOFTWARE_CORE_PHRASES)
 
 # The technology categories flagged as individual binary features. Chosen by
 # frequency in the raw dump (each appears on 150+ companies, so none is a
@@ -162,6 +264,9 @@ def main() -> None:
 
     rows: list[dict] = []
     dropped_young = dropped_active = dropped_no_text = dropped_unknown_status = 0
+    dropped_not_tech = 0
+    tech_only = os.environ.get("VENTUREFLOW_ALL_SECTORS", "") != "1"
+    excluded_examples: list[str] = []
 
     for c in companies:
         launched_at = c.get("launched_at")
@@ -184,6 +289,12 @@ def main() -> None:
             label = 0
         else:
             dropped_unknown_status += 1
+            continue
+
+        if tech_only and not _is_tech_startup(c):
+            dropped_not_tech += 1
+            if len(excluded_examples) < 8:
+                excluded_examples.append(f"{c['name']} ({c.get('subindustry') or c.get('industry')})")
             continue
 
         subindustry = c.get("subindustry") or "unknown"
@@ -225,6 +336,11 @@ def main() -> None:
     print(f"Dropped -- still Active (right-censored): {dropped_active}")
     print(f"Dropped -- no usable description:         {dropped_no_text}")
     print(f"Dropped -- unrecognised status value:     {dropped_unknown_status}")
+    if tech_only:
+        print(f"Dropped -- not a tech startup:            {dropped_not_tech}")
+        print(f"  examples excluded: {'; '.join(excluded_examples)}")
+    else:
+        print("Scope filter DISABLED (VENTUREFLOW_ALL_SECTORS=1) -- all sectors retained")
 
     feature_names = [k for k in rows[0] if k not in ("id", "name", "text", "label")]
     print(f"\n{len(feature_names)} non-text features: {', '.join(feature_names)}")
