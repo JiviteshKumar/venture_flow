@@ -15,7 +15,16 @@ import os
 
 from groq import Groq
 
-MODEL = "llama-3.3-70b-versatile"
+# Model choice, 22 Aug 2026: this was "llama-3.3-70b-versatile" until Groq
+# decommissioned it -- the key still authenticates fine, but that model id now
+# returns a 404 model_not_found, which silently killed every LLM-backed feature
+# in the app (claim verification, founder verification, risk detection, all four
+# specialist agents, memo synthesis, structured extraction, chat). Confirmed by
+# listing the models actually available on this key: no Llama 3.3 of any size is
+# offered any more. openai/gpt-oss-120b is the closest available drop-in for a
+# 70B-class instruct model and is what every call site now uses. If this 404s in
+# future, re-list with `Groq().models.list()` rather than guessing an id.
+MODEL = "openai/gpt-oss-120b"
 
 _client: Groq | None = None
 

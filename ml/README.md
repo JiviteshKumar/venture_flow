@@ -4,6 +4,69 @@ Real trained models, not prompts. This directory is the start of what the
 [Ship List](https://claude.ai/code/artifact/0becb4ec-7ed0-491d-8cfa-b520d404050d)
 calls "Make the model real."
 
+## VentureFlow Score — `models/venturescore_model.pkl` (PRIMARY)
+
+**This is the model that produces the score a VC sees.** It replaced the
+hand-tuned scoring formula in `ventureflow_agent.py`; the LLM now explains
+the number rather than producing it. Full methodology, results with
+confidence intervals, calibration analysis and limitations live in
+[`ml/research/README.md`](research/README.md), with every variant tried —
+including the losers — in [`ml/research/EXPERIMENT_LOG.md`](research/EXPERIMENT_LOG.md).
+
+**Data**: the same 1,560 resolved-outcome Y Combinator companies as the
+Outcome Model below, rebuilt by `ml/scripts/prepare_venturescore_dataset.py`
+with 30 features instead of 6 — YC's second-level `subindustry` taxonomy, 12
+technology tag indicators (SaaS / AI-ML / devtools / fintech / infra / ...),
+remote-work posture, Bay Area and US geography, a normalised rebrand signal,
+and description/one-liner length.
+
+**Method**: calibrated Random Forest (isotonic), served as a 12-member
+bootstrap ensemble so every prediction carries an interval. Selected over
+LightGBM, XGBoost and logistic regression under repeated stratified 5-fold CV
+with bootstrap confidence intervals.
+
+**Headline results** (pooled out-of-fold, n=4,680; base rate 0.465):
+
+| | ROC-AUC | 95% CI | Brier | ECE |
+|---|---|---|---|---|
+| Shipped model (RF, isotonic, deployable features) | 0.6739 | [0.658, 0.689] | 0.2226 | **0.0210** |
+| Same model *with* hindsight features | 0.7243 | [0.709, 0.738] | 0.2088 | 0.0382 |
+
+**The most important number in this repository is the gap between those two
+rows.** `team_size` (mean |SHAP| 0.72, 3x the next feature) records *current*
+headcount: exited companies have median 11 / mean 105, shut-down companies
+median 3 / mean 10. That is successful companies having grown before the
+snapshot, not a seed-stage signal — a model keeping it learns "large team
+implies success" and would mark down exactly the four-person startups this
+product exists to evaluate. `age_years` and `batch_year` encode
+right-censoring (cohort exit rate falls 0.65 → 0.38 from 2010 to 2021-22).
+All three are excluded from the shipped model. Doing so costs 0.048 AUC —
+**about 22% of the model's above-chance signal was hindsight**.
+
+Also excluded, at dataset level, as direct observations of the outcome:
+`isHiring` (shut-down companies don't post jobs), `top_company` (YC's own
+retrospective winner designation), and website liveness.
+
+**Uncertainty, reported on every prediction**: `ensemble_std` and a 5th-95th
+percentile `score_range` for model uncertainty, plus `feature_coverage` for
+input uncertainty — the model trains on directory metadata but scores pitch
+decks, and features like remote posture aren't recoverable from a deck.
+Confidence degrades on either axis, because tight ensemble agreement over
+mostly-imputed input is agreement about nothing. A `low`-confidence score is
+blocked from producing a decisive INVEST or PASS.
+
+**Wired in**: `ml/venturescore.py`, called from `ventureflow_agent.py`
+*before* Groq synthesis so the memo explains the score instead of inventing
+one. Same degradation contract as everything else here — if the model file is
+missing it returns `available: False` and the report falls back to the old
+hand-tuned formula (kept as `_legacy_formula_score()`) rather than failing.
+
+**Honest limitations** (the full list is in `ml/research/README.md` §7):
+AUC 0.674 is a weak-to-moderate signal that should inform a judgement, never
+replace one. YC-only population, coarse survived-or-exited label, no external
+validation, and description length ranking second in SHAP may partly reflect
+directory-maintenance bias rather than company quality.
+
 ## What's actually trained and running (22 Aug 2026)
 
 ### Outcome Model — `models/outcome_model_combined.txt`
@@ -83,26 +146,48 @@ it returns `None` (never a zero vector) on any failure, so a missing or
 corrupt model file degrades to "vector search unavailable," not a crash or
 silently-wrong result.
 
-### Claim Model & Risk/Tone Model — written, not yet run
+### Claim Model & Risk/Tone Model — RUN AT LAST, results below
 
-`ml/scripts/train_claim_model.py` (fine-tunes on SciFact — the same
-SUPPORTS/REFUTES/NOT_ENOUGH_INFO schema `agents/claim_verifier.py` already
-uses) and `ml/scripts/train_risk_model.py` (Financial PhraseBank + TFNS
-sentiment) are both complete and correct, but both need `huggingface.co`,
-which this build session couldn't reach. Run either with:
+These were "written but never run" through every prior session because
+`huggingface.co` was blocked. **In this environment it is reachable, so both
+were finally executed.** Both loaders had to be rewritten first, for a
+*different* reason than the historical one: `datasets` 5.x removed support
+for script-based datasets ("Dataset scripts are no longer supported"), and
+both corpora are script-based with no parquet conversion available. They now
+read their published source files directly — SciFact from AllenAI's S3
+tarball, PhraseBank/TFNS from their Hub repos — which removes the dependency
+on Hub script support entirely.
+
+**Claim Model** (`models/claim_model.txt`) — SciFact, 1,109 claim/evidence
+pairs. **Trained successfully, and the result is that it is not usable:**
+
+| Class | Precision | Recall | F1 | Support |
+|---|---|---|---|---|
+| NOT_ENOUGH_INFO | 0.735 | 0.602 | 0.662 | 83 |
+| REFUTES | 0.063 | 0.042 | **0.050** | 48 |
+| SUPPORTS | 0.393 | 0.527 | 0.451 | 91 |
+| **Accuracy** | | | **0.45** | 222 |
+
+REFUTES — the class that actually matters for due diligence — is essentially
+never detected. **Deliberately not wired into the product**, because shipping
+it would make claim verification worse than the existing Groq-based verifier.
+This is a clean negative result rather than a failure: claim-evidence
+entailment requires representing negation and relation, which lexical TF-IDF
+overlap cannot do. It is empirical justification for the LLM-based verifier
+the product already uses.
+
+**Risk/Tone Model** (`models/risk_tone_model.txt`) — Financial PhraseBank +
+TFNS, 15,376 examples. 77% accuracy, macro-F1 0.62; negative-class recall
+(0.31) is the weak point, and negative tone is the class a risk detector most
+needs. Genuinely usable, but **also not wired in yet**: replacing or
+augmenting the keyword-based detector in `agents/risk_detector.py` needs its
+own head-to-head evaluation against the incumbent, and doing that properly is
+a separate piece of work rather than something to bundle into this pass.
 
 ```bash
-pip install datasets scikit-learn lightgbm
-python ml/scripts/train_claim_model.py
-python ml/scripts/train_risk_model.py
+python ml/scripts/train_claim_model.py   # ~1 min
+python ml/scripts/train_risk_model.py    # ~2 min
 ```
-
-on a machine with normal internet access (your own laptop, or a free
-Colab notebook) and they'll produce `models/claim_model.txt` and
-`models/risk_tone_model.txt` in the same format the outcome model uses —
-`ml/inference.py` can be extended with matching `verify_claim_ml()` /
-`score_tone()` functions once those exist, following the exact pattern
-already there for the outcome model.
 
 ## Reproducing the outcome model from scratch
 

@@ -54,7 +54,7 @@ SEED = 42
 
 def load_rows() -> list[dict]:
     path = DATA_DIR / "outcome_dataset.jsonl"
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
 def build_structured_features(rows: list[dict], industry_enc: LabelEncoder, stage_enc: LabelEncoder) -> np.ndarray:
@@ -195,7 +195,7 @@ def main() -> None:
         "combined_model_structured_feature_importance_gain": structured_importance,
         "combined_model_text_feature_importance_gain_total": text_importance_total,
     }
-    (MODEL_DIR / "outcome_model_report.json").write_text(json.dumps(report, indent=2))
+    (MODEL_DIR / "outcome_model_report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print("\nSaved model + report to", MODEL_DIR)
     print(json.dumps(report["ablation"], indent=2))
 

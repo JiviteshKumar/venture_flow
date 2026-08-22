@@ -3,6 +3,182 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — same-day, sixth pass: the VentureFlow Score replaces the hand-tuned formula
+
+The headline number a VC sees is no longer arithmetic somebody made up. It
+comes from a trained, calibrated model, and the LLM's job has been demoted to
+explaining that number rather than producing it. Full methodology, results
+with confidence intervals, and an honest limitations section are in the new
+`ml/research/` directory; the model card in `ml/README.md` is updated.
+
+**Audit first — three things in the incoming brief did not match the repo.**
+Every file the brief described as existing does exist, the Outcome Model
+loads and scores for real (0.7038/0.5721/0.7001 in its report.json matches
+the 0.704/0.572/0.700 claimed), and `pytest` was green at 18/18 before any
+change. But:
+
+- **Groq's `llama-3.3-70b-versatile` is decommissioned.** The key still
+  authenticates; the model id returns 404 `model_not_found`. Listing the
+  models actually available on this key shows no Llama 3.3 of any size. The
+  entire LLM layer of the app — claim verification, founder verification,
+  risk detection, all four specialist agents, memo synthesis, structured
+  extraction, chat — was dead. Switched to `openai/gpt-oss-120b` (user's
+  choice from the available list) in `groq_client.py`, which is the single
+  place the model id lives, and verified with a live call.
+- **`huggingface.co` is reachable in this environment.** Every prior pass
+  recorded it as blocked. That unblocked the two never-run training scripts —
+  see below.
+- **`DATABASE_URL` still points at the dead Supabase host**, unchanged from
+  the fifth pass. Not fixed here; it needs the user's own Neon credentials.
+  Consequence for this pass: no persisted reports exist, so no feature could
+  be derived from report history.
+
+**What was built.** `ml/scripts/prepare_venturescore_dataset.py` rebuilds the
+labelled set with 30 features instead of 6, from YC fields an audit found
+sitting unused at 97-100% coverage: the second-level `subindustry` taxonomy,
+12 technology tag indicators, remote-work posture, Bay Area / US geography, a
+rebrand signal (normalised so the 91 companies whose "former name" is
+literally the string "Inc." don't count as pivots), and text-shape features.
+`ml/scripts/train_venturescore_model.py` then compares four model families
+against a logistic-regression baseline under repeated stratified 5-fold CV
+with 2,000-sample bootstrap CIs, with every transformer fit inside the
+training fold. `ml/venturescore.py` serves the winner.
+
+**The finding worth publishing, and the reason the shipped model scores
+*lower* than it could.** `team_size` came out of the first SHAP run at 0.72
+mean |SHAP|, more than three times the next feature. Checking its
+distribution against the label: exited companies have median 11 / mean 105,
+shut-down companies median 3 / mean 10 — and only ~5% of either class is
+zero, so this is not a crude "dead company has no staff" artefact. YC records
+*current* headcount, so the feature is mostly recording that successful
+companies grew. A model that keeps it learns "big team implies success" and
+would systematically mark down exactly the four-person seed-stage startups
+this product exists to evaluate. `age_years` and `batch_year` have the same
+problem from the other direction — cohort exit rate falls 0.65 to 0.38 from
+the 2010 batches to 2021-22, which is right-censoring, not worse founders.
+All three were dropped. It costs 0.048 AUC (0.7243 to 0.6759), which is
+**about 22% of the model's above-chance signal**. Both numbers are reported,
+because the gap is the point. `isHiring`, `top_company` and website-liveness
+were excluded earlier still, at dataset level, as outright observations of
+the outcome.
+
+**Shipped**: calibrated Random Forest (isotonic), 12-member bootstrap
+ensemble, ROC-AUC 0.6739 [0.658, 0.689], ECE 0.0210, Brier 0.2226. Random
+Forest beating LightGBM was not expected — LightGBM was this project's
+default — and on the clean feature set LightGBM is the *worst* tree model
+(0.6462), below plain logistic regression. The incumbent choice was the one
+most dependent on the contaminated features.
+
+**Uncertainty is reported on every prediction**, along two separate axes,
+because they mean different things: `ensemble_std` plus a 5th-95th percentile
+range for model uncertainty, and `feature_coverage` for input uncertainty
+(the model trains on directory metadata and scores pitch decks; remote
+posture and subindustry simply aren't in a deck). Confidence degrades on
+either axis — tight ensemble agreement computed over mostly-imputed input is
+agreement about nothing — and a `low`-confidence score is blocked from
+producing a decisive INVEST or PASS.
+
+**Two bugs caught by running things rather than reading them.**
+
+1. **The specialist-agent confidence field crashed the entire report.** The
+   prompt asks for "keys confidence, ..." and never says it must be numeric.
+   Llama 3.3 always answered with a number, so `float(result["confidence"])`
+   worked for as long as that model existed. `gpt-oss-120b` answers
+   `"confidence": "low"` — and `float("low")` raises `ValueError`, which
+   propagated out of `run_due_diligence()` and failed the whole report. Found
+   because the existing test suite went red after the model switch. Fixed at
+   both ends: `_coerce_confidence()` now handles numbers, numeric strings,
+   percentages and the low/medium/high vocabulary, degrading to 0.0 rather
+   than raising; and the prompt now states the expected type. An LLM-authored
+   field should never have been parsed with a bare `float()`.
+2. **`print(ai_analysis)` destroyed completed reports on Windows.** Found
+   during a live end-to-end run, not a mocked one. `sys.stdout` here is
+   cp1252, the memo contained U+2011 NON-BREAKING HYPHEN, and the resulting
+   `UnicodeEncodeError` fired *after* the report was fully built — so a
+   correct report was lost on its way to the console. Now `_safe_print()`.
+   Precise about blast radius: the returned dict and the persisted JSON were
+   always fine, but the exception escaped `run_due_diligence()`, so the
+   caller lost the report anyway. The same class of bug also broke
+   `prepare_outcome_dataset.py` outright — `Path.read_text()` with no
+   encoding against a raw YC dump containing 14,833 non-ASCII bytes — meaning
+   the "reproduce from scratch" command documented in `ml/README.md` had
+   never worked on Windows. Fixed; the rebuilt dataset matches the committed
+   one exactly at 1,560 rows.
+
+**Also caught, by reading the live LLM output instead of trusting it**: the
+first live run had the memo state "67 - 0.17 = 66.8, rounded to 50", because
+the prompt handed it the evidence adjustment as a probability delta while the
+score is in points. Confident arithmetic nonsense in front of an investor.
+The prompt now states the units and shows the subtraction; re-verified live,
+and it now reads "Model-only baseline: 67/100, Evidence adjustment: -17
+points, Resulting score: 50/100".
+
+**The two never-run models were finally run.** `huggingface.co` being
+reachable removed the historical blocker, but a new one replaced it:
+`datasets` 5.x dropped script-based datasets, and both corpora are
+script-based with no parquet conversion. Both loaders were rewritten to read
+published source files directly (SciFact from AllenAI's S3 tarball,
+PhraseBank/TFNS from their Hub repos), which is more durable anyway.
+- **Claim Model: trained, and the honest result is that it is unusable.** 45%
+  accuracy, and REFUTES — the class that matters for diligence — has F1 0.05.
+  Not wired in, because shipping it would make claim verification worse. This
+  is a clean negative result and it argues *for* the existing LLM verifier:
+  lexical TF-IDF overlap cannot represent negation or entailment.
+- **Risk/Tone Model: trained, 77% accuracy, macro-F1 0.62.** Genuinely
+  usable. Also not wired in — swapping it against the incumbent keyword
+  detector needs its own head-to-head evaluation, and bundling that into this
+  pass would have meant shipping an unmeasured change.
+
+**Verified this pass, by running it**: `pytest tests/` → **44 passed** (18
+before, plus 26 new across `tests/test_venturescore.py`), with no
+`DATABASE_URL` and no network needed for the suite. `tsc -b` clean and
+`vite build` succeeds. A live end-to-end `run_due_diligence()` against real
+Groq produced score 50/100 sourced from `venturescore_model`, with the memo
+correctly explaining the model-only 67 and the -17 evidence adjustment. The
+model artefact was also cut from 362 MB to 26 MB (30x400-tree members to
+12x120) after the first fit produced something too large to version; AUC
+moved +0.0045 and ECE -0.005, both within noise.
+
+**Still open, honestly**: the pipeline-derived features the brief most wanted
+— claim-verification confidence, founder verification, risk counts, GitHub
+rubric score — are still not in the model, and this is the single largest gap.
+They are computed at inference time and do not exist for the 1,560 labelled
+companies; training on them means running the full LLM pipeline over the
+entire training set, which is a real API cost that hasn't been incurred. The
+evidence penalty in `_evidence_penalty()` is a stated, bounded, visible prior
+standing in for that fitted layer, and is labelled as such everywhere it
+appears. GitHub-derived features are also still out of reach at scale: no
+`GITHUB_TOKEN` is set (60 requests/hour), and YC's data has no repo field, so
+discovery would be guesswork.
+
+## Update — same-day, fifth pass: root-caused the DB error, removed the demo deck
+
+- **Root cause of "Analysis queue is currently unavailable" found, not just
+  ruled-out hypotheses.** The live `.env`'s `DATABASE_URL` points at a
+  Supabase Postgres host (`db.<project>.supabase.co`), not Neon — and that
+  host no longer resolves at all (`getaddrinfo failed`), confirmed with a
+  direct `psycopg.connect()` from this machine. That's the "wrong folder /
+  missing .env" symptom too: several stale copies of this repo exist side by
+  side in `Downloads/` (`venture_flow_hardening_pass/`, old `venture-flow*`
+  zips/folders), so running the app from one of those, or from this repo
+  before `.env` was filled in, would crash or 503 the same way. Per the
+  decision recorded below ("nothing stays on Supabase, everything goes to
+  Neon"), the fix is to put a real Neon connection string in this repo's
+  `.env` — not a code change, since `db.py`/`ensure_schema()` already target
+  Neon correctly and will pick up all seven migrations on first successful
+  connect. Not fixed *for* the user in this pass, since it needs the user's
+  own Neon project credentials, which aren't something a session should
+  invent or guess at.
+- **Demo deck feature removed**, per explicit user request, not just
+  disabled: `demo_data.py` deleted; `GET /demo/sample` and its import
+  removed from `api.py`; `runDemoAnalysis`/`getDemoSample`/`DemoSample`
+  removed from `AppContext.tsx`/`apiClient.ts`; the "Try a demo deck — no
+  upload needed" button and its handler removed from `UploadDeck.tsx`.
+  Verified: `pytest tests/` → 18/18 still pass (no test referenced the demo
+  route), `tsc -b` builds clean, `api.py` byte-compiles clean, and a repo-wide
+  grep for `demo_data`/`DEMO_SAMPLE`/`getDemoSample`/`runDemoAnalysis`/
+  `DemoSample` outside `legacy/` returns nothing.
+
 ## Update — same-day, fourth pass: Evidence Depth + Product Polish
 
 All 8 remaining Ship List items in these two sections, built and verified.

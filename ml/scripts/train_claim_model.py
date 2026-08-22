@@ -44,25 +44,93 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 SEED = 42
 
 
+SCIFACT_URL = "https://scifact.s3-us-west-2.amazonaws.com/release/latest/data.tar.gz"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+
 def load_scifact_pairs() -> list[dict]:
-    from datasets import load_dataset
+    """Load SciFact directly from AllenAI's published tarball.
 
-    claims_ds = load_dataset("allenai/scifact", "claims")
-    corpus_ds = load_dataset("allenai/scifact", "corpus")
-    corpus_by_id = {str(item["doc_id"]): " ".join(item.get("abstract", [])) for item in corpus_ds["train"]}
+    This used to call datasets.load_dataset("allenai/scifact", ...). Two
+    separate things have since broken that route, and both were found by
+    running it rather than assuming:
 
+      1. The historical blocker recorded in earlier passes -- huggingface.co
+         unreachable from the build sandbox -- no longer applies. The Hub is
+         reachable now.
+      2. A new one took its place: `datasets` 5.x removed support for
+         script-based datasets ("Dataset scripts are no longer supported"),
+         and allenai/scifact is script-based. Its Hub repo contains only
+         README.md, dataset_infos.json and scifact.py -- there are no data
+         files and no auto-converted parquet branch to fall back to.
+
+    The script's own source URL, however, is plain S3 and is reachable, so
+    this reads the tarball directly. That removes the dependency on Hub
+    script support entirely, which is the more durable arrangement anyway:
+    this loader now depends only on a static file being served.
+    """
+    import io
+    import tarfile
+    import urllib.request
+
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    cached = DATA_DIR / "scifact_data.tar.gz"
+    if not cached.exists():
+        print(f"Downloading SciFact from {SCIFACT_URL} ...")
+        with urllib.request.urlopen(SCIFACT_URL, timeout=120) as response:
+            cached.write_bytes(response.read())
+    print(f"Using SciFact tarball at {cached} ({cached.stat().st_size:,} bytes)")
+
+    members: dict[str, list[dict]] = {}
+    with tarfile.open(cached, "r:gz") as tar:
+        for member in tar.getmembers():
+            name = Path(member.name).name
+            if not name.endswith(".jsonl"):
+                continue
+            handle = tar.extractfile(member)
+            if handle is None:
+                continue
+            text = io.TextIOWrapper(handle, encoding="utf-8")
+            members[name] = [json.loads(line) for line in text if line.strip()]
+
+    corpus_by_id = {
+        str(doc["doc_id"]): " ".join(doc.get("abstract", []))
+        for doc in members.get("corpus.jsonl", [])
+    }
+    if not corpus_by_id:
+        raise RuntimeError(f"SciFact corpus not found in tarball; saw {sorted(members)}")
+
+    # SciFact encodes the label inside `evidence`: a claim with no evidence
+    # entry for any cited doc is NOT_ENOUGH_INFO, otherwise the per-document
+    # entry carries SUPPORT or CONTRADICT.
     label_map = {"SUPPORT": "SUPPORTS", "CONTRADICT": "REFUTES"}
-    rows = []
-    for split_name in ["train", "validation"]:
-        for item in claims_ds[split_name]:
-            label = label_map.get(item.get("label", ""), "NOT_ENOUGH_INFO")
-            cited = item.get("cited_doc_ids", []) or []
-            evidence_text = " ".join(corpus_by_id.get(str(doc_id), "") for doc_id in cited)
+    rows: list[dict] = []
+    for split_file, split in (("claims_train.jsonl", "train"), ("claims_dev.jsonl", "dev")):
+        for item in members.get(split_file, []):
+            evidence_map = item.get("evidence") or {}
+            cited = [str(d) for d in (item.get("cited_doc_ids") or [])]
+            if evidence_map:
+                labels = {
+                    entry.get("label")
+                    for entries in evidence_map.values()
+                    for entry in entries
+                }
+                label = next(
+                    (label_map[raw] for raw in ("CONTRADICT", "SUPPORT") if raw in labels),
+                    "NOT_ENOUGH_INFO",
+                )
+                doc_ids = [str(d) for d in evidence_map] or cited
+            else:
+                label = "NOT_ENOUGH_INFO"
+                doc_ids = cited
+            evidence_text = " ".join(corpus_by_id.get(doc_id, "") for doc_id in doc_ids)
+            if not evidence_text.strip():
+                continue
             rows.append({
                 "claim": item["claim"],
                 "evidence": evidence_text,
                 "label": label,
-                "split": "dev" if split_name == "validation" else "train",
+                "split": split,
             })
     return rows
 

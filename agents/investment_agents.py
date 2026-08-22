@@ -24,6 +24,9 @@ RULES:
 - If evidence is absent, use "Insufficient data" and lower confidence.
 - Every non-empty finding must include a short verbatim evidence excerpt.
 - Return ONLY valid JSON matching the requested shape.
+- "confidence" MUST be a bare number between 0 and 1 (e.g. 0.35).
+  Never write it as a word such as "low"/"medium"/"high", never as a
+  percentage string, and never omit it.
 
 EVIDENCE:
 {evidence[:14000]}

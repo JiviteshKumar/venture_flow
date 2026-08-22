@@ -40,7 +40,15 @@ MIN_AGE_YEARS = 3.5  # a company needs real runway to have resolved its outcome 
 
 
 def main() -> None:
-    companies = json.loads(RAW_PATH.read_text())
+    # encoding="utf-8" is load-bearing, not decorative: the raw yc-oss dump
+    # contains 14,833 non-ASCII bytes (accented founder names, en-dashes,
+    # smart quotes). Path.read_text() with no encoding uses the platform
+    # default, which is cp1252 on Windows -- so this line raised
+    # UnicodeDecodeError and the documented "reproduce from scratch" command
+    # in ml/README.md simply did not work on Windows. Caught by running it,
+    # not by reading it. Note the derived .jsonl files below are unaffected
+    # either way, because json.dumps escapes non-ASCII to \uXXXX by default.
+    companies = json.loads(RAW_PATH.read_text(encoding="utf-8"))
     now = time.time()
     min_age_seconds = MIN_AGE_YEARS * 365.25 * 24 * 3600
 
@@ -87,7 +95,7 @@ def main() -> None:
         })
         kept += 1
 
-    OUT_PATH.write_text("\n".join(json.dumps(r) for r in rows))
+    OUT_PATH.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
 
     pos = sum(r["label"] for r in rows)
     print(f"Kept: {kept}  (positive/exit-or-acquired: {pos}, negative/shut-down: {kept - pos})")

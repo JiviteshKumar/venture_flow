@@ -134,6 +134,133 @@ def assess_data_quality(
         "can_proceed": score >= 30,
     }
 
+
+def _safe_print(text: str) -> None:
+    """Print LLM-authored text without letting the console encoding kill the
+    run.
+
+    Found by doing a live end-to-end run rather than a mocked one. On Windows
+    sys.stdout defaults to the ANSI codepage (cp1252 here), and the memo
+    regularly contains characters outside it -- the run that surfaced this
+    contained U+2011 NON-BREAKING HYPHEN. A bare print() therefore raised
+    UnicodeEncodeError *after* the report had been fully built, so a complete
+    and correct report was destroyed on its way to the console. Worth being
+    precise about the blast radius: this is console rendering only, and the
+    returned dict and the persisted JSON were always fine -- but the
+    exception propagated out of run_due_diligence(), so the caller lost the
+    report anyway.
+    """
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(text.encode(encoding, errors="replace").decode(encoding, errors="replace"))
+
+
+def _coerce_confidence(value: object) -> float:
+    """Turn a specialist agent's self-reported confidence into a float in
+    [0, 1], whatever shape the LLM decided to emit it in.
+
+    This exists because of a real outage. The specialist-agent prompt asks
+    for "keys confidence, ..." without ever stating that confidence must be
+    numeric. Llama 3.3 happened to answer with numbers, so a bare
+    float(result["confidence"]) worked for as long as that model was the
+    only one used. When Groq decommissioned it and the app moved to
+    openai/gpt-oss-120b, the new model started answering "confidence":
+    "low" -- and float("low") raises ValueError, which propagated out of
+    run_due_diligence() and failed the entire report. An LLM-authored field
+    should never have been parsed with an unguarded float() in the first
+    place; the prompt has also been tightened, but this coercion is the part
+    that actually has to hold when a future model answers differently again.
+    """
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        confidence = float(value)
+    elif isinstance(value, str):
+        text = value.strip().lower().rstrip("%")
+        words = {"none": 0.0, "very low": 0.1, "low": 0.25, "medium": 0.5,
+                 "moderate": 0.5, "high": 0.8, "very high": 0.95}
+        if text in words:
+            return words[text]
+        try:
+            confidence = float(text)
+        except ValueError:
+            return 0.0
+        if "%" in value:
+            confidence /= 100.0
+    else:
+        return 0.0
+    # Models report this on a 0-1 scale or a 0-100 one depending on mood.
+    if confidence > 1.0:
+        confidence /= 100.0
+    return max(0.0, min(1.0, confidence))
+
+
+def _evidence_penalty(
+    refuted: int,
+    supported: int,
+    n_claims: int,
+    risk_score: float,
+    has_revenue: bool,
+    quality_score: float,
+) -> float:
+    """How much this report's own verified evidence should pull the model's
+    prior down, as a probability delta in [0, 1].
+
+    The VentureFlow Score model is trained on company characteristics and has
+    never read this deck. Claim verification, risk detection and data quality
+    are what the pipeline actually established about *this* company, so they
+    have to reach the headline number somehow.
+
+    This is intentionally a transparent bounded formula and not a second
+    trained layer. Fitting one would require labelled data linking
+    claim-verification outcomes to eventual company outcomes, and no such
+    dataset exists -- inventing the relationship and calling it learned would
+    be exactly the kind of thing this codebase refuses to do elsewhere. The
+    weights below are a stated prior, are visible as `evidence_penalty` on
+    every report, and should be replaced by a fitted layer once enough
+    outcome-labelled reports accumulate to fit one honestly.
+    """
+    penalty = 0.0
+    penalty += min(0.30, refuted * 0.10)          # each refuted claim is direct negative evidence
+    if n_claims == 0:
+        penalty += 0.12                            # nothing was verifiable at all
+    elif supported == 0:
+        penalty += 0.06                            # claims existed but none checked out
+    penalty += max(0.0, min(0.20, (risk_score / 100.0) * 0.20))
+    if not has_revenue:
+        penalty += 0.05
+    penalty += max(-0.05, min(0.05, (50.0 - quality_score) / 500.0))
+    return max(0.0, min(0.60, penalty))
+
+
+def _legacy_formula_score(
+    refuted: int,
+    supported: int,
+    n_claims: int,
+    risk_score: float,
+    has_revenue: bool,
+    quality_score: float,
+) -> float:
+    """The original hand-tuned scoring formula, retained only as the fallback
+    for when the trained model cannot be loaded.
+
+    It is not defensible as a primary score -- the constants were chosen by
+    hand and never validated against an outcome -- but a working approximate
+    score beats failing the report outright, which is why it stays.
+    """
+    claim_penalty = refuted * 15
+    if n_claims == 0:
+        claim_penalty += 20
+    elif supported == 0:
+        claim_penalty += 10
+    financial_penalty = 0 if has_revenue else 10
+    quality_bonus = (quality_score - 50) * 0.2
+    raw = 100 - (risk_score * 0.5) - claim_penalty - financial_penalty + quality_bonus
+    return max(0.0, min(100.0, raw))
+
+
 def run_due_diligence(
     company_name:        str,
     company_description: str   = "",
@@ -369,6 +496,72 @@ def run_due_diligence(
         f"  AI Reasoning: {risk_result.get('ai_reasoning', '')}\n"
     )
 
+    # ── VentureFlow Score — computed BEFORE synthesis, deliberately ──────
+    # The ordering here is the whole point of this pass. The score used to be
+    # computed after the LLM had already written the memo, which meant the
+    # narrative was the source of the number's justification rather than an
+    # explanation of it. Now the trained model produces the number first and
+    # the number is handed to the LLM as a fact to explain. If this block is
+    # ever moved back below the synthesis call, the product silently reverts
+    # to LLM-authored scoring.
+    evidence_penalty = _evidence_penalty(
+        refuted=refuted,
+        supported=supported,
+        n_claims=len(claim_results),
+        risk_score=risk_score,
+        has_revenue=bool(revenue),
+        quality_score=quality["score"],
+    )
+    try:
+        from ml.venturescore import blend_with_evidence, score_company as _venture_score
+        venture_score_result = _venture_score(
+            description=company_description or filing_text or "",
+            one_liner=(company_description or "")[:120],
+            industry=sector,
+            stage=None,
+            location=None,
+        )
+        venture_score_result = blend_with_evidence(venture_score_result, evidence_penalty)
+    except Exception:
+        logger.exception("VentureFlow Score model unavailable")
+        venture_score_result = {"available": False, "reason": "VentureFlow Score raised an unexpected error."}
+    report["sections"]["venture_score"] = venture_score_result
+
+    if venture_score_result.get("available"):
+        model_block = (
+            "VENTUREFLOW SCORE (produced by a trained, calibrated model -- NOT by you):\n"
+            f"  Score: {venture_score_result['venture_score']}/100 "
+            f"(90% range {venture_score_result['score_range'][0]}-{venture_score_result['score_range'][1]})\n"
+            f"  Model confidence: {venture_score_result['confidence']} "
+            f"(feature coverage {venture_score_result['feature_coverage']:.0%}, "
+            f"ensemble spread {venture_score_result['ensemble_std']:.3f})\n"
+            f"  Base rate for comparable companies: {venture_score_result['base_rate']:.1%}\n"
+            # Expressed in score POINTS, not as the underlying probability
+            # delta. A live run showed the model reading "-0.17" as 0.17
+            # points and reporting "67 - 0.17 = 66.8, rounded to 50", which
+            # is arithmetic nonsense presented confidently to an investor.
+            # The units have to be unambiguous in the prompt itself.
+            f"  Model-only score before this report's evidence: "
+            f"{venture_score_result.get('model_only_score')}/100\n"
+            f"  Evidence adjustment applied: "
+            f"-{venture_score_result.get('evidence_penalty', 0) * 100:.0f} points "
+            f"(from refuted claims, risk signals and missing financials), giving "
+            f"{venture_score_result.get('model_only_score')} - "
+            f"{venture_score_result.get('evidence_penalty', 0) * 100:.0f} = "
+            f"{venture_score_result['venture_score']}/100\n"
+            f"  Model: {venture_score_result['model']['family']}, "
+            f"CV ROC-AUC {venture_score_result['model']['cv_roc_auc']} "
+            f"CI95 {venture_score_result['model']['cv_roc_auc_ci95']}, "
+            f"ECE {venture_score_result['model']['cv_ece']}, "
+            f"n={venture_score_result['model']['trained_n']}\n"
+        )
+    else:
+        model_block = (
+            "VENTUREFLOW SCORE: unavailable for this report "
+            f"({venture_score_result.get('reason', 'unknown reason')}). "
+            "Do not invent a score of your own -- say that the model score was unavailable.\n"
+        )
+
     quality_str = (
         f"DATA QUALITY: {quality['quality']} ({quality['score']}/100)\n"
         f"  Warnings: {'; '.join(quality['warnings']) or 'None'}\n"
@@ -387,6 +580,8 @@ COMPANY DESCRIPTION:
 
 {quality_str}
 
+{model_block}
+
 SPECIALIST ANALYSES (evidence-grounded):
 {json.dumps(specialist_results, default=str)}
 
@@ -397,9 +592,26 @@ Write a professional investment memo with these exact sections.
 For each section, clearly state what is EVIDENCED vs what is UNCERTAIN.
 If data is missing for a section, say "Insufficient data" — do not invent numbers.
 
+CRITICAL — YOUR ROLE RELATIVE TO THE SCORE:
+The VentureFlow Score above was produced by a trained, calibrated statistical
+model, not by you. Your job is to EXPLAIN that number using the evidence in
+this prompt — never to compute, override, or silently disagree with it.
+- Do not state any overall score other than the one given above.
+- If the evidence you see seems inconsistent with the model's score, say so
+  explicitly and explain the tension. That disagreement is useful to an
+  investor; quietly substituting your own number is not.
+- Respect the model's stated confidence. If it says confidence is low, your
+  memo must not read as decisive.
+
 ---
 1. EXECUTIVE SUMMARY
 (2-3 sentences. State the investment opportunity and your confidence level.)
+
+1b. WHAT DRIVES THE VENTUREFLOW SCORE
+(Explain the score above in plain language for an investor: what pulled it up,
+what pulled it down, how much of the movement came from the evidence
+adjustment vs. the model's own prior, and how much weight the stated
+confidence and range justify placing on it.)
 
 2. CLAIM VERIFICATION ANALYSIS
 (For each claim: what the web says, whether it's verified, confidence %)
@@ -455,19 +667,18 @@ If data quality is LOW, confidence must be below 60%.
     report["sections"]["ai_analysis"] = ai_analysis
 
     # ── Final score ────────────────────────────────────────────
-    # Penalise for: refuted claims, high risk, low data quality
-    # ── Final score (safe key access) ─────────────────────────────
-    claim_penalty = refuted * 15
-    if len(claim_results) == 0:
-        claim_penalty += 20
-    elif supported == 0:
-        claim_penalty += 10
-    financial_penalty = 0 if revenue else 10
-    quality_bonus = (quality["score"] - 50) * 0.2
-    raw_score     = 100 - (risk_score * 0.5) - claim_penalty - financial_penalty + quality_bonus
-    final_score   = max(0, min(100, raw_score))
+    # The headline number comes from the trained, calibrated VentureFlow Score
+    # model, already computed above (before synthesis, so the memo explains it
+    # rather than authoring it). This block only turns that number into the
+    # report's final_score and recommendation.
+    #
+    # The hand-tuned formula is kept, in _legacy_formula_score(), as the
+    # fallback for when the model file is missing or fails to load. Falling
+    # back to a worse-but-working score is correct here; failing the whole
+    # report because a model file is absent is not, and would break the
+    # degradation contract every other optional signal in this file follows.
     specialist_confidences = [
-        float(result.get("confidence", 0) or 0)
+        _coerce_confidence(result.get("confidence", 0))
         for result in specialist_results.values()
         if isinstance(result, dict)
     ]
@@ -478,6 +689,17 @@ If data quality is LOW, confidence must be below 60%.
         result.get("verdict") == "NOT_ENOUGH_INFO" for result in claim_results
     )
     incomplete_analysis = all_specialists_failed or all_claims_uncertain
+
+    if venture_score_result.get("available"):
+        final_score = float(venture_score_result["venture_score"])
+        score_source = "venturescore_model"
+    else:
+        final_score = _legacy_formula_score(
+            refuted=refuted, supported=supported, n_claims=len(claim_results),
+            risk_score=risk_score, has_revenue=bool(revenue), quality_score=quality["score"],
+        )
+        score_source = "legacy_formula_fallback"
+
     if incomplete_analysis:
         final_score = min(final_score, 30)
 
@@ -490,7 +712,14 @@ If data quality is LOW, confidence must be below 60%.
     else:
         recommendation = "PASS"
 
+    # A low-confidence model score should not produce a decisive INVEST/PASS.
+    # The model itself says when it does not have enough observed input to
+    # justify one, and that judgement is respected here rather than overridden.
+    if venture_score_result.get("confidence") == "low" and recommendation in ("INVEST", "PASS"):
+        recommendation = "NEEDS MORE DILIGENCE"
+
     report["final_score"]    = round(final_score, 1)
+    report["score_source"]   = score_source
     report["recommendation"] = recommendation
     report["risk_level"]     = risk_level
     report["incomplete_analysis"] = incomplete_analysis
@@ -515,9 +744,12 @@ If data quality is LOW, confidence must be below 60%.
     print(f"DATA QUALITY:   {quality['quality']}")
     print(f"{'='*60}")
     print("\nAI ANALYSIS:")
-    print(ai_analysis)
+    _safe_print(ai_analysis)
 
-    with open("due_diligence_report.json", "w") as f:
+    # encoding="utf-8" here for the same reason as _safe_print: the memo
+    # routinely contains characters the Windows default codepage cannot
+    # represent, and the default open() mode would raise on write.
+    with open("due_diligence_report.json", "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, default=str)
     print("\nReport saved to due_diligence_report.json")
 

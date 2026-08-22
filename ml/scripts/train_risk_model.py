@@ -43,22 +43,62 @@ SEED = 42
 
 
 def load_sentiment_rows() -> list[dict]:
-    from datasets import load_dataset
+    """Load Financial PhraseBank + TFNS from their published files directly.
 
-    rows = []
+    This previously used datasets.load_dataset() for both corpora. That route
+    is dead for a reason unrelated to the network block recorded in earlier
+    passes (huggingface.co is reachable now): `datasets` 5.x dropped support
+    for script-based datasets, and takala/financial_phrasebank is script-
+    based. The underlying data files are still served from the same Hub
+    repos, so this fetches them directly -- same corpora, same provenance,
+    same licences, one fewer moving part.
 
-    configs = ["sentences_allagree", "sentences_75agree"]  # higher-agreement subsets only — cleaner labels
-    label_map = {0: "negative", 1: "neutral", 2: "positive"}
-    for config in configs:
-        ds = load_dataset("takala/financial_phrasebank", config, trust_remote_code=True)
-        for item in ds["train"]:
-            rows.append({"text": item["sentence"], "label": label_map[item["label"]]})
+    Financial PhraseBank is distributed as a zip of latin-1 encoded text
+    files, one line per sentence in "sentence@label" form.
+    TFNS ships as plain CSV with integer labels.
+    """
+    import csv
+    import io
+    import zipfile
 
-    tfns_map = {0: "negative", 1: "positive", 2: "neutral"}  # bearish/bullish/neutral -> negative/positive/neutral
-    ds = load_dataset("zeroshot/twitter-financial-news-sentiment")
-    for split in ["train", "validation"]:
-        for item in ds[split]:
-            rows.append({"text": item["text"], "label": tfns_map[item["label"]]})
+    from huggingface_hub import hf_hub_download
+
+    rows: list[dict] = []
+
+    # -- Financial PhraseBank: higher-agreement subsets only, cleaner labels --
+    phrasebank_zip = hf_hub_download(
+        "takala/financial_phrasebank", "data/FinancialPhraseBank-v1.0.zip", repo_type="dataset"
+    )
+    wanted = {"Sentences_AllAgree.txt", "Sentences_75Agree.txt"}
+    with zipfile.ZipFile(phrasebank_zip) as archive:
+        for name in archive.namelist():
+            if Path(name).name not in wanted:
+                continue
+            # latin-1, not utf-8: the corpus predates the convention and
+            # contains bytes that are invalid utf-8.
+            for line in archive.read(name).decode("latin-1").splitlines():
+                if "@" not in line:
+                    continue
+                sentence, _, label = line.rpartition("@")
+                label = label.strip().lower()
+                if sentence.strip() and label in ("negative", "neutral", "positive"):
+                    rows.append({"text": sentence.strip(), "label": label})
+
+    # -- TFNS: bearish/bullish/neutral -> negative/positive/neutral --
+    tfns_map = {0: "negative", 1: "positive", 2: "neutral"}
+    for filename in ("sent_train.csv", "sent_valid.csv"):
+        path = hf_hub_download(
+            "zeroshot/twitter-financial-news-sentiment", filename, repo_type="dataset"
+        )
+        with open(path, encoding="utf-8", newline="") as handle:
+            for record in csv.DictReader(handle):
+                try:
+                    label = tfns_map[int(record["label"])]
+                except (KeyError, ValueError):
+                    continue
+                text = (record.get("text") or "").strip()
+                if text:
+                    rows.append({"text": text, "label": label})
 
     # de-dup identical text
     seen = set()

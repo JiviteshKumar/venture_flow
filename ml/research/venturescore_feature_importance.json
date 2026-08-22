@@ -1,0 +1,737 @@
+{
+  "method": "mean_abs_shap",
+  "deployable_feature_set": {
+    "note": "This is the feature set the production model uses.",
+    "ranking": [
+      {
+        "feature": "subindustry_leaf=Productivity",
+        "mean_abs_shap": 0.438055
+      },
+      {
+        "feature": "desc_len",
+        "mean_abs_shap": 0.24826
+      },
+      {
+        "feature": "one_liner_len",
+        "mean_abs_shap": 0.207933
+      },
+      {
+        "feature": "has_former_name",
+        "mean_abs_shap": 0.151231
+      },
+      {
+        "feature": "is_partly_remote",
+        "mean_abs_shap": 0.126208
+      },
+      {
+        "feature": "industry=B2B",
+        "mean_abs_shap": 0.12597
+      },
+      {
+        "feature": "num_tags",
+        "mean_abs_shap": 0.085625
+      },
+      {
+        "feature": "is_bay_area",
+        "mean_abs_shap": 0.084793
+      },
+      {
+        "feature": "subindustry_leaf=Real Estate and Construction",
+        "mean_abs_shap": 0.082715
+      },
+      {
+        "feature": "tag_saas",
+        "mean_abs_shap": 0.07877
+      },
+      {
+        "feature": "industry=Consumer",
+        "mean_abs_shap": 0.072174
+      },
+      {
+        "feature": "is_any_remote",
+        "mean_abs_shap": 0.059004
+      },
+      {
+        "feature": "tag_devtools",
+        "mean_abs_shap": 0.050092
+      },
+      {
+        "feature": "tag_b2b",
+        "mean_abs_shap": 0.047445
+      },
+      {
+        "feature": "industry=Unspecified",
+        "mean_abs_shap": 0.040168
+      },
+      {
+        "feature": "tag_marketplace",
+        "mean_abs_shap": 0.031864
+      },
+      {
+        "feature": "is_fully_remote",
+        "mean_abs_shap": 0.031358
+      },
+      {
+        "feature": "tag_fintech",
+        "mean_abs_shap": 0.026798
+      },
+      {
+        "feature": "subindustry_leaf=Analytics",
+        "mean_abs_shap": 0.026784
+      },
+      {
+        "feature": "subindustry_leaf=Recruiting and Talent",
+        "mean_abs_shap": 0.025993
+      },
+      {
+        "feature": "tag_analytics",
+        "mean_abs_shap": 0.024984
+      },
+      {
+        "feature": "tag_healthcare",
+        "mean_abs_shap": 0.024532
+      },
+      {
+        "feature": "subindustry_leaf=Agriculture",
+        "mean_abs_shap": 0.021685
+      },
+      {
+        "feature": "subindustry_top=B2B",
+        "mean_abs_shap": 0.021193
+      },
+      {
+        "feature": "subindustry_leaf=Insurance",
+        "mean_abs_shap": 0.019822
+      },
+      {
+        "feature": "subindustry_leaf=Education",
+        "mean_abs_shap": 0.018368
+      },
+      {
+        "feature": "is_us",
+        "mean_abs_shap": 0.017838
+      },
+      {
+        "feature": "subindustry_leaf=Payments",
+        "mean_abs_shap": 0.015718
+      },
+      {
+        "feature": "subindustry_leaf=Government",
+        "mean_abs_shap": 0.015552
+      },
+      {
+        "feature": "subindustry_leaf=Engineering, Product and Design",
+        "mean_abs_shap": 0.014311
+      },
+      {
+        "feature": "tag_hardware",
+        "mean_abs_shap": 0.013815
+      },
+      {
+        "feature": "subindustry_leaf=Banking and Exchange",
+        "mean_abs_shap": 0.013656
+      },
+      {
+        "feature": "subindustry_leaf=Finance and Accounting",
+        "mean_abs_shap": 0.013607
+      },
+      {
+        "feature": "subindustry_leaf=Home and Personal",
+        "mean_abs_shap": 0.013601
+      },
+      {
+        "feature": "tag_infra",
+        "mean_abs_shap": 0.011908
+      },
+      {
+        "feature": "subindustry_leaf=Retail",
+        "mean_abs_shap": 0.011875
+      },
+      {
+        "feature": "tag_consumer",
+        "mean_abs_shap": 0.011445
+      },
+      {
+        "feature": "subindustry_leaf=Consumer",
+        "mean_abs_shap": 0.011254
+      },
+      {
+        "feature": "tag_ai_ml",
+        "mean_abs_shap": 0.010851
+      },
+      {
+        "feature": "subindustry_leaf=Consumer Electronics",
+        "mean_abs_shap": 0.010835
+      },
+      {
+        "feature": "industry=Fintech",
+        "mean_abs_shap": 0.010189
+      },
+      {
+        "feature": "subindustry_leaf=Legal",
+        "mean_abs_shap": 0.010033
+      },
+      {
+        "feature": "subindustry_leaf=Industrials",
+        "mean_abs_shap": 0.007916
+      },
+      {
+        "feature": "industry=Government",
+        "mean_abs_shap": 0.007227
+      },
+      {
+        "feature": "subindustry_leaf=Consumer Finance",
+        "mean_abs_shap": 0.007021
+      },
+      {
+        "feature": "subindustry_leaf=Job and Career Services",
+        "mean_abs_shap": 0.006914
+      },
+      {
+        "feature": "subindustry_leaf=Marketing",
+        "mean_abs_shap": 0.006519
+      },
+      {
+        "feature": "subindustry_top=Unspecified",
+        "mean_abs_shap": 0.006264
+      },
+      {
+        "feature": "industry=Healthcare",
+        "mean_abs_shap": 0.005422
+      },
+      {
+        "feature": "subindustry_leaf=Energy",
+        "mean_abs_shap": 0.004186
+      },
+      {
+        "feature": "subindustry_leaf=Infrastructure",
+        "mean_abs_shap": 0.004055
+      },
+      {
+        "feature": "subindustry_leaf=Consumer Health and Wellness",
+        "mean_abs_shap": 0.003384
+      },
+      {
+        "feature": "subindustry_leaf=Diagnostics",
+        "mean_abs_shap": 0.003125
+      },
+      {
+        "feature": "subindustry_leaf=Climate",
+        "mean_abs_shap": 0.002769
+      },
+      {
+        "feature": "subindustry_leaf=Construction",
+        "mean_abs_shap": 0.00265
+      },
+      {
+        "feature": "subindustry_leaf=Gaming",
+        "mean_abs_shap": 0.002629
+      },
+      {
+        "feature": "subindustry_top=Fintech",
+        "mean_abs_shap": 0.002627
+      },
+      {
+        "feature": "subindustry_leaf=Industrial Bio",
+        "mean_abs_shap": 0.00224
+      },
+      {
+        "feature": "subindustry_leaf=Medical Devices",
+        "mean_abs_shap": 0.002204
+      },
+      {
+        "feature": "subindustry_leaf=Manufacturing and Robotics",
+        "mean_abs_shap": 0.002198
+      },
+      {
+        "feature": "subindustry_leaf=Healthcare Services",
+        "mean_abs_shap": 0.002098
+      },
+      {
+        "feature": "tag_productivity",
+        "mean_abs_shap": 0.002053
+      },
+      {
+        "feature": "subindustry_top=Education",
+        "mean_abs_shap": 0.001892
+      },
+      {
+        "feature": "subindustry_leaf=Fintech",
+        "mean_abs_shap": 0.001647
+      },
+      {
+        "feature": "subindustry_leaf=Asset Management",
+        "mean_abs_shap": 0.001274
+      },
+      {
+        "feature": "subindustry_top=Government",
+        "mean_abs_shap": 0.000758
+      },
+      {
+        "feature": "subindustry_leaf=Human Resources",
+        "mean_abs_shap": 0.000667
+      },
+      {
+        "feature": "industry=Education",
+        "mean_abs_shap": 0.000646
+      },
+      {
+        "feature": "nonprofit",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "industry=Industrials",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "industry=Real Estate and Construction",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Consumer",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Healthcare",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Industrials",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Real Estate and Construction",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Apparel and Cosmetics",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Automotive",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Aviation and Space",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=B2B",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Content",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Credit and Lending",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Drones",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Drug Discovery and Delivery",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Food and Beverage",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Healthcare",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Healthcare IT",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Housing and Real Estate",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Office Management",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Operations",
+        "mean_abs_shap": 0.0
+      }
+    ]
+  },
+  "with_contaminated_features": {
+    "note": "Not shipped. Included to document how far team_size dominates once post-outcome features are allowed in.",
+    "ranking": [
+      {
+        "feature": "team_size",
+        "mean_abs_shap": 0.722606
+      },
+      {
+        "feature": "age_years",
+        "mean_abs_shap": 0.21583
+      },
+      {
+        "feature": "desc_len",
+        "mean_abs_shap": 0.194407
+      },
+      {
+        "feature": "one_liner_len",
+        "mean_abs_shap": 0.173185
+      },
+      {
+        "feature": "industry=B2B",
+        "mean_abs_shap": 0.143695
+      },
+      {
+        "feature": "subindustry_leaf=Productivity",
+        "mean_abs_shap": 0.136794
+      },
+      {
+        "feature": "batch_year",
+        "mean_abs_shap": 0.115129
+      },
+      {
+        "feature": "has_former_name",
+        "mean_abs_shap": 0.080545
+      },
+      {
+        "feature": "tag_saas",
+        "mean_abs_shap": 0.077539
+      },
+      {
+        "feature": "is_bay_area",
+        "mean_abs_shap": 0.07149
+      },
+      {
+        "feature": "tag_b2b",
+        "mean_abs_shap": 0.070215
+      },
+      {
+        "feature": "tag_devtools",
+        "mean_abs_shap": 0.059712
+      },
+      {
+        "feature": "num_tags",
+        "mean_abs_shap": 0.058245
+      },
+      {
+        "feature": "is_us",
+        "mean_abs_shap": 0.055264
+      },
+      {
+        "feature": "industry=Consumer",
+        "mean_abs_shap": 0.052348
+      },
+      {
+        "feature": "is_partly_remote",
+        "mean_abs_shap": 0.052347
+      },
+      {
+        "feature": "subindustry_leaf=Real Estate and Construction",
+        "mean_abs_shap": 0.050394
+      },
+      {
+        "feature": "is_any_remote",
+        "mean_abs_shap": 0.037268
+      },
+      {
+        "feature": "tag_analytics",
+        "mean_abs_shap": 0.032869
+      },
+      {
+        "feature": "tag_marketplace",
+        "mean_abs_shap": 0.032003
+      },
+      {
+        "feature": "tag_fintech",
+        "mean_abs_shap": 0.029382
+      },
+      {
+        "feature": "subindustry_leaf=Government",
+        "mean_abs_shap": 0.028204
+      },
+      {
+        "feature": "tag_hardware",
+        "mean_abs_shap": 0.024882
+      },
+      {
+        "feature": "subindustry_leaf=Analytics",
+        "mean_abs_shap": 0.02231
+      },
+      {
+        "feature": "subindustry_leaf=Diagnostics",
+        "mean_abs_shap": 0.021739
+      },
+      {
+        "feature": "industry=Unspecified",
+        "mean_abs_shap": 0.021597
+      },
+      {
+        "feature": "subindustry_leaf=Education",
+        "mean_abs_shap": 0.020799
+      },
+      {
+        "feature": "subindustry_leaf=Agriculture",
+        "mean_abs_shap": 0.02038
+      },
+      {
+        "feature": "subindustry_leaf=Finance and Accounting",
+        "mean_abs_shap": 0.018596
+      },
+      {
+        "feature": "subindustry_leaf=Legal",
+        "mean_abs_shap": 0.018589
+      },
+      {
+        "feature": "subindustry_leaf=Payments",
+        "mean_abs_shap": 0.017459
+      },
+      {
+        "feature": "tag_infra",
+        "mean_abs_shap": 0.016366
+      },
+      {
+        "feature": "subindustry_leaf=Banking and Exchange",
+        "mean_abs_shap": 0.01406
+      },
+      {
+        "feature": "tag_consumer",
+        "mean_abs_shap": 0.012498
+      },
+      {
+        "feature": "subindustry_leaf=Industrials",
+        "mean_abs_shap": 0.011773
+      },
+      {
+        "feature": "tag_ai_ml",
+        "mean_abs_shap": 0.011764
+      },
+      {
+        "feature": "subindustry_leaf=Recruiting and Talent",
+        "mean_abs_shap": 0.01176
+      },
+      {
+        "feature": "subindustry_leaf=Consumer",
+        "mean_abs_shap": 0.011618
+      },
+      {
+        "feature": "subindustry_leaf=Engineering, Product and Design",
+        "mean_abs_shap": 0.011445
+      },
+      {
+        "feature": "subindustry_leaf=Gaming",
+        "mean_abs_shap": 0.011148
+      },
+      {
+        "feature": "subindustry_leaf=Climate",
+        "mean_abs_shap": 0.010285
+      },
+      {
+        "feature": "subindustry_leaf=Retail",
+        "mean_abs_shap": 0.008786
+      },
+      {
+        "feature": "tag_healthcare",
+        "mean_abs_shap": 0.006948
+      },
+      {
+        "feature": "subindustry_leaf=Insurance",
+        "mean_abs_shap": 0.006926
+      },
+      {
+        "feature": "is_fully_remote",
+        "mean_abs_shap": 0.005341
+      },
+      {
+        "feature": "subindustry_leaf=Consumer Health and Wellness",
+        "mean_abs_shap": 0.00518
+      },
+      {
+        "feature": "subindustry_leaf=Consumer Finance",
+        "mean_abs_shap": 0.005003
+      },
+      {
+        "feature": "industry=Fintech",
+        "mean_abs_shap": 0.004846
+      },
+      {
+        "feature": "industry=Healthcare",
+        "mean_abs_shap": 0.004811
+      },
+      {
+        "feature": "subindustry_leaf=Manufacturing and Robotics",
+        "mean_abs_shap": 0.004513
+      },
+      {
+        "feature": "subindustry_leaf=Marketing",
+        "mean_abs_shap": 0.0043
+      },
+      {
+        "feature": "subindustry_leaf=Consumer Electronics",
+        "mean_abs_shap": 0.004158
+      },
+      {
+        "feature": "subindustry_leaf=Job and Career Services",
+        "mean_abs_shap": 0.003853
+      },
+      {
+        "feature": "subindustry_top=B2B",
+        "mean_abs_shap": 0.003624
+      },
+      {
+        "feature": "subindustry_leaf=Energy",
+        "mean_abs_shap": 0.003479
+      },
+      {
+        "feature": "subindustry_top=Unspecified",
+        "mean_abs_shap": 0.003464
+      },
+      {
+        "feature": "subindustry_leaf=Industrial Bio",
+        "mean_abs_shap": 0.003194
+      },
+      {
+        "feature": "industry=Industrials",
+        "mean_abs_shap": 0.003136
+      },
+      {
+        "feature": "subindustry_leaf=Home and Personal",
+        "mean_abs_shap": 0.002644
+      },
+      {
+        "feature": "subindustry_leaf=Fintech",
+        "mean_abs_shap": 0.002591
+      },
+      {
+        "feature": "subindustry_top=Education",
+        "mean_abs_shap": 0.001268
+      },
+      {
+        "feature": "subindustry_top=Healthcare",
+        "mean_abs_shap": 0.001108
+      },
+      {
+        "feature": "subindustry_leaf=Construction",
+        "mean_abs_shap": 0.000773
+      },
+      {
+        "feature": "subindustry_top=Government",
+        "mean_abs_shap": 0.000744
+      },
+      {
+        "feature": "subindustry_leaf=Drones",
+        "mean_abs_shap": 0.000723
+      },
+      {
+        "feature": "nonprofit",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "tag_productivity",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "industry=Education",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "industry=Government",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "industry=Real Estate and Construction",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Consumer",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Fintech",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Industrials",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_top=Real Estate and Construction",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Apparel and Cosmetics",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Asset Management",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Automotive",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Aviation and Space",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=B2B",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Content",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Credit and Lending",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Drug Discovery and Delivery",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Food and Beverage",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Healthcare",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Healthcare IT",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Healthcare Services",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Housing and Real Estate",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Human Resources",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Infrastructure",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Medical Devices",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Office Management",
+        "mean_abs_shap": 0.0
+      },
+      {
+        "feature": "subindustry_leaf=Operations",
+        "mean_abs_shap": 0.0
+      }
+    ]
+  }
+}

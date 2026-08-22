@@ -40,3 +40,21 @@ VALIDATION_LOG.md
 ml/logs/*.jsonl
 ml/models/personalization_model.pkl
 ml/models/personalization_model_report.json
+
+# Claim and Risk/Tone model artefacts. Both were trained successfully (see
+# ml/README.md for their actual metrics) but NEITHER is wired into the app --
+# the Claim Model because it is not good enough to ship, the Risk model
+# because swapping it against the incumbent keyword detector needs its own
+# evaluation first. Together they are ~73 MB of encoders for code paths
+# nothing calls, and both regenerate in about a minute:
+#   python ml/scripts/train_claim_model.py
+#   python ml/scripts/train_risk_model.py
+# The .json reports ARE committed, so the measured results stay in the repo
+# even though the weights don't.
+ml/models/claim_model.txt
+ml/models/claim_model_encoders.pkl
+ml/models/risk_tone_model.txt
+ml/models/risk_tone_model_encoders.pkl
+
+# Downloaded training corpus cache (re-fetched automatically when missing)
+ml/data/scifact_data.tar.gz
