@@ -94,11 +94,22 @@ See `.env.example` and `frontend/.env.example` for the complete template.
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/health` | Health check |
-| `POST` | `/analyze` | Run company due diligence |
-| `POST` | `/upload-pdf` | Extract content from an uploaded PDF |
-| `POST` | `/chat` | Ask a follow-up analysis question |
-| `GET` | `/database/stats` | Retrieve database statistics |
+| `GET` | `/health` | Health check (reports Neon connectivity) |
+| `POST` | `/upload-pdf` | Extract text, claims and financials from a PDF |
+| `POST` | `/analyze` | Queue a due-diligence run; returns `202` with a `job_id` |
+| `GET` | `/analyze/status/{job_id}` | Poll a run — status, current pipeline `stage`, and the report when complete |
+| `GET` | `/reports` | Saved report history |
+| `GET` | `/reports/{id}` | Load one saved report |
+| `GET` | `/reports/{id}/pdf` | Export a report as PDF |
+| `POST` `GET` | `/reports/{id}/comments` | Team notes on a report |
+| `POST` | `/reports/{id}/decision` | Record an invest/pass decision |
+| `GET` | `/companies/{name}/history` | Score history across repeat analyses |
+| `POST` | `/chat` | Ask a follow-up question about an analysed deck |
+| `GET` | `/database/stats` | Row counts for companies, reports and investments |
+
+Analysis runs as a background job because a full pass takes roughly 2–4
+minutes; `/analyze` returns immediately and the frontend polls
+`/analyze/status/{job_id}`, which reports the pipeline's real current stage.
 
 ## Deploy the frontend with Vercel
 

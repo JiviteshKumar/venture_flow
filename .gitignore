@@ -58,3 +58,10 @@ ml/models/risk_tone_model_encoders.pkl
 
 # Downloaded training corpus cache (re-fetched automatically when missing)
 ml/data/scifact_data.tar.gz
+
+# Build output. `frontend/.gitignore` used to cover the frontend half; it was a
+# zero-byte file and was removed with the rest of the empty scaffolding, so the
+# root list has to be complete on its own.
+dist/
+frontend/dist/
+build/
