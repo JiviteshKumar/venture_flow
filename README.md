@@ -129,6 +129,18 @@ See `.env.example` and `frontend/.env.example` for the complete template.
 - `ALLOWED_ORIGINS` — Comma-separated origins allowed to call the API.
   Defaults to `http://localhost:5173,http://127.0.0.1:5173`; include both
   spellings of any dev host, since a browser treats them as distinct origins.
+  **In production this must list the exact frontend origin.** If it does not,
+  every call fails CORS and the UI shows a bare "Network Error" while the
+  backend log shows a healthy `200` — the browser discards the response before
+  JavaScript can read it, so the real cause never reaches the frontend.
+- `ALLOWED_ORIGIN_REGEX` — optional, anchored regex of additional allowed
+  origins. Vercel mints a new hostname per deployment, so an exact-match list
+  breaks each time one appears; this covers them without a redeploy. Example:
+  `^https://venture-flow-[a-z0-9-]+\.vercel\.app$`. Never use a bare
+  `.*vercel\.app` — this API has no authentication, so CORS is the only thing
+  stopping another site from spending your Groq quota.
+- `TRUST_PROXY_HEADERS` — optional; set `true` behind a managed load balancer
+  so rate limiting keys on the real client IP rather than the proxy.
 - `RATE_LIMIT_PER_MINUTE` — API rate limit, default `30`.
 - `REDIS_URL` — optional; enables the multi-instance-safe rate limiter (see `rate_limiter.py`). Without it, rate limiting is in-memory and per-process, which is correct for local single-instance use.
 - `GITHUB_TOKEN` — optional; raises the GitHub API rate limit for the technical/repo scoring rubric (`technical_scoring.py`) from 60/hour to 5,000/hour.

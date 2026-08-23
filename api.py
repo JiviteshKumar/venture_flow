@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import uuid
 from typing import Any
 
@@ -56,6 +57,26 @@ origins = [
     for value in os.getenv("ALLOWED_ORIGINS", DEFAULT_DEV_ORIGINS).split(",")
     if value.strip()
 ]
+
+# Optional regex of additional allowed origins, for hosts whose name is not
+# fixed. Vercel mints a new hostname per project and per preview deployment
+# -- venture-flow-w8hf.vercel.app and venture-flow-livid.vercel.app are two
+# live frontends of this same app -- so an exact-match list silently breaks
+# every time a new one appears. The symptom is total and unmistakable once you
+# know it: every call from the new host fails CORS, the browser reports
+# "Network Error", and the server logs a perfectly healthy 200 for a response
+# the browser then discards.
+#
+# Deliberately opt-in with no default. This API has no authentication, so CORS
+# is the only thing stopping a page on someone else's domain from spending the
+# owner's Groq quota and writing to their database; a regex baked in here would
+# widen that for everyone who deploys this. Set it per deployment, and keep it
+# anchored -- `^https://venture-flow-[a-z0-9-]+\.vercel\.app$`, never a bare
+# `.*vercel\.app`.
+ALLOWED_ORIGIN_REGEX = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or None
+_origin_pattern = re.compile(ALLOWED_ORIGIN_REGEX) if ALLOWED_ORIGIN_REGEX else None
+
+
 def _client_key(request: Request) -> str:
     """Identify the caller for rate limiting, correctly behind a proxy.
 
@@ -109,7 +130,7 @@ def _cors_headers_for(request: Request) -> dict[str, str]:
         return {}
     if "*" in origins:
         return {"Access-Control-Allow-Origin": "*"}
-    if origin in origins:
+    if origin in origins or (_origin_pattern and _origin_pattern.fullmatch(origin)):
         return {"Access-Control-Allow-Origin": origin, "Vary": "Origin"}
     return {}
 
@@ -137,6 +158,7 @@ async def rate_limit(request: Request, call_next):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],

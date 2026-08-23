@@ -123,3 +123,46 @@ def test_client_key_prefers_forwarded_header_only_when_trusted(monkeypatch):
     # Untrusted: the spoofable header must be ignored entirely.
     monkeypatch.setattr(api, "TRUST_PROXY_HEADERS", False)
     assert api._client_key(request) == "10.0.0.1"
+
+
+def test_origin_regex_allows_a_matching_vercel_deployment(monkeypatch):
+    """Vercel mints a new hostname per deployment.
+
+    This app has had two live frontends at once --
+    venture-flow-w8hf.vercel.app and venture-flow-livid.vercel.app -- and only
+    the first was in ALLOWED_ORIGINS. Every request from the second failed
+    CORS, which the browser reported as "Network Error" while the server
+    logged a healthy 200 for a response the browser then discarded.
+    """
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://venture-flow-w8hf.vercel.app")
+    monkeypatch.setenv("ALLOWED_ORIGIN_REGEX", r"^https://venture-flow-[a-z0-9-]+\.vercel\.app$")
+    import api
+    importlib.reload(api)
+    c = TestClient(api.app, raise_server_exceptions=False)
+
+    other = "https://venture-flow-livid.vercel.app"
+    r = c.get("/", headers={"Origin": other})
+    assert r.headers.get("access-control-allow-origin") == other
+
+    # And on the error paths that bypass CORSMiddleware.
+    monkeypatch.setattr(api, "rate_limit_is_allowed", lambda *_a, **_k: False)
+    r = c.get("/reports", headers={"Origin": other})
+    assert r.status_code == 429
+    assert r.headers.get("access-control-allow-origin") == other
+
+
+def test_origin_regex_is_anchored_and_refuses_lookalikes(monkeypatch):
+    """An unanchored pattern would let evil-venture-flow-x.vercel.app.attacker.com
+    through. The API has no auth, so CORS is the only gate on someone else's
+    page spending the owner's Groq quota."""
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://venture-flow-w8hf.vercel.app")
+    monkeypatch.setenv("ALLOWED_ORIGIN_REGEX", r"^https://venture-flow-[a-z0-9-]+\.vercel\.app$")
+    import api
+    importlib.reload(api)
+    c = TestClient(api.app, raise_server_exceptions=False)
+
+    for bad in ("https://venture-flow-x.vercel.app.attacker.com",
+                "https://evil.com",
+                "http://venture-flow-x.vercel.app"):
+        r = c.get("/", headers={"Origin": bad})
+        assert r.headers.get("access-control-allow-origin") is None, bad
