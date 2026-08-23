@@ -19,7 +19,7 @@ figure can be recomputed without trusting a log line.
 | `claim_benchmark.jsonl` | 150 hand-labeled claims — 50 SUPPORTS, 50 REFUTES, 50 NOT_ENOUGH_INFO |
 | `claim_benchmark_v1_30.jsonl` | The original 30-example set, kept so the "before" number stays reproducible |
 | `claim_benchmark_results_v1_30.json` | The 30-example run — the first time this harness was ever executed |
-| `claim_benchmark_results.json` | The 150-example run |
+| `claim_benchmark_results.json` | The expanded run. Carries `complete` and `n_scored`; currently 134 of 150, the rest blocked on the daily token cap |
 | `claim_benchmark_results.partial.jsonl` | Append-only per-claim log; a run resumes from it |
 | `claim_baseline_results.json` | TF-IDF Claim Model vs the LLM verifier, on identical evidence |
 
@@ -213,7 +213,7 @@ behaviour rather than label defects:
 - **Two (`r1`, `s35`) retrieved zero sources.** `verify_claim` forces
   NOT_ENOUGH_INFO when nothing comes back, so these are DuckDuckGo throttling
   showing up as verifier errors. The `retrieval.claims_with_zero_sources`
-  figure in every results file exists to keep that visible: 6 of 126 on this
+  figure in every results file exists to keep that visible: 6 of 134 on this
   run.
 - **Four (`s9`, `s10`, `s29`, `r35`) are the verifier being strictly literal
   about conjunctions.** It found that Tesla *produced* its millionth vehicle in

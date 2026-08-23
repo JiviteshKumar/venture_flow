@@ -146,9 +146,14 @@ model defer to an LLM narrative — is a calibration question.
   more useful finding.** On the 30-example set the verifier's stated confidence
   averaged 0.901 when correct against 0.890 when wrong: a 0.011 gap, no usable
   discrimination, apparently confirming the paper's warning
-  (`claim_benchmark_results_v1_30.json`). On 126 examples of the expanded set
-  it averaged **0.886 when correct against 0.567 when wrong — a 0.319 gap**
+  (`claim_benchmark_results_v1_30.json`). On 134 examples of the expanded set
+  it averaged **0.890 when correct against 0.567 when wrong — a 0.323 gap**
   (`claim_benchmark_results.json`). The confidence *is* informative here.
+
+  That gap was re-checked deliberately rather than assumed: it had already
+  flipped once between 30 and 126 examples, so the 126 reading could not be
+  trusted until a larger sample agreed with it. At 134 it moved +0.004. The
+  reversal was a small-sample artifact of the 30-example set, not a trend.
 
   The 30-example reading was not a smaller version of the right answer, it was
   the wrong answer, and it was wrong for a structural reason: with only two

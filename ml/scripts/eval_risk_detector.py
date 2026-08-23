@@ -248,12 +248,48 @@ DETECTORS: dict[str, Callable[[dict[str, Any]], tuple[bool, list[str], dict[str,
 _llm_cache: dict[str, dict[str, Any]] = {}
 
 
+def _cache_path(out_path: Path) -> Path:
+    return out_path.with_suffix(".llm_cache.jsonl")
+
+
+def load_llm_cache(out_path: Path) -> None:
+    """Reload LLM judgements scored by an earlier, interrupted run.
+
+    Without this the cache lived only in memory, so a run killed by an
+    exhausted quota threw away every excerpt it had already paid for. That is
+    affordable when tokens are plentiful and not otherwise: on the free tier
+    the daily cap releases roughly 8,760 tokens/hour against ~2,250 needed per
+    excerpt, so one excerpt costs about a quarter-hour of waiting and a lost
+    run costs hours. The claim harness already resumes from a partial log for
+    exactly this reason; this is the same idea applied to the same constraint.
+    """
+    path = _cache_path(out_path)
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue  # a run killed mid-write leaves one truncated line
+        _llm_cache[entry["id"]] = entry["detail"]
+    if _llm_cache:
+        print(f"Reusing {len(_llm_cache)} cached LLM judgement(s) from {path.name}")
+
+
+def _append_llm_cache(out_path: Path, excerpt_id: str, detail: dict[str, Any]) -> None:
+    with open(_cache_path(out_path), "a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"id": excerpt_id, "detail": detail}) + "\n")
+
+
 def run_detector(
     name: str,
     benchmark: list[dict[str, Any]],
     sleep_s: float = 0.0,
     provider_retries: int = 5,
     retry_wait_s: float = 120.0,
+    out_path: Path | None = None,
 ) -> dict[str, Any]:
     rows = []
     for position, item in enumerate(benchmark, 1):
@@ -288,6 +324,10 @@ def run_detector(
                         "is available rather than reporting these numbers."
                     )
                 _llm_cache[item["id"]] = detail
+                # Persist immediately, not at the end of the run. The whole
+                # point is to survive the run being killed mid-grind.
+                if out_path is not None:
+                    _append_llm_cache(out_path, item["id"], detail)
                 cached = detail
             level = str(cached.get("risk_level", "UNKNOWN")).upper()
             allowed = {"MEDIUM", "HIGH", "CRITICAL"} if name == "llm_medium_plus" else {"HIGH", "CRITICAL"}
@@ -335,6 +375,7 @@ def main() -> None:
                         help="seconds to wait between those retries")
     args = parser.parse_args()
 
+    load_llm_cache(Path(args.out))
     benchmark = load_benchmark(args.benchmark)
     print(f"Loaded {len(benchmark)} labeled excerpts "
           f"({sum(1 for r in benchmark if r['gold_risk'])} red flags / "
@@ -355,6 +396,7 @@ def main() -> None:
                 args.sleep if name.startswith("llm_") else 0.0,
                 provider_retries=args.provider_retries,
                 retry_wait_s=args.retry_wait,
+                out_path=Path(args.out),
             )
         except (FileNotFoundError, RuntimeError) as exc:
             # A missing gitignored model file, or an exhausted LLM quota, is a

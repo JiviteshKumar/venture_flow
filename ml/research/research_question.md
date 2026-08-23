@@ -13,9 +13,9 @@ support with measurements, and to drop the parts it cannot.
 >
 > We evaluate a two-part evidence layer — claim verification built on live web
 > search plus a general-purpose LLM, and risk detection over document text —
-> against hand-labeled benchmarks and stated baselines. On 126 pitch-deck-style
-> claims the LLM verifier reaches 0.952 accuracy (SUPPORTS F1 0.946, REFUTES
-> F1 0.973, NOT_ENOUGH_INFO F1 0.942), against 0.333 accuracy for a TF-IDF
+> against hand-labeled benchmarks and stated baselines. On 134 pitch-deck-style
+> claims the LLM verifier reaches 0.955 accuracy (SUPPORTS F1 0.950, REFUTES
+> F1 0.976, NOT_ENOUGH_INFO F1 0.943), against 0.333 accuracy for a TF-IDF
 > entailment model given the identical retrieved evidence — a gap large enough
 > that the retrieval-plus-LLM design is not a close call. On 28 hand-labeled
 > document excerpts, however, the incumbent keyword dictionary scores F1 0.815
@@ -38,7 +38,7 @@ suspicion and the statistical model the thing being protected. The measurements
 partly invert that.
 
 **Claim verification: the LLM wins decisively, and this is not a close
-result.** 0.952 vs 0.333 accuracy on identical evidence, and REFUTES F1 0.973
+result.** 0.955 vs 0.333 accuracy on identical evidence, and REFUTES F1 0.976
 vs 0.000. REFUTES is the class that matters for diligence — it is the one that
 catches a founder overstating — and the TF-IDF baseline never detects it, on
 this benchmark or on SciFact (F1 0.05). Lexical overlap cannot represent
@@ -58,8 +58,10 @@ reference to the literature rather than by rediscovering it.
 deferral rule.** On the original 30-example benchmark, verifier confidence
 averaged 0.901 when correct and 0.890 when wrong — a 0.011 gap, i.e. stated
 confidence carrying no usable signal, which would have made confidence-gated
-deferral impossible. On 126 examples it averaged 0.886 when correct and 0.567
-when wrong: a **0.319 gap**. The small-benchmark reading was not a noisier
+deferral impossible. On 134 examples it averaged 0.890 when correct and 0.567
+when wrong: a **0.323 gap**, and re-checking at 134 rather than trusting the
+126 figure was the point: a number that has already flipped once has to be
+shown to have settled. The small-benchmark reading was not a noisier
 version of the right answer, it was the wrong answer, because it averaged over
 two errors. Any deferral rule built on the 30-example number would have been
 built on noise.
@@ -92,9 +94,11 @@ is still not evaluated at all.
 
 ## What would have to be true to strengthen it
 
-1. **Finish the benchmark.** 126 of 150 claims are scored; 24 remain, blocked
-   only on Groq's free-tier daily token cap. The headline numbers should be
-   restated on the full set.
+1. **Finish the benchmark.** 134 of 150 claims are scored; 16 remain, blocked
+   only on Groq's free-tier daily token cap, which releases about 8,760
+   tokens/hour against roughly 4,000 needed per claim. The headline numbers
+   should be restated on the full set, though the 126 → 134 step moved every
+   metric by ≤ 0.004, so the remaining 16 are unlikely to change a conclusion.
 2. **Contrastive evidence pairs** (VitaminC-style), to test whether the
    verifier is sensitive to evidence or to topic overlap. Nothing here
    currently distinguishes those.

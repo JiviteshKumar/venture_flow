@@ -87,3 +87,8 @@ ml/models/outcome_model_combined_hindsight.txt
 # Local run logs from the eval harnesses (also covered by *.log, listed
 # explicitly because the directory is easy to add to by accident).
 .runlogs/
+
+# Per-excerpt LLM judgement cache for ml/scripts/eval_risk_detector.py. Lets an
+# interrupted run resume instead of re-paying for excerpts already scored --
+# it is a resume aid, not a result. The results file is the artifact.
+ml/eval/*.llm_cache.jsonl

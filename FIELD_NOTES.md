@@ -27,21 +27,29 @@ judgement an early-stage diligence tool makes on every real deck. The
 invented-company examples cannot test that, because there the answer is
 available from the absence of any result at all.
 
-**126 of 150 scored** before the free tier's daily token cap stopped it. The
-results are real and the run resumes:
+**134 of 150 scored** across two sessions; the free tier's daily token cap
+stopped it both times. The results are real and the run resumes:
 
 | | Precision | Recall | F1 | n |
 |---|---|---|---|---|
-| SUPPORTS | 1.000 | 0.897 | 0.946 | 39 |
-| REFUTES | 1.000 | 0.947 | 0.973 | 38 |
-| NOT_ENOUGH_INFO | 0.891 | 1.000 | 0.942 | 49 |
+| SUPPORTS | 1.000 | 0.905 | 0.950 | 42 |
+| REFUTES | 1.000 | 0.952 | 0.976 | 42 |
+| NOT_ENOUGH_INFO | 0.893 | 1.000 | 0.943 | 50 |
 
-Accuracy **0.952**. By subset: public facts 0.922, invented companies 1.000,
+Accuracy **0.955**. By subset: public facts 0.929, invented companies 1.000,
 obscure real companies 1.000. Both SUPPORTS and REFUTES precision are 1.000 —
 **the verifier under-claims rather than over-claims**, which for a diligence
 tool is the safe direction. It shows up in the four errors where it refused to
 affirm a conjunction the retrieved evidence only half-covered (Tesla *produced*
 its millionth vehicle in March 2020; it would not affirm *delivered*).
+
+**The metrics have converged.** Going from 126 to 134 examples moved accuracy
++0.003 and every per-class F1 by ≤ +0.004; all eight new claims were classified
+correctly, so the error set is unchanged at exactly six (four SUPPORTS and two
+REFUTES read down to NOT_ENOUGH_INFO). That matters because the 30 → 126 step
+had *overturned* a conclusion, so the obvious worry was that 150 would overturn
+another. It is not doing so — the numbers are moving in the fourth decimal
+place, not changing sign.
 
 ### The benchmark caught two of my own labels, one of them badly
 
@@ -62,6 +70,11 @@ was not noisier, it was wrong, because it averaged over two errors. The old
 `ml/eval/README.md` warned that 30 examples was "not enough to draw
 fine-grained conclusions about calibration"; that warning was right and worth
 heeding before quoting anything from a set that size.
+
+**Checked again at 134 examples, because a number that flips once can flip
+twice: 0.890 correct vs 0.567 wrong, a 0.323 gap.** Moved +0.004 from the
+126-example reading. The gap is stable, and the 30-example figure remains the
+outlier rather than the start of a trend.
 
 ### Baselines, all three of them
 
@@ -202,7 +215,7 @@ What that blocks, precisely:
 
 - The last **24 of 150** claims. `python ml/scripts/eval_claim_verifier.py`
   resumes from the partial log; the committed results file is marked
-  `"complete": false` so nobody quotes 126 as 150.
+  `"complete": false` so nobody quotes a partial run as 150.
 - The LLM risk detector's **post-fix** numbers. The as-shipped (pre-fix)
   measurement is preserved in `risk_benchmark_results_before_textfix.json`.
 - A full-fidelity end-to-end deck run. The pipeline plumbing was verified on a
