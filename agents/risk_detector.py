@@ -82,8 +82,26 @@ def detect_signals(text: str) -> dict:
 # AI Risk Analysis
 # ----------------------------
 def groq_risk_analysis(company: str, text_signals: dict,
-                       web_signals: dict, web_snippets: list) -> dict:
+                       web_signals: dict, web_snippets: list,
+                       source_text: str = "") -> dict:
+    """Judge risk from the deck/filing text plus keyword and web signals.
 
+    `source_text` was added on 23 Aug 2026 after `ml/scripts/eval_risk_detector.py`
+    measured this function for the first time. It had never received the
+    document at all -- only the *output* of `detect_signals()`, i.e. the list
+    of phrases the keyword dictionary had already matched. The consequence is
+    the opposite of what the architecture claims: the LLM could not find any
+    risk the keyword list had not already found, and on a document where the
+    dictionary matched nothing it was asked to assess a company it had been
+    told nothing about. It answered accordingly, returning
+    `overall_risk_level: "UNKNOWN"` with a null score on 13 of the 28 labeled
+    benchmark excerpts -- including a pitch-deck paragraph disclosing 78%
+    customer concentration and one disclosing an unresolved IP dispute with a
+    departed founder, neither of which uses any dictionary phrase.
+
+    Defaulted to "" rather than made required so existing callers keep working;
+    both live call sites pass it.
+    """
     relevant_snippets = [
         r for r in web_snippets
         if company.lower() in r.get("title", "").lower()
@@ -98,6 +116,11 @@ def groq_risk_analysis(company: str, text_signals: dict,
         for r in snippets_to_use[:8]
     ]) if snippets_to_use else f"No web results specifically about {company} found."
 
+    document_block = (
+        source_text[:6000] if source_text and source_text.strip()
+        else "No document text was supplied."
+    )
+
     prompt = f"""You are a senior risk analyst at a top VC firm.
 Analyze ONLY the risk profile for: {company}
 
@@ -105,14 +128,29 @@ CRITICAL:
 - Only report risks about {company}
 - Ignore other companies completely
 - Do NOT hallucinate risks
+- Judge the DOCUMENT TEXT itself, not just the pre-matched keyword signals.
+  The keyword signals are a lexical pre-pass and miss risks stated in plain
+  language (customer concentration, short runway, founder departure, unclear
+  IP ownership). Read the document for those.
+- Generic risk-factor boilerplate, safe-harbour language and standard
+  accounting-policy notes are NOT red flags. Language such as "could have a
+  material adverse effect" or "we face intense competition", with no specific
+  adverse event disclosed, is routine and must not raise the risk level.
+- Always return a concrete "overall_risk_level" of LOW, MEDIUM or HIGH and a
+  numeric "overall_score" from 0 to 100. Never return null and never return
+  "UNKNOWN": if the document discloses nothing adverse, that is LOW, not
+  unknown.
 
-TEXT SIGNALS:
+DOCUMENT TEXT:
+{document_block}
+
+KEYWORD SIGNALS MATCHED IN THAT TEXT:
 {json.dumps(text_signals, indent=2) if text_signals else "None found"}
 
 WEB DATA:
 {snippets_block}
 
-{"NOTE: No web data found. Use only text." if no_web_data else ""}
+{"NOTE: No web data found. Judge from the document text alone." if no_web_data else ""}
 
 Respond with ONLY valid JSON:
 {{
@@ -131,11 +169,20 @@ Respond with ONLY valid JSON:
                 {"role": "system", "content": "Strict risk analysis. JSON only."},
                 {"role": "user", "content": prompt}
             ],
+            # Constrained JSON output and a larger budget, for the same reason
+            # agents/investment_agents.py already uses them: the current model
+            # spends part of its completion budget on an internal reasoning
+            # trace, so a budget tuned for Llama 3.3 truncates the answer.
+            response_format={"type": "json_object"},
             temperature=0.1,
-            max_tokens=800,
+            max_tokens=1500,
         )
 
-        raw = response.choices[0].message.content.strip()
+        raw = (response.choices[0].message.content or "").strip()
+        if not raw:
+            raise ValueError(
+                f"empty completion (finish_reason={response.choices[0].finish_reason})"
+            )
 
         start = raw.find("{")
         end   = raw.rfind("}") + 1
@@ -178,7 +225,8 @@ def score_risk(text: str, company: str = "") -> dict:
         company=company,
         text_signals=text_signals,
         web_signals=web_signals,
-        web_snippets=web_results
+        web_snippets=web_results,
+        source_text=text,
     )
 
     # 5. Add signal count (fixed logic)

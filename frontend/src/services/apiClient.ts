@@ -10,6 +10,12 @@ export const apiClient = axios.create({
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
+export interface DetectedFounder {
+  name: string;
+  role?: string;
+  background?: string;
+}
+
 export interface UploadResponse {
   session_id: string;
   extracted_text: string;
@@ -18,6 +24,13 @@ export interface UploadResponse {
   revenue: number | null;
   runway_months: number | null;
   page_count: number;
+  /** Founders read out of the deck. Shown back to the user to correct or add
+   *  to before the analysis runs -- extraction is a starting point, not an
+   *  authority on who founded the company. */
+  detected_founders?: DetectedFounder[];
+  /** Which reader ran: "PDF" | "PowerPoint" | "Word" | "plain text" | "Markdown". */
+  document_format?: string;
+  extraction_method?: string;
 }
 
 export interface ClaimDetail {
@@ -57,6 +70,7 @@ export interface AnalyzeResponse {
    */
   claims_unverified?: boolean;
   similar_companies?: Array<{ name: string; domain?: string | null; sector?: string | null; similarity?: number }>;
+  founders?: string[];
   // full nested sections from backend
   sections?: {
     claims?: {
@@ -93,6 +107,43 @@ export interface AnalyzeResponse {
       strengths: string[];
       gaps: string[];
       questions: string[];
+    };
+    /**
+     * Output of agents/founder_verifier.py, one entry per founder submitted.
+     * Empty until 23 Aug 2026 for a structural reason rather than a modelling
+     * one: nothing ever populated DiligenceRequest.founders, so the agent
+     * never ran. See the Founder Analysis tab in Analysis.tsx.
+     */
+    founder_verification?: Array<{
+      available: boolean;
+      reason?: string;
+      name?: string;
+      assessment?: "CONSISTENT" | "CONTRADICTS" | "NOT_ENOUGH_INFO";
+      confidence?: number;
+      evidence_summary?: string;
+      sources?: string[];
+    }>;
+    /**
+     * Output of comparables.py: cosine similarity over 1,560 real Y Combinator
+     * companies. Distinct from `similar_companies`, which is a trigram match
+     * against the user's OWN prior reports and is empty on a fresh database --
+     * the Competitor Insights tab used to read only the latter, which is why
+     * it reported "no comparable companies" on every analysis while this
+     * section sat populated in the same response.
+     */
+    market_comparables?: {
+      available: boolean;
+      reason?: string;
+      comparables?: Array<{
+        name: string;
+        industry?: string;
+        stage?: string;
+        batch?: string;
+        outcome?: string;
+        similarity?: number;
+      }>;
+      source?: string;
+      caveat?: string;
     };
     bull_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; conditions_to_invest: string[] };
     bear_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; diligence_required: string[] };
@@ -290,6 +341,7 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
     claims_unverified: Boolean(raw?.claims_unverified),
     score_source: raw?.score_source ? String(raw.score_source) : null,
     similar_companies: Array.isArray(raw?.similar_companies) ? raw.similar_companies : [],
+    founders: Array.isArray(raw?.founders) ? raw.founders.map(asText).filter(Boolean) : [],
     sections: {
       // Flatten LLM-shaped values before anything renders them. See asText().
       ...normalizeSections(sections),
@@ -340,7 +392,10 @@ export interface AnalysisJob {
 // ─── API CALLS ──────────────────────────────────────────────────────────────
 
 export const api = {
-  /** Upload a PDF pitch deck — returns extracted text + detected claims */
+  /** Upload a pitch deck in any supported format (PDF / PPTX / DOCX / TXT / MD)
+   *  — returns extracted text, detected claims and detected founders.
+   *  Still posts to /upload-pdf: the route kept its name for compatibility
+   *  and now accepts every format document_extractor.py can read. */
   uploadPDF: async (file: File, companyName: string): Promise<UploadResponse> => {
     const form = new FormData();
     form.append("file", file);
@@ -360,6 +415,7 @@ export const api = {
     revenue: number | null;
     burn_rate: number | null;
     runway_months: number | null;
+    founders?: string[];
   }): Promise<AnalysisJob> => {
     const res = await apiClient.post<AnalysisJob>("/analyze", payload, { timeout: 30_000 });
     return res.data;

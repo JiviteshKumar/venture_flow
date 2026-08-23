@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import { api, AnalyzeResponse, UploadResponse } from "../services/apiClient";
@@ -12,6 +13,7 @@ import { api, AnalyzeResponse, UploadResponse } from "../services/apiClient";
 export type AnalysisStatus =
   | "idle"
   | "uploading"
+  | "ready"      // deck parsed; waiting for the user to confirm and submit
   | "analyzing"
   | "done"
   | "error";
@@ -34,7 +36,20 @@ interface AppState {
 
 interface AppContextValue extends AppState {
   setCompanyName: (name: string) => void;
-  runAnalysis: (file: File, companyName: string) => Promise<void>;
+  /**
+   * Parse the deck without starting the analysis.
+   *
+   * Upload used to be the first half of runAnalysis, which meant the user
+   * never saw what had been extracted from their deck before the pipeline
+   * committed to it. That is fine for claims and financials, which the report
+   * shows with their evidence, and wrong for founder names: those go straight
+   * into a live web search and a public-background assessment, so a name the
+   * extractor got wrong becomes a background check on a stranger. Splitting
+   * the two lets the form show the detected founders and let the user fix
+   * them first.
+   */
+  prepareUpload: (file: File, companyName: string) => Promise<void>;
+  runAnalysis: (file: File, companyName: string, founders?: string[]) => Promise<void>;
   loadSavedReport: (reportId: string) => Promise<void>;
   reset: () => void;
 }
@@ -60,13 +75,53 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(INITIAL);
+  // Mirrors state.uploadResult for the callbacks below, which are declared
+  // with an empty dependency list and would otherwise close over the upload
+  // from the first render forever.
+  const uploadRef = useRef<UploadResponse | null>(null);
+  const uploadedFileRef = useRef<File | null>(null);
 
   const setCompanyName = useCallback((name: string) => {
     setState((s) => ({ ...s, companyName: name }));
   }, []);
 
   const reset = useCallback(() => {
+    uploadRef.current = null;
+    uploadedFileRef.current = null;
     setState(INITIAL);
+  }, []);
+
+  const prepareUpload = useCallback(async (file: File, companyName: string) => {
+    setState((s) => ({
+      ...s,
+      status: "uploading",
+      currentStage: "Reading the deck…",
+      progressPct: 5,
+      error: null,
+      companyName,
+      report: null,
+    }));
+    try {
+      const upload = await api.uploadPDF(file, companyName);
+      uploadRef.current = upload;
+      uploadedFileRef.current = file;
+      setState((s) => ({
+        ...s,
+        uploadResult: upload,
+        status: "ready",
+        currentStage: "Deck parsed — review and start the analysis",
+        progressPct: 15,
+      }));
+    } catch (err: unknown) {
+      uploadRef.current = null;
+      uploadedFileRef.current = null;
+      const msg =
+        (err as { response?: { data?: { detail?: string } }; message?: string })
+          ?.response?.data?.detail ||
+        (err as { message?: string })?.message ||
+        "Could not read that file — check that api.py is running";
+      setState((s) => ({ ...s, status: "error", currentStage: "", progressPct: 0, error: msg }));
+    }
   }, []);
 
   const loadSavedReport = useCallback(async (reportId: string) => {
@@ -81,21 +136,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
    * Progress stages update so every page can show status.
    */
   const runAnalysis = useCallback(
-    async (file: File, companyName: string) => {
+    async (file: File, companyName: string, founders: string[] = []) => {
       const timers: ReturnType<typeof setTimeout>[] = [];
 
       setState((s) => ({
         ...s,
         status: "uploading",
-        currentStage: "Extracting text from PDF…",
+        currentStage: "Reading the deck…",
         progressPct: 5,
         error: null,
         companyName,
       }));
 
       try {
-        // ── STEP 1: Upload PDF ──────────────────────────────────────────────
-        const upload = await api.uploadPDF(file, companyName);
+        // ── STEP 1: Reuse the parse from prepareUpload when it is the same
+        // file, so confirming the founders does not re-upload and re-run the
+        // extraction LLM call for nothing.
+        const upload =
+          uploadRef.current && uploadedFileRef.current === file
+            ? uploadRef.current
+            : await api.uploadPDF(file, companyName);
+        uploadRef.current = upload;
+        uploadedFileRef.current = file;
 
         setState((s) => ({
           ...s,
@@ -121,6 +183,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           revenue: upload.revenue,
           burn_rate: null,
           runway_months: upload.runway_months,
+          // What the user confirmed on the form, falling back to whatever the
+          // extractor found. Empty is a legitimate answer -- most decks have
+          // no team slide -- and the Founder Analysis tab now says so instead
+          // of showing an all-zero radar with no explanation.
+          founders:
+            founders.length > 0
+              ? founders
+              : (upload.detected_founders || []).map((f) => f.name).filter(Boolean),
         });
 
         // Percentages are derived from which real stage the backend reports,
@@ -200,7 +270,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ ...state, setCompanyName, runAnalysis, loadSavedReport, reset }}
+      value={{ ...state, setCompanyName, prepareUpload, runAnalysis, loadSavedReport, reset }}
     >
       {children}
     </AppContext.Provider>

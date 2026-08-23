@@ -43,6 +43,7 @@ def _fallback_ai_analysis(
     burn_rate: float,
     runway_months: float,
     synthesis_error: Exception = None,
+    market_comparables: dict | None = None,
 ) -> str:
     verified = sum(1 for r in claim_results if r.get("verdict") == "SUPPORTS")
     refuted = sum(1 for r in claim_results if r.get("verdict") == "REFUTES")
@@ -57,6 +58,24 @@ def _fallback_ai_analysis(
     concern_lines = risk_result.get("key_concerns") or ["Insufficient external evidence to identify specific concerns."]
     positive_lines = risk_result.get("positive_factors") or ["No independently verified positive factors found."]
     red_flag_lines = risk_result.get("red_flags") or ["None identified from available evidence."]
+
+    # The comparables section of this memo used to be a hardcoded "insufficient
+    # database evidence" line. It printed even when comparables.py had returned
+    # five real matches, so the memo contradicted the Comparable Companies table
+    # rendered a few inches below it in the same PDF.
+    comparables = (market_comparables or {}).get("comparables") or []
+    if comparables:
+        comparable_lines = "\n".join(
+            f"- {c.get('name')} ({c.get('industry', 'n/a')}, {c.get('batch', 'n/a')}) "
+            f"-- {c.get('outcome', 'unknown outcome')}, "
+            f"similarity {float(c.get('similarity') or 0):.2f}"
+            for c in comparables[:5]
+        )
+    else:
+        comparable_lines = (
+            "Insufficient database evidence was available for a reliable "
+            "comparable-company analysis."
+        )
 
     error_note = (
         "\n\nSynthesis note: AI synthesis is temporarily unavailable. "
@@ -83,7 +102,7 @@ def _fallback_ai_analysis(
 {chr(10).join(financial_lines)}
 
 5. COMPARABLE COMPANIES
-Insufficient database evidence was available for a reliable comparable-company analysis.
+{comparable_lines}
 
 6. RED FLAGS
 {chr(10).join(f'- {item}' for item in red_flag_lines)}
@@ -439,12 +458,40 @@ def run_due_diligence(
     risk_result["total_signals"] = risk_result.get("total_signals", 0)
     report["sections"]["risk"] = risk_result
 
+    # ── Founder/team verification — additive, evidence-grounded ──
+    #
+    # See agents/founder_verifier.py. Runs BEFORE the specialist agents, on
+    # purpose: it used to run after them, which meant the team analyst -- the
+    # agent that produces the capability scores behind the Founder Analysis
+    # radar -- never saw the one piece of independent, non-deck evidence about
+    # the team that this pipeline gathers. It was scoring founders from the
+    # deck alone, and on a deck with no team slide that means scoring them from
+    # nothing. Moving this up costs nothing (the two are independent) and gives
+    # the agent something real to reason over.
+    #
+    # `founders` is populated from the upload form, which pre-fills it from
+    # structured_extractor's read of the deck's team slide. Empty stays a
+    # legitimate answer -- most decks have no team slide -- and the report says
+    # so rather than showing an unexplained empty chart.
+    if founders:
+        _stage("Checking founder backgrounds against public evidence")
+        try:
+            from agents.founder_verifier import verify_founders as _verify_founders
+            founder_verification = _verify_founders(founders, company=company_name, deck_context=company_description)
+        except Exception:
+            logger.exception("Founder verification unavailable")
+            founder_verification = []
+    else:
+        founder_verification = []
+    report["sections"]["founder_verification"] = founder_verification
+
     _stage("Running market, team, bull and bear agents")
     specialist_results = run_investment_agents(
         company=company_name,
         document=risk_text,
         claims=claim_results,
         risk=risk_result,
+        founder_checks=founder_verification,
     )
     report["sections"].update(specialist_results)
 
@@ -481,20 +528,6 @@ def run_due_diligence(
     else:
         technical_score = {"available": False, "reason": "No GitHub URL was provided."}
     report["sections"]["technical_score"] = technical_score
-
-    # ── Founder/team verification — additive, evidence-grounded ──
-    # See agents/founder_verifier.py. Active only when founder names are
-    # supplied (optional DiligenceRequest field, not yet in the upload form).
-    if founders:
-        try:
-            from agents.founder_verifier import verify_founders as _verify_founders
-            founder_verification = _verify_founders(founders, company=company_name, deck_context=company_description)
-        except Exception:
-            logger.exception("Founder verification unavailable")
-            founder_verification = []
-    else:
-        founder_verification = []
-    report["sections"]["founder_verification"] = founder_verification
 
     # ── Real comparable-company benchmarking ─────────────────────
     # See comparables.py / market_data.py. Additive, never blocks the report.
@@ -731,6 +764,7 @@ If data quality is LOW, confidence must be below 60%.
             burn_rate=burn_rate,
             runway_months=runway_months,
             synthesis_error=e,
+            market_comparables=market_comparables,
         )
 
     report["sections"]["ai_analysis"] = ai_analysis

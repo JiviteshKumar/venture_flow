@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, field_validator
 from chatbot import chat_with_document, store_document
 from db import add_comment, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_decision, stats, update_analysis_job
 from db import healthcheck as neon_healthcheck
-from pdf_extractor import extract_text_from_pdf
+from document_extractor import SUPPORTED_FORMATS, UnsupportedDocument, extract_document, is_supported
 from rate_limiter import is_allowed as rate_limit_is_allowed
 from structured_extractor import extract_structured
 from ventureflow_agent import run_due_diligence
@@ -187,6 +187,12 @@ class ChatResponse(BaseModel):
     sources: list[str]
 
 
+class DetectedFounder(BaseModel):
+    name: str
+    role: str = ""
+    background: str = ""
+
+
 class PDFExtractResponse(BaseModel):
     session_id: str
     extracted_text: str
@@ -196,6 +202,14 @@ class PDFExtractResponse(BaseModel):
     runway_months: float | None
     page_count: int
     extraction_method: str = "regex_fallback"
+    # Founders read out of the deck itself, so the Founder Analysis tab has an
+    # input path at all. The upload form shows these back to the user to
+    # correct or add to before the analysis is submitted -- extraction is a
+    # starting point, not an authority on who founded the company.
+    detected_founders: list[DetectedFounder] = Field(default_factory=list)
+    # "PDF" / "PowerPoint" / "Word" / "plain text" / "Markdown". Surfaced so
+    # the UI can say which reader ran rather than implying everything is a PDF.
+    document_format: str = "PDF"
 
 
 def _as_list(value: Any) -> list[str]:
@@ -405,35 +419,38 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
     )
 
 
-@app.post("/upload-pdf", response_model=PDFExtractResponse)
-async def upload_pdf(
-    file: UploadFile = File(...),  # noqa: B008 - FastAPI multipart declaration
-    company_name: str = Form(default="Unknown Company", max_length=160),
-):
-    if file.content_type not in {"application/pdf", "application/x-pdf"} and not (
-        file.filename or ""
-    ).lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+async def _extract_uploaded_document(
+    file: UploadFile, company_name: str
+) -> PDFExtractResponse:
+    """Shared body of /upload-pdf and /upload-document.
+
+    Every accepted format converges on the same text -> extract_structured
+    pipeline (see document_extractor.py). The route stays format-agnostic so
+    adding a reader is one entry in that module and nothing here.
+    """
+    if not is_supported(file.filename or ""):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Supported formats: {', '.join(sorted(SUPPORTED_FORMATS))}",
+        )
     file_bytes = await file.read(10 * 1024 * 1024 + 1)
     if len(file_bytes) > 10 * 1024 * 1024:
         raise HTTPException(
             status_code=400, detail="File too large. Maximum size is 10MB"
         )
     try:
-        text = await run_in_threadpool(extract_text_from_pdf, file_bytes)
+        document = await run_in_threadpool(
+            extract_document, file.filename or "", file_bytes
+        )
+        text = document["text"]
         if len(text or "") < 50:
             raise HTTPException(
-                status_code=422, detail="Could not extract readable text from this PDF."
+                status_code=422,
+                detail=f"Could not extract readable text from this {document['format']} file.",
             )
         info = await run_in_threadpool(extract_structured, text)
         session_id = str(uuid.uuid4())
         store_document(session_id, text, company_name)
-        import io
-
-        import pdfplumber
-
-        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            page_count = len(pdf.pages)
         return PDFExtractResponse(
             session_id=session_id,
             extracted_text=text[:5000],
@@ -441,16 +458,40 @@ async def upload_pdf(
             company_description=info.get("description", ""),
             revenue=info.get("revenue"),
             runway_months=info.get("runway_months"),
-            page_count=page_count,
+            page_count=document["page_count"],
             extraction_method=info.get("_method", "regex_fallback"),
+            detected_founders=[
+                DetectedFounder(**founder) for founder in (info.get("founders") or [])[:5]
+            ],
+            document_format=document["format"],
         )
     except HTTPException:
         raise
+    except UnsupportedDocument as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        logger.exception("PDF processing error")
+        logger.exception("Document processing error")
         raise HTTPException(
-            status_code=422, detail="The PDF could not be processed."
+            status_code=422, detail="The document could not be processed."
         ) from exc
+
+
+@app.post("/upload-pdf", response_model=PDFExtractResponse)
+async def upload_pdf(
+    file: UploadFile = File(...),  # noqa: B008 - FastAPI multipart declaration
+    company_name: str = Form(default="Unknown Company", max_length=160),
+):
+    """Kept at its original path because the frontend and scripts/batch_deck_test.py
+    both call it; it now accepts every format /upload-document does."""
+    return await _extract_uploaded_document(file, company_name)
+
+
+@app.post("/upload-document", response_model=PDFExtractResponse)
+async def upload_document(
+    file: UploadFile = File(...),  # noqa: B008 - FastAPI multipart declaration
+    company_name: str = Form(default="Unknown Company", max_length=160),
+):
+    return await _extract_uploaded_document(file, company_name)
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -544,36 +585,68 @@ async def record_report_decision(report_id: str, request: DecisionRequest):
     return {"recorded": True, "total_decisions": decided}
 
 
-@app.get("/reports/{report_id}/pdf")
-async def saved_report_pdf(report_id: str):
-    """A real PDF, not the frontend's plain-text export -- see report_pdf.py."""
+# Export formats. All three render the same `report_document.build_report_blocks()`
+# content, so they cannot drift apart -- see report_document.py.
+EXPORT_FORMATS: dict[str, tuple[str, str]] = {
+    "pdf": ("application/pdf", "pdf"),
+    "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"),
+    "md": ("text/markdown; charset=utf-8", "md"),
+}
+
+
+async def _render_report_export(report_id: str, fmt: str) -> Response:
+    if fmt not in EXPORT_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported export format. Supported: {', '.join(sorted(EXPORT_FORMATS))}",
+        )
     try:
         stored = await run_in_threadpool(get_report, report_id)
     except Exception as exc:
-        logger.exception("Could not load report for PDF export")
+        logger.exception("Could not load report for export")
         raise HTTPException(status_code=503, detail="Saved report is currently unavailable.") from exc
     if not stored:
         raise HTTPException(status_code=404, detail="Saved report not found.")
 
     import datetime
 
-    from report_pdf import build_report_pdf
-
     report = _normalize_report(stored.get("raw_output"), stored["company"])
-    try:
-        pdf_bytes = await run_in_threadpool(
-            build_report_pdf, report, datetime.date.today().isoformat()
-        )
-    except Exception as exc:
-        logger.exception("PDF generation failed")
-        raise HTTPException(status_code=500, detail="Could not generate the PDF.") from exc
+    generated_on = datetime.date.today().isoformat()
 
+    try:
+        if fmt == "pdf":
+            from report_pdf import build_report_pdf
+            content: bytes = await run_in_threadpool(build_report_pdf, report, generated_on)
+        elif fmt == "docx":
+            from report_docx import build_report_docx
+            content = await run_in_threadpool(build_report_docx, report, generated_on)
+        else:
+            from report_markdown import build_report_markdown
+            markdown = await run_in_threadpool(build_report_markdown, report, generated_on)
+            content = markdown.encode("utf-8")
+    except Exception as exc:
+        logger.exception("%s generation failed", fmt)
+        raise HTTPException(status_code=500, detail=f"Could not generate the {fmt.upper()} export.") from exc
+
+    media_type, extension = EXPORT_FORMATS[fmt]
     safe_name = "".join(c if c.isalnum() else "-" for c in stored["company"]).strip("-").lower() or "ventureflow"
     return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{safe_name}-due-diligence.pdf"'},
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}-due-diligence.{extension}"'},
     )
+
+
+@app.get("/reports/{report_id}/pdf")
+async def saved_report_pdf(report_id: str):
+    """Kept at its original path -- the frontend links to it directly."""
+    return await _render_report_export(report_id, "pdf")
+
+
+@app.get("/reports/{report_id}/export/{fmt}")
+async def saved_report_export(report_id: str, fmt: str):
+    """PDF, Word or Markdown, all from the same report content."""
+    return await _render_report_export(report_id, fmt.lower())
 
 
 class CommentRequest(BaseModel):

@@ -1,30 +1,150 @@
-{"id": "s1", "claim": "Stripe was founded in 2010 by Patrick Collison and John Collison.", "gold_verdict": "SUPPORTS", "category": "founding_facts"}
-{"id": "s2", "claim": "Airbnb went public via IPO in December 2020.", "gold_verdict": "SUPPORTS", "category": "public_markets"}
-{"id": "s3", "claim": "OpenAI released ChatGPT to the public in November 2022.", "gold_verdict": "SUPPORTS", "category": "product_launch"}
-{"id": "s4", "claim": "SpaceX first successfully landed an orbital-class rocket booster in December 2015.", "gold_verdict": "SUPPORTS", "category": "milestone"}
-{"id": "s5", "claim": "Slack was acquired by Salesforce in a deal that closed in 2021.", "gold_verdict": "SUPPORTS", "category": "acquisition"}
-{"id": "s6", "claim": "Y Combinator was founded in 2005 by Paul Graham.", "gold_verdict": "SUPPORTS", "category": "founding_facts"}
-{"id": "s7", "claim": "Zoom's user base grew dramatically during the COVID-19 pandemic in 2020.", "gold_verdict": "SUPPORTS", "category": "growth"}
-{"id": "s8", "claim": "Instagram was acquired by Facebook in 2012 for approximately $1 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition"}
-{"id": "s9", "claim": "Tesla delivered its one millionth electric vehicle in March 2020.", "gold_verdict": "SUPPORTS", "category": "milestone"}
-{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "SUPPORTS", "category": "funding"}
-{"id": "r1", "claim": "WeWork successfully completed its initial IPO in 2019.", "gold_verdict": "REFUTES", "category": "public_markets"}
-{"id": "r2", "claim": "Theranos's blood-testing technology was validated as accurate by independent regulators.", "gold_verdict": "REFUTES", "category": "product_claims"}
-{"id": "r3", "claim": "Google was founded in 1995 by Mark Zuckerberg.", "gold_verdict": "REFUTES", "category": "founding_facts"}
-{"id": "r4", "claim": "Twitter changed its name to X in 2020.", "gold_verdict": "REFUTES", "category": "rebrand"}
-{"id": "r5", "claim": "Amazon was founded as a physical retail bookstore chain.", "gold_verdict": "REFUTES", "category": "founding_facts"}
-{"id": "r6", "claim": "Facebook's IPO in 2012 was a flawless, glitch-free debut on Nasdaq.", "gold_verdict": "REFUTES", "category": "public_markets"}
-{"id": "r7", "claim": "Quibi's short-form video app achieved profitability within six months of launch.", "gold_verdict": "REFUTES", "category": "product_claims"}
-{"id": "r8", "claim": "Elizabeth Holmes was acquitted of all fraud charges related to Theranos.", "gold_verdict": "REFUTES", "category": "legal"}
-{"id": "r9", "claim": "Blockbuster acquired Netflix in the early 2000s.", "gold_verdict": "REFUTES", "category": "acquisition"}
-{"id": "r10", "claim": "MySpace remains the largest social network in the world today.", "gold_verdict": "REFUTES", "category": "market_position"}
-{"id": "n1", "claim": "Northwind Analytics reported $4.2M in ARR as of Q3 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics"}
-{"id": "n2", "claim": "Bramblecart Inc.'s customer churn rate is below 2% monthly.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics"}
-{"id": "n3", "claim": "Fictively Labs holds a pending patent for its adaptive routing algorithm.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "ip_claims"}
-{"id": "n4", "claim": "Voltgrid Systems' pilot program with three unnamed utilities cut energy waste by 18%.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pilot_results"}
-{"id": "n5", "claim": "Harrow Biotech's Phase 1 trial enrolled 42 patients across two sites.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "clinical_trial"}
-{"id": "n6", "claim": "Cascade Ledger processes over 50,000 transactions daily for its enterprise clients.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction"}
-{"id": "n7", "claim": "Thistle & Vane's founding team previously worked together at a stealth startup.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "team"}
-{"id": "n8", "claim": "Anchorline Robotics' warehouse robots achieve 99.4% pick accuracy in production deployments.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims"}
-{"id": "n9", "claim": "Fernglass Health's app has a 4.8-star average rating among clinicians who tested it privately.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims"}
-{"id": "n10", "claim": "Marrow Data Systems is in exclusive talks with two Fortune 500 companies for a 2026 pilot.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pipeline"}
+{"id": "s1", "claim": "Stripe was founded in 2010 by Patrick Collison and John Collison.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "r1", "claim": "WeWork successfully completed its initial IPO in 2019.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "n1", "claim": "Northwind Analytics reported $4.2M in ARR as of Q3 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o1", "claim": "Siasto, the Y Combinator Winter 2011 collaboration tool for small businesses, reached 12,000 paying teams before it shut down.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s2", "claim": "Airbnb went public via IPO in December 2020.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r2", "claim": "Theranos's blood-testing technology was validated as accurate by independent regulators.", "gold_verdict": "REFUTES", "category": "product_claims", "subset": "public_fact"}
+{"id": "n2", "claim": "Bramblecart Inc.'s customer churn rate is below 2% monthly.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o2", "claim": "Slinkset's white-label social news platform hosted more than 4,000 active communities at its peak.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s3", "claim": "OpenAI released ChatGPT to the public in November 2022.", "gold_verdict": "SUPPORTS", "category": "product_launch", "subset": "public_fact"}
+{"id": "r3", "claim": "Google was founded in 1995 by Mark Zuckerberg.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "n3", "claim": "Fictively Labs holds a pending patent for its adaptive routing algorithm.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "ip_claims", "subset": "nonexistent_company"}
+{"id": "o3", "claim": "Picwing, the family photo-sharing startup, shipped over two million printed photos during its operating years.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s4", "claim": "SpaceX first successfully landed an orbital-class rocket booster in December 2015.", "gold_verdict": "SUPPORTS", "category": "milestone", "subset": "public_fact"}
+{"id": "r4", "claim": "Twitter changed its name to X in 2020.", "gold_verdict": "REFUTES", "category": "rebrand", "subset": "public_fact"}
+{"id": "n4", "claim": "Voltgrid Systems' pilot program with three unnamed utilities cut energy waste by 18%.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pilot_results", "subset": "nonexistent_company"}
+{"id": "o4", "claim": "Koduco Games' multiplayer iPad titles were downloaded more than 500,000 times.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s5", "claim": "Slack was acquired by Salesforce in a deal that closed in 2021.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r5", "claim": "Amazon was founded as a physical retail bookstore chain.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "n5", "claim": "Harrow Biotech's Phase 1 trial enrolled 42 patients across two sites.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "clinical_trial", "subset": "nonexistent_company"}
+{"id": "o5", "claim": "Inporia's Kaleidoscope fashion-discovery product sustained a 22% email open rate across its subscriber list.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "obscure_real_company"}
+{"id": "s6", "claim": "Y Combinator was founded in 2005 by Paul Graham.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "r6", "claim": "Facebook's IPO in 2012 was a flawless, glitch-free debut on Nasdaq.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "n6", "claim": "Cascade Ledger processes over 50,000 transactions daily for its enterprise clients.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "nonexistent_company"}
+{"id": "o6", "claim": "Zumo Labs' synthetic data pipeline generated over ten million labeled training images for its customers.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "obscure_real_company"}
+{"id": "s7", "claim": "Zoom's user base grew dramatically during the COVID-19 pandemic in 2020.", "gold_verdict": "SUPPORTS", "category": "growth", "subset": "public_fact"}
+{"id": "r7", "claim": "Quibi's short-form video app achieved profitability within six months of launch.", "gold_verdict": "REFUTES", "category": "product_claims", "subset": "public_fact"}
+{"id": "n7", "claim": "Thistle & Vane's founding team previously worked together at a stealth startup.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "team", "subset": "nonexistent_company"}
+{"id": "o7", "claim": "SBX Robotics' synthetic training data improved customer computer-vision model accuracy by an average of 15%.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pilot_results", "subset": "obscure_real_company"}
+{"id": "s8", "claim": "Instagram was acquired by Facebook in 2012 for approximately $1 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r8", "claim": "Elizabeth Holmes was acquitted of all fraud charges related to Theranos.", "gold_verdict": "REFUTES", "category": "legal", "subset": "public_fact"}
+{"id": "n8", "claim": "Anchorline Robotics' warehouse robots achieve 99.4% pick accuracy in production deployments.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "nonexistent_company"}
+{"id": "o8", "claim": "Nextop IO's mobile connectivity SDK was integrated into more than 300 production applications.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s9", "claim": "Tesla delivered its one millionth electric vehicle in March 2020.", "gold_verdict": "SUPPORTS", "category": "milestone", "subset": "public_fact"}
+{"id": "r9", "claim": "Blockbuster acquired Netflix in the early 2000s.", "gold_verdict": "REFUTES", "category": "acquisition", "subset": "public_fact"}
+{"id": "n9", "claim": "Fernglass Health's app has a 4.8-star average rating among clinicians who tested it privately.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "nonexistent_company"}
+{"id": "o9", "claim": "Roost's web push notification service delivered more than one billion notifications.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "SUPPORTS", "category": "funding", "subset": "public_fact"}
+{"id": "r10", "claim": "MySpace remains the largest social network in the world today.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "n10", "claim": "Marrow Data Systems is in exclusive talks with two Fortune 500 companies for a 2026 pilot.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pipeline", "subset": "nonexistent_company"}
+{"id": "o10", "claim": "Talentdrop paid more than $250,000 in referral bounties to its recruiting community.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s11", "claim": "GitHub was acquired by Microsoft in a deal that closed in 2018.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r11", "claim": "Microsoft acquired GitHub in 2012 for approximately $1 billion.", "gold_verdict": "REFUTES", "category": "acquisition", "subset": "public_fact"}
+{"id": "n11", "claim": "Quillhaven Robotics signed a $3.1M multi-year contract with a regional grocery chain in 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "nonexistent_company"}
+{"id": "o11", "claim": "Greo, the conversation video app from Y Combinator's Summer 2017 batch, had 40,000 monthly active users in 2018.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s12", "claim": "LinkedIn was acquired by Microsoft in 2016 for approximately $26 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r12", "claim": "Instagram was founded by Elon Musk.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "n12", "claim": "Deltafern Systems reduced its customer acquisition cost by 47% after changing acquisition channels in 2024.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o12", "claim": "Tingles, the relaxation video platform, had a paid subscriber base of 8,000 users.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s13", "claim": "WhatsApp was acquired by Facebook in 2014 for approximately $19 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r13", "claim": "Netflix began as a streaming-only service and never operated a DVD-by-mail business.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "n13", "claim": "Pelagic Byte Corp holds an ISO 27001 certification as of January 2026.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "compliance", "subset": "nonexistent_company"}
+{"id": "o13", "claim": "OneKey's EV charging site-selection tool was licensed by four charging networks.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s14", "claim": "YouTube was acquired by Google in 2006 for approximately $1.65 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r14", "claim": "Nokia was the world's best-selling smartphone brand in 2023.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "n14", "claim": "Wrenmoor Labs reported net revenue retention of 128% for fiscal year 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o14", "claim": "Milky Way AI connected consumer packaged goods brands to more than 200,000 retail stores.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s15", "claim": "Snowflake went public on the New York Stock Exchange in September 2020.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r15", "claim": "FTX remained solvent throughout 2022 and never filed for bankruptcy.", "gold_verdict": "REFUTES", "category": "financial_distress", "subset": "public_fact"}
+{"id": "n15", "claim": "Ostrich Ledger Technologies employs fourteen full-time engineers based in Lisbon.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "team", "subset": "nonexistent_company"}
+{"id": "o15", "claim": "Lunatic's server-side WebAssembly runtime was running in production at 30 companies.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s16", "claim": "Coinbase went public through a direct listing on Nasdaq in April 2021.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r16", "claim": "Silicon Valley Bank was acquired by JPMorgan Chase after its 2023 failure.", "gold_verdict": "REFUTES", "category": "acquisition", "subset": "public_fact"}
+{"id": "n16", "claim": "Sablefish AI's language model outperforms comparable commercial models by twelve points on its internal benchmark suite.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "nonexistent_company"}
+{"id": "o16", "claim": "Fabricly's apparel sourcing marketplace facilitated $5M in manufacturing orders.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s17", "claim": "Adobe announced an agreement to acquire Figma in September 2022.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r17", "claim": "Apple became the first company to reach a one trillion dollar market capitalization, doing so in 2010.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "n17", "claim": "Gorse and Thistle Bioinformatics closed a $6M seed round led by an unnamed European fund.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "funding", "subset": "nonexistent_company"}
+{"id": "o17", "claim": "Celery, the Y Combinator pre-order platform, processed more than $30M in pre-orders before its acquisition.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s18", "claim": "Adobe's planned acquisition of Figma was terminated in December 2023.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r18", "claim": "Uber has been profitable in every year since its founding.", "gold_verdict": "REFUTES", "category": "financial_metrics", "subset": "public_fact"}
+{"id": "n18", "claim": "Cindervale Energy's battery chemistry retains 80% of capacity after 900 charge cycles.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "nonexistent_company"}
+{"id": "o18", "claim": "Zoomer, the outsourced food delivery startup, completed 1.2 million deliveries.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s19", "claim": "Elon Musk completed his acquisition of Twitter in October 2022 for approximately $44 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r19", "claim": "Tesla was founded in 2003 by Elon Musk as its sole founder.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "n19", "claim": "Marrowlight Logistics operates in eleven metropolitan areas across North America.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "nonexistent_company"}
+{"id": "o19", "claim": "CarWoo helped consumers purchase more than 25,000 vehicles through its car-buying marketplace.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s20", "claim": "Dropbox went public on Nasdaq in March 2018.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r20", "claim": "Zoom was founded in 2020 in response to the COVID-19 pandemic.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "n20", "claim": "Halverstone Compliance's platform is used by three of the ten largest US regional banks.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "nonexistent_company"}
+{"id": "o20", "claim": "Sage Care's in-home elder care platform served 1,800 families across California.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s21", "claim": "Airbnb was founded in 2008 by Brian Chesky, Joe Gebbia and Nathan Blecharczyk.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "r21", "claim": "Slack was originally built as a video-conferencing product.", "gold_verdict": "REFUTES", "category": "product_claims", "subset": "public_fact"}
+{"id": "n21", "claim": "Brindlewick Analytics grew monthly active users by 340% year over year in 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "growth", "subset": "nonexistent_company"}
+{"id": "o21", "claim": "Faction Technology's driverless electric vehicles completed 20,000 autonomous delivery miles.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "milestone", "subset": "obscure_real_company"}
+{"id": "s22", "claim": "Palantir went public through a direct listing in September 2020.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r22", "claim": "Amazon Web Services was launched in 2015.", "gold_verdict": "REFUTES", "category": "product_launch", "subset": "public_fact"}
+{"id": "n22", "claim": "Tessellate Freight has signed a letter of intent with a Fortune 100 shipper.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pipeline", "subset": "nonexistent_company"}
+{"id": "o22", "claim": "The Buttermilk Company's instant meal kits were stocked in 900 retail locations.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s23", "claim": "NVIDIA's market capitalization exceeded one trillion dollars for the first time in 2023.", "gold_verdict": "SUPPORTS", "category": "market_position", "subset": "public_fact"}
+{"id": "r23", "claim": "Y Combinator is headquartered in New York City.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "n23", "claim": "Norvane Diagnostics received Breakthrough Device designation from the FDA in 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "compliance", "subset": "nonexistent_company"}
+{"id": "o23", "claim": "NudgePad's browser-based IDE had 15,000 registered developers before the team joined Microsoft.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s24", "claim": "Anthropic was founded in 2021 by former OpenAI employees including Dario Amodei.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "r24", "claim": "Stripe completed an initial public offering in 2021.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "n24", "claim": "Quietloom Software reported a gross margin of 84% in its most recent fiscal year.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o24", "claim": "Snipd's content-clipping tool had 60,000 registered users.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s25", "claim": "DeepMind was acquired by Google in 2014.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r25", "claim": "SpaceX is a publicly traded company listed on Nasdaq.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "n25", "claim": "Kestrelbridge Payments processes $180M in annualized payment volume.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o25", "claim": "Jumpchat's cross-channel messaging bridge handled five million messages per month.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "s26", "claim": "Sam Altman was removed as chief executive of OpenAI in November 2023 and reinstated within days.", "gold_verdict": "SUPPORTS", "category": "management", "subset": "public_fact"}
+{"id": "r26", "claim": "OpenAI has operated exclusively as a for-profit company since it was founded.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "s27", "claim": "Zoom Video Communications went public on Nasdaq in April 2019.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r27", "claim": "ChatGPT was first released to the public in 2020.", "gold_verdict": "REFUTES", "category": "product_launch", "subset": "public_fact"}
+{"id": "s28", "claim": "Uber went public on the New York Stock Exchange in May 2019.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r28", "claim": "Google's parent holding company is named Meta Platforms.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "s29", "claim": "Lyft went public in March 2019, before Uber's initial public offering.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r29", "claim": "Facebook changed its corporate name to Alphabet in 2021.", "gold_verdict": "REFUTES", "category": "rebrand", "subset": "public_fact"}
+{"id": "s30", "claim": "Shopify is a Canadian company that went public in 2015.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r30", "claim": "Adam Neumann remained chief executive of WeWork until the company filed for bankruptcy in 2023.", "gold_verdict": "REFUTES", "category": "management", "subset": "public_fact"}
+{"id": "s31", "claim": "Atlassian was founded in Australia in 2002 by Mike Cannon-Brookes and Scott Farquhar.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "r31", "claim": "Enron's collapse was caused by a cyberattack on its trading systems.", "gold_verdict": "REFUTES", "category": "financial_distress", "subset": "public_fact"}
+{"id": "s32", "claim": "Spotify went public through a direct listing on the New York Stock Exchange in April 2018.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r32", "claim": "Juicero is still operating and its juice press is widely regarded as an essential kitchen device.", "gold_verdict": "REFUTES", "category": "product_claims", "subset": "public_fact"}
+{"id": "s33", "claim": "Slack went public through a direct listing on the New York Stock Exchange in June 2019.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r33", "claim": "Yahoo acquired Google in 2002.", "gold_verdict": "REFUTES", "category": "acquisition", "subset": "public_fact"}
+{"id": "s34", "claim": "Salesforce acquired Tableau in 2019.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r34", "claim": "IBM sold its Watson artificial intelligence division to Apple in 2019.", "gold_verdict": "REFUTES", "category": "acquisition", "subset": "public_fact"}
+{"id": "s35", "claim": "IBM acquired Red Hat in 2019 for approximately $34 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r35", "claim": "Lyft operates in more countries than Uber.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "s36", "claim": "Intuit acquired Mailchimp in 2021 for approximately $12 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r36", "claim": "Nikola Corporation's 2018 promotional video showed its truck driving under its own power.", "gold_verdict": "REFUTES", "category": "product_claims", "subset": "public_fact"}
+{"id": "s37", "claim": "Amazon acquired Whole Foods Market in 2017 for approximately $13.7 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r37", "claim": "Elizabeth Holmes founded Theranos after completing a medical degree at Stanford University.", "gold_verdict": "REFUTES", "category": "team", "subset": "public_fact"}
+{"id": "s38", "claim": "Twitter was rebranded as X in 2023 under Elon Musk's ownership.", "gold_verdict": "SUPPORTS", "category": "rebrand", "subset": "public_fact"}
+{"id": "r38", "claim": "Twitter's Blue paid verification subscription was introduced in 2015.", "gold_verdict": "REFUTES", "category": "product_launch", "subset": "public_fact"}
+{"id": "s39", "claim": "Stripe was valued at $95 billion in a funding round announced in March 2021.", "gold_verdict": "SUPPORTS", "category": "funding", "subset": "public_fact"}
+{"id": "r39", "claim": "Snapchat's parent company is named Meta Platforms.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "s40", "claim": "FTX filed for Chapter 11 bankruptcy protection in November 2022.", "gold_verdict": "SUPPORTS", "category": "legal", "subset": "public_fact"}
+{"id": "r40", "claim": "Airbnb owns and operates the majority of the properties listed on its platform.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "s41", "claim": "Sam Bankman-Fried was convicted of fraud by a federal jury in November 2023.", "gold_verdict": "SUPPORTS", "category": "legal", "subset": "public_fact"}
+{"id": "r41", "claim": "Dropbox was acquired by Apple in 2011.", "gold_verdict": "REFUTES", "category": "acquisition", "subset": "public_fact"}
+{"id": "s42", "claim": "Silicon Valley Bank failed and was placed under regulatory control in March 2023.", "gold_verdict": "SUPPORTS", "category": "financial_distress", "subset": "public_fact"}
+{"id": "r42", "claim": "Kodak successfully pivoted to become the dominant digital camera company of the 2010s.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "s43", "claim": "Instacart went public on Nasdaq in September 2023.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r43", "claim": "Segway became the mass-market personal transportation standard its founders predicted.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "s44", "claim": "Arm Holdings listed its shares on Nasdaq in September 2023.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r44", "claim": "Groupon's share price has risen steadily since its 2011 initial public offering.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "s45", "claim": "Klarna is a Swedish buy-now-pay-later payments company.", "gold_verdict": "SUPPORTS", "category": "company_profile", "subset": "public_fact"}
+{"id": "r45", "claim": "Alibaba is an American company headquartered in Seattle.", "gold_verdict": "REFUTES", "category": "company_profile", "subset": "public_fact"}
+{"id": "s46", "claim": "Databricks was founded by the original creators of Apache Spark.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "r46", "claim": "Spotify was founded in the United States.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "s47", "claim": "GitLab went public on Nasdaq in October 2021.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r47", "claim": "Bird, the electric scooter company, reached sustained profitability shortly after launch and has never filed for bankruptcy.", "gold_verdict": "REFUTES", "category": "financial_distress", "subset": "public_fact"}
+{"id": "s48", "claim": "Reddit went public on the New York Stock Exchange in March 2024.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r48", "claim": "GitHub Copilot was launched in 2015.", "gold_verdict": "REFUTES", "category": "product_launch", "subset": "public_fact"}
+{"id": "s49", "claim": "DoorDash went public on the New York Stock Exchange in December 2020.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r49", "claim": "Mt. Gox is currently the world's largest cryptocurrency exchange by trading volume.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "s50", "claim": "Datadog went public on Nasdaq in September 2019.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "r50", "claim": "Pets.com survived the dot-com crash and remains a leading online pet retailer.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}

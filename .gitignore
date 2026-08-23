@@ -75,3 +75,15 @@ ml/data/scifact_data.tar.gz
 dist/
 frontend/dist/
 build/
+
+# The hindsight-feature variant of the Outcome Model. Trained by
+# ml/scripts/train_outcome_model.py purely so the leakage ablation in
+# ml/models/outcome_model_report.json can be reproduced; nothing loads it and
+# it regenerates with the shipped model in one command. Same treatment as the
+# other unshipped weights above -- the measured numbers are committed, the
+# bytes are not.
+ml/models/outcome_model_combined_hindsight.txt
+
+# Local run logs from the eval harnesses (also covered by *.log, listed
+# explicitly because the directory is easy to add to by accident).
+.runlogs/

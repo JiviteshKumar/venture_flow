@@ -86,7 +86,12 @@ EVIDENCE:
         return fallback
 
 
-def _evidence_block(document: str, claims: list[dict[str, Any]], risk: dict[str, Any]) -> str:
+def _evidence_block(
+    document: str,
+    claims: list[dict[str, Any]],
+    risk: dict[str, Any],
+    founder_checks: list[dict[str, Any]] | None = None,
+) -> str:
     claim_lines = [
         f"- {claim.get('verdict', 'UNKNOWN')}: {claim.get('claim', '')}"
         for claim in claims
@@ -94,17 +99,41 @@ def _evidence_block(document: str, claims: list[dict[str, Any]], risk: dict[str,
     # Python < 3.12 does not allow a backslash inside an f-string expression,
     # so the join has to happen on its own line before the f-string is built.
     claims_block = "\n".join(claim_lines) or "No claims were extracted."
+
+    # Founder background checks (agents/founder_verifier.py). This is the only
+    # evidence about the team in this pipeline that does not come from the deck
+    # the founders wrote, so withholding it from the team analyst -- which is
+    # what happened until 23 Aug 2026, because verification ran after the
+    # agents -- left that agent grading a team on its own self-description, or
+    # on nothing at all when the deck had no team slide.
+    founder_lines = [
+        f"- {check.get('name', 'unknown')}: {check.get('assessment', 'NOT_ENOUGH_INFO')} "
+        f"(confidence {check.get('confidence', 0)}) -- {check.get('evidence_summary', '')}"
+        for check in (founder_checks or [])
+        if check.get("available")
+    ]
+    founders_block = "\n".join(founder_lines) or (
+        "No founder names were submitted, so no independent background check was run."
+    )
+
     return (
         f"PITCH DECK TEXT:\n{document or 'No readable deck text.'}\n\n"
         f"CLAIM RESULTS:\n{claims_block}\n\n"
+        f"FOUNDER BACKGROUND CHECKS (independent web evidence):\n{founders_block}\n\n"
         f"RISK SIGNALS:\n{json.dumps(risk, default=str)[:3000]}"
     )
 
 
-def run_investment_agents(company: str, document: str, claims: list[dict[str, Any]], risk: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def run_investment_agents(
+    company: str,
+    document: str,
+    claims: list[dict[str, Any]],
+    risk: dict[str, Any],
+    founder_checks: list[dict[str, Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
     """Run independent bull, bear, market and team specialists in parallel."""
     del company  # Company identity is already included in supplied deck evidence.
-    evidence = _evidence_block(document, claims, risk)
+    evidence = _evidence_block(document, claims, risk, founder_checks)
     jobs = {
         "market": (
             "market-validation analyst",
@@ -113,7 +142,10 @@ def run_investment_agents(company: str, document: str, claims: list[dict[str, An
         ),
         "team": (
             "founder and team diligence analyst",
-            "Assess only team capabilities, hiring gaps and execution evidence present in the deck. Return JSON with keys confidence, overall_assessment, capabilities (area/score/evidence), strengths, gaps, questions.",
+            "Assess team capabilities, hiring gaps and execution evidence. Use both the deck text and the FOUNDER BACKGROUND CHECKS section, which is independent web evidence about the named founders. "
+            "Return JSON with keys confidence, overall_assessment, capabilities (area/score/evidence), strengths, gaps, questions. "
+            "`capabilities` must hold 4-6 named capability areas scored 0-100 (for example Technical Depth, Domain Experience, Commercial Execution, Prior Startup Experience, Team Completeness), each with a short verbatim evidence excerpt. "
+            "Return capabilities as an empty list ONLY when there is genuinely no team evidence of any kind -- a scored area with nothing behind it is worse than an absent one.",
             {"confidence": 0, "overall_assessment": "Insufficient team information", "capabilities": [], "strengths": [], "gaps": ["Deck does not provide enough team evidence."], "questions": ["Provide founder biographies and relevant operating experience."]},
         ),
         "bull_case": (

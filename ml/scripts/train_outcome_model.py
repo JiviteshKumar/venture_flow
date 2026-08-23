@@ -57,18 +57,50 @@ def load_rows() -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def build_structured_features(rows: list[dict], industry_enc: LabelEncoder, stage_enc: LabelEncoder) -> np.ndarray:
-    industries = industry_enc.transform([r["industry"] for r in rows])
-    stages = stage_enc.transform([r["stage"] for r in rows])
-    feats = np.column_stack([
-        industries,
-        stages,
-        [r["team_size"] for r in rows],
-        [r["num_tags"] for r in rows],
-        [int(r["nonprofit"]) for r in rows],
-        [r["age_years"] for r in rows],
-    ]).astype(float)
-    return feats
+# Structured features, split by whether they are knowable at the moment a VC
+# reads a seed-stage deck.
+#
+# `team_size` and `age_years` are not. They are recorded at snapshot time,
+# years after the outcome they are being used to predict: exited companies have
+# median headcount 11 and mean 105, shut-down companies median 3 and mean 10,
+# which is successful companies having grown, not a seed-stage signal. A model
+# keeping them learns "large, old team implies success" and marks down exactly
+# the four-person startups this product exists to evaluate. `age_years`
+# additionally encodes right-censoring, since older cohorts have had longer to
+# resolve.
+#
+# The VentureFlow Score model was rebuilt specifically to exclude these (see
+# ml/research/README.md), and the Outcome Model kept using them -- two models
+# in one pipeline under opposite methodologies, with no note anywhere saying
+# so. That inconsistency is what this split fixes.
+DEPLOYABLE_FEATURES = ["industry", "stage", "num_tags", "nonprofit"]
+HINDSIGHT_FEATURES = ["team_size", "age_years"]
+
+
+def build_structured_features(
+    rows: list[dict],
+    industry_enc: LabelEncoder,
+    stage_enc: LabelEncoder,
+    include_hindsight: bool = True,
+) -> tuple[np.ndarray, list[str]]:
+    """Return (feature matrix, column names).
+
+    Column names are returned rather than assumed by position because two
+    variants now exist and importances are reported per column; a mismatch
+    there would silently mislabel an importance table.
+    """
+    columns: list[np.ndarray] = [
+        industry_enc.transform([r["industry"] for r in rows]),
+        stage_enc.transform([r["stage"] for r in rows]),
+        np.array([r["num_tags"] for r in rows]),
+        np.array([int(r["nonprofit"]) for r in rows]),
+    ]
+    names = list(DEPLOYABLE_FEATURES)
+    if include_hindsight:
+        columns.append(np.array([r["team_size"] for r in rows]))
+        columns.append(np.array([r["age_years"] for r in rows]))
+        names += HINDSIGHT_FEATURES
+    return np.column_stack(columns).astype(float), names
 
 
 def evaluate(y_true, y_prob, label: str) -> dict:
@@ -136,14 +168,28 @@ def main() -> None:
 
     industry_enc = LabelEncoder().fit([r["industry"] for r in rows])
     stage_enc = LabelEncoder().fit([r["stage"] for r in rows])
-    structured = build_structured_features(rows, industry_enc, stage_enc)
-    scaler = StandardScaler().fit(structured[idx_train])
-    structured_scaled = scaler.transform(structured)
+
+    structured_hindsight, hindsight_names = build_structured_features(
+        rows, industry_enc, stage_enc, include_hindsight=True
+    )
+    scaler_hindsight = StandardScaler().fit(structured_hindsight[idx_train])
+    structured_hindsight_scaled = scaler_hindsight.transform(structured_hindsight)
+
+    structured_deployable, deployable_names = build_structured_features(
+        rows, industry_enc, stage_enc, include_hindsight=False
+    )
+    scaler_deployable = StandardScaler().fit(structured_deployable[idx_train])
+    structured_deployable_scaled = scaler_deployable.transform(structured_deployable)
 
     variants = {
+        # The three original variants are kept unchanged so the published
+        # ablation stays comparable run to run, and so the cost of removing
+        # the hindsight features is visible rather than asserted.
         "text_only": text_features,
-        "structured_only": structured_scaled,
-        "combined": np.hstack([text_features, structured_scaled]),
+        "structured_only_with_hindsight": structured_hindsight_scaled,
+        "combined_with_hindsight": np.hstack([text_features, structured_hindsight_scaled]),
+        "structured_only_deployable": structured_deployable_scaled,
+        "combined_deployable": np.hstack([text_features, structured_deployable_scaled]),
     }
 
     all_metrics = []
@@ -155,32 +201,58 @@ def main() -> None:
         all_metrics.append(metrics)
         boosters[name] = booster
 
-    # Save the winning (combined) model plus everything needed to run inference later.
-    boosters["combined"].save_model(str(MODEL_DIR / "outcome_model_combined.txt"))
+    # The SHIPPED model is the deployable one. ml/inference.py loads this file,
+    # and until 23 Aug 2026 it was the hindsight variant -- the same leakage the
+    # VentureFlow Score model was rebuilt to exclude, running in the same
+    # pipeline with no note anywhere that the two disagreed on methodology.
+    boosters["combined_deployable"].save_model(str(MODEL_DIR / "outcome_model_combined.txt"))
+    # Kept alongside it, unshipped, so the gap between the two rows in the
+    # ablation can be reproduced without retraining.
+    boosters["combined_with_hindsight"].save_model(
+        str(MODEL_DIR / "outcome_model_combined_hindsight.txt")
+    )
     import pickle
     with open(MODEL_DIR / "outcome_model_encoders.pkl", "wb") as f:
         pickle.dump({
             "industry_encoder": industry_enc,
             "stage_encoder": stage_enc,
-            "scaler": scaler,
+            # The deployable scaler, matching the shipped booster. A mismatch
+            # here would not raise -- it would silently scale four features
+            # with six features' statistics.
+            "scaler": scaler_deployable,
+            "structured_feature_names": deployable_names,
+            "scaler_hindsight": scaler_hindsight,
+            "structured_feature_names_hindsight": hindsight_names,
             "tfidf": tfidf,
             "svd": svd,
         }, f)
 
-    # Feature importance for the ablation write-up.
-    importance = boosters["combined"].feature_importance(importance_type="gain")
-    feature_names = (
-        [f"text_svd_{i}" for i in range(text_features.shape[1])]
-        + ["industry", "stage", "team_size", "num_tags", "nonprofit", "age_years"]
+    def importance_of(booster, structured_names: list[str]) -> tuple[dict, float]:
+        importance = booster.feature_importance(importance_type="gain")
+        names = [f"text_svd_{i}" for i in range(text_features.shape[1])] + structured_names
+        structured_importance = {
+            name: round(float(val), 2)
+            for name, val in zip(names, importance)
+            if not name.startswith("text_svd_")
+        }
+        text_total = float(sum(
+            val for name, val in zip(names, importance) if name.startswith("text_svd_")
+        ))
+        return structured_importance, round(text_total, 2)
+
+    deployable_importance, deployable_text_total = importance_of(
+        boosters["combined_deployable"], deployable_names
     )
-    structured_importance = {
-        name: float(val)
-        for name, val in zip(feature_names, importance)
-        if not name.startswith("text_svd_")
-    }
-    text_importance_total = float(sum(
-        val for name, val in zip(feature_names, importance) if name.startswith("text_svd_")
-    ))
+    hindsight_importance, hindsight_text_total = importance_of(
+        boosters["combined_with_hindsight"], hindsight_names
+    )
+
+    by_variant = {m["variant"]: m for m in all_metrics}
+    leakage_cost = round(
+        by_variant["combined_with_hindsight"]["roc_auc"]
+        - by_variant["combined_deployable"]["roc_auc"],
+        4,
+    )
 
     report = {
         "dataset": {
@@ -191,9 +263,23 @@ def main() -> None:
             "n_negative": len(labels) - int(sum(labels)),
             "min_age_years_filter": 3.5,
         },
+        "shipped_variant": "combined_deployable",
+        "leakage_control": {
+            "excluded_features": HINDSIGHT_FEATURES,
+            "reason": (
+                "Both are recorded at snapshot time, years after the outcome being "
+                "predicted: team_size measures growth that already happened, and "
+                "age_years encodes right-censoring. Excluded to match the methodology "
+                "of the VentureFlow Score model (ml/research/README.md), which this "
+                "model previously contradicted."
+            ),
+            "roc_auc_cost_of_excluding_them": leakage_cost,
+        },
         "ablation": all_metrics,
-        "combined_model_structured_feature_importance_gain": structured_importance,
-        "combined_model_text_feature_importance_gain_total": text_importance_total,
+        "shipped_model_structured_feature_importance_gain": deployable_importance,
+        "shipped_model_text_feature_importance_gain_total": deployable_text_total,
+        "hindsight_model_structured_feature_importance_gain": hindsight_importance,
+        "hindsight_model_text_feature_importance_gain_total": hindsight_text_total,
     }
     (MODEL_DIR / "outcome_model_report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print("\nSaved model + report to", MODEL_DIR)

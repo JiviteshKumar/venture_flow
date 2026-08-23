@@ -1,0 +1,2533 @@
+{
+  "benchmark": "risk_benchmark.jsonl",
+  "note": "LLM detector runs without the web-search step of the production score_risk(); see module docstring.",
+  "detectors": {
+    "keyword": {
+      "metrics": {
+        "n": 28,
+        "confusion": {
+          "tp": 11,
+          "fp": 1,
+          "fn": 4,
+          "tn": 12
+        },
+        "score_roc_auc": 0.836,
+        "precision": 0.917,
+        "recall": 0.733,
+        "f1": 0.815,
+        "accuracy": 0.821,
+        "boilerplate_false_positive_rate": 0.077,
+        "boilerplate_n": 13,
+        "boilerplate_flagged_ids": [
+          "sec_safe_harbor_meridian"
+        ],
+        "missed_red_flag_ids": [
+          "sec_cfo_resignation_littlefield",
+          "deck_customer_concentration",
+          "deck_runway_crunch",
+          "deck_founder_departure_ip"
+        ],
+        "category_precision": 1.0,
+        "category_recall": 0.571
+      },
+      "rows": [
+        {
+          "id": "sec_going_concern_usprecious",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "going concern"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_going_concern_salamon",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "going concern"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_material_weakness_meridian",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "material weakness"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_material_weakness_vividseats",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "material weakness"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_sec_subpoena_lvs",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 2.0,
+          "detail": {
+            "signals": {
+              "legal_risk": [
+                "lawsuit",
+                "subpoena"
+              ]
+            },
+            "total_signals": 2,
+            "score": 2.0
+          }
+        },
+        {
+          "id": "sec_subpoena_restatement_cpiaero",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "score": 3.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "restatement"
+              ],
+              "legal_risk": [
+                "litigation",
+                "subpoena"
+              ]
+            },
+            "total_signals": 3,
+            "score": 3.0
+          }
+        },
+        {
+          "id": "sec_wells_notice_competitivetech",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 3.0,
+          "detail": {
+            "signals": {
+              "legal_risk": [
+                "lawsuit",
+                "SEC investigation",
+                "subpoena"
+              ]
+            },
+            "total_signals": 3,
+            "score": 3.0
+          }
+        },
+        {
+          "id": "sec_restatement_maxwell",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "restatement"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_restatement_bam",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "restatement"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_covenant_breach_ameri",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "default"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_covenant_default_zynex",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "financial_risk": [
+                "default"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_cfo_resignation_littlefield",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_safe_harbor_meridian",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 1.0,
+          "detail": {
+            "signals": {
+              "legal_risk": [
+                "litigation"
+              ]
+            },
+            "total_signals": 1,
+            "score": 1.0
+          }
+        },
+        {
+          "id": "sec_riskfactor_summary_budajuice",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_additional_capital_lotterydotcom",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_critical_audit_matter_endeavor",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_asc606_policy_solarcapital",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_asc606_policy_chicagorivet",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_8k_item202_chubb",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_8k_board_appointment_skyway",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_econ_conditions_ranger",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "sec_competition_rentrak",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "deck_customer_concentration",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "operational_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "deck_runway_crunch",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "deck_founder_departure_ip",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "deck_product_description",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "deck_market_sizing",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        },
+        {
+          "id": "deck_team_slide",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "signals": {},
+            "total_signals": 0,
+            "score": 0.0
+          }
+        }
+      ]
+    },
+    "tone_model": {
+      "metrics": {
+        "n": 28,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 15,
+          "tn": 13
+        },
+        "score_roc_auc": 0.333,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.464,
+        "boilerplate_false_positive_rate": 0.0,
+        "boilerplate_n": 13,
+        "boilerplate_flagged_ids": [],
+        "missed_red_flag_ids": [
+          "sec_going_concern_usprecious",
+          "sec_going_concern_salamon",
+          "sec_material_weakness_meridian",
+          "sec_material_weakness_vividseats",
+          "sec_sec_subpoena_lvs",
+          "sec_subpoena_restatement_cpiaero",
+          "sec_wells_notice_competitivetech",
+          "sec_restatement_maxwell",
+          "sec_restatement_bam",
+          "sec_covenant_breach_ameri",
+          "sec_covenant_default_zynex",
+          "sec_cfo_resignation_littlefield",
+          "deck_customer_concentration",
+          "deck_runway_crunch",
+          "deck_founder_departure_ip"
+        ],
+        "category_precision": 0.0,
+        "category_recall": 0.0
+      },
+      "rows": [
+        {
+          "id": "sec_going_concern_usprecious",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0711,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.071,
+              "neutral": 0.81,
+              "positive": 0.119
+            },
+            "score": 0.0711
+          }
+        },
+        {
+          "id": "sec_going_concern_salamon",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0136,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.014,
+              "neutral": 0.855,
+              "positive": 0.131
+            },
+            "score": 0.0136
+          }
+        },
+        {
+          "id": "sec_material_weakness_meridian",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0282,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.028,
+              "neutral": 0.855,
+              "positive": 0.117
+            },
+            "score": 0.0282
+          }
+        },
+        {
+          "id": "sec_material_weakness_vividseats",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0146,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.015,
+              "neutral": 0.804,
+              "positive": 0.181
+            },
+            "score": 0.0146
+          }
+        },
+        {
+          "id": "sec_sec_subpoena_lvs",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0217,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.022,
+              "neutral": 0.93,
+              "positive": 0.048
+            },
+            "score": 0.0217
+          }
+        },
+        {
+          "id": "sec_subpoena_restatement_cpiaero",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0129,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.013,
+              "neutral": 0.924,
+              "positive": 0.063
+            },
+            "score": 0.0129
+          }
+        },
+        {
+          "id": "sec_wells_notice_competitivetech",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0533,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.053,
+              "neutral": 0.814,
+              "positive": 0.133
+            },
+            "score": 0.0533
+          }
+        },
+        {
+          "id": "sec_restatement_maxwell",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.1413,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.141,
+              "neutral": 0.717,
+              "positive": 0.142
+            },
+            "score": 0.1413
+          }
+        },
+        {
+          "id": "sec_restatement_bam",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0239,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.024,
+              "neutral": 0.818,
+              "positive": 0.159
+            },
+            "score": 0.0239
+          }
+        },
+        {
+          "id": "sec_covenant_breach_ameri",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0394,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.039,
+              "neutral": 0.882,
+              "positive": 0.078
+            },
+            "score": 0.0394
+          }
+        },
+        {
+          "id": "sec_covenant_default_zynex",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0272,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.027,
+              "neutral": 0.909,
+              "positive": 0.064
+            },
+            "score": 0.0272
+          }
+        },
+        {
+          "id": "sec_cfo_resignation_littlefield",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0122,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.012,
+              "neutral": 0.903,
+              "positive": 0.085
+            },
+            "score": 0.0122
+          }
+        },
+        {
+          "id": "sec_safe_harbor_meridian",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.1041,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.104,
+              "neutral": 0.798,
+              "positive": 0.098
+            },
+            "score": 0.1041
+          }
+        },
+        {
+          "id": "sec_riskfactor_summary_budajuice",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0756,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.076,
+              "neutral": 0.635,
+              "positive": 0.289
+            },
+            "score": 0.0756
+          }
+        },
+        {
+          "id": "sec_additional_capital_lotterydotcom",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0251,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.025,
+              "neutral": 0.559,
+              "positive": 0.416
+            },
+            "score": 0.0251
+          }
+        },
+        {
+          "id": "sec_critical_audit_matter_endeavor",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0956,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.096,
+              "neutral": 0.638,
+              "positive": 0.267
+            },
+            "score": 0.0956
+          }
+        },
+        {
+          "id": "sec_asc606_policy_solarcapital",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0948,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.095,
+              "neutral": 0.749,
+              "positive": 0.156
+            },
+            "score": 0.0948
+          }
+        },
+        {
+          "id": "sec_asc606_policy_chicagorivet",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0596,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.06,
+              "neutral": 0.472,
+              "positive": 0.468
+            },
+            "score": 0.0596
+          }
+        },
+        {
+          "id": "sec_8k_item202_chubb",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0216,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.022,
+              "neutral": 0.84,
+              "positive": 0.139
+            },
+            "score": 0.0216
+          }
+        },
+        {
+          "id": "sec_8k_board_appointment_skyway",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0143,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.014,
+              "neutral": 0.962,
+              "positive": 0.024
+            },
+            "score": 0.0143
+          }
+        },
+        {
+          "id": "sec_econ_conditions_ranger",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.1861,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.186,
+              "neutral": 0.624,
+              "positive": 0.19
+            },
+            "score": 0.1861
+          }
+        },
+        {
+          "id": "sec_competition_rentrak",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0505,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.051,
+              "neutral": 0.776,
+              "positive": 0.173
+            },
+            "score": 0.0505
+          }
+        },
+        {
+          "id": "deck_customer_concentration",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "operational_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.1022,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.102,
+              "neutral": 0.697,
+              "positive": 0.201
+            },
+            "score": 0.1022
+          }
+        },
+        {
+          "id": "deck_runway_crunch",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.1641,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.164,
+              "neutral": 0.593,
+              "positive": 0.243
+            },
+            "score": 0.1641
+          }
+        },
+        {
+          "id": "deck_founder_departure_ip",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0115,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.012,
+              "neutral": 0.91,
+              "positive": 0.079
+            },
+            "score": 0.0115
+          }
+        },
+        {
+          "id": "deck_product_description",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0184,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.018,
+              "neutral": 0.917,
+              "positive": 0.065
+            },
+            "score": 0.0184
+          }
+        },
+        {
+          "id": "deck_market_sizing",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.1683,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.168,
+              "neutral": 0.643,
+              "positive": 0.188
+            },
+            "score": 0.1683
+          }
+        },
+        {
+          "id": "deck_team_slide",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0337,
+          "detail": {
+            "predicted_tone": "neutral",
+            "probabilities": {
+              "negative": 0.034,
+              "neutral": 0.807,
+              "positive": 0.159
+            },
+            "score": 0.0337
+          }
+        }
+      ]
+    },
+    "llm_medium_plus": {
+      "metrics": {
+        "n": 28,
+        "confusion": {
+          "tp": 12,
+          "fp": 2,
+          "fn": 3,
+          "tn": 11
+        },
+        "score_roc_auc": null,
+        "precision": 0.857,
+        "recall": 0.8,
+        "f1": 0.828,
+        "accuracy": 0.821,
+        "boilerplate_false_positive_rate": 0.154,
+        "boilerplate_n": 13,
+        "boilerplate_flagged_ids": [
+          "sec_safe_harbor_meridian",
+          "sec_8k_item202_chubb"
+        ],
+        "missed_red_flag_ids": [
+          "sec_cfo_resignation_littlefield",
+          "deck_customer_concentration",
+          "deck_founder_departure_ip"
+        ],
+        "category_precision": 1.0,
+        "category_recall": 0.571
+      },
+      "rows": [
+        {
+          "id": "sec_going_concern_usprecious",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 70.0,
+          "detail": {
+            "risk_level": "HIGH",
+            "overall_score": 70,
+            "score": 70.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "issue": "going concern",
+                "description": "Audited financial statements contain language indicating substantial doubt about the company's ability to continue as a going concern."
+              }
+            ],
+            "red_flags": [
+              "Going concern qualification in audited financial statements"
+            ]
+          }
+        },
+        {
+          "id": "sec_going_concern_salamon",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "type": "going_concern",
+                "description": "The company's disclosures indicate substantial doubt about its ability to continue as a going concern."
+              }
+            ],
+            "red_flags": [
+              {
+                "flag": "going_concern",
+                "detail": "Substantial doubt about ability to continue operations."
+              }
+            ]
+          }
+        },
+        {
+          "id": "sec_material_weakness_meridian",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "issue": "material weakness",
+                "description": "Meridian has identified a material weakness in its internal control over financial reporting, which could materially affect its results of operations and revenues if not corrected."
+              }
+            ],
+            "red_flags": [
+              "Material weakness in internal control over financial reporting"
+            ]
+          }
+        },
+        {
+          "id": "sec_material_weakness_vividseats",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 40.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 40,
+            "score": 40.0,
+            "key_concerns": [
+              "Material weakness in internal controls over financial reporting identified for FY2022 and FY2021."
+            ],
+            "red_flags": [
+              "Material weakness in internal controls (audit of FY2022 and FY2021)"
+            ]
+          }
+        },
+        {
+          "id": "sec_sec_subpoena_lvs",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "Legal Risk",
+                "description": "The company is involved in a lawsuit filed by Steven C. Jacobs and has received a subpoena from the Securities and Exchange Commission requesting production of documents related to its compliance."
+              }
+            ],
+            "red_flags": [
+              "Lawsuit involving Steven C. Jacobs",
+              "SEC subpoena for compliance documents"
+            ]
+          }
+        },
+        {
+          "id": "sec_subpoena_restatement_cpiaero",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "Financial Risk",
+                "type": "Restatement",
+                "description": "The company disclosed errors in previously issued financial statements and has undertaken a restatement, indicating potential weaknesses in internal controls, accounting processes, or financial reporting accuracy."
+              },
+              {
+                "category": "Legal Risk",
+                "type": "Litigation",
+                "description": "The company acknowledges the possibility of additional litigation or shareholder claims related to prior matters, suggesting ongoing or future legal exposure."
+              },
+              {
+                "category": "Legal Risk",
+                "type": "SEC Subpoena",
+                "description": "A subpoena from the SEC\u2019s Division of Enforcement was received, indicating regulatory scrutiny that could lead to enforcement actions, fines, or required remedial measures."
+              }
+            ],
+            "red_flags": [
+              "Financial statement restatement",
+              "Potential future shareholder litigation",
+              "SEC enforcement subpoena"
+            ]
+          }
+        },
+        {
+          "id": "sec_wells_notice_competitivetech",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              "Legal risk stemming from a disclosed lawsuit (referenced in Note 16 of the company's Form 10\u2011K).",
+              "SEC investigation indicated by a subpoena received on May 17, 2001, and a subsequent dismissal on May 16, 2003.",
+              "Potential regulatory scrutiny due to the subpoena and investigation history."
+            ],
+            "red_flags": [
+              {
+                "type": "legal",
+                "description": "Lawsuit referenced in the company's Form 10\u2011K (Note 16)."
+              },
+              {
+                "type": "regulatory",
+                "description": "SEC investigation and subpoena received in 2001, with the investigation dismissed in 2003."
+              }
+            ]
+          }
+        },
+        {
+          "id": "sec_restatement_maxwell",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "type": "restatement",
+                "description": "Historical restatement of financial statements indicates potential issues with prior reporting accuracy and may affect comparability of financial metrics."
+              }
+            ],
+            "red_flags": [
+              "Past financial restatement"
+            ]
+          }
+        },
+        {
+          "id": "sec_restatement_bam",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "type": "restatement",
+                "description": "The company disclosed a restatement of previously issued financial statements, indicating prior reporting inaccuracies and potential underlying accounting or control issues."
+              }
+            ],
+            "red_flags": [
+              "Financial restatement disclosed"
+            ]
+          }
+        },
+        {
+          "id": "sec_covenant_breach_ameri",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              "Potential loan default risk if waivers from Sterling National Bank are discontinued, which could force the company to seek alternative financing under potentially unfavorable terms."
+            ],
+            "red_flags": [
+              "Loan covenant waiver dependency"
+            ]
+          }
+        },
+        {
+          "id": "sec_covenant_default_zynex",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              "Potential default under existing credit agreement, indicated by the company's exercise of default remedies and acceleration of repayment obligations."
+            ],
+            "red_flags": [
+              "Exercise of default remedies under credit agreement",
+              "Acceleration of repayment of outstanding obligations"
+            ]
+          }
+        },
+        {
+          "id": "sec_cfo_resignation_littlefield",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": 0,
+            "score": 0.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_safe_harbor_meridian",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "Legal Risk",
+                "description": "Potential litigation exposure related to forward\u2011looking statements, as indicated by reference to the Private Securities Litigation Reform Act of 1995."
+              }
+            ],
+            "red_flags": [
+              "Mention of litigation safe\u2011harbor language indicates awareness of potential securities lawsuits."
+            ]
+          }
+        },
+        {
+          "id": "sec_riskfactor_summary_budajuice",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_additional_capital_lotterydotcom",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_critical_audit_matter_endeavor",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_asc606_policy_solarcapital",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_asc606_policy_chicagorivet",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_8k_item202_chubb",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": true,
+          "predicted_categories": [],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_8k_board_appointment_skyway",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_econ_conditions_ranger",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_competition_rentrak",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_customer_concentration",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "operational_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_runway_crunch",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_founder_departure_ip",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_product_description",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": 0,
+            "score": 0.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_market_sizing",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": 0,
+            "score": 0.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_team_slide",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        }
+      ]
+    },
+    "llm_high_only": {
+      "metrics": {
+        "n": 28,
+        "confusion": {
+          "tp": 1,
+          "fp": 0,
+          "fn": 14,
+          "tn": 13
+        },
+        "score_roc_auc": null,
+        "precision": 1.0,
+        "recall": 0.067,
+        "f1": 0.125,
+        "accuracy": 0.5,
+        "boilerplate_false_positive_rate": 0.0,
+        "boilerplate_n": 13,
+        "boilerplate_flagged_ids": [],
+        "missed_red_flag_ids": [
+          "sec_going_concern_salamon",
+          "sec_material_weakness_meridian",
+          "sec_material_weakness_vividseats",
+          "sec_sec_subpoena_lvs",
+          "sec_subpoena_restatement_cpiaero",
+          "sec_wells_notice_competitivetech",
+          "sec_restatement_maxwell",
+          "sec_restatement_bam",
+          "sec_covenant_breach_ameri",
+          "sec_covenant_default_zynex",
+          "sec_cfo_resignation_littlefield",
+          "deck_customer_concentration",
+          "deck_runway_crunch",
+          "deck_founder_departure_ip"
+        ],
+        "category_precision": 1.0,
+        "category_recall": 0.571
+      },
+      "rows": [
+        {
+          "id": "sec_going_concern_usprecious",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": true,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 70.0,
+          "detail": {
+            "risk_level": "HIGH",
+            "overall_score": 70,
+            "score": 70.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "issue": "going concern",
+                "description": "Audited financial statements contain language indicating substantial doubt about the company's ability to continue as a going concern."
+              }
+            ],
+            "red_flags": [
+              "Going concern qualification in audited financial statements"
+            ]
+          }
+        },
+        {
+          "id": "sec_going_concern_salamon",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "type": "going_concern",
+                "description": "The company's disclosures indicate substantial doubt about its ability to continue as a going concern."
+              }
+            ],
+            "red_flags": [
+              {
+                "flag": "going_concern",
+                "detail": "Substantial doubt about ability to continue operations."
+              }
+            ]
+          }
+        },
+        {
+          "id": "sec_material_weakness_meridian",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "issue": "material weakness",
+                "description": "Meridian has identified a material weakness in its internal control over financial reporting, which could materially affect its results of operations and revenues if not corrected."
+              }
+            ],
+            "red_flags": [
+              "Material weakness in internal control over financial reporting"
+            ]
+          }
+        },
+        {
+          "id": "sec_material_weakness_vividseats",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk",
+            "management_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 40.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 40,
+            "score": 40.0,
+            "key_concerns": [
+              "Material weakness in internal controls over financial reporting identified for FY2022 and FY2021."
+            ],
+            "red_flags": [
+              "Material weakness in internal controls (audit of FY2022 and FY2021)"
+            ]
+          }
+        },
+        {
+          "id": "sec_sec_subpoena_lvs",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "Legal Risk",
+                "description": "The company is involved in a lawsuit filed by Steven C. Jacobs and has received a subpoena from the Securities and Exchange Commission requesting production of documents related to its compliance."
+              }
+            ],
+            "red_flags": [
+              "Lawsuit involving Steven C. Jacobs",
+              "SEC subpoena for compliance documents"
+            ]
+          }
+        },
+        {
+          "id": "sec_subpoena_restatement_cpiaero",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk",
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "Financial Risk",
+                "type": "Restatement",
+                "description": "The company disclosed errors in previously issued financial statements and has undertaken a restatement, indicating potential weaknesses in internal controls, accounting processes, or financial reporting accuracy."
+              },
+              {
+                "category": "Legal Risk",
+                "type": "Litigation",
+                "description": "The company acknowledges the possibility of additional litigation or shareholder claims related to prior matters, suggesting ongoing or future legal exposure."
+              },
+              {
+                "category": "Legal Risk",
+                "type": "SEC Subpoena",
+                "description": "A subpoena from the SEC\u2019s Division of Enforcement was received, indicating regulatory scrutiny that could lead to enforcement actions, fines, or required remedial measures."
+              }
+            ],
+            "red_flags": [
+              "Financial statement restatement",
+              "Potential future shareholder litigation",
+              "SEC enforcement subpoena"
+            ]
+          }
+        },
+        {
+          "id": "sec_wells_notice_competitivetech",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              "Legal risk stemming from a disclosed lawsuit (referenced in Note 16 of the company's Form 10\u2011K).",
+              "SEC investigation indicated by a subpoena received on May 17, 2001, and a subsequent dismissal on May 16, 2003.",
+              "Potential regulatory scrutiny due to the subpoena and investigation history."
+            ],
+            "red_flags": [
+              {
+                "type": "legal",
+                "description": "Lawsuit referenced in the company's Form 10\u2011K (Note 16)."
+              },
+              {
+                "type": "regulatory",
+                "description": "SEC investigation and subpoena received in 2001, with the investigation dismissed in 2003."
+              }
+            ]
+          }
+        },
+        {
+          "id": "sec_restatement_maxwell",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "type": "restatement",
+                "description": "Historical restatement of financial statements indicates potential issues with prior reporting accuracy and may affect comparability of financial metrics."
+              }
+            ],
+            "red_flags": [
+              "Past financial restatement"
+            ]
+          }
+        },
+        {
+          "id": "sec_restatement_bam",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "financial_risk",
+                "type": "restatement",
+                "description": "The company disclosed a restatement of previously issued financial statements, indicating prior reporting inaccuracies and potential underlying accounting or control issues."
+              }
+            ],
+            "red_flags": [
+              "Financial restatement disclosed"
+            ]
+          }
+        },
+        {
+          "id": "sec_covenant_breach_ameri",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              "Potential loan default risk if waivers from Sterling National Bank are discontinued, which could force the company to seek alternative financing under potentially unfavorable terms."
+            ],
+            "red_flags": [
+              "Loan covenant waiver dependency"
+            ]
+          }
+        },
+        {
+          "id": "sec_covenant_default_zynex",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "financial_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              "Potential default under existing credit agreement, indicated by the company's exercise of default remedies and acceleration of repayment obligations."
+            ],
+            "red_flags": [
+              "Exercise of default remedies under credit agreement",
+              "Acceleration of repayment of outstanding obligations"
+            ]
+          }
+        },
+        {
+          "id": "sec_cfo_resignation_littlefield",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk"
+          ],
+          "gold_severity": "MEDIUM",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": 0,
+            "score": 0.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_safe_harbor_meridian",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [
+            "legal_risk"
+          ],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [
+              {
+                "category": "Legal Risk",
+                "description": "Potential litigation exposure related to forward\u2011looking statements, as indicated by reference to the Private Securities Litigation Reform Act of 1995."
+              }
+            ],
+            "red_flags": [
+              "Mention of litigation safe\u2011harbor language indicates awareness of potential securities lawsuits."
+            ]
+          }
+        },
+        {
+          "id": "sec_riskfactor_summary_budajuice",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_additional_capital_lotterydotcom",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_critical_audit_matter_endeavor",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_asc606_policy_solarcapital",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_asc606_policy_chicagorivet",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_8k_item202_chubb",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_8k_board_appointment_skyway",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_econ_conditions_ranger",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "sec_competition_rentrak",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_customer_concentration",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "operational_risk",
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_runway_crunch",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "financial_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 35.0,
+          "detail": {
+            "risk_level": "MEDIUM",
+            "overall_score": 35,
+            "score": 35.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_founder_departure_ip",
+          "subset": "red_flag",
+          "gold_risk": true,
+          "gold_categories": [
+            "management_risk",
+            "legal_risk"
+          ],
+          "gold_severity": "HIGH",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_product_description",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": 0,
+            "score": 0.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_market_sizing",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": 0.0,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": 0,
+            "score": 0.0,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        },
+        {
+          "id": "deck_team_slide",
+          "subset": "boilerplate",
+          "gold_risk": false,
+          "gold_categories": [],
+          "gold_severity": "NONE",
+          "predicted_risk": false,
+          "predicted_categories": [],
+          "score": null,
+          "detail": {
+            "risk_level": "UNKNOWN",
+            "overall_score": null,
+            "score": null,
+            "key_concerns": [],
+            "red_flags": []
+          }
+        }
+      ]
+    }
+  }
+}

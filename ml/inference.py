@@ -59,11 +59,23 @@ def score_company(
 
     This is a weak, coarse signal — trained on ~1,560 Y Combinator companies
     with a binary "acquired or went public" vs. "shut down" proxy label
-    (test-set ROC-AUC 0.70, see ml/models/outcome_model_report.json). It is
+    (test-set ROC-AUC 0.646, see ml/models/outcome_model_report.json). It is
     NOT a return-multiple prediction, NOT validated on non-YC companies, and
     should never be presented as a standalone verdict — it's one additional,
     labeled-data-backed signal alongside the evidence-grounded LLM analysis
     this app already produces, not a replacement for it.
+
+    **`team_size` and `age_years` are accepted and deliberately ignored.**
+    They were features until 23 Aug 2026, and they were hindsight: both are
+    recorded at snapshot time, years after the outcome. `team_size` alone
+    carried more gain than every other structured feature combined, which is
+    the model learning that companies which already grew went on to succeed.
+    The VentureFlow Score model excludes exactly these; this one did not, so
+    the pipeline was running two models under contradictory methodology.
+    Excluding them costs 0.058 ROC-AUC (0.704 -> 0.646) — a real cost, and the
+    honest number. The parameters stay in the signature because callers pass
+    them and removing them would be a breaking change for a value the model
+    should not have been using in the first place.
     """
     _load()
     if _state is None:
@@ -86,13 +98,20 @@ def score_company(
     def _safe_encode(enc, value: str) -> int:
         return int(enc.transform([value])[0]) if value in enc.classes_ else -1
 
+    # Order must match train_outcome_model.DEPLOYABLE_FEATURES exactly. The
+    # saved encoders carry the names so a future reordering fails loudly here
+    # instead of silently feeding the model the wrong columns.
+    expected = _state.get("structured_feature_names")
+    if expected and expected != ["industry", "stage", "num_tags", "nonprofit"]:
+        return {
+            "available": False,
+            "reason": f"Model was trained on unexpected features {expected}; retrain with ml/scripts/train_outcome_model.py",
+        }
     structured = np.array([[
         _safe_encode(industry_enc, industry),
         _safe_encode(stage_enc, stage),
-        team_size,
         num_tags,
         int(nonprofit),
-        age_years,
     ]], dtype=float)
     structured_scaled = scaler.transform(structured)
 
@@ -112,12 +131,15 @@ def score_company(
         "available": True,
         "probability_survives_or_exits": round(probability, 3),
         "band": band,
-        "model_test_auc": 0.70,
+        "model_test_auc": 0.646,
+        "excluded_hindsight_features": ["team_size", "age_years"],
         "trained_on": "1,560 Y Combinator companies (yc-oss/api), 3.5+ years post-launch, "
                        "label = Acquired/Public vs. Inactive, Active/unresolved excluded",
         "caveat": (
             "Weak proxy label, YC-only distribution, not validated outside this population. "
-            "One input signal, not an investment verdict."
+            "One input signal, not an investment verdict. team_size and age_years are "
+            "excluded as hindsight features, which costs 0.058 ROC-AUC and is the reason "
+            "this number is lower than the 0.70 reported before 23 Aug 2026."
         ),
     }
 

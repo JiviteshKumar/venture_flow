@@ -7,8 +7,10 @@ pdfplumber
 pgvector
 psycopg[binary]
 psycopg_pool
+python-docx
 python-dotenv
 python-multipart
+python-pptx
 reportlab
 requests
 scikit-learn

@@ -1,0 +1,556 @@
+{
+  "benchmark_subset": {
+    "n_scored": 36,
+    "n_skipped_no_evidence": 1,
+    "skipped_ids": [
+      "s35"
+    ],
+    "note": "Both systems are scored on exactly these rows and on exactly the same retrieved evidence, so the two metric blocks below are directly comparable."
+  },
+  "tfidf_claim_model": {
+    "model": "ml/models/claim_model.txt (LightGBM over TF-IDF+SVD, trained on SciFact)",
+    "metrics": {
+      "n": 36,
+      "accuracy": 0.778,
+      "per_class": {
+        "SUPPORTS": {
+          "precision": 1.0,
+          "recall": 0.778,
+          "f1": 0.875,
+          "support": 36
+        },
+        "REFUTES": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "NOT_ENOUGH_INFO": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        }
+      },
+      "confusion_matrix": {
+        "SUPPORTS": {
+          "SUPPORTS": 28,
+          "REFUTES": 2,
+          "NOT_ENOUGH_INFO": 6
+        },
+        "REFUTES": {
+          "SUPPORTS": 0,
+          "REFUTES": 0,
+          "NOT_ENOUGH_INFO": 0
+        },
+        "NOT_ENOUGH_INFO": {
+          "SUPPORTS": 0,
+          "REFUTES": 0,
+          "NOT_ENOUGH_INFO": 0
+        }
+      },
+      "by_subset": {
+        "public_fact": {
+          "n": 36,
+          "correct": 28,
+          "accuracy": 0.778
+        }
+      },
+      "calibration": {
+        "mean_confidence_when_correct": 0.708,
+        "mean_confidence_when_incorrect": 0.629,
+        "note": "A well-calibrated verifier should show a higher mean confidence when correct than when incorrect. If these are close or inverted, the model's stated confidence isn't trustworthy on its own."
+      }
+    },
+    "rows": [
+      {
+        "id": "s1",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.698,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.213,
+          "REFUTES": 0.089,
+          "SUPPORTS": 0.698
+        }
+      },
+      {
+        "id": "s2",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.658,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.164,
+          "REFUTES": 0.178,
+          "SUPPORTS": 0.658
+        }
+      },
+      {
+        "id": "s3",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.739,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.229,
+          "REFUTES": 0.031,
+          "SUPPORTS": 0.739
+        }
+      },
+      {
+        "id": "s4",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "REFUTES",
+        "confidence": 0.565,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.124,
+          "REFUTES": 0.565,
+          "SUPPORTS": 0.31
+        }
+      },
+      {
+        "id": "s5",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.48,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.475,
+          "REFUTES": 0.046,
+          "SUPPORTS": 0.48
+        }
+      },
+      {
+        "id": "s6",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.644,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.163,
+          "REFUTES": 0.193,
+          "SUPPORTS": 0.644
+        }
+      },
+      {
+        "id": "s7",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "REFUTES",
+        "confidence": 0.521,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.046,
+          "REFUTES": 0.521,
+          "SUPPORTS": 0.433
+        }
+      },
+      {
+        "id": "s8",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.807,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.155,
+          "REFUTES": 0.038,
+          "SUPPORTS": 0.807
+        }
+      },
+      {
+        "id": "s9",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "NOT_ENOUGH_INFO",
+        "confidence": 0.715,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.715,
+          "REFUTES": 0.033,
+          "SUPPORTS": 0.252
+        }
+      },
+      {
+        "id": "s10",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.801,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.135,
+          "REFUTES": 0.064,
+          "SUPPORTS": 0.801
+        }
+      },
+      {
+        "id": "s11",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.591,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.333,
+          "REFUTES": 0.077,
+          "SUPPORTS": 0.591
+        }
+      },
+      {
+        "id": "s12",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.728,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.217,
+          "REFUTES": 0.055,
+          "SUPPORTS": 0.728
+        }
+      },
+      {
+        "id": "s13",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.6,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.376,
+          "REFUTES": 0.025,
+          "SUPPORTS": 0.6
+        }
+      },
+      {
+        "id": "s14",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.639,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.293,
+          "REFUTES": 0.069,
+          "SUPPORTS": 0.639
+        }
+      },
+      {
+        "id": "s15",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.862,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.123,
+          "REFUTES": 0.015,
+          "SUPPORTS": 0.862
+        }
+      },
+      {
+        "id": "s16",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.556,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.396,
+          "REFUTES": 0.048,
+          "SUPPORTS": 0.556
+        }
+      },
+      {
+        "id": "s17",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.637,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.32,
+          "REFUTES": 0.042,
+          "SUPPORTS": 0.637
+        }
+      },
+      {
+        "id": "s18",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.705,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.262,
+          "REFUTES": 0.033,
+          "SUPPORTS": 0.705
+        }
+      },
+      {
+        "id": "s19",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "NOT_ENOUGH_INFO",
+        "confidence": 0.624,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.624,
+          "REFUTES": 0.046,
+          "SUPPORTS": 0.33
+        }
+      },
+      {
+        "id": "s20",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "NOT_ENOUGH_INFO",
+        "confidence": 0.7,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.7,
+          "REFUTES": 0.018,
+          "SUPPORTS": 0.283
+        }
+      },
+      {
+        "id": "s21",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "NOT_ENOUGH_INFO",
+        "confidence": 0.654,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.654,
+          "REFUTES": 0.057,
+          "SUPPORTS": 0.289
+        }
+      },
+      {
+        "id": "s22",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.834,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.121,
+          "REFUTES": 0.045,
+          "SUPPORTS": 0.834
+        }
+      },
+      {
+        "id": "s23",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "NOT_ENOUGH_INFO",
+        "confidence": 0.488,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.488,
+          "REFUTES": 0.051,
+          "SUPPORTS": 0.461
+        }
+      },
+      {
+        "id": "s24",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.558,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.379,
+          "REFUTES": 0.063,
+          "SUPPORTS": 0.558
+        }
+      },
+      {
+        "id": "s25",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.606,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.154,
+          "REFUTES": 0.239,
+          "SUPPORTS": 0.606
+        }
+      },
+      {
+        "id": "s26",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.922,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.013,
+          "REFUTES": 0.065,
+          "SUPPORTS": 0.922
+        }
+      },
+      {
+        "id": "s27",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.873,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.049,
+          "REFUTES": 0.078,
+          "SUPPORTS": 0.873
+        }
+      },
+      {
+        "id": "s28",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.883,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.083,
+          "REFUTES": 0.034,
+          "SUPPORTS": 0.883
+        }
+      },
+      {
+        "id": "s29",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.729,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.23,
+          "REFUTES": 0.041,
+          "SUPPORTS": 0.729
+        }
+      },
+      {
+        "id": "s30",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.685,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.232,
+          "REFUTES": 0.082,
+          "SUPPORTS": 0.685
+        }
+      },
+      {
+        "id": "s31",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.685,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.269,
+          "REFUTES": 0.046,
+          "SUPPORTS": 0.685
+        }
+      },
+      {
+        "id": "s32",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.761,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.176,
+          "REFUTES": 0.062,
+          "SUPPORTS": 0.761
+        }
+      },
+      {
+        "id": "s33",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.898,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.039,
+          "REFUTES": 0.064,
+          "SUPPORTS": 0.898
+        }
+      },
+      {
+        "id": "s34",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "NOT_ENOUGH_INFO",
+        "confidence": 0.767,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.767,
+          "REFUTES": 0.07,
+          "SUPPORTS": 0.163
+        }
+      },
+      {
+        "id": "s37",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.767,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.171,
+          "REFUTES": 0.062,
+          "SUPPORTS": 0.767
+        }
+      },
+      {
+        "id": "s38",
+        "subset": "public_fact",
+        "gold": "SUPPORTS",
+        "predicted": "SUPPORTS",
+        "confidence": 0.48,
+        "probabilities": {
+          "NOT_ENOUGH_INFO": 0.475,
+          "REFUTES": 0.046,
+          "SUPPORTS": 0.48
+        }
+      }
+    ]
+  },
+  "llm_web_search_verifier": {
+    "model": "agents/claim_verifier.py (DuckDuckGo retrieval + openai/gpt-oss-120b judge)",
+    "metrics": {
+      "n": 36,
+      "accuracy": 0.917,
+      "per_class": {
+        "SUPPORTS": {
+          "precision": 1.0,
+          "recall": 0.917,
+          "f1": 0.957,
+          "support": 36
+        },
+        "REFUTES": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        },
+        "NOT_ENOUGH_INFO": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        }
+      },
+      "confusion_matrix": {
+        "SUPPORTS": {
+          "SUPPORTS": 33,
+          "REFUTES": 0,
+          "NOT_ENOUGH_INFO": 3
+        },
+        "REFUTES": {
+          "SUPPORTS": 0,
+          "REFUTES": 0,
+          "NOT_ENOUGH_INFO": 0
+        },
+        "NOT_ENOUGH_INFO": {
+          "SUPPORTS": 0,
+          "REFUTES": 0,
+          "NOT_ENOUGH_INFO": 0
+        }
+      },
+      "by_subset": {
+        "public_fact": {
+          "n": 36,
+          "correct": 33,
+          "accuracy": 0.917
+        }
+      },
+      "calibration": {
+        "mean_confidence_when_correct": 0.955,
+        "mean_confidence_when_incorrect": 0.85,
+        "note": "A well-calibrated verifier should show a higher mean confidence when correct than when incorrect. If these are close or inverted, the model's stated confidence isn't trustworthy on its own."
+      }
+    }
+  }
+}

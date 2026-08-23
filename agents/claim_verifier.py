@@ -201,7 +201,22 @@ Respond with ONLY valid JSON, no other text:
             "key_evidence": "",
         }
 
-def verify_claim(claim_text: str, verbose: bool = True) -> dict:
+def _evidence_text(evidence: dict) -> str:
+    """Flatten retrieved evidence to the text the judge actually reasoned over.
+
+    Only the evaluation harness asks for this (`include_evidence=True`), and
+    it exists so a baseline model can be scored on the *same* evidence rather
+    than a separately-retrieved set -- two models fed different search results
+    are not a comparison of the models. Kept out of the default return value
+    because it is several kilobytes per claim and every production caller
+    persists its result into a report.
+    """
+    parts = [f"{s['title']} {s['snippet']}" for s in evidence.get("snippets", [])]
+    parts += [ft["text"] for ft in evidence.get("full_texts", [])]
+    return "\n".join(p for p in parts if p)
+
+
+def verify_claim(claim_text: str, verbose: bool = True, include_evidence: bool = False) -> dict:
     if verbose:
         print(f"\n{'='*60}")
         print(f"Verifying: {claim_text}")
@@ -211,7 +226,7 @@ def verify_claim(claim_text: str, verbose: bool = True) -> dict:
 
     # A model must never be allowed to infer a verdict without retrieved evidence.
     if not evidence["snippets"] and not evidence["full_texts"]:
-        return {
+        empty = {
             "claim": claim_text,
             "verdict": "NOT_ENOUGH_INFO",
             "confidence": 0.0,
@@ -221,6 +236,9 @@ def verify_claim(claim_text: str, verbose: bool = True) -> dict:
             "total_sources": 0,
             "full_pages_read": 0,
         }
+        if include_evidence:
+            empty["evidence_text"] = ""
+        return empty
 
     print(f"  Groq AI analyzing {len(evidence['snippets'])} sources "
           f"+ {len(evidence['full_texts'])} full pages...")
@@ -237,6 +255,8 @@ def verify_claim(claim_text: str, verbose: bool = True) -> dict:
         "total_sources":   len(evidence["snippets"]),
         "full_pages_read": len(evidence["full_texts"]),
     }
+    if include_evidence:
+        result["evidence_text"] = _evidence_text(evidence)
 
     if verbose:
         print(f"\n  VERDICT:      {result['verdict']}")

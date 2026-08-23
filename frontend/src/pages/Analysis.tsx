@@ -408,6 +408,19 @@ const Analysis = () => {
   const teamRadarData = team?.capabilities?.length
     ? team.capabilities.map(item => ({ subject: item.area, value: Math.max(0, Math.min(100, Number(item.score) || 0)), evidence: item.evidence }))
     : [];
+  /**
+   * Founder background checks (agents/founder_verifier.py).
+   *
+   * This is the other half of why the Founder Analysis tab was empty. The
+   * radar is driven by the team specialist agent, which only ever saw the deck
+   * text -- and most decks have no team slide, so it correctly returned no
+   * capabilities and the chart drew every axis at zero with no explanation.
+   * The verifier that *would* have had something to say never ran at all,
+   * because nothing populated DiligenceRequest.founders until the upload form
+   * gained a founders field and structured_extractor started reading the team
+   * slide.
+   */
+  const founderChecks = (report.sections?.founder_verification ?? []).filter(f => f?.available);
 
   // Claims table from real claim details
   const claimsTableData = claimsDetails.slice(0, 5).map(c => ({
@@ -418,7 +431,48 @@ const Analysis = () => {
     delta: `${Math.round(c.confidence * 100)}%`,
   }));
 
-  const competitors = report.similar_companies ?? [];
+  /**
+   * Comparable companies.
+   *
+   * This tab reported "No comparable companies were found" on every single
+   * analysis, and the cause was not the similarity search -- that works.
+   * `report.similar_companies` is `db.find_similar_companies()`, a trigram
+   * match over the *user's own* companies table restricted to rows that
+   * already have a report or a portfolio investment. On a fresh single-user
+   * database analysing a different company each time it correctly returns
+   * nothing, every time.
+   *
+   * The real comparables were being computed all along and never rendered:
+   * `sections.market_comparables` is comparables.py's cosine-similarity search
+   * over 1,560 real Y Combinator companies, which returns five matches for any
+   * non-empty description. So the YC comps are the primary source here and the
+   * portfolio overlap is kept as a clearly-labelled secondary signal, since
+   * "have I looked at something like this before" is a different and also
+   * useful question.
+   */
+  const marketComparables = report.sections?.market_comparables;
+  const ycComparables = (marketComparables?.available && marketComparables.comparables) || [];
+  const portfolioMatches = report.similar_companies ?? [];
+  const competitors = ycComparables.length
+    ? ycComparables.map(c => ({
+        name: c.name,
+        domain: c.batch ?? null,
+        sector: c.industry ?? null,
+        similarity: c.similarity,
+        outcome: c.outcome ?? null,
+      }))
+    : portfolioMatches.map(c => ({
+        name: c.name,
+        domain: c.domain ?? null,
+        sector: c.sector ?? null,
+        similarity: c.similarity,
+        outcome: null as string | null,
+      }));
+  const comparablesSource = ycComparables.length
+    ? (marketComparables?.source ?? "Y Combinator comparable companies")
+    : portfolioMatches.length
+      ? "Your own prior reports and portfolio (name/domain similarity)"
+      : "";
 
   const exportReport = () => {
     const lines = [
@@ -932,7 +986,13 @@ const Analysis = () => {
                         <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
                         <Radar dataKey="value" stroke="#1D6FE8" fill="#1D6FE8" fillOpacity={0.09} strokeWidth={2.5} dot={{ fill: "#1D6FE8", r: 4, strokeWidth: 0 } as any} />
                       </RadarChart>
-                    </ResponsiveContainer> : <p style={{ color: "#94A3B8", fontSize: 13 }}>Insufficient team evidence in this deck.</p>}
+                    </ResponsiveContainer> : <p style={{ color: "#94A3B8", fontSize: 13, lineHeight: 1.7 }}>
+                      No capability scores were produced, because this deck contains no team
+                      slide for the analyst agent to read.
+                      {founderChecks.length > 0
+                        ? " The named founders were still checked against public web evidence — see below."
+                        : " Add founder names on the upload form to run a public-background check on them."}
+                    </p>}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
@@ -956,6 +1016,54 @@ const Analysis = () => {
                     </div>
                   </Panel>
                 </div>
+
+                {/* Founder background checks — the output of the agent that
+                    could never run before the upload form had a founders
+                    field. */}
+                <Panel className="vf-panel-neutral" accentColor="var(--border)" style={{ marginTop: 12 }}>
+                  <SLabel>Founder Background Checks</SLabel>
+                  {founderChecks.length ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {founderChecks.map((check, i) => {
+                        const tone = check.assessment === "CONSISTENT" ? "#0EA66A"
+                          : check.assessment === "CONTRADICTS" ? "#D93025" : "#C47A0A";
+                        return (
+                          <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "12px 14px", background: "var(--surface-2)" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                              <span className="an-founder-name">{check.name}</span>
+                              <span style={{
+                                fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                                letterSpacing: "0.08em", color: tone, border: `1px solid ${tone}33`,
+                                background: `${tone}12`, borderRadius: 5, padding: "2px 7px",
+                              }}>{check.assessment}</span>
+                              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#94A3B8" }}>
+                                confidence {Math.round((check.confidence ?? 0) * 100)}%
+                              </span>
+                            </div>
+                            <p className="an-founder-desc">{check.evidence_summary}</p>
+                            {(check.sources ?? []).length > 0 && (
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {(check.sources ?? []).slice(0, 4).map((url, j) => (
+                                  <a key={j} href={url} target="_blank" rel="noreferrer" style={{
+                                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5,
+                                    color: "#1D6FE8", textDecoration: "none",
+                                    border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
+                                  }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ color: "#94A3B8", fontSize: 13, lineHeight: 1.7, margin: "10px 0 0" }}>
+                      No founder names were submitted with this analysis, so no background check ran.
+                      Re-run from the upload page with founder names filled in — they are read from the
+                      deck's team slide automatically when it has one.
+                    </p>
+                  )}
+                </Panel>
               </div>
             )}
 
@@ -965,25 +1073,41 @@ const Analysis = () => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     <SLabel>Competitive Landscape</SLabel>
-                    {competitors.length ? <table className="an-comp-table">
-                      <thead>
-                        <tr>
-                          {["Company", "Domain", "Sector", "Similarity"].map((h) => (
-                            <th key={h} className="an-comp-th">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {competitors.map((competitor, i) => (
-                          <tr key={i} className="an-comp-tr">
-                            <td className="an-comp-td" style={{ fontWeight: 600 }}>{competitor.name}</td>
-                            <td className="an-comp-td">{competitor.domain || "—"}</td>
-                            <td className="an-comp-td">{competitor.sector || "—"}</td>
-                            <td className="an-comp-td">{typeof competitor.similarity === "number" ? `${Math.round(competitor.similarity * 100)}%` : "—"}</td>
+                    {competitors.length ? <>
+                      <table className="an-comp-table">
+                        <thead>
+                          <tr>
+                            {["Company", "Batch / Domain", "Sector", "Outcome", "Similarity"].map((h) => (
+                              <th key={h} className="an-comp-th">{h}</th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table> : <p style={{ color: "#64748B", fontSize: 13, margin: "16px 0" }}>No comparable companies were found in the portfolio database for this analysis.</p>}
+                        </thead>
+                        <tbody>
+                          {competitors.map((competitor, i) => (
+                            <tr key={i} className="an-comp-tr">
+                              <td className="an-comp-td" style={{ fontWeight: 600 }}>{competitor.name}</td>
+                              <td className="an-comp-td">{competitor.domain || "—"}</td>
+                              <td className="an-comp-td">{competitor.sector || "—"}</td>
+                              <td className="an-comp-td" style={{ color: competitor.outcome === "Shut down" ? "#D93025" : competitor.outcome ? "#0EA66A" : "#94A3B8" }}>{competitor.outcome || "—"}</td>
+                              <td className="an-comp-td">{typeof competitor.similarity === "number" ? `${Math.round(competitor.similarity * 100)}%` : "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <p style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.6, marginTop: 12 }}>
+                        Source: {comparablesSource}
+                        {marketComparables?.caveat && ycComparables.length ? ` — ${marketComparables.caveat}` : ""}
+                      </p>
+                      {ycComparables.length > 0 && portfolioMatches.length > 0 && (
+                        <p style={{ color: "#64748B", fontSize: 12, marginTop: 8 }}>
+                          Also matched in your own history: {portfolioMatches.map(m => m.name).join(", ")}.
+                        </p>
+                      )}
+                    </> : <p style={{ color: "#64748B", fontSize: 13, margin: "16px 0" }}>
+                      {marketComparables && !marketComparables.available
+                        ? `Comparable-company search was unavailable: ${marketComparables.reason ?? "no reason recorded"}.`
+                        : "No comparable companies were found for this analysis."}
+                    </p>}
                   </Panel>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

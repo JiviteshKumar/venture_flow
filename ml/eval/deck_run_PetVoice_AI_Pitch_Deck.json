@@ -1,0 +1,295 @@
+{
+  "upload": {
+    "session_id": "262f07ad-1326-41d3-a89d-3d708ba8f9b6",
+    "extracted_text": "PE T VOI C E A I\nWhat is your dog really trying to tell\nyou?\nAI-powered bioacoustic translation for pets, delivered through a smart collar and companion app.\nSeed Pitch Deck \u00b7 2026 \u00b7 Confidential\nTHE PROBLEM\nPet owners are flying blind\n73% $1,500\nof owners misread their dog's distress average unplanned vet bill traced\nsignals until symptoms become back to an early symptom nobody\nvisible caught\n1 in 3\ndogs show measurable separation\nanxiety that goes unnoticed by their\nowner\nTHE SOLUTION\nOne collar. One app. A real-time\nwindow into how your pet feels.\n\u25cf Lightweight smart collar records vocalizations, posture shifts, and\nmovement patterns\n\u25cf On-device AI model trained on 50,000+ hours of labeled bioacoustic\nCapture Translate\ndata\n\u25cf App translates raw signals into plain-English mood and need: hungry,\nanxious, in pain, playful\n\u25cf Shareable health timeline owners can hand straight to their vet\nUnderstand\nHOW IT WORKS\nFrom a bark to an answer in under two seconds\n01\n02 03\nCapture\nCollar mic + 6-axis motion sensor record\nvocalization, posture, and movement\ncontinuously.\nTranslate Understand\nAn on-device model trained on labeled The app surfaces a plain-English insight\n\u2192 \u2192\nbioacoustic data classifies emotional state and a suggested action, logged to a\nand need. shareable timeline.\nMARKET OPPORTUNITY\nA large, fast-growing market still waiting on real AI\n$320B $8.1B 24%\nGlobal pet care market, 2026 Connected pet-tech segment by 2030 Projected CAGR, pet wearables\nConnected pet-tech market, $B (illustrative) Why now\n9 On-device audio models finally run on $20 of\n8\nhardware\n8\n7\n7\n6\n6\n5\nPet humanization spending has outpaced general\n5\n4 retail for 8 straight years\n4 4\n3\n3\n2 73% of Gen Z pet owners say they'd pay for deeper\n1 insight into their pet's needs\n0\n2024 2025 2026 2027 2028 2029 2030\nBUSINESS MODEL\nHardware gets us in the door. Subscription is the business.\nRevenue mix at scale\nStarter\n$129\none-time, collar included\n\u25cf Real-time mood alerts\n\u25cf 7-day insight history\n\u25cf 1 pet profile\nPro\n$129 + $9.99/mo\ncollar + full subscription\n\u25cf Everything in Starter\n\u25cf Unlimited history + trends\n\u25cf Vet-share clinical report\n5%\n40%\n55%\n\u25cf Up to 4 pet profiles\nSubscription Hardware Vet / B2B data\nTRACTION\nSix weeks in market, before a single ad dollar spent\n12,400\nwaitlist signups\n4.8 / 5\naverage beta app rating\n82 NPS\namong 300 beta households\n3 clinics\npiloting the vet-share dashboard\nWaitlist growth, weekly signups\n14000\n12000\n10000\n8000\n6000\n4000\n2000\n0\nW1\nW2 W3\nW4\nW5 W6\nCOMPETITIVE LANDSCAPE\nNobody else combines real hardware with real translation depth\n\u2191 AI TRANSLATION DEPTH\nOur edge\nProprietary bioacoustic dataset, not a generic\nsound classifier\nBark-detection apps\nPetVoice AI\nHardware + software shipped as one product,\nnot bolted together\nClinical-grade reporting vets actually want to see\nSmart camera monitors\nBasic GPS trackers\nHARDWARE SOPHISTICATION \u2192\nTEAM\nBuilders who've shipped hardware, ML, and pet products before\nAanya Kapoor\nCo-founder & CEO\nEx-PM at a pet health startup; led the\nteam that shipped its telehealth product\nto 200K+ users.\nRohan Mehta\nCo-founder & CTO\nML engineer with a research background\nin bioacoustics and on-device audio\nmodels.\nDev Sharma\nHead of Hardware\nWearables engineer; previously shipped\ntwo consumer electronics products from\nprototype to retail.\nTHE ASK\nRaising a $1.2M seed round\nTo finish clinical validation, tool the second hardware revision, and convert our\nwaitlist into paying households.\nUse of funds\n45% Product & AI R&D\n10%\n25% Hardware tooling\n20%\n45%\n20% Go-to-market\n10% Team\n25%\nAanya Kapoor \u00b7 hello@petvoice.ai \u00b7 petvoice.ai Thank you",
+    "detected_claims": [
+      "Pet humanization spending has outpaced general 5 4 retail for 8 straight years 4 4 3 3 2 73% of Gen Z pet owners say they'd pay for deeper 1 insight into their pet's needs 0 2024 2025 2026 2027 2028 2029 2030",
+      "Pet owners are flying blind 73% $1,500 of owners misread their dog's distress average unplanned vet bill traced signals until symptoms become back to an early symptom nobody visible caught 1 in 3 dogs show measurable separation anxiety that goes unnoticed by their owner"
+    ],
+    "company_description": "PE T VOI C E A I\nWhat is your dog really trying to tell\nyou?\nAI-powered bioacoustic translation for pets, delivered through a smart collar and companion app.\nSeed Pitch Deck \u00b7 2026 \u00b7 Confidential\nTHE PROBLEM\nPet owners are flying blind\n73% $1,500\nof owners misread their dog's distress average unplanned vet bill traced\nsignals until symptoms become back to an early symptom nobody\nvisible caught\n1 in 3\ndogs show measurable separation\nanxiety that goes unnoticed by their\nowner\nTHE SOLUTION\nOne collar. One app. A real-time\nwindow into how your pet feels.\n\u25cf Lightweight smart collar records vocalizations, posture shifts, and\nmovement patterns\n\u25cf On-device AI model trained on 50,000+ hours of labeled bioacoustic\nCapture Translate\ndata\n\u25cf App translates raw signals into plain-English mood and need: hungry,\nanxious, in pain, playful\n\u25cf Shareable health timeline owners can hand straight to their vet\nUnderstand\nHOW IT WORKS\nFrom a bark to an answer in under two seconds\n01\n02 03\nCapture\nCollar mic + 6-axis motion sensor record\nvocalization, posture, and movement\ncontinuously.\nTranslate Understand\nAn on-device model trained on labeled The app surfaces a plain-English insight\n\u2192 \u2192\nbioacoustic data c",
+    "revenue": null,
+    "runway_months": null,
+    "page_count": 10,
+    "extraction_method": "regex_fallback",
+    "detected_founders": [
+      {
+        "name": "Aanya Kapoor",
+        "role": "Co-founder & CEO",
+        "background": "Ex-PM at a pet health startup; led the team that shipped its telehealth product to 200K+ users."
+      },
+      {
+        "name": "Rohan Mehta",
+        "role": "Co-founder & CTO",
+        "background": "ML engineer with a research background in bioacoustics and on-device audio models."
+      },
+      {
+        "name": "Dev Sharma",
+        "role": "Head of Hardware",
+        "background": "Wearables engineer; previously shipped two consumer electronics products from prototype to retail."
+      }
+    ],
+    "document_format": "PDF"
+  },
+  "report": {
+    "company": "PetVoice AI",
+    "final_score": 30.0,
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "UNKNOWN",
+    "ai_analysis": "1. EXECUTIVE SUMMARY\nPetVoice AI has been reviewed with HIGH data quality (85/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 2\n- Supported: 0\n- Refuted: 0\n- Uncertain: 2\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\nInsufficient database evidence was available for a reliable comparable-company analysis.\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+    "claims_verified": 2,
+    "claims_supported": 0,
+    "claims_refuted": 0,
+    "claims_uncertain": 2,
+    "risk_signals_found": 2,
+    "key_concerns": [],
+    "red_flags": [],
+    "positive_factors": [],
+    "sections": {
+      "risk": {
+        "red_flags": [],
+        "risk_level": "UNKNOWN",
+        "ai_reasoning": "Error in analysis",
+        "key_concerns": [],
+        "overall_score": 30.0,
+        "total_signals": 2,
+        "positive_factors": [],
+        "overall_risk_level": "UNKNOWN"
+      },
+      "team": {
+        "gaps": [
+          "Deck does not provide enough team evidence."
+        ],
+        "questions": [
+          "Provide founder biographies and relevant operating experience."
+        ],
+        "strengths": [],
+        "confidence": 0,
+        "capabilities": [],
+        "overall_assessment": "Insufficient team information"
+      },
+      "claims": {
+        "checked": 2,
+        "details": [
+          {
+            "claim": "Pet humanization spending has outpaced general 5 4 retail for 8 straight years 4 4 3 3 2 73% of Gen Z pet owners say they'd pay for deeper 1 insight into their pet's needs 0 2024 2025 2026 2027 2028 2029 2030",
+            "sources": [
+              "https://mainstreet.getbeyondx.com/articles/2026-04-10-u-s-pet-spending-hits-record-165-billion-as-families-embrace-animal-humanization/",
+              "https://www.petholidayclub.com/blog/pets-as-family-the-science-and-data-behind-the-worlds-biggest-pet-trend/",
+              "https://petving.com/trends/20260418-16",
+              "https://www.accio.com/business/pet_humanization_trend",
+              "https://www.petazu.com/the-humanization-of-pet-food-what-the-data-reveals/"
+            ],
+            "verdict": "NOT_ENOUGH_INFO",
+            "reasoning": "Claim verification is temporarily unavailable.",
+            "confidence": 0.0,
+            "key_evidence": "",
+            "total_sources": 9,
+            "full_pages_read": 5
+          },
+          {
+            "claim": "Pet owners are flying blind 73% $1,500 of owners misread their dog's distress average unplanned vet bill traced signals until symptoms become back to an early symptom nobody visible caught 1 in 3 dogs show measurable separation anxiety that goes unnoticed by their owner",
+            "sources": [
+              "https://americanpetproducts.org/industry-trends-and-stats",
+              "https://worldmetrics.org/animal-rescue-statistics/"
+            ],
+            "verdict": "NOT_ENOUGH_INFO",
+            "reasoning": "Claim verification is temporarily unavailable.",
+            "confidence": 0.0,
+            "key_evidence": "",
+            "total_sources": 2,
+            "full_pages_read": 2
+          }
+        ],
+        "refuted": 0,
+        "supported": 0,
+        "uncertain": 2,
+        "reliability_note": "MEDIUM \u2014 some claims unverified"
+      },
+      "market": {
+        "gaps": [
+          "Insufficient market evidence in the deck."
+        ],
+        "signals": [],
+        "confidence": 0,
+        "recommendation": "Validate market size and buyer demand.",
+        "market_definition": "Insufficient data"
+      },
+      "bear_case": {
+        "thesis": "Insufficient evidence for a complete bear case",
+        "signals": [],
+        "confidence": 0,
+        "diligence_required": [
+          "Validate financials, market demand and team execution."
+        ]
+      },
+      "bull_case": {
+        "thesis": "Insufficient evidence for a bull case",
+        "signals": [],
+        "confidence": 0,
+        "conditions_to_invest": [
+          "Verify key commercial and product claims."
+        ]
+      },
+      "ai_analysis": "1. EXECUTIVE SUMMARY\nPetVoice AI has been reviewed with HIGH data quality (85/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 2\n- Supported: 0\n- Refuted: 0\n- Uncertain: 2\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\nInsufficient database evidence was available for a reliable comparable-company analysis.\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+      "rag_context": {
+        "reports_retrieved": 5
+      },
+      "venture_score": {
+        "model": {
+          "cv_ece": 0.0219,
+          "family": "rf",
+          "cv_brier": 0.2223,
+          "trained_n": 1298,
+          "cv_roc_auc": 0.6772,
+          "calibration": "isotonic",
+          "cv_roc_auc_ci95": [
+            0.6607,
+            0.6932
+          ],
+          "excluded_contaminated_features": [
+            "team_size",
+            "age_years",
+            "batch_year"
+          ]
+        },
+        "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+        "available": true,
+        "base_rate": 0.4892,
+        "confidence": "medium",
+        "score_range": [
+          26,
+          46
+        ],
+        "ensemble_std": 0.0672,
+        "venture_score": 37,
+        "evidence_penalty": 0.12,
+        "feature_coverage": 0.625,
+        "imputed_features": [
+          "has_former_name",
+          "industry",
+          "is_any_remote",
+          "is_bay_area",
+          "is_fully_remote",
+          "is_partly_remote",
+          "is_us",
+          "nonprofit",
+          "stage"
+        ],
+        "model_only_score": 49,
+        "lift_over_base_rate": -0.002,
+        "probability_exit_or_survive": 0.3672
+      },
+      "technical_score": {
+        "reason": "No GitHub URL was provided.",
+        "available": false
+      },
+      "ml_outcome_model": {
+        "band": "unfavorable",
+        "caveat": "Weak proxy label, YC-only distribution, not validated outside this population. One input signal, not an investment verdict.",
+        "available": true,
+        "trained_on": "1,560 Y Combinator companies (yc-oss/api), 3.5+ years post-launch, label = Acquired/Public vs. Inactive, Active/unresolved excluded",
+        "model_test_auc": 0.7,
+        "probability_survives_or_exits": 0.098
+      },
+      "market_comparables": {
+        "caveat": "A text-similarity match over company descriptions, not a market-data-verified comp set -- treat these as leads to look into, not as validated comparables or valuation guidance. Also YC-only, same population caveat as the Outcome Model.",
+        "source": "1,560 real Y Combinator companies (yc-oss/api), TF-IDF+SVD text similarity",
+        "available": true,
+        "comparables": [
+          {
+            "name": "Flightcaster",
+            "batch": "Summer 2009",
+            "stage": "Early",
+            "outcome": "Acquired/Public",
+            "industry": "Consumer",
+            "similarity": 0.646
+          },
+          {
+            "name": "Edyn",
+            "batch": "Winter 2014",
+            "stage": "Early",
+            "outcome": "Shut down",
+            "industry": "Industrials",
+            "similarity": 0.625
+          },
+          {
+            "name": "AvairSense",
+            "batch": "Winter 2022",
+            "stage": "Early",
+            "outcome": "Shut down",
+            "industry": "Consumer",
+            "similarity": 0.595
+          },
+          {
+            "name": "MindPortal",
+            "batch": "Winter 2021",
+            "stage": "Early",
+            "outcome": "Shut down",
+            "industry": "Consumer",
+            "similarity": 0.54
+          },
+          {
+            "name": "Ardis AI",
+            "batch": "Winter 2020",
+            "stage": "Early",
+            "outcome": "Shut down",
+            "industry": "B2B",
+            "similarity": 0.533
+          }
+        ]
+      },
+      "founder_verification": [
+        {
+          "name": "Aanya Kapoor",
+          "sources": [],
+          "available": true,
+          "assessment": "NOT_ENOUGH_INFO",
+          "confidence": 0.0,
+          "evidence_summary": "No public evidence found for this person."
+        },
+        {
+          "name": "Rohan Mehta",
+          "sources": [
+            "https://startupintros.com/people/rohan-mehta",
+            "https://www.linkedin.com/in/rohanmehta2",
+            "https://in.linkedin.com/in/rohan-mehta-92b00317",
+            "https://nocap.blog/founder/rohan-mehta/",
+            "https://www.linkedin.com/posts/mehta-rohan_easeofuse-activity-7305871833973563394-0eDg"
+          ],
+          "available": true,
+          "assessment": "NOT_ENOUGH_INFO",
+          "confidence": 0.0,
+          "evidence_summary": "Founder verification was temporarily unavailable."
+        },
+        {
+          "name": "Dev Sharma",
+          "sources": [],
+          "available": true,
+          "assessment": "NOT_ENOUGH_INFO",
+          "confidence": 0.0,
+          "evidence_summary": "No public evidence found for this person."
+        }
+      ],
+      "personalized_ranking": {
+        "reason": "Not enough recorded decisions yet to personalize.",
+        "available": false,
+        "decisions_needed": 15,
+        "decisions_so_far": 0
+      }
+    },
+    "data_quality": {
+      "score": 85,
+      "quality": "HIGH",
+      "warnings": [
+        "No revenue data provided \u2014 financial analysis will be limited"
+      ],
+      "can_proceed": true
+    },
+    "similar_companies": [],
+    "incomplete_analysis": true,
+    "score_source": "venturescore_model",
+    "claims_unverified": true,
+    "report_id": "61",
+    "session_id": "11230cd1-4dec-4149-bd9c-4e245097f6d1"
+  }
+}

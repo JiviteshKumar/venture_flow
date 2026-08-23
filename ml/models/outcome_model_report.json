@@ -7,6 +7,15 @@
     "n_negative": 834,
     "min_age_years_filter": 3.5
   },
+  "shipped_variant": "combined_deployable",
+  "leakage_control": {
+    "excluded_features": [
+      "team_size",
+      "age_years"
+    ],
+    "reason": "Both are recorded at snapshot time, years after the outcome being predicted: team_size measures growth that already happened, and age_years encodes right-censoring. Excluded to match the methodology of the VentureFlow Score model (ml/research/README.md), which this model previously contradicted.",
+    "roc_auc_cost_of_excluding_them": 0.058
+  },
   "ablation": [
     {
       "variant": "text_only",
@@ -20,35 +29,64 @@
       "baseline_positive_rate": 0.4647
     },
     {
-      "variant": "structured_only",
+      "variant": "structured_only_with_hindsight",
       "n_test": 312,
-      "accuracy": 0.6442,
-      "roc_auc": 0.7001,
-      "precision": 0.6466,
-      "recall": 0.5172,
-      "f1": 0.5747,
-      "brier_score": 0.2187,
+      "accuracy": 0.6506,
+      "roc_auc": 0.7047,
+      "precision": 0.6525,
+      "recall": 0.531,
+      "f1": 0.5856,
+      "brier_score": 0.2157,
       "baseline_positive_rate": 0.4647
     },
     {
-      "variant": "combined",
+      "variant": "combined_with_hindsight",
       "n_test": 312,
-      "accuracy": 0.6699,
-      "roc_auc": 0.7038,
+      "accuracy": 0.6506,
+      "roc_auc": 0.7039,
+      "precision": 0.6698,
+      "recall": 0.4897,
+      "f1": 0.5657,
+      "brier_score": 0.2277,
+      "baseline_positive_rate": 0.4647
+    },
+    {
+      "variant": "structured_only_deployable",
+      "n_test": 312,
+      "accuracy": 0.625,
+      "roc_auc": 0.6613,
       "precision": 0.7059,
-      "recall": 0.4966,
-      "f1": 0.583,
-      "brier_score": 0.2287,
+      "recall": 0.331,
+      "f1": 0.4507,
+      "brier_score": 0.225,
+      "baseline_positive_rate": 0.4647
+    },
+    {
+      "variant": "combined_deployable",
+      "n_test": 312,
+      "accuracy": 0.6378,
+      "roc_auc": 0.6459,
+      "precision": 0.6818,
+      "recall": 0.4138,
+      "f1": 0.515,
+      "brier_score": 0.2353,
       "baseline_positive_rate": 0.4647
     }
   ],
-  "combined_model_structured_feature_importance_gain": {
-    "industry": 327.8826981782913,
-    "stage": 360.87809640169144,
-    "team_size": 2043.4083864688873,
-    "num_tags": 16.77848994731903,
-    "nonprofit": 0.0,
-    "age_years": 253.80617916584015
+  "shipped_model_structured_feature_importance_gain": {
+    "industry": 188.71,
+    "stage": 1134.35,
+    "num_tags": 14.08,
+    "nonprofit": 0.0
   },
-  "combined_model_text_feature_importance_gain_total": 11575.308447659016
+  "shipped_model_text_feature_importance_gain_total": 12559.86,
+  "hindsight_model_structured_feature_importance_gain": {
+    "industry": 309.59,
+    "stage": 389.72,
+    "num_tags": 22.3,
+    "nonprofit": 0.0,
+    "team_size": 1978.05,
+    "age_years": 260.38
+  },
+  "hindsight_model_text_feature_importance_gain_total": 11558.79
 }

@@ -1,0 +1,30 @@
+{"id": "s1", "claim": "Stripe was founded in 2010 by Patrick Collison and John Collison.", "gold_verdict": "SUPPORTS", "category": "founding_facts"}
+{"id": "s2", "claim": "Airbnb went public via IPO in December 2020.", "gold_verdict": "SUPPORTS", "category": "public_markets"}
+{"id": "s3", "claim": "OpenAI released ChatGPT to the public in November 2022.", "gold_verdict": "SUPPORTS", "category": "product_launch"}
+{"id": "s4", "claim": "SpaceX first successfully landed an orbital-class rocket booster in December 2015.", "gold_verdict": "SUPPORTS", "category": "milestone"}
+{"id": "s5", "claim": "Slack was acquired by Salesforce in a deal that closed in 2021.", "gold_verdict": "SUPPORTS", "category": "acquisition"}
+{"id": "s6", "claim": "Y Combinator was founded in 2005 by Paul Graham.", "gold_verdict": "SUPPORTS", "category": "founding_facts"}
+{"id": "s7", "claim": "Zoom's user base grew dramatically during the COVID-19 pandemic in 2020.", "gold_verdict": "SUPPORTS", "category": "growth"}
+{"id": "s8", "claim": "Instagram was acquired by Facebook in 2012 for approximately $1 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition"}
+{"id": "s9", "claim": "Tesla delivered its one millionth electric vehicle in March 2020.", "gold_verdict": "SUPPORTS", "category": "milestone"}
+{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "SUPPORTS", "category": "funding"}
+{"id": "r1", "claim": "WeWork successfully completed its initial IPO in 2019.", "gold_verdict": "REFUTES", "category": "public_markets"}
+{"id": "r2", "claim": "Theranos's blood-testing technology was validated as accurate by independent regulators.", "gold_verdict": "REFUTES", "category": "product_claims"}
+{"id": "r3", "claim": "Google was founded in 1995 by Mark Zuckerberg.", "gold_verdict": "REFUTES", "category": "founding_facts"}
+{"id": "r4", "claim": "Twitter changed its name to X in 2020.", "gold_verdict": "REFUTES", "category": "rebrand"}
+{"id": "r5", "claim": "Amazon was founded as a physical retail bookstore chain.", "gold_verdict": "REFUTES", "category": "founding_facts"}
+{"id": "r6", "claim": "Facebook's IPO in 2012 was a flawless, glitch-free debut on Nasdaq.", "gold_verdict": "REFUTES", "category": "public_markets"}
+{"id": "r7", "claim": "Quibi's short-form video app achieved profitability within six months of launch.", "gold_verdict": "REFUTES", "category": "product_claims"}
+{"id": "r8", "claim": "Elizabeth Holmes was acquitted of all fraud charges related to Theranos.", "gold_verdict": "REFUTES", "category": "legal"}
+{"id": "r9", "claim": "Blockbuster acquired Netflix in the early 2000s.", "gold_verdict": "REFUTES", "category": "acquisition"}
+{"id": "r10", "claim": "MySpace remains the largest social network in the world today.", "gold_verdict": "REFUTES", "category": "market_position"}
+{"id": "n1", "claim": "Northwind Analytics reported $4.2M in ARR as of Q3 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics"}
+{"id": "n2", "claim": "Bramblecart Inc.'s customer churn rate is below 2% monthly.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics"}
+{"id": "n3", "claim": "Fictively Labs holds a pending patent for its adaptive routing algorithm.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "ip_claims"}
+{"id": "n4", "claim": "Voltgrid Systems' pilot program with three unnamed utilities cut energy waste by 18%.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pilot_results"}
+{"id": "n5", "claim": "Harrow Biotech's Phase 1 trial enrolled 42 patients across two sites.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "clinical_trial"}
+{"id": "n6", "claim": "Cascade Ledger processes over 50,000 transactions daily for its enterprise clients.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction"}
+{"id": "n7", "claim": "Thistle & Vane's founding team previously worked together at a stealth startup.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "team"}
+{"id": "n8", "claim": "Anchorline Robotics' warehouse robots achieve 99.4% pick accuracy in production deployments.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims"}
+{"id": "n9", "claim": "Fernglass Health's app has a 4.8-star average rating among clinicians who tested it privately.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims"}
+{"id": "n10", "claim": "Marrow Data Systems is in exclusive talks with two Fortune 500 companies for a 2026 pilot.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "pipeline"}

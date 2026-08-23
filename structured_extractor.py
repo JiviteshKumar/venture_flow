@@ -34,12 +34,29 @@ class ExtractedClaim(BaseModel):
     ] = "other"
 
 
+class ExtractedFounder(BaseModel):
+    """A named person from the deck's team slide.
+
+    Added 23 Aug 2026. `agents/founder_verifier.py` had existed unused since
+    the third pass because nothing ever populated `DiligenceRequest.founders`:
+    the upload form has no founders field and extraction did not look for one,
+    so the Founder Analysis tab was structurally guaranteed to be empty. This
+    is the automatic half of the fix; the upload form now also lets the user
+    correct or add names before submitting.
+    """
+
+    name: str = Field(min_length=3, max_length=80)
+    role: str = Field(default="", max_length=120)
+    background: str = Field(default="", max_length=600)
+
+
 class ExtractedFinancials(BaseModel):
     description: str = ""
     revenue: float | None = Field(default=None, ge=0)
     burn_rate: float | None = Field(default=None, ge=0)
     runway_months: float | None = Field(default=None, ge=0, le=600)
     claims: list[ExtractedClaim] = Field(default_factory=list, max_length=8)
+    founders: list[ExtractedFounder] = Field(default_factory=list, max_length=5)
 
 
 _SCHEMA_PROMPT = """Return ONLY a JSON object with this exact shape, no prose, no markdown fences:
@@ -50,6 +67,9 @@ _SCHEMA_PROMPT = """Return ONLY a JSON object with this exact shape, no prose, n
   "runway_months": <runway in months as a plain number, or null if not stated>,
   "claims": [
     {"claim": "<a specific, checkable statement from the text, near-verbatim>", "category": "financial|market|product|team|traction|legal|other"}
+  ],
+  "founders": [
+    {"name": "<a person named in the text as a founder or executive>", "role": "<their stated title>", "background": "<their stated prior experience, verbatim-ish>"}
   ]
 }
 Rules:
@@ -58,7 +78,11 @@ Rules:
 - Never invent a number that is not present in the text.
 - If a field is not stated anywhere in the text, use null (for numbers) or an
   empty list (for claims). Do not guess.
-- Return at most 6 claims, ranked by how verifiable/specific they are."""
+- Return at most 6 claims, ranked by how verifiable/specific they are.
+- For "founders", list only real people NAMED in the text with a founder or
+  executive title. Return an empty list if the deck has no team slide -- most
+  do not, and inventing a plausible-sounding founder would send a fabricated
+  name to a live web search and produce a background check on nobody."""
 
 
 def extract_structured(text: str) -> dict[str, Any]:
@@ -94,6 +118,7 @@ def extract_structured(text: str) -> dict[str, Any]:
             "burn_rate": parsed.burn_rate,
             "runway_months": parsed.runway_months,
             "claims": [c.claim for c in parsed.claims],
+            "founders": [f.model_dump() for f in parsed.founders],
             "_method": "llm_schema",
         }
     except (json.JSONDecodeError, ValidationError) as exc:
@@ -112,4 +137,5 @@ def extract_structured(text: str) -> dict[str, Any]:
 def _regex_fallback(text: str) -> dict[str, Any]:
     info = _regex_extractor.extract_company_info(text)
     claims = _regex_extractor.extract_claims_from_text(text)
-    return {**info, "claims": claims}
+    founders = _regex_extractor.extract_founders(text)
+    return {**info, "claims": claims, "founders": founders}

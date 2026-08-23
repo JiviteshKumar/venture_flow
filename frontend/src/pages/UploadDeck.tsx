@@ -11,6 +11,11 @@ import { useApp } from "../context/AppContext";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
+// Kept in step with document_extractor.SUPPORTED_FORMATS on the backend. The
+// upload used to be PDF-only, which forced founders to export their deck
+// before they could use the product at all.
+const ACCEPTED_EXTENSIONS = [".pdf", ".pptx", ".docx", ".txt", ".md"];
+
 const analysisFeatures = [
   {
     icon: TrendingUp, label: "Market Validation",
@@ -196,20 +201,28 @@ const MiniPreviewCard = ({ card, delay }: { card: typeof miniPreviewCards[0]; de
 
 const UploadDeck = () => {
   const navigate = useNavigate();
-  const { status, currentStage, progressPct, runAnalysis, report, error, reset } = useApp();
+  const { status, currentStage, progressPct, prepareUpload, runAnalysis, uploadResult, report, error, reset } = useApp();
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
   const [fileObj, setFileObj] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [companyInput, setCompanyInput] = useState("");
+  // Founder names, comma-separated. Pre-filled from what the extractor found
+  // in the deck and editable before submitting, because these names are sent
+  // to a live web search and a public-background assessment -- a name the
+  // extractor got wrong becomes a background check on a stranger.
+  const [foundersInput, setFoundersInput] = useState("");
+  const [foundersTouched, setFoundersTouched] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [activeDot, setActiveDot] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Derive UI state from global context
   const isAnalyzing = status === "uploading" || status === "analyzing";
+  const isParsed = status === "ready" && uploadResult !== null;
   const showPreview = status === "done" && report !== null;
+  const detectedFounders = uploadResult?.detected_founders ?? [];
 
   // Map global progressPct to a step index for the animated steps list
   const analysisStep = Math.min(
@@ -222,14 +235,23 @@ const UploadDeck = () => {
     return () => clearInterval(t);
   }, []);
 
+  // Prefill from extraction, but never over the top of something the user
+  // typed -- their correction is the whole reason this field is editable.
+  useEffect(() => {
+    if (foundersTouched) return;
+    const names = (uploadResult?.detected_founders ?? []).map(f => f.name).filter(Boolean);
+    setFoundersInput(names.join(", "));
+  }, [uploadResult, foundersTouched]);
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const storeFile = (f: File) => {
-    if (!f.name.toLowerCase().endsWith(".pdf")) {
-      setFileError("Please upload a PDF deck. PowerPoint import is not enabled for this launch build.");
+    const extension = f.name.slice(f.name.lastIndexOf(".")).toLowerCase();
+    if (!ACCEPTED_EXTENSIONS.includes(extension)) {
+      setFileError(`Unsupported file type. Accepted formats: ${ACCEPTED_EXTENSIONS.join(", ")}.`);
       return;
     }
     if (f.size > 10 * 1024 * 1024) {
@@ -240,11 +262,16 @@ const UploadDeck = () => {
     setFileName(f.name);
     setFileSize(formatSize(f.size));
     setFileObj(f);
+    setFoundersTouched(false);
     // Auto-fill company name from filename if empty
+    const derivedName = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
     if (!companyInput) {
-      setCompanyInput(f.name.replace(/\.pdf$/i, "").replace(/[-_]/g, " "));
+      setCompanyInput(derivedName);
     }
-    if (status === "done") reset();
+    if (status === "done" || status === "ready") reset();
+    // Parse immediately so the form can show what was found in the deck --
+    // in particular the founders -- before the analysis is committed to.
+    void prepareUpload(f, companyInput || derivedName || "Unknown Company");
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,7 +289,12 @@ const UploadDeck = () => {
 
   const handleAnalyze = async () => {
     if (!fileObj || isAnalyzing) return;
-    await runAnalysis(fileObj, companyInput || fileName || "Unknown Company");
+    const founders = foundersInput
+      .split(",")
+      .map(name => name.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+    await runAnalysis(fileObj, companyInput || fileName || "Unknown Company", founders);
   };
 
   const currentStep = analysisSteps[analysisStep];
@@ -831,7 +863,7 @@ const UploadDeck = () => {
                 onClick={() => !isAnalyzing && inputRef.current?.click()}
               >
                 <input ref={inputRef} type="file" style={{ display: "none" }}
-                  accept=".pdf,application/pdf" onChange={handleFileChange} />
+                  accept={ACCEPTED_EXTENSIONS.join(",")} onChange={handleFileChange} />
 
                 <AnimatePresence mode="wait">
                   {!fileName ? (
@@ -842,7 +874,7 @@ const UploadDeck = () => {
                         <Upload size={21} color={isDragging ? "#1D6FE8" : "#94A3B8"} strokeWidth={1.6} />
                       </div>
                       <div className="up-dz-main-text">{isDragging ? "Release to upload" : "Drop your deck here"}</div>
-                      <div className="up-dz-hint">or click to browse<br />PDF · up to 10 MB</div>
+                      <div className="up-dz-hint">or click to browse<br />PDF · PPTX · DOCX · TXT · MD · up to 10 MB</div>
                     </motion.div>
                   ) : (
                     <motion.div key="selected"
@@ -871,6 +903,48 @@ const UploadDeck = () => {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* FOUNDERS — the input path the Founder Analysis tab never had.
+                  Pre-filled from the deck, editable, and explicit about being
+                  empty rather than silently producing an all-zero radar. */}
+              {(isParsed || isAnalyzing || detectedFounders.length > 0) && (
+                <div style={{ marginTop: 14 }}>
+                  <label className="up-company-label" htmlFor="founders">
+                    Founders {detectedFounders.length > 0 && (
+                      <span style={{ color: "#0EA66A", fontWeight: 500 }}>
+                        · {detectedFounders.length} found in deck
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    id="founders"
+                    className="up-company-input"
+                    placeholder="Comma-separated, e.g. Ada Lovelace, Grace Hopper"
+                    value={foundersInput}
+                    onChange={e => { setFoundersTouched(true); setFoundersInput(e.target.value); }}
+                    disabled={isAnalyzing}
+                  />
+                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6, lineHeight: 1.5 }}>
+                    {detectedFounders.length > 0
+                      ? "Read from the deck's team slide. Correct or add names before analysing — each one is checked against public web evidence."
+                      : "No team slide was found in this deck. Add founder names to enable the background check, or leave blank to skip it."}
+                  </div>
+                  {detectedFounders.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                      {detectedFounders.map((f, i) => (
+                        <span key={i} title={f.background || ""} style={{
+                          fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+                          padding: "3px 8px", borderRadius: 6,
+                          background: "var(--surface-2)", border: "1px solid var(--border)",
+                          color: "var(--text-secondary)",
+                        }}>
+                          {f.name}{f.role ? ` · ${f.role}` : ""}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Error display */}
               <AnimatePresence>
@@ -1066,7 +1140,13 @@ const UploadDeck = () => {
 
             <div className="up-card" style={{ padding: "18px 20px" }}>
               <div className="up-section-label">Supported Formats</div>
-              {[{ fmt: "PDF", desc: "Recommended" }].map(f => (
+              {[
+                { fmt: "PDF", desc: "Recommended" },
+                { fmt: "PPTX", desc: "PowerPoint" },
+                { fmt: "DOCX", desc: "Word" },
+                { fmt: "TXT", desc: "Plain text" },
+                { fmt: "MD", desc: "Markdown" },
+              ].map(f => (
                 <div key={f.fmt} className="up-format-row">
                   <div>
                     <span className="up-format-name">.{f.fmt.toLowerCase()}</span>
