@@ -32,6 +32,10 @@ logger = logging.getLogger("ventureflow.api")
 MAX_TEXT_CHARS = 50_000
 MAX_CLAIMS = 12
 RATE_LIMIT = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
+# Trust X-Forwarded-For when running behind a managed platform's load
+# balancer (Render, Vercel, Fly). Off by default because the header is
+# client-supplied and spoofable when the app is directly internet-facing.
+TRUST_PROXY_HEADERS = os.getenv("TRUST_PROXY_HEADERS", "").strip().lower() in {"1", "true", "yes"}
 
 app = FastAPI(
     title="VentureFlow AI",
@@ -52,6 +56,84 @@ origins = [
     for value in os.getenv("ALLOWED_ORIGINS", DEFAULT_DEV_ORIGINS).split(",")
     if value.strip()
 ]
+def _client_key(request: Request) -> str:
+    """Identify the caller for rate limiting, correctly behind a proxy.
+
+    `request.client.host` is the peer socket address. On Render (and any
+    platform that terminates TLS at a load balancer) that is the *proxy*, not
+    the user, so every visitor shares a single 30-requests-per-minute bucket
+    and the limiter trips far sooner than intended -- for reasons that look
+    nothing like rate limiting from the browser, because the 429 was also
+    arriving without CORS headers.
+
+    `X-Forwarded-For` is a client-supplied header and trivially spoofable, so
+    it is trusted only when `TRUST_PROXY_HEADERS` is set, which should be true
+    on a managed host and false when the app is directly internet-facing.
+    Render, Vercel and Fly all set this header; the left-most entry is the
+    original client.
+    """
+    if TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("x-forwarded-for", "")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _cors_headers_for(request: Request) -> dict[str, str]:
+    """CORS headers for a response that will not pass through CORSMiddleware.
+
+    Two response paths in this app are emitted *outside* that middleware and so
+    would otherwise carry no `Access-Control-Allow-Origin` at all:
+
+      * the 429 from the rate-limit middleware, and
+      * the 500 from the catch-all exception handler, which Starlette serves
+        from ServerErrorMiddleware -- the outermost layer of the whole stack,
+        outside anything `add_middleware` can wrap.
+
+    A browser discards a cross-origin response with no ACAO header before any
+    JavaScript can read it, so axios reports a bare `Network Error` with no
+    status and no body. That is exactly the symptom this app showed in
+    production: every underlying failure -- an exhausted rate limit, a Neon
+    connection dropping mid-request -- surfaced as the same uninformative
+    "Network Error", because the real message never reached the browser.
+
+    It is invisible locally, which is why it survived: `vite.config.ts` proxies
+    /api to the backend, making local requests same-origin, and CORS never
+    applies at all.
+
+    Mirrors CORSMiddleware's own behaviour: echo the origin only if it is
+    allowed, and never reflect an arbitrary one.
+    """
+    origin = request.headers.get("origin")
+    if not origin:
+        return {}
+    if "*" in origins:
+        return {"Access-Control-Allow-Origin": "*"}
+    if origin in origins:
+        return {"Access-Control-Allow-Origin": origin, "Vary": "Origin"}
+    return {}
+
+
+# Registered BEFORE CORSMiddleware, deliberately. Starlette applies middleware
+# outermost-last, so whatever is added last wraps everything added before it.
+# This used to be declared after the CORS middleware, which put the rate
+# limiter *outside* it and meant its 429 never got CORS headers. Adding it
+# first puts CORS on the outside, where it can decorate the 429 on the way out.
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    if request.url.path in {"/health", "/"}:
+        return await call_next(request)
+    if not rate_limit_is_allowed(_client_key(request), RATE_LIMIT):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests. Please retry in a minute."},
+            # Belt and braces: correct even if this is ever re-registered in a
+            # position CORSMiddleware does not wrap.
+            headers=_cors_headers_for(request),
+        )
+    return await call_next(request)
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -80,27 +162,20 @@ async def close_database_pool() -> None:
     await run_in_threadpool(close_pool)
 
 
-@app.middleware("http")
-async def rate_limit(request: Request, call_next):
-    if request.url.path in {"/health", "/"}:
-        return await call_next(request)
-    client = request.client.host if request.client else "unknown"
-    if not rate_limit_is_allowed(client, RATE_LIMIT):
-        return JSONResponse(
-            status_code=429,
-            content={"detail": "Too many requests. Please retry in a minute."},
-        )
-    return await call_next(request)
-
-
 @app.exception_handler(Exception)
-async def unhandled_error(_: Request, exc: Exception):
+async def unhandled_error(request: Request, exc: Exception):
     logger.exception("Unhandled API error")
     return JSONResponse(
         status_code=500,
         content={
             "detail": "The analysis service encountered an unexpected error. Please retry."
         },
+        # Starlette serves this from ServerErrorMiddleware, which sits outside
+        # every `add_middleware` layer including CORS. Without these headers a
+        # browser drops the response and the frontend can only say "Network
+        # Error" -- so a genuine 500 became indistinguishable from the backend
+        # being down. See _cors_headers_for().
+        headers=_cors_headers_for(request),
     )
 
 
