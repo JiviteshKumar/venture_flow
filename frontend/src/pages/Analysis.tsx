@@ -987,11 +987,18 @@ const Analysis = () => {
                         <Radar dataKey="value" stroke="#1D6FE8" fill="#1D6FE8" fillOpacity={0.09} strokeWidth={2.5} dot={{ fill: "#1D6FE8", r: 4, strokeWidth: 0 } as any} />
                       </RadarChart>
                     </ResponsiveContainer> : <p style={{ color: "#94A3B8", fontSize: 13, lineHeight: 1.7 }}>
-                      No capability scores were produced, because this deck contains no team
-                      slide for the analyst agent to read.
+                      {/* Do not assert *why* the scores are missing. The team analyst
+                          returns the same empty `capabilities` list whether the deck
+                          genuinely had no team slide or the agent call failed, and
+                          claiming the former when the latter happened is the kind of
+                          confidently-wrong empty state this tab already had once. */}
+                      The team analyst produced no capability scores for this deck.
                       {founderChecks.length > 0
-                        ? " The named founders were still checked against public web evidence — see below."
-                        : " Add founder names on the upload form to run a public-background check on them."}
+                        ? " Founder names were found and checked against public web evidence — see below."
+                        : " No founder names were submitted; add them on the upload form to run a public-background check."}
+                      {report.incomplete_analysis
+                        ? " This analysis is flagged incomplete, so the agent may not have run at all."
+                        : ""}
                     </p>}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
