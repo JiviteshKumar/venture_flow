@@ -180,3 +180,48 @@ follows from Loughran & McDonald (2011) rather than being a new idea.
 - Severity labels (`gold_severity`) are recorded but not currently scored by
   the harness; only the binary risk/no-risk decision and the category overlap
   are.
+
+---
+
+## 3. Post-run label review (23 Aug 2026)
+
+The `obscure_real_company` section above commits to re-reading the retrieved
+evidence after each run and correcting any gold label the evidence contradicts.
+That review was done on the 128-claim run and **found two of my own labels
+wrong.** Both are recorded here rather than quietly fixed, because a benchmark
+whose corrections are invisible is not auditable.
+
+**`r25` — "SpaceX is a publicly traded company listed on Nasdaq."** Labeled
+REFUTES. The verifier returned SUPPORTS at 0.97 confidence, citing sources
+saying SpaceX listed on Nasdaq under SPCX in June 2026. Checked independently:
+the verifier is right and the label was wrong — written from knowledge that
+predates the listing. This is the exact failure this project's honesty standard
+exists to catch, and the benchmark caught it in the direction that matters: the
+system was right and the human was wrong. Replaced with a durably false claim
+about Falcon 9 reuse, so the item cannot silently flip again, and re-queued.
+
+**`o24` — "Snipd's content-clipping tool had 60,000 registered users."**
+Labeled NOT_ENOUGH_INFO for the YC Summer 2008 company Snipd. The verifier
+returned REFUTES, citing "over 500,000 knowledge workers" — for a *different*,
+much better-known modern product also called Snipd. The verdict was reasonable
+on the evidence and the benchmark item was defective: a name collision, not a
+thin-evidence case. Rewritten to name the YC batch explicitly, and re-queued.
+
+The other six errors were reviewed and left alone, because they are real system
+behaviour rather than label defects:
+
+- **Two (`r1`, `s35`) retrieved zero sources.** `verify_claim` forces
+  NOT_ENOUGH_INFO when nothing comes back, so these are DuckDuckGo throttling
+  showing up as verifier errors. The `retrieval.claims_with_zero_sources`
+  figure in every results file exists to keep that visible: 6 of 126 on this
+  run.
+- **Four (`s9`, `s10`, `s29`, `r35`) are the verifier being strictly literal
+  about conjunctions.** It found that Tesla *produced* its millionth vehicle in
+  March 2020 and refused to affirm *delivered*; found Notion's $50M-at-$2B round
+  and refused to affirm it was the Series C; confirmed Lyft's March 2019 IPO but
+  had no Uber IPO date in the retrieved set and so would not affirm "before
+  Uber". Each is arguably pedantic and each errs toward NOT_ENOUGH_INFO rather
+  than toward a false SUPPORTS. **For a diligence tool that is the safe
+  direction**, and it is visible in the confusion matrix as recall loss on
+  SUPPORTS with precision 1.000 — the verifier under-claims rather than
+  over-claims. That is a property worth keeping, not a bug to tune away.

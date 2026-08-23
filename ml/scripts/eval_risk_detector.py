@@ -248,13 +248,31 @@ DETECTORS: dict[str, Callable[[dict[str, Any]], tuple[bool, list[str], dict[str,
 _llm_cache: dict[str, dict[str, Any]] = {}
 
 
-def run_detector(name: str, benchmark: list[dict[str, Any]], sleep_s: float = 0.0) -> dict[str, Any]:
+def run_detector(
+    name: str,
+    benchmark: list[dict[str, Any]],
+    sleep_s: float = 0.0,
+    provider_retries: int = 5,
+    retry_wait_s: float = 120.0,
+) -> dict[str, Any]:
     rows = []
     for position, item in enumerate(benchmark, 1):
         if name.startswith("llm_"):
             cached = _llm_cache.get(item["id"])
             if cached is None:
                 flagged, categories, detail = detector_llm_medium_plus(item)
+                # Wait out a rate limit before giving up. Groq's free tier caps
+                # tokens per day on a rolling window, so quota trickles back
+                # rather than arriving all at once, and one excerpt costs about
+                # 1,600 tokens -- a few minutes of accumulated allowance. Same
+                # reasoning as the claim harness.
+                for attempt in range(1, provider_retries + 1):
+                    if not (detail.get("risk_level") == "UNKNOWN" and detail.get("overall_score") == 30):
+                        break
+                    print(f"    provider unavailable; waiting {retry_wait_s:.0f}s "
+                          f"(attempt {attempt}/{provider_retries})")
+                    time.sleep(retry_wait_s)
+                    flagged, categories, detail = detector_llm_medium_plus(item)
                 # Refuse to score a provider outage. groq_risk_analysis degrades
                 # to this exact fallback on any exception, including a 429, and
                 # a run that records it produces a detector that "flags nothing"
@@ -311,6 +329,10 @@ def main() -> None:
     parser.add_argument("--detectors", nargs="+", default=list(DETECTORS))
     parser.add_argument("--sleep", type=float, default=1.0,
                         help="seconds between LLM calls; the free Groq tier is 8k tokens/minute")
+    parser.add_argument("--provider-retries", type=int, default=5,
+                        help="how many times to wait out a provider/quota failure per excerpt")
+    parser.add_argument("--retry-wait", type=float, default=120.0,
+                        help="seconds to wait between those retries")
     args = parser.parse_args()
 
     benchmark = load_benchmark(args.benchmark)
@@ -329,7 +351,10 @@ def main() -> None:
         print(f"--- {name} ---")
         try:
             output["detectors"][name] = run_detector(
-                name, benchmark, args.sleep if name.startswith("llm_") else 0.0
+                name, benchmark,
+                args.sleep if name.startswith("llm_") else 0.0,
+                provider_retries=args.provider_retries,
+                retry_wait_s=args.retry_wait,
             )
         except (FileNotFoundError, RuntimeError) as exc:
             # A missing gitignored model file, or an exhausted LLM quota, is a

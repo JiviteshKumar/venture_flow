@@ -130,20 +130,47 @@ embeddings later is a one-function change (`build_text_features()` in
 `train_outcome_model.py`) once this runs somewhere with normal internet
 access.
 
+**Leakage correction, 23 Aug 2026 — read this before quoting any number
+above or below.** This model shipped for months using `team_size` and
+`age_years` as features. Those are the *exact* hindsight features the
+VentureFlow Score model was rebuilt to exclude, so the pipeline was running two
+models under contradictory methodology with nothing anywhere saying so. Both
+are recorded at snapshot time, years after the outcome being predicted:
+`team_size` measures growth that already happened, and `age_years` encodes
+right-censoring. In the combined model `team_size` alone carried gain 1,978
+against 390 for the next-largest structured feature — the model's single
+strongest signal was hindsight.
+
+The shipped model is now the **deployable** variant, trained on industry,
+stage, tag count and nonprofit status only. `ml/inference.py` still accepts
+`team_size` and `age_years` as arguments and ignores them.
+
 **Results — the ablation, which is the actual finding**:
 
 | Variant | ROC-AUC | Accuracy | F1 | Brier |
 |---|---|---|---|---|
 | Text only | 0.572 | 0.555 | 0.403 | 0.259 |
-| Structured only | 0.700 | 0.644 | 0.575 | 0.219 |
-| Combined | **0.704** | 0.670 | 0.583 | 0.229 |
+| Structured only, *with* hindsight | 0.705 | 0.651 | 0.586 | 0.216 |
+| Combined, *with* hindsight | 0.704 | 0.651 | 0.566 | 0.228 |
+| Structured only, deployable | 0.661 | 0.625 | 0.451 | 0.225 |
+| **Combined, deployable (SHIPPED)** | **0.646** | 0.638 | 0.515 | 0.235 |
 
-Structured features (industry, stage, team size, age) carry almost all of
-the real signal; the free-text description adds very little on top of
-them in this TF-IDF setup. That is a genuine, reportable result, not a
-disappointing one — it's exactly the kind of finding an ablation study is
-for, and it directly tells you where to spend effort next (better text
-representation, not more structured features).
+Two findings, not one.
+
+*The ablation finding, unchanged*: structured features carry almost all of the
+real signal; the free-text description adds very little on top of them in this
+TF-IDF setup. That is exactly the kind of result an ablation study is for, and
+it says where to spend effort next — a better text representation, not more
+structured features.
+
+*The leakage finding*: **removing the two hindsight features costs 0.058
+ROC-AUC.** That is the honest price of the correction, and it is close to the
+0.048 the VentureFlow Score model paid for the same exclusion — two independent
+models on the same population agreeing on roughly how much of their
+above-chance signal was hindsight. Any comparison of this model to published
+work must use 0.646, not 0.704. Full numbers in
+`ml/models/outcome_model_report.json`; the pre-correction report is preserved
+as `outcome_model_report_before_leakage_fix.json`.
 
 **Honest limitations** (belongs in a model card, not buried): the label is
 a coarse binary proxy — "survived/exited" vs. "shut down" — not a return
@@ -220,12 +247,28 @@ overlap cannot do. It is empirical justification for the LLM-based verifier
 the product already uses.
 
 **Risk/Tone Model** (`models/risk_tone_model.txt`) — Financial PhraseBank +
-TFNS, 15,376 examples. 77% accuracy, macro-F1 0.62; negative-class recall
-(0.31) is the weak point, and negative tone is the class a risk detector most
-needs. Genuinely usable, but **also not wired in yet**: replacing or
-augmenting the keyword-based detector in `agents/risk_detector.py` needs its
-own head-to-head evaluation against the incumbent, and doing that properly is
-a separate piece of work rather than something to bundle into this pass.
+TFNS, 15,376 examples. 77% accuracy, macro-F1 0.62 *on its own held-out news
+data*; negative-class recall (0.31) is the weak point, and negative tone is the
+class a risk detector most needs.
+
+**The head-to-head evaluation this section said was needed has now been run,
+and the model lost badly** (`ml/eval/risk_benchmark_results.json`, 28
+hand-labeled excerpts):
+
+| Detector | Precision | Recall | F1 | Boilerplate FP rate | Ranking AUC |
+|---|---|---|---|---|---|
+| Keyword dictionary (incumbent, shipped) | 0.917 | 0.733 | **0.815** | **0.077** | 0.836 |
+| Risk/Tone model | 0.0 | 0.0 | 0.0 | 0.0 | 0.333 |
+
+The tone model predicted `neutral` on all 28 excerpts, giving going-concern
+disclosures a negative-class probability of 0.014–0.071. Its ranking AUC of
+0.333 is *below* chance, meaning it ordered risky text below risk-free text.
+The cause is domain shift: it was trained on short financial news headlines and
+applied to long filing paragraphs, and Loughran & McDonald established in 2011
+that news-derived sentiment does not transfer to filing prose. **Deliberately
+not wired in.** The right conclusion is not "tune the threshold" — a
+below-chance ranking has nothing to threshold — it is that this corpus is the
+wrong training data for this job. See `ml/research/related_work.md` §6.
 
 ```bash
 python ml/scripts/train_claim_model.py   # ~1 min
@@ -285,19 +328,79 @@ scale it always refits from scratch on the full history rather than doing
 incremental updates, which is the right call until there's enough data for
 that distinction to matter.
 
-## Claim-verification benchmark + eval — `ml/eval/`
+## Evaluation — `ml/eval/`
 
-`ml/eval/claim_benchmark.jsonl` — 30 hand-labeled claims (10 each
-SUPPORTS/REFUTES/NOT_ENOUGH_INFO) — and `ml/scripts/eval_claim_verifier.py`,
-which runs them through the live `agents/claim_verifier.py` and reports
-precision/recall/F1 per class, a confusion matrix, and a confidence-
-calibration check. See `ml/eval/README.md` for exactly how the labels were
-constructed and this benchmark's honest limitations (30 examples is a
-starting point, and the NOT_ENOUGH_INFO class uses invented company names,
-not real obscure claims). The metrics computation is unit-tested with no
-network or LLM calls (`tests/test_eval_claim_verifier.py`); actually running
-the benchmark against live claims needs a working `GROQ_API_KEY` and
-internet access, neither available in the sandbox this was built in.
+**Both benchmarks have now been run. The claim harness had existed since the
+third pass and had never once been executed end to end; risk detection had no
+benchmark at all.** Full methodology, label provenance and limitations are in
+[`ml/eval/README.md`](eval/README.md); every figure below is reloadable from a
+committed artifact in that directory.
+
+### Claim verification
+
+`ml/eval/claim_benchmark.jsonl` — **150 hand-labeled claims**, 50 each
+SUPPORTS / REFUTES / NOT_ENOUGH_INFO, scored by
+`ml/scripts/eval_claim_verifier.py` against the live
+`agents/claim_verifier.py`.
+
+The NOT_ENOUGH_INFO class is deliberately split in two. Half are invented
+companies, the original set's style. Half are **real but obscure Y Combinator
+companies paired with publicly undocumented metrics** — Siasto, Picwing, Zumo
+Labs, Roost — where a search finds the company but not the claim. That is the
+judgement an early-stage diligence tool has to make on every real deck, and the
+invented-company examples cannot test it, because there the answer is available
+from the absence of any search result at all. The previous version of this
+section flagged that gap; this closes it.
+
+The original 30 examples are preserved as `claim_benchmark_v1_30.jsonl` with
+their results, so the "before" number stays reproducible.
+
+### Risk detection
+
+`ml/eval/risk_benchmark.jsonl` — **28 hand-labeled excerpts, 22 of them real
+SEC filing text** pulled from EDGAR full-text search by
+`ml/scripts/collect_risk_excerpts.py` and traceable to the filing by URL, plus
+6 pitch-deck-register paragraphs because SEC filings do not cover the product's
+actual input. 15 genuine red flags, 13 deliberately hard risk-free negatives.
+
+The headline metric is the **boilerplate false-positive rate**, not recall. A
+detector that flags everything scores perfect recall and is useless on
+documents that are mostly hedged legal prose; the 13 negatives are safe-harbour
+paragraphs, accounting-policy notes and macro risk factors, all saturated with
+the vocabulary a keyword detector keys on. That number was completely
+unmeasured before this benchmark existed.
+
+### Baselines
+
+Two, both run against the same inputs as the systems they benchmark:
+
+- **`ml/scripts/eval_claim_model_baseline.py`** scores the TF-IDF Claim Model
+  against the claim benchmark, reusing the exact web evidence the LLM verifier
+  judged (the harness persists it per row). Re-retrieving would have made the
+  gap partly a measure of DuckDuckGo's minute-to-minute variance rather than of
+  the two models.
+- **`ml/scripts/eval_score_baseline.py`** compares the VentureFlow Score to
+  `_legacy_formula_score()`, the pre-ML fallback, on real labeled YC companies
+  with the evidence state held fixed. Result in
+  `ml/research/score_baseline_comparison.json`: the model reaches ROC-AUC
+  **0.668** and the legacy formula **0.500**, returning one identical value for
+  all 300 companies — it takes no company feature as input, so it cannot rank
+  two companies against each other at all. The comparison is therefore not
+  "the model is somewhat better"; it is that all company-level discrimination
+  in this product comes from the model. The formula does respond to evidence,
+  and far more sharply than the model does (a 95-point swing across evidence
+  states against the model's 32), which is the trade the two make.
+
+The metrics computations in both harnesses are unit-tested with no network or
+LLM calls (`tests/test_eval_claim_verifier.py`).
+
+**Operational note, learned the hard way.** Groq's free-tier daily token limit
+is scoped to the **organization**, not the API key — a new key in the same org
+inherits the exhausted budget. When it is hit, `agents/claim_verifier.py`
+degrades to `NOT_ENOUGH_INFO` at confidence 0.0, which is indistinguishable in
+a results file from a real verdict. The first 150-example run recorded 14 such
+rows before this was noticed. Both harnesses now wait, retry, and then refuse
+to write a provider outage as a measurement.
 
 ## Drift monitoring — `ml/scripts/check_drift.py`
 

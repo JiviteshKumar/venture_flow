@@ -93,9 +93,9 @@
 {"id": "s24", "claim": "Anthropic was founded in 2021 by former OpenAI employees including Dario Amodei.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
 {"id": "r24", "claim": "Stripe completed an initial public offering in 2021.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
 {"id": "n24", "claim": "Quietloom Software reported a gross margin of 84% in its most recent fiscal year.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
-{"id": "o24", "claim": "Snipd's content-clipping tool had 60,000 registered users.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "o24", "claim": "Snipd, the Y Combinator Summer 2008 content-clipping startup, had 60,000 registered users.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
 {"id": "s25", "claim": "DeepMind was acquired by Google in 2014.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
-{"id": "r25", "claim": "SpaceX is a publicly traded company listed on Nasdaq.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "r25", "claim": "SpaceX has never reused a Falcon 9 first-stage booster; every one is expendable.", "gold_verdict": "REFUTES", "category": "product_claims", "subset": "public_fact"}
 {"id": "n25", "claim": "Kestrelbridge Payments processes $180M in annualized payment volume.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
 {"id": "o25", "claim": "Jumpchat's cross-channel messaging bridge handled five million messages per month.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
 {"id": "s26", "claim": "Sam Altman was removed as chief executive of OpenAI in November 2023 and reinstated within days.", "gold_verdict": "SUPPORTS", "category": "management", "subset": "public_fact"}

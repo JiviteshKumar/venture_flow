@@ -3,6 +3,229 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 23 Aug 2026, tenth pass: the evaluation gap, closed with numbers
+
+The audit's top finding was that this project had an evaluation *framework* and
+no evaluation. `ml/scripts/eval_claim_verifier.py` had existed since the third
+pass and had **never once been run end to end** — there was no results file
+anywhere in the repository. Risk detection had no benchmark at all. Everything
+below exists to fix that, plus the two report tabs that produced nothing.
+
+### The claim benchmark, run for the first time, then expanded
+
+Ran the existing 30 examples as-is first, so there is a "before" on record:
+**93.3% accuracy** (`ml/eval/claim_benchmark_results_v1_30.json`). One harness
+change was needed to make it run at all on Windows — it does not import
+`console_safety`, so the LLM's typographic characters would have killed it
+partway through with `UnicodeEncodeError`.
+
+Then expanded to **150 hand-labeled claims**, 50/50/50, adding the sub-category
+the old set explicitly lacked: **real but obscure Y Combinator companies paired
+with publicly undocumented metrics** — Siasto, Picwing, Zumo Labs, Roost,
+Talentdrop. A search finds the company and not the claim, which is exactly the
+judgement an early-stage diligence tool makes on every real deck. The
+invented-company examples cannot test that, because there the answer is
+available from the absence of any result at all.
+
+**126 of 150 scored** before the free tier's daily token cap stopped it. The
+results are real and the run resumes:
+
+| | Precision | Recall | F1 | n |
+|---|---|---|---|---|
+| SUPPORTS | 1.000 | 0.897 | 0.946 | 39 |
+| REFUTES | 1.000 | 0.947 | 0.973 | 38 |
+| NOT_ENOUGH_INFO | 0.891 | 1.000 | 0.942 | 49 |
+
+Accuracy **0.952**. By subset: public facts 0.922, invented companies 1.000,
+obscure real companies 1.000. Both SUPPORTS and REFUTES precision are 1.000 —
+**the verifier under-claims rather than over-claims**, which for a diligence
+tool is the safe direction. It shows up in the four errors where it refused to
+affirm a conjunction the retrieved evidence only half-covered (Tesla *produced*
+its millionth vehicle in March 2020; it would not affirm *delivered*).
+
+### The benchmark caught two of my own labels, one of them badly
+
+`r25` — "SpaceX is a publicly traded company listed on Nasdaq" — was labeled
+REFUTES. The verifier returned SUPPORTS at 0.97 confidence, citing the June
+2026 Nasdaq listing under SPCX. Checked independently: **the verifier was right
+and the label was wrong**, written from knowledge predating the listing. `o24`
+was a name collision — the YC 2008 "Snipd" against a much better-known modern
+product of the same name. Both corrected and re-queued, and both written up in
+`ml/eval/README.md` §3 rather than quietly fixed.
+
+### A negative result that reversed with sample size
+
+The 30-example run showed verifier confidence averaging 0.901 when correct and
+0.890 when wrong — an 0.011 gap, i.e. no usable signal. On 126 examples:
+**0.886 correct vs 0.567 wrong, a 0.319 gap.** The small benchmark's reading
+was not noisier, it was wrong, because it averaged over two errors. The old
+`ml/eval/README.md` warned that 30 examples was "not enough to draw
+fine-grained conclusions about calibration"; that warning was right and worth
+heeding before quoting anything from a set that size.
+
+### Baselines, all three of them
+
+- **TF-IDF Claim Model vs the LLM verifier**, on *identical* retrieved evidence
+  (the harness now persists what the LLM judged, so the baseline is not scored
+  against a separately-retrieved and therefore incomparable set). On 120
+  claims: **0.333 accuracy vs 0.967**, and **REFUTES F1 0.000 vs 0.986**. The
+  documented SciFact negative result replicates in the target domain, worse.
+- **Risk/Tone Model vs the keyword dictionary** — the head-to-head these notes
+  have flagged as needed since the second pass. The keyword list wins outright:
+  **F1 0.815 vs 0.000**, boilerplate false-positive rate 7.7% vs 0%, and the
+  tone model's ranking AUC is **0.333 — below chance**, meaning it ordered
+  risky text *below* risk-free text. It predicted `neutral` on all 28 excerpts,
+  giving going-concern disclosures a negative probability of 0.014–0.071. Not a
+  threshold problem: financial *news* sentiment is the wrong training domain for
+  filing prose, as Loughran & McDonald established in 2011.
+- **VentureFlow Score vs `_legacy_formula_score()`** on 300 real labeled YC
+  companies with the evidence state held fixed: **0.668 vs 0.500**. The formula
+  returns one identical value for all 300 because it reads no company feature
+  at all. The finding is not "the model is better" — it is that the baseline
+  has no company-level discrimination to be better than.
+
+### The risk benchmark, built from real filings
+
+28 excerpts, **22 of them real SEC text** pulled from EDGAR full-text search
+(`ml/scripts/collect_risk_excerpts.py`, source URL kept per excerpt), plus 6
+pitch-deck-register paragraphs since filings do not cover the product's actual
+input. 15 genuine red flags, 13 deliberately hard risk-free negatives —
+safe-harbour paragraphs, ASC 606 notes, a critical audit matter, macro risk
+factors — all saturated with the vocabulary a keyword detector keys on.
+
+The headline metric is the **boilerplate false-positive rate**, not recall: a
+detector that flags everything scores perfect recall and is useless on
+documents that are mostly hedged legal prose. It was completely unmeasured
+before this benchmark existed.
+
+### The bug the risk benchmark found on its first run
+
+`groq_risk_analysis()` **never received the document**. It got only
+`detect_signals()`'s output — the phrases the keyword dictionary had already
+matched. So the LLM half of risk detection could not find any risk the keyword
+list had missed, and on a document the dictionary matched nothing in it was
+asked to assess a company it had been told nothing about. It returned
+`overall_risk_level: "UNKNOWN"` with a null score on 13 of 28 excerpts,
+including a deck paragraph disclosing 78% customer concentration. Fixed by
+passing the text, adding constrained JSON output and a larger token budget (the
+same fix `investment_agents.py` already carried), and telling the prompt
+explicitly that boilerplate is not a red flag.
+
+### Leakage: two models, opposite methodologies, nothing saying so
+
+The Outcome Model still used `team_size` and `age_years` — the exact hindsight
+features the VentureFlow Score model was rebuilt to exclude. In the combined
+model `team_size` alone carried gain **1,978** against 390 for the next
+structured feature: its single strongest signal was hindsight. Retrained on the
+deployable feature set. **Cost: 0.058 ROC-AUC, 0.704 → 0.646** — close to the
+0.048 the VentureFlow Score paid for the same exclusion. 0.646 is now the
+reported figure everywhere, including against published work.
+
+### The two dead report tabs — root causes, not nicer empty states
+
+**Competitor Insights** was reading `report.similar_companies`, which is
+`db.find_similar_companies()`: a trigram match over the user's **own**
+companies table, restricted to rows that already have a report or a portfolio
+investment. On a fresh single-user database analysing a different company every
+time it correctly returns nothing, every time. Meanwhile
+`sections.market_comparables` — comparables.py's cosine search over 1,560 real
+YC companies — was computed on every run and **never rendered**. The similarity
+search was never broken; nothing displayed it. Verified on a live run: five
+comparables at 0.53–0.65 similarity with real recorded outcomes.
+
+**Founder Analysis** had no input path at all. `agents/founder_verifier.py` has
+existed since the third pass and had never run in production, because nothing
+ever populated `DiligenceRequest.founders` — the field existed on the API model
+and neither the upload form nor extraction ever filled it. Fixed at every
+layer: `structured_extractor` and `pdf_extractor` read the team slide, the
+upload form shows the detected names back for correction before submitting
+(they go to a live web search, so a wrong name means a background check on a
+stranger), and verification now runs **before** the specialist agents, so the
+team analyst — which produces the radar's capability scores — finally sees the
+only non-deck-derived evidence about the team this pipeline gathers.
+
+### Multi-column PDF extraction, fixed at last
+
+Carried in these notes as a known defect since the first pass.
+`page.extract_text()` reads in raster order, so a three-column slide
+interleaves. Measured on RouteIQ.pdf, the pricing slide put "$28/vehicle/mo"
+next to "Up to 500 vehicles" when the deck says 50 — a wrong number presented
+as a quoted fact, which is precisely what this product exists to prevent.
+
+Now reconstructed from word geometry: gutter detection by x-histogram, with
+full-width prose lines excluded from that histogram (one slide subtitle
+otherwise bridges every gutter and vetoes detection for the whole page), and
+blocks split on large vertical gaps so footers stay at the foot of the page.
+**Verified lossless across 21 real decks** — identical character multiset, pure
+reordering. The PetVoice team slide now yields three intact founder records
+where it previously yielded three names, three roles and three biographies in
+separate runs.
+
+### Multi-format input and output
+
+`document_extractor.py` accepts **.pptx, .docx, .txt and .md** alongside PDF,
+all converging on the same `structured_extractor` pipeline rather than a
+parallel path per format. The pptx reader needed its own column reconstruction:
+shapes are stored in z-order, and the same team slide came out as three names,
+then three titles, then three biographies.
+
+`report_document.py` now holds the report's content once, and **PDF, Word and
+Markdown are three renderers over it**. Adding a fourth format is one renderer
+and no content changes. A test asserts all three carry the same sections, which
+is the drift this structure exists to prevent.
+
+### Real bugs found by the new tests
+
+- The `.txt`/`.md` reader tried **utf-16 before cp1252**. Without a BOM, utf-16
+  accepts almost any even-length byte string, so an ordinary Windows-encoded
+  note decoded to plausible-looking CJK and was passed downstream as the deck's
+  text. Now BOM-gated.
+- `_fallback_ai_analysis()` hardcoded "Insufficient database evidence was
+  available for a reliable comparable-company analysis" — printed even when
+  five real comparables were in the same report, so the memo contradicted the
+  table rendered below it.
+- `report_pdf` did not escape `&` or `<`. reportlab parses Paragraph text as
+  mini-HTML, so a company name like "Smith & Sons" would have raised.
+
+### Verified by running
+
+`pytest tests/` → **97 passed** (65 before this pass). Frontend `eslint`,
+`tsc -b` and `vite build` all clean. A live end-to-end run of a real deck
+through the real HTTP endpoints (`scripts/run_single_deck.py`).
+
+### Blocked, and not worked around
+
+**Groq's free-tier 200,000 tokens/day is scoped to the organization, not the
+API key** — verified by the 429 naming the same org id after a new key was
+issued. A second, genuinely different org was then used and also exhausted.
+What that blocks, precisely:
+
+- The last **24 of 150** claims. `python ml/scripts/eval_claim_verifier.py`
+  resumes from the partial log; the committed results file is marked
+  `"complete": false` so nobody quotes 126 as 150.
+- The LLM risk detector's **post-fix** numbers. The as-shipped (pre-fix)
+  measurement is preserved in `risk_benchmark_results_before_textfix.json`.
+- A full-fidelity end-to-end deck run. The pipeline plumbing was verified on a
+  real deck; the LLM stages inside that run degraded to their fallbacks.
+
+Both harnesses now **refuse to score a provider outage**. When the cap is hit
+the verifier degrades to NOT_ENOUGH_INFO at confidence 0.0, indistinguishable
+in a results file from a real verdict; the first 150-example attempt recorded
+14 such rows before this guard existed, and they would have depressed SUPPORTS
+recall and inflated NOT_ENOUGH_INFO precision by an amount that is not a
+property of the verifier at all.
+
+### Still open after this pass
+
+- The **investment memo is unevaluated**. LLM-synthesised, unattributed, and
+  the half of the product a VC actually reads. FActScore/ALCE are the right
+  instruments (`ml/research/related_work.md` §3).
+- The **four specialist agents** are unvalidated LLM judges whose scores the
+  report renders as measurements.
+- Both benchmarks are **single-annotator**, with no agreement figure.
+- No **contrastive evidence pairs**, so nothing tests whether the verifier is
+  sensitive to evidence or merely to topic overlap.
+
 ## Update — 22 Aug 2026, ninth pass: the UI crash, and the first fully-working run
 
 ### "Something went wrong" on every page — Rules of Hooks

@@ -170,6 +170,51 @@ def _load_partial(partial_path: Path) -> dict[str, dict[str, Any]]:
     return done
 
 
+def _write_results(
+    benchmark_path: Path,
+    out_path: Path,
+    rows: list[dict[str, Any]],
+    *,
+    complete: bool,
+    expected_n: int,
+) -> dict[str, Any]:
+    """Serialise metrics + per-claim rows to the results file.
+
+    `complete` is recorded rather than inferred, because a run stopped by an
+    exhausted daily quota still produces a legitimate artifact for the claims
+    it did score -- and the one thing that must never happen is somebody
+    reading a 128-claim result as the 150-claim result.
+    """
+    metrics = compute_metrics(rows)
+    # Retrieval health belongs in the artifact: verify_claim forces
+    # NOT_ENOUGH_INFO on a claim it could retrieve nothing for, so a throttled
+    # search backend would inflate that class and read as verifier behaviour
+    # when it is really an artifact of the evaluation run.
+    metrics["retrieval"] = {
+        "claims_with_zero_sources": sum(1 for r in rows if not r.get("total_sources")),
+        "mean_sources_per_claim": round(
+            sum(r.get("total_sources", 0) for r in rows) / len(rows), 2
+        ) if rows else 0.0,
+    }
+    output = {
+        "benchmark": benchmark_path.name,
+        "verifier": "agents/claim_verifier.py (live web search + LLM judge)",
+        "complete": complete,
+        "n_scored": len(rows),
+        "n_in_benchmark": expected_n,
+        "metrics": metrics,
+        "rows": rows,
+    }
+    if not complete:
+        output["incomplete_reason"] = (
+            "The run stopped on a provider/quota failure. The rows present are real "
+            "measurements; the missing claims were never scored, not scored as "
+            "NOT_ENOUGH_INFO. Re-run the same command to resume from the partial log."
+        )
+    out_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
+    return output
+
+
 def run_benchmark(
     benchmark_path: Path | str | None = None,
     out_path: Path | str | None = None,
@@ -229,6 +274,15 @@ def run_benchmark(
         # so this raises; the partial log holds everything scored so far and
         # the next invocation resumes from it once quota is back.
         if _is_provider_failure(result):
+            # Write what was genuinely scored before giving up. A run stopped
+            # by an exhausted quota still produced real measurements for every
+            # claim before that point, and they should land in a reloadable
+            # artifact rather than only in the partial log -- clearly marked
+            # `complete: false` so nobody quotes a 128-claim run as 150.
+            if rows:
+                _write_results(benchmark_path, out_path, rows, complete=False,
+                               expected_n=len(benchmark))
+                print(f"\nWrote partial results ({len(rows)}/{len(benchmark)} claims) to {out_path}")
             raise RuntimeError(
                 f"The claim verifier reported itself unavailable on {item['id']} "
                 f"(reason: {result.get('reasoning', '')!r}). This is a provider/quota "
@@ -259,25 +313,8 @@ def run_benchmark(
               f"conf={row['confidence']} sources={row['total_sources']}")
         time.sleep(sleep_s)  # be polite to the free search backend
 
-    metrics = compute_metrics(rows)
-    # Retrieval health belongs in the artifact: verify_claim forces
-    # NOT_ENOUGH_INFO on a claim it could retrieve nothing for, so a throttled
-    # search backend would inflate that class and read as verifier behaviour
-    # when it is really an artifact of the evaluation run.
-    metrics["retrieval"] = {
-        "claims_with_zero_sources": sum(1 for r in rows if not r.get("total_sources")),
-        "mean_sources_per_claim": round(
-            sum(r.get("total_sources", 0) for r in rows) / len(rows), 2
-        ) if rows else 0.0,
-    }
-    output = {
-        "benchmark": benchmark_path.name,
-        "verifier": "agents/claim_verifier.py (live web search + LLM judge)",
-        "metrics": metrics,
-        "rows": rows,
-    }
-    out_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
-    return output
+    return _write_results(benchmark_path, out_path, rows, complete=True,
+                          expected_n=len(benchmark))
 
 
 if __name__ == "__main__":

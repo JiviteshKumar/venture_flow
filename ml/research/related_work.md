@@ -140,11 +140,25 @@ model defer to an LLM narrative — is a calibration question.
   [arXiv:2306.13063](https://arxiv.org/abs/2306.13063)) — the direct caution:
   verbalised confidence is systematically overconfident and poorly calibrated.
   `agents/claim_verifier.py` asks the model for a `confidence` float and the UI
-  shows it as a percentage. **The eval harness's calibration check exists
-  precisely to test this locally, and the first 30-example run supports the
-  paper's warning rather than contradicting it: mean confidence 0.901 when
-  correct against 0.890 when wrong — a 0.011 gap, which is not usable
-  discrimination** (`ml/eval/claim_benchmark_results_v1_30.json`).
+  shows it as a percentage, so this matters here.
+
+  **Measured locally, and the answer changed with sample size — which is the
+  more useful finding.** On the 30-example set the verifier's stated confidence
+  averaged 0.901 when correct against 0.890 when wrong: a 0.011 gap, no usable
+  discrimination, apparently confirming the paper's warning
+  (`claim_benchmark_results_v1_30.json`). On 126 examples of the expanded set
+  it averaged **0.886 when correct against 0.567 when wrong — a 0.319 gap**
+  (`claim_benchmark_results.json`). The confidence *is* informative here.
+
+  The 30-example reading was not a smaller version of the right answer, it was
+  the wrong answer, and it was wrong for a structural reason: with only two
+  errors in the set, the "incorrect" mean was an average over two numbers. The
+  previous `ml/eval/README.md` warned that 30 examples is "not enough to draw
+  fine-grained conclusions about calibration" and that warning turned out to be
+  exactly right. Verbalised confidence still should not be presented to a user
+  as a probability — a mean gap is not calibration in Guo et al.'s sense, and
+  no reliability diagram or ECE has been computed for it — but "the model's
+  confidence is worthless" is not what this system's data says.
 - **Judging LLM-as-a-Judge** (Zheng et al.,
   [arXiv:2306.05685](https://arxiv.org/abs/2306.05685)) — position and
   verbosity biases in LLM judges. Relevant because the four specialist agents
@@ -251,7 +265,7 @@ research question (see §8) deliberately narrows to the two components that
 | Web-retrieval-based verification of real-world claims | Prior art: AVeriTeC. Our implementation is simpler and weaker. |
 | A 150-example pitch-deck claim benchmark, including real-but-obscure companies | Small, domain-specific, hand-labeled. A modest contribution. |
 | A 28-example risk benchmark with a measured boilerplate false-positive rate | Method follows Loughran & McDonald. The measurement on this system is new. |
-| TF-IDF claim model as a negative result | A clean, reportable negative result. Explained by known domain-shift findings. |
+| TF-IDF claim model as a negative result | A clean, reportable negative result, and it **replicates in the target domain**: 0.333 accuracy and REFUTES F1 0.0 on 120 pitch-deck claims, against 0.967 / 0.986 for the LLM verifier on the same claims and the same retrieved evidence. Explained by known domain-shift findings. |
 | Risk/Tone model as a negative result | Same. Predicted in advance by Loughran & McDonald. |
 | Startup outcome prediction | Below published AUC and on a narrower population. Not a contribution. |
 | Leakage control as an explicit, measured decision | Ordinary good practice, applied and quantified (0.048 and 0.058 AUC). Reportable as methodology, not as novelty. |

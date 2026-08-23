@@ -12,7 +12,14 @@ The repository contains two deployable parts:
 ## Features
 
 - Company due-diligence analysis with structured risk and confidence assessment.
-- PDF upload and extraction for pitch-deck review.
+- Pitch-deck upload and extraction in PDF, PowerPoint (.pptx), Word (.docx),
+  plain text and Markdown. Multi-column slide layouts are reconstructed into
+  reading order rather than read raster-first (see `pdf_extractor.py`).
+- Founder names are read from the deck's team slide and shown back on the
+  upload form for correction before each one is checked against public web
+  evidence.
+- Report export as PDF, Word or Markdown, all rendered from one shared
+  content model (`report_document.py`).
 - Conversational analysis endpoint for follow-up questions.
 - Dashboard views for risks, team, market, and competitor information.
 - PostgreSQL/Neon database helpers -- all persistence is Neon. (A legacy
@@ -95,12 +102,14 @@ See `.env.example` and `frontend/.env.example` for the complete template.
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | `GET` | `/health` | Health check (reports Neon connectivity) |
-| `POST` | `/upload-pdf` | Extract text, claims and financials from a PDF |
+| `POST` | `/upload-pdf` | Extract text, claims, financials and founders from a deck (any supported format; kept at this path for compatibility) |
+| `POST` | `/upload-document` | Same handler, under a format-neutral name |
 | `POST` | `/analyze` | Queue a due-diligence run; returns `202` with a `job_id` |
 | `GET` | `/analyze/status/{job_id}` | Poll a run — status, current pipeline `stage`, and the report when complete |
 | `GET` | `/reports` | Saved report history |
 | `GET` | `/reports/{id}` | Load one saved report |
 | `GET` | `/reports/{id}/pdf` | Export a report as PDF |
+| `GET` | `/reports/{id}/export/{fmt}` | Export a report as `pdf`, `docx` or `md` |
 | `POST` `GET` | `/reports/{id}/comments` | Team notes on a report |
 | `POST` | `/reports/{id}/decision` | Record an invest/pass decision |
 | `GET` | `/companies/{name}/history` | Score history across repeat analyses |
