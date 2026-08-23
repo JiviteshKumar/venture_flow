@@ -106,9 +106,14 @@ The frontend runs at `http://localhost:5173`.
 curl http://localhost:8000/health
 ```
 
-Expected: `{"status":"healthy","database":"connected"}`. A `degraded` status
-means `DATABASE_URL` is unset or unreachable — the API still serves, but
-nothing persists.
+Expected: `{"status":"healthy","database":"connected"}`.
+
+If you get `{"status":"degraded","database":"unavailable"}` on the **first**
+call after a quiet period, just call it again. Neon's free tier autosuspends an
+idle database and the first query wakes it, so one degraded response followed
+by healthy ones is normal rather than a fault. A `degraded` status that
+*persists* across several retries means `DATABASE_URL` is unset or genuinely
+unreachable — the API still serves in that state, but nothing persists.
 
 Then open `http://localhost:5173` and upload a deck. Either `localhost` or
 `127.0.0.1` works: both are in the default `ALLOWED_ORIGINS`, because a
