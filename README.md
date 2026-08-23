@@ -35,6 +35,15 @@ The repository contains two deployable parts:
 
 ## Local setup
 
+**Prerequisites.** Python **3.11+** (developed and tested on 3.13; the codebase
+uses PEP 604 `X | None` annotations that Pydantic resolves at runtime, so 3.9
+will not work) and Node **20.19+ or 22.12+** (required by Vite 7 — an older
+Node fails inside the bundler with an error that never mentions Node). A
+`DATABASE_URL` for a Neon/PostgreSQL instance and a `GROQ_API_KEY` are both
+required; `/health` reports which of them is missing.
+
+Two terminals, roughly five minutes.
+
 ### 1. Clone and configure the backend
 
 ```bash
@@ -78,12 +87,33 @@ In a separate terminal:
 ```bash
 cd frontend
 npm install
-copy .env.example .env  # Windows
-# cp .env.example .env  # macOS/Linux
 npm run dev
 ```
 
-For local development, set `VITE_API_BASE_URL=http://localhost:8000` in `frontend/.env`. The frontend runs at `http://localhost:5173` by default.
+**Do not copy `frontend/.env.example` to `frontend/.env`.** There is no
+frontend environment file to create for local development, and creating one
+from that template is the fastest way to break the app: the template holds a
+deployment placeholder (`https://your-backend.example.com`) and every API call
+then fails with an opaque network error. With no `.env`, the frontend calls
+`/api`, which `vite.config.ts` proxies to `http://localhost:8000`. That is the
+supported local path and it needs no configuration.
+
+The frontend runs at `http://localhost:5173`.
+
+### 3. Confirm it is actually up
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected: `{"status":"healthy","database":"connected"}`. A `degraded` status
+means `DATABASE_URL` is unset or unreachable — the API still serves, but
+nothing persists.
+
+Then open `http://localhost:5173` and upload a deck. Either `localhost` or
+`127.0.0.1` works: both are in the default `ALLOWED_ORIGINS`, because a
+browser treats them as different origins and allowing only one produces a page
+that loads and then silently never populates.
 
 ## Environment variables
 
@@ -91,11 +121,15 @@ See `.env.example` and `frontend/.env.example` for the complete template.
 
 - `DATABASE_URL` — PostgreSQL/Neon connection URL.
 - `GROQ_API_KEY` — Groq API key for AI-powered analysis.
-- `ALLOWED_ORIGINS` — Comma-separated URLs allowed to call the API.
+- `ALLOWED_ORIGINS` — Comma-separated origins allowed to call the API.
+  Defaults to `http://localhost:5173,http://127.0.0.1:5173`; include both
+  spellings of any dev host, since a browser treats them as distinct origins.
 - `RATE_LIMIT_PER_MINUTE` — API rate limit, default `30`.
 - `REDIS_URL` — optional; enables the multi-instance-safe rate limiter (see `rate_limiter.py`). Without it, rate limiting is in-memory and per-process, which is correct for local single-instance use.
 - `GITHUB_TOKEN` — optional; raises the GitHub API rate limit for the technical/repo scoring rubric (`technical_scoring.py`) from 60/hour to 5,000/hour.
-- `VITE_API_BASE_URL` — public backend URL used by the frontend.
+- `VITE_API_BASE_URL` — **deployment only.** Read by a built frontend (e.g. on
+  Vercel). Ignored by `npm run dev`, which uses the `/api` proxy in
+  `vite.config.ts`. The copy in the root `.env` is not read by anything local.
 
 ## API endpoints
 

@@ -38,9 +38,18 @@ app = FastAPI(
     description="AI-powered VC due diligence platform",
     version="3.0.0",
 )
+# Both spellings of the dev origin, deliberately. `localhost` and `127.0.0.1`
+# are different origins to a browser, and Vite happily serves on either: it
+# prints "Local: http://localhost:5173/" but answers on 127.0.0.1:5173 too. A
+# default listing only the first means anyone who types the numeric form gets
+# a CORS failure whose symptom is "the page loads and nothing ever populates" --
+# no error in the server log, because the request never arrives. Confirmed by
+# curl before this was widened: an Origin of http://127.0.0.1:5173 came back
+# with no Access-Control-Allow-Origin header at all.
+DEFAULT_DEV_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
 origins = [
     value.strip()
-    for value in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    for value in os.getenv("ALLOWED_ORIGINS", DEFAULT_DEV_ORIGINS).split(",")
     if value.strip()
 ]
 app.add_middleware(
