@@ -136,7 +136,19 @@ def main() -> int:
     args = parser.parse_args()
 
     manifest = json.loads((DECK_DIR / "manifest.json").read_text(encoding="utf-8"))
-    rows = {} if args.force else _load_done()
+
+    # --force re-runs the SELECTED decks, it does not discard the others.
+    #
+    # It used to start from an empty dict, so `--only Buffer Coinbase --force`
+    # rewrote the results file with two rows and silently destroyed the five
+    # completed runs already in it -- runs that had each cost roughly 24,000
+    # tokens of a 200,000/day budget. Losing a measurement is bad; losing it
+    # quietly, in a script whose whole purpose is to accumulate measurements
+    # across quota-limited sessions, is worse.
+    rows = _load_done()
+    if args.force:
+        for company in (args.only or [entry["company"] for entry in manifest]):
+            rows.pop(company, None)
 
     for entry in manifest:
         company = entry["company"]
