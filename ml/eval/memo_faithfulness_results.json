@@ -1,0 +1,4361 @@
+{
+  "what_this_measures": "Exact agreement between the memo and the structured sections of the same report. Where they disagree the memo is wrong by construction: the section is the source and the memo is the retelling. Does NOT evaluate whether the memo's free prose is entailed by retrieved evidence -- that needs atomic claim decomposition and an entailment model (FActScore/ALCE).",
+  "n_reports": 40,
+  "n_reports_with_checkable_assertions": 38,
+  "total_assertions_checked": 214,
+  "total_supported": 212,
+  "overall_faithfulness": 0.9907,
+  "contradictions": [
+    {
+      "report_id": "39",
+      "company": "AgroPulse",
+      "kind": "final_score",
+      "memo_value": 33.0,
+      "report_value": 30.0,
+      "verdict": "CONTRADICTED",
+      "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (33/100)"
+    },
+    {
+      "report_id": "36",
+      "company": "ComplyForge AI",
+      "kind": "final_score",
+      "memo_value": 57.0,
+      "report_value": 30.0,
+      "verdict": "CONTRADICTED",
+      "snippet": "- **Resulting score:** 57 / 100 (range 44-71)."
+    }
+  ],
+  "per_report": [
+    {
+      "report_id": "67",
+      "company": "ui drive test",
+      "memo_chars": 7844,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 40.0,
+          "report_value": 40.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (40/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 48.0,
+          "report_value": 48.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model-generated baseline:** 48 / 100 (derived from historical patterns of comparable logistics SaaS firms)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 8.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 24.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": "medium",
+          "report_value": "medium",
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model confidence:** *medium* (feature coverage 62 %, ensemble spread 0.094). The medium confidence rating means the score should be treated as a **directional indicator**, not "
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": 62.0,
+          "report_value": 62.5,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model confidence:** *medium* (feature coverage 62 %, ensemble spread 0.094). The medium confidence rating means the score should be treated as a **directional indicator**, not "
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.094,
+          "report_value": 0.0936,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model confidence:** *medium* (feature coverage 62 %, ensemble spread 0.094). The medium confidence rating means the score should be treated as a **directional indicator**, not "
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "LOW",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 10.0,
+          "report_value": 10.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Low model-derived risk score** (10 / 100) - suggests the algorithm did not detect obvious negative signals beyond missing data."
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Confidence",
+            "Evidence",
+            "Evidence Source"
+          ],
+          "report_value": [
+            "drivingforce",
+            "krab",
+            "reebeez",
+            "sorted",
+            "standard treasury"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "66",
+      "company": "ClaimFlow",
+      "memo_chars": 7398,
+      "n_checkable": 4,
+      "n_supported": 4,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 39.0,
+          "report_value": 39.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (39/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 10.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 25.0,
+          "report_value": 25.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 25-49"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 49.0,
+          "report_value": 49.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 25-49"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.088,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "LOW",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI SaaS",
+            "ARR",
+            "AgroPulse",
+            "All",
+            "Also",
+            "B2B SaaS"
+          ],
+          "report_value": [
+            "dabble",
+            "jido maps",
+            "picurio",
+            "reduced energy microsystems",
+            "snipshot"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "65",
+      "company": "Thornbury Freight LIVE",
+      "memo_chars": 7406,
+      "n_checkable": 9,
+      "n_supported": 9,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 36.0,
+          "report_value": 36.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Resulting score:** **36 / 100** (range 24-48)."
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 50.0,
+          "report_value": 50.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model-generated baseline:** 50 / 100 (derived from historical patterns of comparable SaaS logistics startups)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 14.0,
+          "report_value": 14.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Evidence-adjustment:** -14 points (the model subtracted points for multiple unverified claims, absence of any financial data, and the presence of medium-level risk signals)."
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 24.0,
+          "report_value": 24.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 24-48"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 48.0,
+          "report_value": 48.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 24-48"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": "Medium",
+          "report_value": "medium",
+          "verdict": "SUPPORTED",
+          "snippet": "* **Confidence:** *Medium* (feature coverage 62 %; ensemble spread 0.079). The medium confidence reflects that the model had a reasonable amount of input features, but the adjustme"
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": 62.0,
+          "report_value": 62.5,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Confidence:** *Medium* (feature coverage 62 %; ensemble spread 0.079). The medium confidence reflects that the model had a reasonable amount of input features, but the adjustme"
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.079,
+          "report_value": 0.0786,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Confidence:** *Medium* (feature coverage 62 %; ensemble spread 0.079). The medium confidence reflects that the model had a reasonable amount of input features, but the adjustme"
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "MEDIUM",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 40.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Confidence",
+            "Consequently",
+            "Evidence"
+          ],
+          "report_value": [
+            "ascen",
+            "chaos genius",
+            "federacy",
+            "givespark",
+            "simperium"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "64",
+      "company": "CORS Probe",
+      "memo_chars": 6053,
+      "n_checkable": 5,
+      "n_supported": 5,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 19.0,
+          "report_value": 19.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Resulting score:** **19 / 100** (the figure supplied by the VentureFlow model)."
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 40.0,
+          "report_value": 40.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model-generated baseline:** 40 / 100 (derived from historical patterns of comparable SaaS startups)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 21.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 10.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": "Medium",
+          "report_value": "medium",
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model confidence:** *Medium* (feature coverage 62 %, ensemble spread 0.059). The medium confidence reflects that the model had a reasonable amount of structured input (e.g., th"
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": 62.0,
+          "report_value": 62.5,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model confidence:** *Medium* (feature coverage 62 %, ensemble spread 0.059). The medium confidence reflects that the model had a reasonable amount of structured input (e.g., th"
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.059,
+          "report_value": 0.0586,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model confidence:** *Medium* (feature coverage 62 %, ensemble spread 0.059). The medium confidence reflects that the model had a reasonable amount of structured input (e.g., th"
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "LOW",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Evidence",
+            "In",
+            "Medium"
+          ],
+          "report_value": [
+            "42floors",
+            "icracked",
+            "plangrid",
+            "the muse",
+            "wireover"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "63",
+      "company": "Orbital Relay",
+      "memo_chars": 1428,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 12.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 25.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0765,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30.0/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 5"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "Acquired",
+            "B2B",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "Consumer"
+          ],
+          "report_value": [
+            "gazehawk",
+            "invoid",
+            "kisan network",
+            "snaptalent",
+            "sourcebeacon"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "62",
+      "company": "PetVoice AI Smoke",
+      "memo_chars": 1437,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 12.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 26.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0672,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30.0/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 2"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 2"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "Acquired",
+            "B2B",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "Consumer",
+            "DILIGENCE"
+          ],
+          "report_value": [
+            "ardis ai",
+            "avairsense",
+            "edyn",
+            "flightcaster",
+            "mindportal"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "61",
+      "company": "PetVoice AI",
+      "memo_chars": 1187,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 12.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 26.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0672,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30.0/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 2"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 2"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS",
+            "Insufficient"
+          ],
+          "report_value": [
+            "ardis ai",
+            "avairsense",
+            "edyn",
+            "flightcaster",
+            "mindportal"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "60",
+      "company": "ClaimFlow",
+      "memo_chars": 6912,
+      "n_checkable": 1,
+      "n_supported": 1,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 33.0,
+          "report_value": 33.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (33/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 16.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 19.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0862,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 3.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "Absence",
+            "CLAIM VERIFICATION",
+            "Evidence",
+            "Indicates",
+            "Interpretation"
+          ],
+          "report_value": [
+            "dabble",
+            "jido maps",
+            "picurio",
+            "reduced energy microsystems",
+            "snipshot"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "59",
+      "company": "AgroPulse",
+      "memo_chars": 6482,
+      "n_checkable": 1,
+      "n_supported": 1,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 33.0,
+          "report_value": 33.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (33/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 16.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 21.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0753,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 2.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 2.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "Consequently",
+            "GREEN FLAGS",
+            "Industry",
+            "Insufficient",
+            "No",
+            "POSITIVE SIGNALS"
+          ],
+          "report_value": [
+            "able health",
+            "airo health",
+            "habit labs",
+            "nutrigene",
+            "ruta health"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "58",
+      "company": "RouteIQ",
+      "memo_chars": 6507,
+      "n_checkable": 5,
+      "n_supported": 5,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 47.0,
+          "report_value": 47.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Resulting score:** **47 / 100** (the figure supplied by the calibrated model)."
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 54.0,
+          "report_value": 54.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model-generated baseline:** 54 / 100 (derived from historical patterns of comparable SaaS logistics startups)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 7.0,
+          "report_value": 7.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Evidence adjustment:** -7 points, reflecting the presence of a single verified claim (fuel-waste) and a suite of unverified or missing data points (market size, pricing, traffi"
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 34.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": 62.0,
+          "report_value": 62.5,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Confidence level reported by the model:** *medium* (feature coverage 62 %, ensemble spread 0.071). This indicates the algorithm has a moderate amount of input data, but the spr"
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.071,
+          "report_value": 0.0715,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Confidence level reported by the model:** *medium* (feature coverage 62 %, ensemble spread 0.071). This indicates the algorithm has a moderate amount of input data, but the spr"
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "MEDIUM",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 35.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 4.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 3.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALY",
+            "CLAIM VERIFICATION",
+            "Confidence",
+            "Evidence",
+            "Resulting",
+            "TAM"
+          ],
+          "report_value": [
+            "blink",
+            "bufferbox",
+            "purple plate",
+            "rider",
+            "supr daily"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "57",
+      "company": "CounselAI",
+      "memo_chars": 6443,
+      "n_checkable": 4,
+      "n_supported": 4,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 33.0,
+          "report_value": 33.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (33/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 16.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 21.0,
+          "report_value": 21.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range (21-43"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 43.0,
+          "report_value": 43.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range (21-43"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0766,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Sentrywall** - Autonomous security platform; only 1 verified claim out of 5, risk score 30/100, flagged as \u201cneeds more diligence\u201d."
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 3.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Confidence",
+            "Evidence",
+            "Medium"
+          ],
+          "report_value": [
+            "dioptra",
+            "firstignite",
+            "payflow",
+            "regology",
+            "stellar"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "56",
+      "company": "ComplyForge AI Pitch Deck",
+      "memo_chars": 6855,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 45.0,
+          "report_value": 45.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (45/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 51.0,
+          "report_value": 51.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Model baseline:** 51 / 100 (derived from historical patterns of comparable SaaS compliance startups)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 6.0,
+          "report_value": 6.0,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Evidence adjustment:** -6 points, reflecting:"
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 35.0,
+          "report_value": 35.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range (35-53"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 53.0,
+          "report_value": 53.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range (35-53"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.064,
+          "report_value": 0.0639,
+          "verdict": "SUPPORTED",
+          "snippet": "* **Confidence in the score:** *medium* (model confidence = 62 % feature coverage, ensemble spread 0.064). The range (35-53) and the \u201cmedium\u201d confidence suggest the score should be"
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 2.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 3.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "Act",
+            "August",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Confidence"
+          ],
+          "report_value": [
+            "booth ai",
+            "dialect",
+            "dioptra",
+            "payflow",
+            "regology"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "55",
+      "company": "TalentGraph",
+      "memo_chars": 1189,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 58.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 33.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0485,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30.0/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS"
+          ],
+          "report_value": [
+            "forage",
+            "headstart",
+            "joberator",
+            "taro",
+            "the muse"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "54",
+      "company": "ShelfSight",
+      "memo_chars": 1186,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 28.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 48.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 17.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0725,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS",
+            "Insufficient"
+          ],
+          "report_value": [
+            "aisle50",
+            "caper",
+            "flexengage",
+            "milky way ai",
+            "suggestr"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "53",
+      "company": "Sentrywall",
+      "memo_chars": 1165,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 42.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 48.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 6.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 32.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0663,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 1.0,
+          "report_value": 1.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 1"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 4.0,
+          "report_value": 4.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 4"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS",
+            "Insufficient"
+          ],
+          "report_value": [
+            "avairsense",
+            "bannerman",
+            "safebase",
+            "stacksi",
+            "vectrix"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "52",
+      "company": "Signalcraft",
+      "memo_chars": 6535,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 40.0,
+          "report_value": 40.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Resulting score:** 40 / 100 (the score shown in the prompt)."
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 52.0,
+          "report_value": 52.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model-generated prior:** 52 / 100 (baseline estimate before any evidence)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 12.0,
+          "report_value": 12.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Evidence adjustment:** -12 points (the model subtracted points for unverified market-size and pricing claims, missing financials, and the absence of a risk analysis)."
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 26.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": "medium",
+          "report_value": "medium",
+          "verdict": "SUPPORTED",
+          "snippet": "- **Stated confidence:** *medium* (feature coverage 62 %; ensemble spread 0.087). The medium confidence reflects that the model had a moderate amount of input features, but many ke"
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": 62.0,
+          "report_value": 62.5,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Stated confidence:** *medium* (feature coverage 62 %; ensemble spread 0.087). The medium confidence reflects that the model had a moderate amount of input features, but many ke"
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.087,
+          "report_value": 0.0871,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Stated confidence:** *medium* (feature coverage 62 %; ensemble spread 0.087). The medium confidence reflects that the model had a moderate amount of input features, but many ke"
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ARR",
+            "All",
+            "Conclusion",
+            "EVIDENCED",
+            "GREEN FLAGS",
+            "Independent"
+          ],
+          "report_value": [
+            "bizzy",
+            "buzzle",
+            "grepdata",
+            "interstate analytics",
+            "skylights"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "51",
+      "company": "ShelfSight",
+      "memo_chars": 6509,
+      "n_checkable": 3,
+      "n_supported": 3,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 23.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 45.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 22.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 14.0,
+          "report_value": 14.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 14-33"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 33.0,
+          "report_value": 33.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 14-33"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0641,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 4.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "Absence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS",
+            "NEEDS MORE",
+            "No"
+          ],
+          "report_value": [
+            "caper",
+            "dev tools ai",
+            "jido maps",
+            "maitian.ai",
+            "zumo labs"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "50",
+      "company": "Sentrywall",
+      "memo_chars": 6565,
+      "n_checkable": 1,
+      "n_supported": 1,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 42.0,
+          "report_value": 42.0,
+          "verdict": "SUPPORTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (42/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 48.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 6.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 32.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0669,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 4.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "Bottom",
+            "CLAIM VERIFICATION",
+            "Confidence",
+            "Evidence Adjustment",
+            "Model"
+          ],
+          "report_value": [
+            "bannerman",
+            "dioptra",
+            "safebase",
+            "stacksi",
+            "vectrix"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "49",
+      "company": "thermagrid energy pitch deck",
+      "memo_chars": 1158,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 51.2,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "MEDIUM",
+          "report_value": "MEDIUM",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: MEDIUM"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 39.0,
+          "report_value": 39.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 39/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 3.0,
+          "report_value": 3.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 3"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 3.0,
+          "report_value": 3.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 3"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        }
+      ]
+    },
+    {
+      "report_id": "48",
+      "company": "ledgerloop ai pitch deck",
+      "memo_chars": 1165,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 68.8,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "LOW",
+          "report_value": "LOW",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: LOW"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 21.0,
+          "report_value": 21.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 21/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 1.0,
+          "report_value": 1.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 1"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 4.0,
+          "report_value": 4.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 4"
+        }
+      ]
+    },
+    {
+      "report_id": "47",
+      "company": "ComplyForge AI Pitch Deck",
+      "memo_chars": 6501,
+      "n_checkable": 5,
+      "n_supported": 5,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 42.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 42.0,
+          "report_value": 42.0,
+          "verdict": "SUPPORTED",
+          "snippet": "**Interpretation:** The internal database shows that comparable early-stage compliance-tech firms typically suffer from the same data gaps (no disclosed revenue, limited claim veri"
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Evidence adjustment:** 0 points - the model did not deduct points because no claim was refuted; however, many key commercial claims remain unverified."
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 33.0,
+          "report_value": 33.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range; 33-51"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 51.0,
+          "report_value": 51.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range; 33-51"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": "medium",
+          "report_value": "medium",
+          "verdict": "SUPPORTED",
+          "snippet": "- **Confidence:** *medium* (model confidence \u2248 mid-range; 33-51 score interval)."
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0601,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 3.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 2.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "Act",
+            "Aug",
+            "August",
+            "CLAIM VERIFICATION",
+            "Claim"
+          ],
+          "report_value": [
+            "booth ai",
+            "dialect",
+            "dioptra",
+            "payflow",
+            "regology"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "46",
+      "company": "Calmwell",
+      "memo_chars": 1165,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 54.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 22.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0943,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS"
+          ],
+          "report_value": [
+            "able health",
+            "evry health",
+            "ribbon health",
+            "savvy",
+            "verano health"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "45",
+      "company": "AgroPulse",
+      "memo_chars": 1166,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 29.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 15.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0926,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS"
+          ],
+          "report_value": [
+            "cowlar",
+            "edyn",
+            "lobby",
+            "nextdrop",
+            "tule"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "44",
+      "company": "Carbon Ledger",
+      "memo_chars": 1170,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 55.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 21.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0962,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS"
+          ],
+          "report_value": [
+            "aklimate",
+            "amiato",
+            "geosite",
+            "pelm",
+            "workbase"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "43",
+      "company": "Calmwell",
+      "memo_chars": 1165,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 54.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 20.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 22.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0943,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS"
+          ],
+          "report_value": [
+            "able health",
+            "evry health",
+            "ribbon health",
+            "savvy",
+            "verano health"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "42",
+      "company": "AgroPulse",
+      "memo_chars": 1164,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 45.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 12.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 25.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0608,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 5"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS",
+            "Insufficient"
+          ],
+          "report_value": [
+            "able health",
+            "airo health",
+            "habit labs",
+            "nutrigene",
+            "ruta health"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "41",
+      "company": "claritycare health pitch deck",
+      "memo_chars": 1159,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 48.2,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "MEDIUM",
+          "report_value": "MEDIUM",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: MEDIUM"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 39.0,
+          "report_value": 39.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 39/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 2"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 2"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        }
+      ]
+    },
+    {
+      "report_id": "40",
+      "company": "Calmwell",
+      "memo_chars": 1163,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 43.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 49.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 6.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 34.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0632,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 2.0,
+          "report_value": 2.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 2"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 3.0,
+          "report_value": 3.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 3"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "AI",
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS"
+          ],
+          "report_value": [
+            "covie",
+            "leaky",
+            "onederful",
+            "telivy",
+            "zinc platform"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "39",
+      "company": "AgroPulse",
+      "memo_chars": 6298,
+      "n_checkable": 4,
+      "n_supported": 3,
+      "n_contradicted": 1,
+      "faithfulness": 0.75,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 33.0,
+          "report_value": 30.0,
+          "verdict": "CONTRADICTED",
+          "snippet": "### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (33/100)"
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": null,
+          "report_value": 45.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": null,
+          "report_value": 12.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 25.0,
+          "report_value": 25.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range is **25-41"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 41.0,
+          "report_value": 41.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range is **25-41"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0608,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Evidence",
+            "Interpretation",
+            "Model"
+          ],
+          "report_value": [
+            "able health",
+            "airo health",
+            "habit labs",
+            "nutrigene",
+            "ruta health"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "38",
+      "company": "AgroPulse",
+      "memo_chars": 6252,
+      "n_checkable": 3,
+      "n_supported": 3,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 45.0,
+          "report_value": 45.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model-derived prior:** The calibrated model assigned a baseline score of **45/100** (reflecting typical prospects in the precision-ag space)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 12.0,
+          "report_value": 12.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Evidence adjustment:** The system subtracted **12 points** for unverified market-size claims, lack of any financial metrics, and the absence of demonstrated traction, bringing "
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": null,
+          "report_value": 25.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": null,
+          "report_value": 62.5,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": null,
+          "report_value": 0.0608,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 5.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Confidence",
+            "Deck",
+            "No"
+          ],
+          "report_value": [
+            "able health",
+            "airo health",
+            "habit labs",
+            "nutrigene",
+            "ruta health"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "37",
+      "company": "ledgerloop ai pitch deck",
+      "memo_chars": 1192,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 5"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        }
+      ]
+    },
+    {
+      "report_id": "36",
+      "company": "ComplyForge AI",
+      "memo_chars": 5970,
+      "n_checkable": 8,
+      "n_supported": 7,
+      "n_contradicted": 1,
+      "faithfulness": 0.875,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": 57.0,
+          "report_value": 30.0,
+          "verdict": "CONTRADICTED",
+          "snippet": "- **Resulting score:** 57 / 100 (range 44-71)."
+        },
+        {
+          "kind": "model_only_score",
+          "memo_value": 64.0,
+          "report_value": 64.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Model-generated baseline:** 64 / 100 (derived from historical patterns of comparable SaaS companies)."
+        },
+        {
+          "kind": "evidence_penalty_points",
+          "memo_value": 7.0,
+          "report_value": 7.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Evidence adjustment:** -7 points, reflecting one unverified claim (40 enterprise customers) and the absence of key risk, market, and financial details."
+        },
+        {
+          "kind": "score_range_low",
+          "memo_value": 44.0,
+          "report_value": 44.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 44-71"
+        },
+        {
+          "kind": "score_range_high",
+          "memo_value": 71.0,
+          "report_value": 71.0,
+          "verdict": "SUPPORTED",
+          "snippet": "range 44-71"
+        },
+        {
+          "kind": "score_confidence_band",
+          "memo_value": null,
+          "report_value": "medium",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "feature_coverage_pct",
+          "memo_value": 67.0,
+          "report_value": 66.7,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Confidence in the score:** *medium* (feature coverage 67 %, ensemble spread 0.090). The model\u2019s moderate confidence and the wide score range mean the number should be treated a"
+        },
+        {
+          "kind": "ensemble_std",
+          "memo_value": 0.09,
+          "report_value": 0.09,
+          "verdict": "SUPPORTED",
+          "snippet": "- **Confidence in the score:** *medium* (feature coverage 67 %, ensemble spread 0.090). The model\u2019s moderate confidence and the wide score range mean the number should be treated a"
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "UNKNOWN",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "ANALYSIS",
+            "ARR",
+            "CLAIM VERIFICATION",
+            "Claim",
+            "Confidence",
+            "Evidence"
+          ],
+          "report_value": [
+            "firstignite",
+            "hoai",
+            "payflow",
+            "rain neuromorphics",
+            "tailor-ed"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "34",
+      "company": "thermagrid energy pitch deck",
+      "memo_chars": 1196,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 3.0,
+          "report_value": 3.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 3"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 3.0,
+          "report_value": 3.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 3"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        }
+      ]
+    },
+    {
+      "report_id": "31",
+      "company": "novaedge sample pitch deck",
+      "memo_chars": 1193,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        }
+      ]
+    },
+    {
+      "report_id": "30",
+      "company": "novaedge sample pitch deck",
+      "memo_chars": 1193,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        }
+      ]
+    },
+    {
+      "report_id": "29",
+      "company": "novaedge sample pitch deck",
+      "memo_chars": 1193,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        }
+      ]
+    },
+    {
+      "report_id": "28",
+      "company": "novaedge sample pitch deck",
+      "memo_chars": 1193,
+      "n_checkable": 6,
+      "n_supported": 6,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 0"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 0"
+        }
+      ]
+    },
+    {
+      "report_id": "27",
+      "company": "ShieldAI Cyber SeriesA",
+      "memo_chars": 1184,
+      "n_checkable": 7,
+      "n_supported": 7,
+      "n_contradicted": 0,
+      "faithfulness": 1.0,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 30.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": "UNKNOWN",
+          "report_value": "UNKNOWN",
+          "verdict": "SUPPORTED",
+          "snippet": "- Overall risk level: UNKNOWN"
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": 30.0,
+          "report_value": 30.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Risk score: 30/100"
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Claims checked: 5"
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Supported: 0"
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": 0.0,
+          "report_value": 0.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Refuted: 0"
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": 5.0,
+          "report_value": 5.0,
+          "verdict": "SUPPORTED",
+          "snippet": "- Uncertain: 5"
+        },
+        {
+          "kind": "no_false_corroboration",
+          "memo_value": 0,
+          "report_value": 0,
+          "verdict": "SUPPORTED",
+          "snippet": "memo asserts no verified claims -- correct"
+        },
+        {
+          "kind": "no_fabricated_comparable",
+          "memo_value": [
+            "CONFIDENCE LEVEL",
+            "Confidence",
+            "DILIGENCE",
+            "FINAL VERDICT",
+            "GREEN FLAGS",
+            "Insufficient"
+          ],
+          "report_value": [
+            "flightcaster",
+            "floobits",
+            "next caller",
+            "shift messenger",
+            "unima"
+          ],
+          "verdict": "NOT_ASSERTED",
+          "snippet": "capitalised tokens near a comparables heading, for manual review"
+        }
+      ]
+    },
+    {
+      "report_id": "26",
+      "company": "3 CarbonLoop ClimateTech",
+      "memo_chars": 2395,
+      "n_checkable": 0,
+      "n_supported": 0,
+      "n_contradicted": 0,
+      "faithfulness": null,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 75.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "MEDIUM",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 40.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        }
+      ]
+    },
+    {
+      "report_id": "25",
+      "company": "PawPulse Pitch Deck",
+      "memo_chars": 2864,
+      "n_checkable": 0,
+      "n_supported": 0,
+      "n_contradicted": 0,
+      "faithfulness": null,
+      "assertions": [
+        {
+          "kind": "final_score",
+          "memo_value": null,
+          "report_value": 85.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_level",
+          "memo_value": null,
+          "report_value": "HIGH",
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "risk_score",
+          "memo_value": null,
+          "report_value": 50.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_checked",
+          "memo_value": null,
+          "report_value": 3.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_supported",
+          "memo_value": null,
+          "report_value": 2.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_refuted",
+          "memo_value": null,
+          "report_value": 0.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        },
+        {
+          "kind": "claims_uncertain",
+          "memo_value": null,
+          "report_value": 1.0,
+          "verdict": "NOT_ASSERTED",
+          "snippet": ""
+        }
+      ]
+    }
+  ]
+}

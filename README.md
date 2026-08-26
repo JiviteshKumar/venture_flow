@@ -142,6 +142,13 @@ See `.env.example` and `frontend/.env.example` for the complete template.
 - `TRUST_PROXY_HEADERS` — optional; set `true` behind a managed load balancer
   so rate limiting keys on the real client IP rather than the proxy.
 - `RATE_LIMIT_PER_MINUTE` — API rate limit, default `30`.
+- `DEMO_ACCESS_TOKEN` — shared passphrase gating a deployed instance. **Unset
+  means open.** Without it every stored report is readable by any anonymous
+  caller, over sequential integer report ids, so set it on anything reachable
+  from the internet; the server logs a loud `UNGATED` warning at startup when
+  it is configured for a non-local origin without one. This is a gate, not
+  authentication — there is no user model and no per-account data isolation
+  yet, so everyone with the passphrase sees the same shared pool of reports.
 - `REDIS_URL` — optional; enables the multi-instance-safe rate limiter (see `rate_limiter.py`). Without it, rate limiting is in-memory and per-process, which is correct for local single-instance use.
 - `GITHUB_TOKEN` — optional; raises the GitHub API rate limit for the technical/repo scoring rubric (`technical_scoring.py`) from 60/hour to 5,000/hour.
 - `VITE_API_BASE_URL` — **deployment only.** Read by a built frontend (e.g. on

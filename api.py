@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import secrets
 import uuid
 from typing import Any
 
@@ -76,6 +77,38 @@ origins = [
 ALLOWED_ORIGIN_REGEX = os.getenv("ALLOWED_ORIGIN_REGEX", "").strip() or None
 _origin_pattern = re.compile(ALLOWED_ORIGIN_REGEX) if ALLOWED_ORIGIN_REGEX else None
 
+# Shared passphrase gating the deployed demo.
+#
+# This is a gate, NOT authentication, and the difference is worth being precise
+# about because it would be easy to mistake one for the other. There is no user
+# model, no per-account data isolation, and no schema-level ownership: every
+# report still lives in one shared pool. What this does is stop an anonymous
+# passer-by from reading that pool.
+#
+# It exists because the deployed API had none of the above and was returning
+# every uploaded deck's analysis -- company names, scores, and the full memo --
+# to any unauthenticated caller, over sequential integer ids (/reports/50) that
+# make the whole table trivially enumerable. For a product whose premise is
+# confidential diligence on other people's companies, that is the most severe
+# defect in the system, and it needed closing before the schema work that will
+# eventually replace it.
+#
+# A public single-page app cannot hold a secret, so the token is not baked into
+# the bundle: the user types the passphrase, the frontend keeps it for the tab's
+# lifetime and sends it on every request. Anyone you share it with gets in,
+# which is exactly the security property of a demo passphrase and no more.
+#
+# Unset means open, so a fresh clone and local development are unaffected. A
+# loud startup warning covers the case that matters -- deployed, reachable from
+# a real origin, and ungated.
+DEMO_ACCESS_TOKEN = os.getenv("DEMO_ACCESS_TOKEN", "").strip() or None
+
+# Reachable without the passphrase. `/` and `/health` are how a platform health
+# check and a human both establish the service is alive, and neither exposes
+# any report data. The OpenAPI routes are listed so the docs page can load its
+# own schema.
+PUBLIC_PATHS = {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+
 
 def _client_key(request: Request) -> str:
     """Identify the caller for rate limiting, correctly behind a proxy.
@@ -135,6 +168,46 @@ def _cors_headers_for(request: Request) -> dict[str, str]:
     return {}
 
 
+def _presented_token(request: Request) -> str | None:
+    """The passphrase the caller presented, from either accepted form.
+
+    `X-Demo-Token` is what the frontend sends. `Authorization: Bearer` is
+    accepted too so the API stays usable from curl and scripts without a
+    bespoke header, which matters because `scripts/batch_deck_test.py` and the
+    eval harnesses drive these endpoints directly.
+    """
+    header = request.headers.get("x-demo-token")
+    if header:
+        return header.strip()
+    authorization = request.headers.get("authorization", "")
+    if authorization.lower().startswith("bearer "):
+        return authorization[7:].strip()
+    return None
+
+
+# Registered BEFORE CORSMiddleware, deliberately -- see the rate limiter below
+# for why that ordering matters. A 401 that reaches a browser without CORS
+# headers is discarded before JavaScript can read it, and the frontend would
+# show "Network Error" instead of prompting for the passphrase.
+@app.middleware("http")
+async def require_demo_token(request: Request, call_next):
+    if DEMO_ACCESS_TOKEN is None or request.url.path in PUBLIC_PATHS:
+        return await call_next(request)
+    # A CORS preflight carries no custom headers by definition, so it can never
+    # present the token. Rejecting it would make the browser report a CORS
+    # failure rather than a 401, hiding the real reason from the user.
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    presented = _presented_token(request)
+    if presented is None or not secrets.compare_digest(presented, DEMO_ACCESS_TOKEN):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "This demo is passphrase-protected. Enter the access passphrase to continue."},
+            headers=_cors_headers_for(request),
+        )
+    return await call_next(request)
+
+
 # Registered BEFORE CORSMiddleware, deliberately. Starlette applies middleware
 # outermost-last, so whatever is added last wraps everything added before it.
 # This used to be declared after the CORS middleware, which put the rate
@@ -161,8 +234,35 @@ app.add_middleware(
     allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    # X-Demo-Token must be listed or the browser's preflight for it is refused
+    # with a 400 before the request is ever made -- which surfaces as a CORS
+    # error rather than as the 401 that would tell the user to enter the
+    # passphrase. Caught by tests/test_demo_gate.py::test_preflight_is_not_gated.
+    allow_headers=["Content-Type", "X-Demo-Token"],
 )
+
+
+@app.on_event("startup")
+async def warn_if_deployed_and_ungated() -> None:
+    """Say something loud if this looks deployed but has no passphrase.
+
+    The failure this guards against already happened: the API ran in
+    production returning every stored report to anonymous callers, and nothing
+    anywhere said so. `ALLOWED_ORIGINS` naming a non-localhost origin is a
+    decent proxy for "this is reachable from a real frontend", and combined
+    with no DEMO_ACCESS_TOKEN that is the state worth shouting about.
+    """
+    deployed = any(
+        not (o.startswith("http://localhost") or o.startswith("http://127.0.0.1"))
+        for o in origins
+    ) or bool(ALLOWED_ORIGIN_REGEX)
+    if deployed and DEMO_ACCESS_TOKEN is None:
+        logger.warning(
+            "UNGATED: this API is configured for a non-local origin but "
+            "DEMO_ACCESS_TOKEN is not set. Every stored report is readable by "
+            "any anonymous caller, and report ids are sequential integers. Set "
+            "DEMO_ACCESS_TOKEN to gate it."
+        )
 
 
 @app.on_event("startup")

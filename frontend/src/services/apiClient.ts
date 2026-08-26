@@ -8,6 +8,67 @@ export const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+/**
+ * Demo passphrase handling.
+ *
+ * The deployed API is gated by a shared passphrase (see DEMO_ACCESS_TOKEN in
+ * api.py). This is a gate, not authentication: there is no user model and no
+ * per-account data isolation yet. It exists because the deployed API was
+ * returning every stored report to anonymous callers over sequential integer
+ * ids.
+ *
+ * A public bundle cannot hold a secret, so nothing is baked in at build time.
+ * The user types the passphrase once and it lives in sessionStorage — tab
+ * lifetime only, deliberately, so a shared or public machine does not keep a
+ * demo credential lying around after the tab closes.
+ *
+ * Wrapped in try/catch because sessionStorage throws outright in some contexts
+ * (private windows with site data blocked), and a storage failure must not
+ * take down the app.
+ */
+const TOKEN_KEY = "vf_demo_token";
+
+export const demoToken = {
+  get(): string {
+    try { return sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
+  },
+  set(value: string): void {
+    try { sessionStorage.setItem(TOKEN_KEY, value); } catch { /* non-fatal */ }
+  },
+  clear(): void {
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch { /* non-fatal */ }
+  },
+};
+
+/** True once the backend has answered 401, i.e. the deployment is gated. */
+export let gateRequired = false;
+
+apiClient.interceptors.request.use((config) => {
+  const token = demoToken.get();
+  if (token) config.headers["X-Demo-Token"] = token;
+  return config;
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      gateRequired = true;
+      // Drop a passphrase the server rejected, so the prompt reappears rather
+      // than the app retrying a known-bad value forever.
+      demoToken.clear();
+      window.dispatchEvent(new CustomEvent("vf:gate-required"));
+    }
+    return Promise.reject(error);
+  },
+);
+
+/** Headers for the raw fetch() calls that bypass apiClient (chat, history). */
+export function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const token = demoToken.get();
+  return token ? { ...extra, "X-Demo-Token": token } : extra;
+}
+
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
 export interface DetectedFounder {

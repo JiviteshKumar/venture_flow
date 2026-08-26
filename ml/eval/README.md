@@ -225,3 +225,90 @@ behaviour rather than label defects:
   direction**, and it is visible in the confusion matrix as recall loss on
   SUPPORTS with precision 1.000 — the verifier under-claims rather than
   over-claims. That is a property worth keeping, not a bug to tune away.
+
+---
+
+## 4. Memo faithfulness
+
+| File | What it is |
+|---|---|
+| `memo_faithfulness_results.json` | Every checked assertion, its memo value, the report's own value, and the verdict |
+
+```bash
+python ml/scripts/eval_memo_faithfulness.py              # every stored report
+python ml/scripts/eval_memo_faithfulness.py --report-id 65
+```
+
+The memo is the half of this product a VC actually reads, and it was the only
+component with no evaluation of any kind. `ml/research/research_question.md`
+excludes it from the project's claims for exactly that reason. This closes part
+of the gap.
+
+### What it measures, and what it does not
+
+The memo restates facts the pipeline already established — the score and its
+components, the risk level, how many claims were checked and how many held up.
+Those are numbers the report already contains, so agreement is exact and needs
+no LLM. **Where the memo and the section disagree, the memo is wrong by
+construction**: the section is the source, the memo is the retelling.
+
+It does **not** evaluate whether the memo's free prose is entailed by the
+retrieved evidence. That needs atomic-claim decomposition and an entailment
+model (FActScore, ALCE — `ml/research/related_work.md` §3), which costs LLM
+calls the free-tier quota cannot currently afford. This instrument costs
+nothing, so it runs over every stored report today and over every future one
+for free.
+
+A memo that simply does not restate a fact is **not** penalised. Only
+`SUPPORTED` and `CONTRADICTED` enter the ratio; unrestated facts are recorded as
+`NOT_ASSERTED`.
+
+### Result: 0.991 over 214 assertions in 38 reports
+
+212 supported, 2 contradicted.
+
+**Both contradictions are real, and they are the same bug.** On reports 36 and
+39 the memo quotes a score the product does not show:
+
+| Report | Memo says | Report headline | Why |
+|---|---|---|---|
+| ComplyForge AI (36) | 57 / 100 | **30** | `incomplete_analysis` capped it |
+| AgroPulse (39) | 33 / 100 | **30** | same |
+
+`ventureflow_agent.py` applies `final_score = min(final_score, 30)` when
+`incomplete_analysis` is set, and the memo is synthesised from the *uncapped*
+model score. So the memo can present a materially more favourable number than
+the product's own headline — 57 against 30 — and it does so precisely on the
+reports where verification was too incomplete to trust the estimate. The error
+runs in the least safe direction available.
+
+### The first run was wrong, and that is why the tests exist
+
+The evaluator's first pass reported **33 contradictions**, and every one was the
+instrument misreading the memo rather than the memo misreading the report:
+
+- a bare `N/100` pattern matched the fallback memo's `data quality (85/100)`,
+  on 25 of 38 reports;
+- `| **REFUTED** | 90 % |` in a per-claim table was read as a refuted *count*
+  of 90;
+- `| **High** |` in a risk table was read as the score's confidence band;
+- another company's `Risk score 30 / 100` in a comparables table was read as
+  this company's.
+
+The common cause was matching inside markdown table rows. None of the facts
+checked here is ever legitimately stated in a table row in these memos, so
+`_search` now skips any match whose line contains a pipe, and the headline-score
+pattern requires an explicit label.
+
+Each of those four cases is pinned by name in
+`tests/test_memo_faithfulness.py`. **An evaluator that invents contradictions is
+worse than no evaluator**, because its output looks like evidence — so the
+regression tests matter more here than the headline number.
+
+### Honest limitations
+
+- Exact restatement only. Prose faithfulness is unmeasured.
+- 38 reports from one deck corpus, mostly generated during development.
+- The comparables check (`no_fabricated_comparable`) is reported but never
+  scored: capitalised prose produces too many false positives for it to be a
+  pass/fail signal, so it is a pointer for a human rather than a number.

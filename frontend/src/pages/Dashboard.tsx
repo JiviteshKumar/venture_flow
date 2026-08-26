@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import { api, ReportSummary } from "../services/apiClient";
+import { api, authHeaders, ReportSummary } from "../services/apiClient";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -147,7 +147,7 @@ const Dashboard = () => {
       setScoreHistory([]);
       return;
     }
-    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/companies/${encodeURIComponent(report.company)}/history`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/companies/${encodeURIComponent(report.company)}/history`, { headers: authHeaders() })
       .then((res) => (res.ok ? res.json() : { history: [] }))
       .then((data) => setScoreHistory(data.history || []))
       .catch(() => setScoreHistory([]));

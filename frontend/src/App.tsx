@@ -5,10 +5,15 @@ import Analysis from "./pages/Analysis";
 import UploadDeck from "./pages/UploadDeck";
 import NotFound from "./pages/NotFound";
 import { AppProvider } from "./context/AppContext";
+import DemoGate from "./components/common/DemoGate";
 
 function App() {
   return (
     <AppProvider>
+      {/* Wraps the whole app so a gated deployment asks for the passphrase
+          before any page can call the API. Renders nothing when the backend
+          is ungated, which is the case for every local run. */}
+      <DemoGate>
       <BrowserRouter>
         <Layout>
           <Routes>
@@ -19,6 +24,7 @@ function App() {
           </Routes>
         </Layout>
       </BrowserRouter>
+      </DemoGate>
     </AppProvider>
   );
 }

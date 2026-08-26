@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { CheckCircle, AlertTriangle, ChevronDown, ChevronUp, Download, ExternalLink, Upload, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { authHeaders } from "../services/apiClient";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import VentureScorePanel from "../components/analysis/VentureScorePanel";
@@ -97,7 +98,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ session_id: sessionId, question: q }),
       });
       const data = await res.json();
@@ -212,7 +213,7 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
 
   const refresh = () => {
     if (!reportId) return;
-    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${reportId}/comments`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${reportId}/comments`, { headers: authHeaders() })
       .then((res) => (res.ok ? res.json() : []))
       .then(setComments)
       .catch(() => setComments([]));
@@ -227,7 +228,7 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${reportId}/comments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ author_name: authorName || "Anonymous", body }),
       });
       if (res.ok) {
@@ -514,7 +515,7 @@ const Analysis = () => {
     if (!report.report_id) return;
     setPdfExporting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${report.report_id}/pdf`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${report.report_id}/pdf`, { headers: authHeaders() });
       if (!res.ok) throw new Error("PDF export failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
