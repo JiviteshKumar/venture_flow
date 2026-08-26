@@ -92,3 +92,17 @@ ml/models/outcome_model_combined_hindsight.txt
 # interrupted run resume instead of re-paying for excerpts already scored --
 # it is a resume aid, not a result. The results file is the artifact.
 ml/eval/*.llm_cache.jsonl
+
+# Scraped third-party pitch decks (ml/eval/decks/*.pdf).
+#
+# The MANIFEST is committed and the PDFs are not, deliberately. Two reasons:
+# 19MB of binaries would live in git history forever, and these are other
+# companies' copyrighted decks retrieved from public mirrors -- redistributing
+# them through this repository is not ours to do.
+#
+# The corpus stays reproducible without them: manifest.json records the source
+# URL, SHA-256, byte size, extracted character count and deck vintage of every
+# file, and `python scripts/scrape_pitch_decks.py` re-fetches them. A SHA-256
+# mismatch on re-fetch means the mirror changed the file, which is worth
+# knowing rather than papering over.
+ml/eval/decks/*.pdf

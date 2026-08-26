@@ -20,7 +20,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import add_comment, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_decision, stats, update_analysis_job
+from db import add_comment, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_analysed_company, record_decision, stats, update_analysis_job
 from db import healthcheck as neon_healthcheck
 from document_extractor import SUPPORTED_FORMATS, UnsupportedDocument, extract_document, is_supported
 from rate_limiter import is_allowed as rate_limit_is_allowed
@@ -589,6 +589,15 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
             status_code=503,
             detail="Analysis completed but could not be saved. Please retry.",
         ) from exc
+    # Derived analytics row. Deliberately after persist_report and deliberately
+    # not wrapped in the same failure handling: the report is already safe on
+    # disk at this point, and a projection of it must never be able to turn a
+    # completed analysis into a 503 the user sees. record_analysed_company
+    # swallows its own errors and returns None.
+    await run_in_threadpool(
+        record_analysed_company, report=report, report_id=report_id
+    )
+
     document = request.filing_text or request.company_description
     if document:
         store_document(session_id, document, request.company_name)

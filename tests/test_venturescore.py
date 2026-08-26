@@ -278,35 +278,103 @@ def test_unverifiable_claims_do_not_cap_the_score(monkeypatch, tmp_path):
     assert report["recommendation"] == "NEEDS MORE DILIGENCE"
 
 
-def test_genuine_pipeline_failure_still_caps_the_score(monkeypatch, tmp_path):
-    """The other half of the same distinction: when the specialist agents all
-    fail, that IS an incomplete analysis and the cap must still apply."""
+def _score_with(monkeypatch, name, *, specialists, claims):
+    """Run the pipeline twice-comparably: same company text, different evidence."""
+    monkeypatch.setattr(ventureflow_agent, "run_investment_agents", lambda **_k: specialists)
+    return ventureflow_agent.run_due_diligence(
+        name,
+        company_description="An AI-powered SaaS platform for enterprise developer teams. " * 3,
+        claims_to_verify=claims, sector="B2B", revenue=500_000,
+    )
+
+
+def test_specialists_at_zero_lower_the_score_smoothly_instead_of_capping_it(monkeypatch, tmp_path):
+    """When every specialist that actually ran returns confidence 0, that is a
+    real signal about a content-free deck -- but it must be priced as a
+    *penalty*, not as a cap.
+
+    This is the regression guard for the defect that motivated the change: the
+    old rule was `final_score = min(final_score, 30)`, which mapped every thin
+    deck onto one identical number. Measured across 40 stored reports, 18 of 40
+    different startups scored exactly 30.0. So the assertion here is
+    deliberately COMPARATIVE rather than a threshold -- a constant-score
+    implementation passes `<= 30` and fails this.
+    """
     monkeypatch.chdir(tmp_path)
     _patch_pipeline(monkeypatch)
-    monkeypatch.setattr(ventureflow_agent, "run_investment_agents", lambda **_k: {
-        "market": {"confidence": 0}, "team": {"confidence": 0}, "bull": {"confidence": 0},
-    })
+    confident = _score_with(
+        monkeypatch, "Confident Co",
+        specialists={"market": {"confidence": 0.9}, "team": {"confidence": 0.9},
+                     "bull": {"confidence": 0.9}},
+        claims=["claim one"],
+    )
+    zeroed = _score_with(
+        monkeypatch, "Zeroed Co",
+        specialists={"market": {"confidence": 0}, "team": {"confidence": 0},
+                     "bull": {"confidence": 0}},
+        claims=["claim one"],
+    )
+
+    # The deck is not "unanalysable" -- it had text, the pipeline ran.
+    assert zeroed["incomplete_analysis"] is False
+    # ...but it IS thin, and the report says so out loud.
+    assert zeroed["thin_evidence"] is True
+    # The penalty moved, and moved the right way.
+    assert zeroed["final_score"] < confident["final_score"]
+    assert zeroed["evidence_penalty"] > confident["evidence_penalty"]
+    # And no thin deck may reach a decisive verdict regardless of the number.
+    assert zeroed["recommendation"] == "NEEDS MORE DILIGENCE"
+
+
+def test_no_extractable_claims_is_priced_as_thin_evidence_not_as_a_cap(monkeypatch, tmp_path):
+    """No claims at all means nothing was checked. That is real missing
+    evidence and must cost the company score -- but it is not the same thing as
+    the analysis having failed, and it must not flatten the number."""
+    monkeypatch.chdir(tmp_path)
+    _patch_pipeline(monkeypatch)
+    with_claims = _score_with(
+        monkeypatch, "Some Claims Co",
+        specialists={"market": {"confidence": 0.6}},
+        claims=["claim one", "claim two", "claim three"],
+    )
+    without = _score_with(
+        monkeypatch, "No Claims Co",
+        specialists={"market": {"confidence": 0.6}},
+        claims=[],
+    )
+
+    assert without["incomplete_analysis"] is False
+    assert without["claims_unverified"] is False
+    assert without["thin_evidence"] is True
+    assert without["final_score"] < with_claims["final_score"]
+    assert without["recommendation"] == "NEEDS MORE DILIGENCE"
+
+
+def test_claim_sparsity_is_graded_rather_than_stepped(monkeypatch, tmp_path):
+    """The specific anti-cliff property: 0, 1, 2 and 3 claims must produce four
+    distinct penalties, not two."""
+    penalties = [
+        ventureflow_agent._evidence_components(
+            refuted=0, supported=n, n_claims=n, risk_score=20,
+            has_revenue=True, quality_score=80,
+        )["claim_sparsity"]
+        for n in range(4)
+    ]
+    assert penalties == sorted(penalties, reverse=True), "more claims must never cost more"
+    assert len(set(penalties)) == 4, f"claim sparsity collapsed to a step: {penalties}"
+
+
+def test_a_deck_with_no_readable_text_at_all_is_still_floored(monkeypatch, tmp_path):
+    """The one hard floor that survives. If text extraction produced nothing,
+    the product genuinely knows nothing and must say so rather than reporting
+    the model's prior as if it were an assessment."""
+    monkeypatch.chdir(tmp_path)
+    _patch_pipeline(monkeypatch)
     report = ventureflow_agent.run_due_diligence(
-        "Broken Pipeline Co",
-        company_description="An AI-powered SaaS platform for enterprise developer teams. " * 3,
+        "Empty Deck Co", company_description="", filing_text="",
         claims_to_verify=["claim one"], sector="B2B", revenue=500_000,
     )
     assert report["incomplete_analysis"] is True
-    assert report["final_score"] <= 30
-
-
-def test_no_extractable_claims_counts_as_a_failed_analysis(monkeypatch, tmp_path):
-    """No claims at all means nothing was checked -- that is a failure to
-    analyse, not a verification result, and must still cap."""
-    monkeypatch.chdir(tmp_path)
-    _patch_pipeline(monkeypatch)
-    report = ventureflow_agent.run_due_diligence(
-        "No Claims Co",
-        company_description="An AI-powered SaaS platform. " * 5,
-        claims_to_verify=[], sector="B2B", revenue=500_000,
-    )
-    assert report["incomplete_analysis"] is True
-    assert report["claims_unverified"] is False
     assert report["final_score"] <= 30
 
 

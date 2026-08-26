@@ -10,6 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 
+from agents.evidence_filter import filter_sources
 from groq_client import MODEL, get_client
 logger = logging.getLogger(__name__)
 
@@ -39,16 +40,59 @@ def fetch_page_text(url: str, max_chars: int = 3000) -> str:
     except:
         return ""
 
-def build_queries(claim: str) -> list:
+def build_queries(claim: str, company: str = "") -> list:
+    """Search queries for one claim, scoped to the company when it is known.
+
+    The company parameter is the fix for a measured retrieval failure. This
+    function used to receive only the claim text, because `verify_claim()` had
+    no company parameter to pass -- so **the company name never entered the
+    search query at all**. Deck claims are written elliptically ("Seed round
+    target is $8M", "ARR grew 4x last year"); stripped of the company they are
+    generic strings, and a generic string retrieves generic pages.
+
+    The worked example: ClaimFlow's "Seed round target is $8M" returned
+    merriam-webster.com, youtube.com, dictionary.cambridge.org, truemfg.com and
+    trueccu.com. The last two are companies with "true" in the name, retrieved
+    because the template `is it true that {claim}` put the word "true" into the
+    query. Nothing in that result set is about ClaimFlow.
+
+    Two templates are gone:
+
+    - `is it true that {claim}` -- a pure noise generator. It contributes the
+      words "is/it/true/that" to every query, which is what pulled in the
+      dictionary entries for "true" and the two same-named businesses. Its
+      intent (find corroboration) is already served better by `fact check`.
+    - `{claim} false wrong debunked` -- retained ONLY when no company is known.
+      It is what finds a public claim's refutation, so removing it outright
+      would risk REFUTES recall (0.952 on the current benchmark), but on a
+      seed-stage startup there is no debunking literature to find and the
+      adjectives simply drift the query off-topic.
+
+    When a company IS known the strategy changes entirely: anchor every query
+    on the name, since the question is never "is this statement true in
+    general" but "is it true of this company".
+    """
+    claim = (claim or "").strip()
+    company = (company or "").strip()
+    if not company:
+        # Unscoped fallback: near the templates that measured 0.955 accuracy on
+        # ml/eval/claim_benchmark.jsonl, minus the demonstrated noise generator.
+        return [
+            f'"{claim}"',
+            f"fact check {claim}",
+            f"{claim} evidence proof",
+            f"{claim} false wrong debunked",
+        ]
+
     return [
+        f'"{company}" {claim}',
+        f"{company} {claim}",
         f'"{claim}"',
-        f"fact check {claim}",
-        f"is it true that {claim}",
-        f"{claim} evidence proof",
-        f"{claim} false wrong debunked",
+        f'"{company}" funding revenue customers announcement',
+        f"{company} startup company news",
     ]
 
-def collect_evidence(claim: str) -> dict:
+def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
     """Gather web evidence for one claim.
 
     The searches and page fetches run concurrently. They used to run one after
@@ -65,7 +109,7 @@ def collect_evidence(claim: str) -> dict:
     their own exceptions and return empty results, so one failed query or
     unreachable page degrades that item rather than the claim.
     """
-    queries = build_queries(claim)
+    queries = build_queries(claim, company=company)
     print(f"  Running {len(queries)} searches concurrently...")
     all_snippets = []
     seen_urls    = set()
@@ -81,6 +125,22 @@ def collect_evidence(claim: str) -> dict:
                     all_snippets.append(r)
 
     print(f"  Found {len(all_snippets)} unique sources")
+
+    # Relevance gate, before the LLM sees anything. Better queries reduce the
+    # off-topic rate but do not eliminate it, and an off-topic page is not
+    # neutral: it is an invitation for the judge to reason about a different
+    # company that happens to share a word with this one. The gate is a cheap
+    # TF-IDF similarity check plus a small blocklist, and it records what it
+    # removed so the report can say so rather than just showing fewer sources.
+    filter_context = " ".join(filter(None, [company, context, claim]))
+    kept, dropped = filter_sources(
+        all_snippets, context=filter_context, company=company,
+    )
+    if dropped:
+        print(f"  Relevance gate dropped {len(dropped)} of {len(all_snippets)} sources")
+        for item in dropped[:5]:
+            print(f"    - {item.get('url', '')[:70]}  [{item.get('_drop_reason', '')}]")
+    all_snippets = kept
 
     top = all_snippets[:5]
     print(f"  Reading full content from top {len(top)} pages concurrently...")
@@ -99,9 +159,39 @@ def collect_evidence(claim: str) -> dict:
         "snippets":   all_snippets[:15],
         "full_texts": full_texts,
         "sources":    [r["url"] for r in all_snippets[:10]],
+        # Reported, not discarded. A reader who wonders why a claim came back
+        # unverified is entitled to see what was thrown away on their behalf.
+        "dropped":    [
+            {"url": d.get("url", ""), "reason": d.get("_drop_reason", "")}
+            for d in dropped
+        ],
+        "retrieved_before_filter": len(dropped) + len(all_snippets),
     }
 
-def groq_judge(claim: str, evidence: dict) -> dict:
+def groq_judge(claim: str, evidence: dict, as_of: str = "") -> dict:
+    """Judge one claim against retrieved evidence.
+
+    `as_of` is the deck's vintage, and it exists because of the single most
+    damaging error found in production testing. Run across seven real pitch
+    decks, the verifier produced four REFUTES verdicts at 0.95-0.97 confidence,
+    and **every one of them was wrong in the same way**:
+
+      - Airbnb (2008): "630,000 users on couchsurfing.com" was refuted using
+        Wikipedia's present-day figure of 12,000,000.
+      - Buffer (2011): "800 Paying Users" was refuted because Buffer now has
+        over 70,000.
+      - Coinbase (2012): "$2 million per day in transaction volume" was refuted
+        because Coinbase now does roughly $751 million per day.
+      - Uber (2008): "Overall market is $4.2B annually" was refuted using
+        Uber's own 2025 global revenue of $52B.
+
+    Each claim was TRUE when written. The verifier was reading historical
+    statements against present-day evidence and calling the difference a
+    falsehood -- so it penalised precisely the companies whose numbers had grown
+    the most. REFUTES precision on the benchmark is 1.000; on real decks it was
+    0.000, because ml/eval/claim_benchmark.jsonl contains no time-dependent
+    claims and therefore could not see this failure mode at all.
+    """
     evidence_block = "=== SEARCH SNIPPETS ===\n"
     for i, s in enumerate(evidence["snippets"][:10], 1):
         evidence_block += f"\n[{i}] {s['title']}\n"
@@ -113,6 +203,14 @@ def groq_judge(claim: str, evidence: dict) -> dict:
         for ft in evidence["full_texts"][:3]:
             evidence_block += f"\n[From: {ft['url']}]\n"
             evidence_block += ft["text"][:1500] + "\n"
+
+    as_of_line = (
+        f"This claim is taken from a pitch deck dated or published around {as_of}. "
+        f"Judge it as a statement about that time."
+        if as_of else
+        "The date of this claim is unknown. If it looks like a point-in-time metric "
+        "from a pitch deck, assume it describes the past, not today."
+    )
 
     prompt = f"""You are a strict professional fact-checker.
 
@@ -128,6 +226,26 @@ RULES:
 - Base verdict ONLY on evidence above
 - Topic similarity does NOT mean the claim is supported
 - Look for direct factual confirmation or contradiction
+
+TIME — read this before deciding REFUTES:
+{as_of_line}
+A pitch deck states metrics as of the date it was written. Today's value of a
+metric does NOT contradict a past value of the same metric. A company that had
+800 paying users then and 70,000 now is a company that GREW; it is not a company
+that lied.
+
+So, for any claim that is a point-in-time quantity (users, revenue, run rate,
+transaction volume, headcount, market size, growth):
+- If the evidence describes a DIFFERENT period than the claim, you MUST answer
+  NOT_ENOUGH_INFO. Say in the reasoning that the evidence is from a different
+  period.
+- Answer REFUTES only if the evidence contradicts the claim FOR THE PERIOD THE
+  CLAIM IS ABOUT.
+- A larger present-day figure is evidence of growth, never evidence of falsehood.
+
+Also: if the only evidence is a copy of the pitch deck itself, or an article
+reproducing the deck, that is the claim restating itself. Answer
+NOT_ENOUGH_INFO — a document cannot corroborate itself.
 
 Respond with ONLY valid JSON, no other text:
 {{
@@ -199,6 +317,12 @@ Respond with ONLY valid JSON, no other text:
             "confidence":   0.0,
             "reasoning":    "Claim verification is temporarily unavailable.",
             "key_evidence": "",
+            # Explicit marker, not prose. Downstream used to detect this by
+            # string-comparing the reasoning text, which silently failed the
+            # moment a second fallback site worded it "was" instead of "is" --
+            # see the note in ventureflow_agent's degradation block.
+            "_degraded":        True,
+            "_degraded_reason": "claim verifier provider call failed",
         }
 
 def _evidence_text(evidence: dict) -> str:
@@ -216,13 +340,31 @@ def _evidence_text(evidence: dict) -> str:
     return "\n".join(p for p in parts if p)
 
 
-def verify_claim(claim_text: str, verbose: bool = True, include_evidence: bool = False) -> dict:
+def verify_claim(
+    claim_text: str,
+    verbose: bool = True,
+    include_evidence: bool = False,
+    company: str = "",
+    context: str = "",
+    as_of: str = "",
+) -> dict:
+    """Verify one claim against live web search.
+
+    `company` and `context` are optional and default to the previous behaviour,
+    because two callers verify bare claims with no company attached: the
+    interactive REPL at the bottom of this file, and
+    ml/scripts/eval_claim_verifier.py, whose benchmark rows carry no company
+    field. The product path (ventureflow_agent) always passes them, and that is
+    the path where the missing company name was doing the damage.
+    """
     if verbose:
         print(f"\n{'='*60}")
         print(f"Verifying: {claim_text}")
+        if company:
+            print(f"Company:   {company}")
         print(f"{'='*60}")
 
-    evidence = collect_evidence(claim_text)
+    evidence = collect_evidence(claim_text, company=company, context=context)
 
     # A model must never be allowed to infer a verdict without retrieved evidence.
     if not evidence["snippets"] and not evidence["full_texts"]:
@@ -235,6 +377,8 @@ def verify_claim(claim_text: str, verbose: bool = True, include_evidence: bool =
             "sources": [],
             "total_sources": 0,
             "full_pages_read": 0,
+            "sources_dropped": len(evidence.get("dropped", [])),
+            "dropped_sources": evidence.get("dropped", []),
         }
         if include_evidence:
             empty["evidence_text"] = ""
@@ -243,7 +387,7 @@ def verify_claim(claim_text: str, verbose: bool = True, include_evidence: bool =
     print(f"  Groq AI analyzing {len(evidence['snippets'])} sources "
           f"+ {len(evidence['full_texts'])} full pages...")
 
-    judgment = groq_judge(claim_text, evidence)
+    judgment = groq_judge(claim_text, evidence, as_of=as_of)
 
     result = {
         "claim":           claim_text,
@@ -254,6 +398,11 @@ def verify_claim(claim_text: str, verbose: bool = True, include_evidence: bool =
         "sources":         evidence["sources"][:5],
         "total_sources":   len(evidence["snippets"]),
         "full_pages_read": len(evidence["full_texts"]),
+        # Surfaced so a reader can distinguish "the web had nothing" from "the
+        # relevance gate removed everything the web had", which are very
+        # different statements about a company.
+        "sources_dropped": len(evidence.get("dropped", [])),
+        "dropped_sources": evidence.get("dropped", []),
     }
     if include_evidence:
         result["evidence_text"] = _evidence_text(evidence)

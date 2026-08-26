@@ -3,6 +3,198 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 27 Aug 2026, eleventh pass: run it on real decks, and find out it lies about growth
+
+The headline: **the pipeline was tested on real pitch decks for the first time,
+and the most important thing it found is that every confident REFUTES verdict it
+produced was wrong.** Not marginally wrong — wrong in one systematic way, at
+0.95–0.97 confidence, on the claims that matter most.
+
+Everything below is measured. Where something could not be measured today it
+says so and says why.
+
+### The corpus: seven real decks, and three near-misses worth recording
+
+Built by `scripts/scrape_pitch_decks.py`. Seven genuine founder decks with
+verifiable outcomes: Airbnb (2009), Uber (2008), Buffer (2011), Intercom (2011),
+Coinbase (2012), Mint (2007), Front (2016). Manifest with source URL, SHA-256 and
+deck vintage in `ml/eval/decks/manifest.json`.
+
+**The scraper's first corpus was 60% wrong and every file looked right.** The
+acceptance test was "does text extract from it", which says nothing about whose
+deck it is. Kept as "Uber": a *Marketing Strategy Template* quoting Uber fourteen
+times. Kept as "Buffer": a Foundersuite guide, *How to Build the Ultimate Pitch
+Deck*. Kept as "Front": a blank template opening "Hello founder!". Two further
+rounds caught a university investment club's **equity pitch about Yelp stock**
+(names Yelp 62 times, in the first line, not a template) and an **SEO spam PDF**
+for Revolut whose only mention of Revolut was its title line.
+
+This is worth recording because it is the same error the product itself keeps
+making — a name match mistaken for an identity match — and here it would have
+been worse, because the corpus is supposed to be ground truth. Every number in
+this section would have been meaningless and would have looked entirely
+reasonable. `looks_like_the_companys_own_deck()` now requires four things: the
+name appears, it appears more than once, it appears in the opening 300
+characters, and the document is not third-party analysis.
+
+**Six well-known decks could not be read at all.** Dropbox (2007), LinkedIn
+(2004), YouTube (2005), Facebook (2004), WeWork and BuzzFeed extract to *exactly
+zero characters* — valid PDFs, fully legible to a human, every page a slide image
+with no text layer. Before this pass they arrived as `text=""` and produced a
+report about nothing, and the report blamed the deck rather than the product.
+`document_extractor` now returns `text_layer` in {present, sparse, none} with an
+explicit note, so "we could not open your file" is sayable.
+
+### The finding: the verifier calls growth a lie
+
+Reading every decisive verdict across the seven decks:
+
+| Deck | Claim | Verdict | Conf. | What the tool cited |
+|---|---|---|---|---|
+| Airbnb 2008 | "630,000 users on couchsurfing.com" | REFUTES | 0.97 | Wikipedia's *present-day* 12,000,000 |
+| Buffer 2011 | "800 Paying Users" | REFUTES | 0.97 | Buffer *now* has 70,000+ |
+| Coinbase 2012 | "$2M/day transaction volume" | REFUTES | 0.96 | Coinbase *now* does ~$751M/day |
+| Uber 2008 | "Overall market is $4.2B annually" | REFUTES | 0.96 | Uber's *2025* global revenue, $52B |
+
+**All four claims were true when written.** The verifier was reading historical
+statements against present-day evidence and reporting the difference as
+falsehood — so it penalised hardest exactly the companies whose numbers had grown
+most. REFUTES precision is **1.000 on `ml/eval/claim_benchmark.jsonl` and 0.000
+here**, and the benchmark could not have caught this: all 150 of its claims are
+about present-day facts, so it contains no time-dependent claim at all. A 0.955
+accuracy figure was concealing a total failure on the one claim type a pitch deck
+is made of.
+
+Each wrong REFUTES also cost 0.10 of evidence penalty, so the error moved the
+headline score.
+
+**Second defect, found the same way: circular verification.** Buffer's "$150,000
+annual revenue run rate" was marked SUPPORTS at 0.96 citing pitchdeckinspo.com,
+failory.com and slideshare.net — all three hosting Buffer's own 2011 deck.
+Intercom's claim was "confirmed" by two Scribd copies of the Intercom deck. The
+tool verified a document against itself and reported it as independent
+corroboration, which is worse than returning NOT_ENOUGH_INFO because it
+manufactures confidence a reader will act on.
+
+Fixes, in `agents/claim_verifier.py` and `agents/evidence_filter.py`: the judge is
+now told the deck's vintage (parsed from the source, or inferred conservatively,
+or absent — never guessed) and instructed that a larger present-day figure is
+evidence of growth, never of falsehood; and deck-mirror domains are dropped as
+circular before the judge sees them. Pinned structurally by
+`tests/test_claim_verifier_grounding.py`, which asserts the prompt carries the
+rules rather than asserting what a model replies.
+
+**Status of the temporal fix: UNVERIFIED end to end.** The Groq daily token cap
+was exhausted during the re-run, so the confirmation that these four verdicts
+flip to NOT_ENOUGH_INFO has not been made. The fix is unit-tested; it is not yet
+measured. `ml/eval/real_deck_runs_before_temporal_fix.json` holds the "before".
+
+### Decision #1: the constant score, resolved by grading rather than capping
+
+The hard cap `final_score = min(final_score, 30)` is gone. It is reserved to one
+case — no readable deck text at all — and thin evidence is now priced smoothly
+through `_evidence_components()`. A cap of any kind maps a range of genuinely
+different decks onto one number, which is the defect, not the fix.
+
+Confirmed on stored reports (`ml/scripts/check_score_distribution.py`): **18 of
+60 stored reports scored an identical 30.0 — 30% of the corpus.**
+
+On the seven real decks under the new code: scores **15, 17, 22, 29, 30, 37, 39 —
+seven distinct values from seven decks, largest identical cluster 14%.**
+
+And an unplanned but decisive confirmation: the quota exhaustion above produced a
+genuine 429 across all four specialists *and* risk analysis. Under the old code
+those two reports would have read 30.0 and 30.0. They read **47.0 and 38.0**,
+with `provider_degraded: true` naming all five failed components, and a
+non-decisive recommendation. Kept as
+`ml/eval/real_deck_runs_outage_evidence.json`.
+
+**A bug in that fix, found by the real decks.** Degradation was detected by
+string-comparing `reasoning` against "Claim verification is temporarily
+unavailable." — and there are *two* fallback sites, wording it "is" and "was".
+Airbnb's fourth claim failed through the "was" path, and the report declared
+itself not degraded. The risk branch had the same fault, looking for "Error in
+analysis" while the pipeline's own fallback writes "Risk analysis unavailable."
+Detection is now on an explicit `_degraded` flag. Matching on prose was the
+original defect wearing a different hat.
+
+### The honest limitation: the trained model barely discriminates on deck text
+
+Worth stating plainly because it qualifies the result above. The model-only
+scores across the seven decks were **50, 51, 51, 53, 53, 58, 64** — a range of
+14, against the 8–86 spread with sd 24.3 reported on 150 YC companies. The final
+spread of 15–39 is therefore produced mostly by the *evidence layer*, not by the
+trained model.
+
+The model reads company characteristics (description, industry, stage, location);
+deck-derived descriptions of seven consumer/SaaS startups produce similar feature
+vectors. So "the score discriminates per company" is true of the shipped number
+and **not yet true of the trained model on this input**. That is a real
+limitation and the obvious next piece of work.
+
+### Risk detection: the deck register, closed
+
+`agents/deck_financials.py` is new — deterministic, no LLM. It parses financial
+quantities out of deck prose and computes the relationships: runway, burn
+multiple, customer concentration, growth. The keyword dictionary missed all three
+deck-register red flags because a founder writes "our anchor customer represents
+$1.9M of that figure", not "customer concentration".
+
+Measured on `ml/eval/risk_benchmark.jsonl`:
+
+| detector | precision | recall | F1 | boilerplate FP | AUC |
+|---|---|---|---|---|---|
+| keyword (control) | 0.917 | 0.733 | 0.815 | 0.077 | 0.836 |
+| keyword + financials | 0.933 | **0.933** | **0.933** | **0.077** | 0.941 |
+
+The number that matters is the second-from-last column: **the boilerplate
+false-positive rate did not move.** Recall rose from 0.733 to 0.933 without
+buying it with noise on the 13 hard negatives. All three deck red flags now fire.
+
+Three arithmetic bugs were found and fixed while building it, each of which
+produced a plausible wrong number rather than an error: reading `cash_on_hand`
+from the previous sentence (0.1 months of runway instead of 2.7 — out by a factor
+of thirty); letting the annual `revenue` anchor claim "monthly recognised
+revenue" (burn multiple 129x instead of 10.8x); and a regex matching the "4M"
+*inside* "$2.4M", inventing a $4,000,000 figure that then won the
+nearest-to-anchor contest. Extraction is now sentence-scoped and nearest-anchor.
+20 tests in `tests/test_deck_financials.py`.
+
+The state also **backfills** revenue, burn and runway when the LLM extractor
+missed them, so a deck full of financials is no longer marked down for having
+none — and the memo prompt is now handed the figures explicitly, because an
+invented runway is the worst hallucination this product could ship.
+
+### Also done
+
+- **`agents/slide_vision.py`** — renders slides and asks a vision model to
+  transcribe text *and describe charts as data* (axes, units, series, values
+  read). Written for the six unreadable decks and for the traction slide, whose
+  meaning lives in a chart pdfplumber cannot see. **Not yet run against a real
+  deck** — quota. `available: False` with a reason is the honest failure.
+- **`migrations/009_analysed_companies.sql`** — first-class rows for analysed
+  companies with financial state, evidence trail and trustworthiness flags as
+  *columns*, so "which companies have under six months of runway" is a query.
+  Tenant-ready from the start: `owner_org_id` nullable meaning "pre-auth", every
+  index leading with it. Applied to Neon; `report_id` correctly resolved to
+  `integer` on the legacy schema.
+- **Retrieval** — company name and deck context now reach `build_queries()`;
+  `agents/evidence_filter.py` gates sources on TF-IDF similarity before the LLM
+  sees them. Visible in the Airbnb run: sources are `investors.airbnb.com`,
+  `news.airbnb.com`, `forbes.com/companies/airbnb`, not dictionaries.
+
+### Still broken, and not fixable from here
+
+`ALLOWED_ORIGIN_REGEX` and `DEMO_ACCESS_TOKEN` are **still unset on Render**,
+re-checked live today. `venture-flow-livid.vercel.app` gets no CORS header on any
+response and its preflight returns 400, so the deployed frontend cannot call the
+API at all; and `GET /reports` returned **20 stored reports to an anonymous
+caller**.
+
+The code is correct — proven by running the same code with both variables set:
+CORS headers present for the real origin including on the 401, preflight 200,
+`/reports` gated, `evil.com` refused. **This is configuration, not code.**
+
 ## Update — 23 Aug 2026, tenth pass: the evaluation gap, closed with numbers
 
 The audit's top finding was that this project had an evaluation *framework* and

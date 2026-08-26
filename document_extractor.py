@@ -30,6 +30,13 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+# Below this many characters across the whole document, a multi-page file is
+# treated as having no usable text layer rather than as being nearly empty. Set
+# generously: a genuine one-slide teaser still clears it, while an image-only
+# deck of any length falls far below.
+_TEXT_LAYER_MIN_CHARS = 120
+
+
 class UnsupportedDocument(Exception):
     """Raised for a file extension no reader handles."""
 
@@ -304,9 +311,42 @@ def extract_document(filename: str, data: bytes) -> dict:
             f"{extension or 'This file'} is not a supported deck format. Supported: {supported}"
         )
     text, page_count = reader(data)
+
+    # "This deck has no text layer" and "this deck is empty" are different
+    # facts, and the caller could not previously tell them apart -- both
+    # arrived as text="".
+    #
+    # This is not a hypothetical. Of thirteen well-known pitch decks fetched
+    # from public mirrors, SIX extracted to exactly zero characters: Dropbox
+    # (2007), LinkedIn (2004), YouTube (2005), Facebook (2004), WeWork and
+    # BuzzFeed. Every one is a real PDF that opens correctly and is completely
+    # legible to a human; each page is a slide *image* with no embedded text.
+    # A founder uploading any of them got a report built on nothing, and the
+    # report did not say so -- it said the data was insufficient, which reads
+    # as a judgement about the deck's content rather than about the product's
+    # inability to open it.
+    #
+    # `text_layer` makes the distinction explicit so the API, the UI and the
+    # memo can all say the true thing: we could not read this file, here is
+    # why, and here is what to do about it.
+    stripped = (text or "").strip()
+    if page_count and len(stripped) < _TEXT_LAYER_MIN_CHARS:
+        text_layer = "none" if not stripped else "sparse"
+    else:
+        text_layer = "present"
+
     return {
         "text": text,
         "page_count": page_count,
         "format": SUPPORTED_FORMATS[extension],
         "extension": extension,
+        "text_layer": text_layer,
+        "extracted_chars": len(stripped),
+        "text_layer_note": (
+            f"This file has {page_count} page(s) but only {len(stripped)} characters of "
+            f"machine-readable text. It is almost certainly a deck of slide IMAGES with no "
+            f"embedded text layer. Nothing can be read from it without optical character "
+            f"recognition or a vision model -- see agents/slide_vision.py."
+            if text_layer != "present" else ""
+        ),
     }

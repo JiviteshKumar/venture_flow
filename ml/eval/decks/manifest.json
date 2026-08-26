@@ -1,0 +1,79 @@
+[
+  {
+    "company": "Uber",
+    "file": "Uber.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/uber/uber-pitch-deck-2008.pdf",
+    "bytes": 1417324,
+    "sha256": "dd45d5c79cab6a8ada45b0a99e2c4cc21c75447f1b96b7753ffa95a33141d803",
+    "extracted_chars": 5390,
+    "pages": null,
+    "fetched_at": "2026-08-26T19:51:22Z",
+    "deck_year": "2008"
+  },
+  {
+    "company": "Buffer",
+    "file": "Buffer.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
+    "bytes": 6574715,
+    "sha256": "ac2d84ea4a340b6c96f5a02f066febd2c0a11c4cbc66e07d8ab00423f7805295",
+    "extracted_chars": 2012,
+    "pages": null,
+    "fetched_at": "2026-08-26T19:51:27Z",
+    "deck_year": "2011"
+  },
+  {
+    "company": "Intercom",
+    "file": "Intercom.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/intercom/intercom-pitch-deck-2011.pdf",
+    "bytes": 141235,
+    "sha256": "dd6c18b8c3d570f0e8dea679dd5b639b74bbc18f3b42c0e650ab49a81559e0d3",
+    "extracted_chars": 2355,
+    "pages": null,
+    "fetched_at": "2026-08-26T19:51:29Z",
+    "deck_year": "2011"
+  },
+  {
+    "company": "Coinbase",
+    "file": "Coinbase.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf",
+    "bytes": 1454182,
+    "sha256": "727940dd43cd846c922d2c06c3c2ce476079cac939f63081edfb364a89e59caa",
+    "extracted_chars": 635,
+    "pages": null,
+    "fetched_at": "2026-08-26T19:51:59Z",
+    "deck_year": "2012"
+  },
+  {
+    "company": "Mint",
+    "file": "Mint.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/mint/mint-pitch-deck-2007.pdf",
+    "bytes": 244082,
+    "sha256": "04714564f64547a207b8d115db3602bacfecd6a9dadb69ebd12637bd262b23b4",
+    "extracted_chars": 9873,
+    "pages": null,
+    "fetched_at": "2026-08-26T19:52:00Z",
+    "deck_year": "2007"
+  },
+  {
+    "company": "Front",
+    "file": "Front.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/front-series-a/front-series-a-pitch-deck-2016.pdf",
+    "bytes": 5476327,
+    "sha256": "212fd7240f93372e0ea69959c0872c45ca186021fef35aca83fef0fdb1a76a6b",
+    "extracted_chars": 4095,
+    "pages": null,
+    "fetched_at": "2026-08-26T19:56:48Z",
+    "deck_year": "2016"
+  },
+  {
+    "company": "Airbnb",
+    "file": "Airbnb.pdf",
+    "source_url": "https://media.genppt.com/pitch-decks/airbnb/airbnb-pitch-deck-2009.pdf",
+    "bytes": 4509019,
+    "sha256": "83f42ebab1b394e0f5e890761857c557fc5b19274667b46f086ab1f4236973a6",
+    "extracted_chars": 2472,
+    "pages": null,
+    "fetched_at": "2026-08-26T20:01:04Z",
+    "deck_year": "2009"
+  }
+]

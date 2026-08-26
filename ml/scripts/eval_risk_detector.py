@@ -144,6 +144,43 @@ def detector_keyword(row: dict[str, Any]) -> tuple[bool, list[str], dict[str, An
     }
 
 
+def detector_keyword_plus_financials(row: dict[str, Any]) -> tuple[bool, list[str], dict[str, Any]]:
+    """The SEC keyword dictionary composed with the deterministic deck reader.
+
+    Kept as a separate arm rather than folded into `detector_keyword`, so that
+    `keyword` remains an unmoved control. The point of the comparison is that
+    the dictionary is not being replaced -- it is genuinely the stronger
+    detector on filing prose, which is what it was built from -- but it is blind
+    to the register a pitch deck is written in. Measured on this benchmark it
+    missed all three deck red flags (`deck_customer_concentration`,
+    `deck_runway_crunch`, `deck_founder_departure_ip`), each of which states its
+    risk as arithmetic rather than as a term of art.
+
+    The number to watch is NOT recall. It is the false-positive rate on the 13
+    deliberately hard risk-free negatives -- safe-harbour paragraphs, ASC 606
+    notes, a critical audit matter -- because a detector that flags everything
+    scores perfect recall and is worthless on documents that are mostly hedged
+    legal prose.
+    """
+    from agents.deck_financials import deck_risk_signals
+    from agents.risk_detector import detect_signals
+
+    signals = detect_signals(row["text"])
+    deck = deck_risk_signals(row["text"])
+    for entry in deck:
+        signals.setdefault(entry["category"], []).append({
+            "signal": entry["signal"], "context": entry["context"],
+        })
+
+    total = sum(len(v) for v in signals.values())
+    return bool(signals), sorted(signals), {
+        "signals": {category: [s["signal"] for s in hits] for category, hits in signals.items()},
+        "total_signals": total,
+        "score": float(total),
+        "deck_signals": [entry["signal"] for entry in deck],
+    }
+
+
 _tone_state: dict[str, Any] | None = None
 
 
@@ -236,6 +273,7 @@ def detector_llm_high_only(row: dict[str, Any]) -> tuple[bool, list[str], dict[s
 
 DETECTORS: dict[str, Callable[[dict[str, Any]], tuple[bool, list[str], dict[str, Any]]]] = {
     "keyword": detector_keyword,
+    "keyword_plus_financials": detector_keyword_plus_financials,
     "tone_model": detector_tone_model,
     "llm_medium_plus": detector_llm_medium_plus,
     "llm_high_only": detector_llm_high_only,

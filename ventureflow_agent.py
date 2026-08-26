@@ -14,6 +14,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import json
+import re
 from agents.claim_verifier import verify_claim
 from agents.risk_detector import score_risk
 from agents.investment_agents import run_investment_agents
@@ -115,6 +116,36 @@ NEEDS MORE DILIGENCE. The available evidence is not strong enough for an investm
 
 9. CONFIDENCE LEVEL
 {min(75, max(20, quality.get('score', 50)))}%. Confidence is constrained by data quality and the number of independently verified claims.{error_note}"""
+
+_YEAR_RE = re.compile(r"(19[89]\d|20[0-4]\d)")
+
+
+def _infer_deck_vintage(text: str) -> str:
+    """Best guess at when a deck was written, or "" if there is no basis.
+
+    Deliberately weak and deliberately conservative. It returns a year only when
+    one is actually printed in the deck, prefers the LATEST year that is not in
+    the future (a deck is written at least as late as the most recent year it
+    cites), and ignores forward-looking projections, which is why the pattern
+    stops at 2049 but the caller filters to <= the current year.
+
+    Returning "" is a perfectly good outcome: the judge's prompt already assumes
+    an undated point-in-time metric describes the past rather than today, so an
+    absent vintage weakens the guard without inverting it. Guessing a year would
+    be worse than not knowing one -- a wrong `as_of` would license exactly the
+    confident-but-wrong REFUTES this exists to prevent.
+    """
+    import datetime
+
+    if not text:
+        return ""
+    current_year = datetime.date.today().year
+    years = [int(y) for y in _YEAR_RE.findall(text)]
+    plausible = [y for y in years if 1995 <= y <= current_year]
+    if not plausible:
+        return ""
+    return str(max(plausible))
+
 
 def assess_data_quality(
     claims_to_verify: list,
@@ -254,16 +285,17 @@ def _coerce_number(value: object, default: float) -> float:
     return default
 
 
-def _evidence_penalty(
+def _evidence_components(
     refuted: int,
     supported: int,
     n_claims: int,
     risk_score: float,
     has_revenue: bool,
     quality_score: float,
-) -> float:
+    specialist_confidences: list[float] | None = None,
+) -> dict[str, float]:
     """How much this report's own verified evidence should pull the model's
-    prior down, as a probability delta in [0, 1].
+    prior down, broken out per term so the report can show its work.
 
     The VentureFlow Score model is trained on company characteristics and has
     never read this deck. Claim verification, risk detection and data quality
@@ -288,17 +320,82 @@ def _evidence_penalty(
     risk_score = _coerce_number(risk_score, 30)
     quality_score = _coerce_number(quality_score, 50)
 
-    penalty = 0.0
-    penalty += min(0.30, refuted * 0.10)          # each refuted claim is direct negative evidence
-    if n_claims == 0:
-        penalty += 0.12                            # nothing was verifiable at all
-    elif supported == 0:
-        penalty += 0.06                            # claims existed but none checked out
-    penalty += max(0.0, min(0.20, (risk_score / 100.0) * 0.20))
-    if not has_revenue:
-        penalty += 0.05
-    penalty += max(-0.05, min(0.05, (50.0 - quality_score) / 500.0))
-    return max(0.0, min(0.60, penalty))
+    components: dict[str, float] = {}
+
+    # Each refuted claim is direct negative evidence about this company.
+    components["refuted_claims"] = min(0.30, refuted * 0.10)
+
+    # How much checkable evidence the deck offered at all, graded rather than
+    # stepped. This used to be a flat +0.12 at n_claims == 0 and nothing at
+    # n_claims == 1, which meant a deck with a single throwaway claim was
+    # treated as materially better evidenced than one with none. The endpoints
+    # are unchanged (0 claims still costs 0.12) so prior reports stay
+    # comparable; what changed is that 1 and 2 now sit between the endpoints
+    # instead of falling off a step.
+    components["claim_sparsity"] = round(
+        max(0.0, min(1.0, (3 - n_claims) / 3.0)) * 0.12, 4
+    )
+
+    # Of the claims that *were* checked, how many survived. Also graded: the
+    # old rule fired only when supported == 0, so 1-of-8 supported and 8-of-8
+    # supported were scored identically.
+    if n_claims > 0:
+        unsupported_fraction = max(0.0, min(1.0, 1.0 - (supported / float(n_claims))))
+        components["claims_unsupported"] = round(unsupported_fraction * 0.10, 4)
+    else:
+        components["claims_unsupported"] = 0.0
+
+    # What the specialist agents actually concluded, when they concluded
+    # anything. Degraded agents are excluded by the caller: an agent that never
+    # ran is not an agent that judged the company harshly, and conflating those
+    # two is the exact defect this whole pass exists to remove. When every
+    # specialist was degraded this term is 0.0 and the report says so
+    # separately via `provider_degraded`.
+    answered = [_coerce_confidence(c) for c in (specialist_confidences or []) if c is not None]
+    if answered:
+        mean_confidence = sum(answered) / len(answered)
+        components["specialist_uncertainty"] = round(
+            max(0.0, min(1.0, 1.0 - mean_confidence)) * 0.15, 4
+        )
+    else:
+        components["specialist_uncertainty"] = 0.0
+
+    components["risk_signals"] = round(max(0.0, min(0.20, (risk_score / 100.0) * 0.20)), 4)
+    components["no_revenue"] = 0.0 if has_revenue else 0.05
+    components["data_quality"] = round(
+        max(-0.05, min(0.05, (50.0 - quality_score) / 500.0)), 4
+    )
+    return components
+
+
+def _evidence_penalty(
+    refuted: int,
+    supported: int,
+    n_claims: int,
+    risk_score: float,
+    has_revenue: bool,
+    quality_score: float,
+    specialist_confidences: list[float] | None = None,
+) -> float:
+    """Total evidence adjustment, as a probability delta in [0, 0.60].
+
+    See `_evidence_components` for the per-term rationale. The 0.60 bound is a
+    deliberate ceiling on how far this report's own evidence may move a trained
+    model's prior -- 60 points is already an enormous deduction -- but it is a
+    *bound*, not a target: the distribution of realised penalties across stored
+    reports is checked in `ml/scripts/check_score_distribution.py` precisely so
+    that a pile-up at the ceiling would be visible rather than silent. That is
+    the failure mode the removed hard cap had.
+    """
+    total = sum(
+        _evidence_components(
+            refuted=refuted, supported=supported, n_claims=n_claims,
+            risk_score=risk_score, has_revenue=has_revenue,
+            quality_score=quality_score,
+            specialist_confidences=specialist_confidences,
+        ).values()
+    )
+    return max(0.0, min(0.60, total))
 
 
 def _legacy_formula_score(
@@ -345,6 +442,7 @@ def run_due_diligence(
     team_size:            int  = None,
     github_url:            str  = None,
     founders:             list = None,
+    deck_date:            str  = "",
     on_stage=None,
 ) -> dict:
 
@@ -400,7 +498,21 @@ def run_due_diligence(
     if claims_to_verify:
         for claim in claims_to_verify[:5]:
             try:
-                result = verify_claim(claim, verbose=True)
+                # The company name and deck context are what make a deck claim
+                # searchable at all. Without them "Seed round target is $8M" is
+                # a generic string, and retrieval returns generic pages -- see
+                # the worked example in agents/claim_verifier.build_queries.
+                result = verify_claim(
+                    claim,
+                    verbose=True,
+                    company=company_name,
+                    context=(company_description or "")[:600],
+                    # The deck's vintage. Without it the verifier judges a 2011
+                    # metric against 2026 evidence and calls growth a lie -- see
+                    # the four wrong REFUTES documented in
+                    # agents/claim_verifier.groq_judge.
+                    as_of=deck_date or _infer_deck_vintage(filing_text or company_description),
+                )
             except Exception:
                 logger.exception("Claim verification failed")
                 result = {
@@ -412,6 +524,8 @@ def run_due_diligence(
                     "sources": [],
                     "total_sources": 0,
                     "full_pages_read": 0,
+                    "_degraded": True,
+                    "_degraded_reason": "claim verification raised",
                 }
             claim_results.append(result)
 
@@ -449,6 +563,8 @@ def run_due_diligence(
             "ai_reasoning": "Risk analysis unavailable.",
             "red_flags": [],
             "total_signals": 0,
+            "_degraded": True,
+            "_degraded_reason": "risk analysis raised",
         }
     risk_result["risk_level"] = risk_result.get("risk_level") or risk_result.get("overall_risk_level") or "UNKNOWN"
     risk_result["overall_score"] = _coerce_number(risk_result.get("overall_score"), 30)
@@ -457,6 +573,45 @@ def run_due_diligence(
     risk_result["red_flags"] = risk_result.get("red_flags") or []
     risk_result["total_signals"] = risk_result.get("total_signals", 0)
     report["sections"]["risk"] = risk_result
+
+    # ── Financial state, computed deterministically from the deck ────────
+    #
+    # agents/deck_financials parses the quantities out of the deck and computes
+    # the relationships between them -- runway, burn multiple, customer
+    # concentration, growth. It runs inside score_risk, so the numbers arrive on
+    # `risk_result`; they are lifted onto the report here because they are a
+    # first-class finding about the company, not a by-product of risk scoring.
+    #
+    # It also BACKFILLS the three financial inputs. Those used to come solely
+    # from the LLM structured extractor, which returns null whenever it does not
+    # notice a figure or the provider is down -- so a deck that plainly states
+    # $410K monthly burn against $1.1M cash could reach the scorer with no
+    # financials at all, and be penalised for "no revenue data" on a page full
+    # of it. Backfill is only ever additive: a value the caller supplied is
+    # never overwritten, and every backfilled figure records that it was
+    # derived rather than given.
+    financial_state = risk_result.get("financial_state") or {}
+    report["sections"]["financial_state"] = financial_state
+    backfilled = []
+    if not revenue and financial_state.get("annual_revenue"):
+        revenue = float(financial_state["annual_revenue"])
+        backfilled.append("revenue")
+    if not burn_rate and financial_state.get("monthly_burn"):
+        burn_rate = float(financial_state["monthly_burn"])
+        backfilled.append("burn_rate")
+    if not runway_months and financial_state.get("runway_months"):
+        runway_months = float(financial_state["runway_months"])
+        backfilled.append("runway_months")
+    report["sections"]["financials_backfilled_from_deck"] = backfilled
+    if backfilled:
+        print(f"  Financial state read from the deck: {', '.join(backfilled)}")
+
+    # Data quality was assessed before any of this existed, on the caller's
+    # inputs alone. Re-assess once, so a deck whose financials were recovered
+    # from its own text is not still marked down for not having them.
+    if backfilled:
+        quality = assess_data_quality(claims_to_verify, company_description, filing_text, revenue)
+        report["data_quality"] = quality
 
     # ── Founder/team verification — additive, evidence-grounded ──
     #
@@ -589,6 +744,42 @@ def run_due_diligence(
     risk_level = risk_result.get("risk_level") or risk_result.get("overall_risk_level") or "MEDIUM"
     risk_score = _coerce_number(risk_result.get("overall_score"), 30)
 
+    # The memo must be told the company's financial position explicitly, with
+    # provenance. Left implicit, the LLM either omits runway entirely or invents
+    # a figure -- and an invented runway is the most consequential hallucination
+    # this product could ship.
+    state_lines = []
+    for key, label in (
+        ("annual_revenue", "Annual revenue"), ("mrr", "MRR"), ("arr", "ARR"),
+        ("monthly_burn", "Monthly burn"), ("cash_on_hand", "Cash on hand"),
+        ("runway_months", "Runway (months)"), ("burn_multiple", "Burn multiple"),
+        ("largest_customer_share", "Largest customer share of revenue"),
+        ("growth_multiple", "Revenue growth multiple"),
+    ):
+        value = (risk_result.get("financial_state") or {}).get(key)
+        if value is None:
+            continue
+        if key == "largest_customer_share":
+            state_lines.append(f"  {label}: {value:.0%}")
+        elif key in ("burn_multiple", "growth_multiple", "runway_months"):
+            state_lines.append(f"  {label}: {value:g}")
+        else:
+            state_lines.append(f"  {label}: ${value:,.0f}")
+    source = (risk_result.get("financial_state") or {}).get("runway_source")
+    if state_lines:
+        financial_state_str = (
+            "FINANCIAL STATE (computed deterministically from the deck text, not by an LLM):\n"
+            + "\n".join(state_lines)
+            + (f"\n  Runway basis: {source}" if source else "")
+            + "\n  These figures are parsed from the deck and each carries the sentence it "
+              "came from. Treat them as stated-by-the-founder, not as independently verified.\n"
+        )
+    else:
+        financial_state_str = (
+            "FINANCIAL STATE: no financial quantities could be parsed from the deck text. "
+            "Do NOT estimate revenue, burn or runway -- say they were not disclosed.\n"
+        )
+
     risk_str = (
         f"RISK ANALYSIS:\n"
         f"  Level: {risk_level} "
@@ -606,14 +797,96 @@ def run_due_diligence(
     # the number is handed to the LLM as a fact to explain. If this block is
     # ever moved back below the synthesis call, the product silently reverts
     # to LLM-authored scoring.
-    evidence_penalty = _evidence_penalty(
+    specialist_confidences = [
+        _coerce_confidence(result.get("confidence", 0))
+        for result in specialist_results.values()
+        if isinstance(result, dict)
+    ]
+    all_specialists_failed = bool(specialist_confidences) and all(
+        confidence <= 0 for confidence in specialist_confidences
+    )
+
+    # Infrastructure failure is not a judgement about the company.
+    #
+    # This is the single most damaging defect this product has had. Measured
+    # across 40 stored reports: 25 were score-capped, and 19 of those were
+    # capped purely because Groq returned 429 to all four specialist agents.
+    # The result was that 18 of 40 different startups scored an identical
+    # 30/100 with an identical recommendation -- a due-diligence tool that
+    # could not tell two decks apart, because an exhausted API quota was being
+    # reported as a verdict.
+    #
+    # The VentureFlow Score does not read the specialists at all. It scores
+    # company characteristics, and on 150 real YC companies it has a healthy
+    # spread (8-86, sd 24.3, 50 distinct values across 150). When the LLM layer
+    # falls over, that number is still the best estimate available and should
+    # survive; what degrades is the *narrative*, not the score.
+    #
+    # So the cap is now reserved for the one case where the product genuinely
+    # knows nothing about the company: no readable deck text at all. Everything
+    # else is reported as degraded -- visibly, with the reason -- while keeping
+    # the model's number and blocking a decisive INVEST/PASS.
+    degraded_components = [
+        {"component": name, "reason": result.get("_degraded_reason", "unknown")}
+        for name, result in specialist_results.items()
+        if isinstance(result, dict) and result.get("_degraded")
+    ]
+    # Detected on an explicit flag, never on the wording of a message.
+    #
+    # This block previously string-compared `reasoning` against "Claim
+    # verification is temporarily unavailable." -- and there are TWO fallback
+    # sites for a failed claim check, one here in the pipeline and one inside
+    # agents/claim_verifier, wording it "was" and "is" respectively. Only the
+    # "is" variant matched, so a claim that failed via the pipeline's own
+    # exception handler was recorded at confidence 0.0 with `provider_degraded`
+    # left False.
+    #
+    # Caught on the very first real deck run: Airbnb's "There are 10.6M trips
+    # booked worldwide" came back "Claim verification was temporarily
+    # unavailable" at confidence 0.0, and the report declared itself
+    # not degraded. That is the original constant-score defect wearing a
+    # different hat -- an infrastructure failure being counted as a finding
+    # about the company -- reintroduced by matching on prose. The risk branch
+    # had the same fault: it looked for "Error in analysis" while the
+    # pipeline's own fallback writes "Risk analysis unavailable."
+    for result in claim_results:
+        if isinstance(result, dict) and result.get("_degraded"):
+            degraded_components.append({
+                "component": "claim_verification",
+                "reason": result.get("_degraded_reason", "provider unavailable"),
+            })
+            break
+    if risk_result.get("_degraded"):
+        degraded_components.append({
+            "component": "risk_analysis",
+            "reason": risk_result.get("_degraded_reason", "provider unavailable"),
+        })
+    provider_degraded = bool(degraded_components)
+
+    # Only the specialists that actually answered may push the score down. An
+    # agent that never ran has expressed no opinion about the company, and
+    # feeding its zero into the evidence term would resurrect -- quietly, and
+    # in a harder place to see -- the exact confusion the marker above exists
+    # to remove.
+    answering_confidences = [
+        _coerce_confidence(result.get("confidence", 0))
+        for result in specialist_results.values()
+        if isinstance(result, dict) and not result.get("_degraded")
+    ]
+
+    evidence_components = _evidence_components(
         refuted=refuted,
         supported=supported,
         n_claims=len(claim_results),
         risk_score=risk_score,
         has_revenue=bool(revenue),
         quality_score=quality["score"],
+        specialist_confidences=answering_confidences,
     )
+    evidence_penalty = max(0.0, min(0.60, sum(evidence_components.values())))
+    report["sections"]["evidence_components"] = {
+        name: round(value, 4) for name, value in evidence_components.items()
+    }
     try:
         from ml.venturescore import blend_with_evidence, score_company as _venture_score
         venture_score_result = _venture_score(
@@ -679,6 +952,8 @@ COMPANY DESCRIPTION:
 {claims_str}
 
 {risk_str}
+
+{financial_state_str}
 
 {quality_str}
 
@@ -780,14 +1055,6 @@ If data quality is LOW, confidence must be below 60%.
     # back to a worse-but-working score is correct here; failing the whole
     # report because a model file is absent is not, and would break the
     # degradation contract every other optional signal in this file follows.
-    specialist_confidences = [
-        _coerce_confidence(result.get("confidence", 0))
-        for result in specialist_results.values()
-        if isinstance(result, dict)
-    ]
-    all_specialists_failed = bool(specialist_confidences) and all(
-        confidence <= 0 for confidence in specialist_confidences
-    )
 
     # "Nothing could be corroborated" and "the analysis did not run" are
     # different things, and conflating them made the product useless on the
@@ -805,14 +1072,38 @@ If data quality is LOW, confidence must be below 60%.
     # computed and then discarded every time. A due-diligence tool that
     # cannot rank one seed deck above another is not doing its job.
     #
-    # The cap is therefore reserved for a genuine pipeline failure -- the
-    # specialists all errored, or no claim was extractable at all. Claims that
-    # were checked but could not be verified are reported as exactly that:
-    # an honest confidence signal, already priced into the score through
-    # _evidence_penalty() and reflected in the model's own confidence label,
-    # and still blocked from producing an INVEST verdict by the `supported < 2`
-    # rule below. Nothing here lets an unverified deck look verified.
-    analysis_failed = all_specialists_failed or not claim_results
+    # `analysis_failed` now means exactly one thing: the product had no usable
+    # input about this company -- no readable deck text at all, so there is
+    # literally nothing to score and the honest output is a floor plus a
+    # warning. Two things it deliberately no longer means:
+    #
+    #   1. "The LLM was down." That is `provider_degraded`, reported
+    #      separately, and it no longer flattens the score.
+    #   2. "The deck was thin." A content-free deck is a real and important
+    #      signal, but it is a *graded* one and it is now priced through
+    #      `_evidence_components()` -- specialist_uncertainty, claim_sparsity
+    #      and claims_unsupported all rise smoothly as the deck says less.
+    #
+    # Point 2 is the part worth being careful about, because the obvious fix
+    # to the constant-30 bug was to keep the cap and merely narrow when it
+    # fires. That would have been the same defect with a smaller blast radius:
+    # any hard cap maps a range of genuinely different decks onto one identical
+    # number, which is precisely the behaviour that made 18 of 40 stored
+    # reports read 30.0. A thin deck should therefore *fall*, not *snap*.
+    #
+    # What still holds the line on honesty: a thin deck cannot reach INVEST,
+    # because `supported < 2` and the model's own low-confidence flag both
+    # force NEEDS MORE DILIGENCE independently of the number.
+    no_usable_input = not (risk_text or "").strip()
+    analysis_failed = no_usable_input
+
+    # Retained as a reported signal rather than a score lever. It is genuinely
+    # interesting to a reader that every specialist that actually ran returned
+    # zero confidence, and it is already priced into the score smoothly above.
+    thin_evidence = (
+        all_specialists_failed and not provider_degraded
+    ) or not claim_results
+
     claims_unverified = bool(claim_results) and all(
         result.get("verdict") == "NOT_ENOUGH_INFO" for result in claim_results
     )
@@ -828,10 +1119,17 @@ If data quality is LOW, confidence must be below 60%.
         )
         score_source = "legacy_formula_fallback"
 
+    # The ONLY surviving hard floor, and only for the one case where the
+    # product genuinely knows nothing: there was no readable text. Anything
+    # else keeps the model's number.
     if incomplete_analysis:
         final_score = min(final_score, 30)
 
-    if incomplete_analysis or len(claim_results) == 0 or supported < 2 or quality["quality"] == "LOW":
+    # A degraded run keeps the model's number -- the model did its job -- but is
+    # never allowed to produce a decisive verdict, and says so on the report.
+    if (provider_degraded or incomplete_analysis or thin_evidence
+            or len(claim_results) == 0 or supported < 2
+            or quality["quality"] == "LOW"):
         recommendation = "NEEDS MORE DILIGENCE"
     elif final_score >= 75 and refuted == 0:
         recommendation = "INVEST"
@@ -856,6 +1154,18 @@ If data quality is LOW, confidence must be below 60%.
     # is a finding a VC should see stated plainly; "our pipeline broke" is a
     # different message entirely.
     report["claims_unverified"] = claims_unverified
+    # Third, distinct state: the pipeline ran and the model scored the company,
+    # but one or more LLM-backed components could not be reached. The score
+    # stands (the model never depended on them); the narrative around it is
+    # thinner, and the report says which parts and why rather than silently
+    # presenting a diminished analysis as a complete one.
+    report["provider_degraded"] = provider_degraded
+    report["degraded_components"] = degraded_components
+    # Fourth state, and the one that replaced the hard cap: the pipeline ran
+    # fine and the company simply gave it very little to work with. Graded into
+    # the score, reported as a flag, and blocked from a decisive verdict.
+    report["thin_evidence"] = thin_evidence
+    report["evidence_penalty"] = round(evidence_penalty, 4)
 
     # ── Firm-personalization ranking — mechanism, not yet active ─
     # See ml/personalization.py: this stays unavailable, honestly, until

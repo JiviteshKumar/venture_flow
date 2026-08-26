@@ -1,0 +1,328 @@
+[
+  {
+    "company": "Buffer",
+    "source_url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
+    "sha256": "ac2d84ea4a340b6c96f5a02f066febd2c0a11c4cbc66e07d8ab00423f7805295",
+    "extracted_chars": 2012,
+    "extraction_method": "llm_schema",
+    "elapsed_s": 179.7,
+    "claims_extracted": [
+      "800 Paying Users",
+      "$150,000 annual revenue run rate",
+      "97% margins"
+    ],
+    "revenue": 3600000.0,
+    "founders": [],
+    "final_score": 29.0,
+    "score_source": "venturescore_model",
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "LOW",
+    "incomplete_analysis": false,
+    "thin_evidence": false,
+    "provider_degraded": false,
+    "degraded_components": [],
+    "evidence_penalty": 0.2198,
+    "evidence_components": {
+      "refuted_claims": 0.1,
+      "claim_sparsity": 0.0,
+      "claims_unsupported": 0.0667,
+      "specialist_uncertainty": 0.0731,
+      "risk_signals": 0.03,
+      "no_revenue": 0.0,
+      "data_quality": -0.05
+    },
+    "venture_score": {
+      "available": true,
+      "venture_score": 29,
+      "score_range": [
+        20,
+        37
+      ],
+      "probability_exit_or_survive": 0.2875,
+      "confidence": "medium",
+      "ensemble_std": 0.0564,
+      "feature_coverage": 0.625,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0181,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 51,
+      "evidence_penalty": 0.2198
+    },
+    "claim_results": [
+      {
+        "claim": "800 Paying Users",
+        "verdict": "REFUTES",
+        "confidence": 0.97,
+        "reasoning": "The evidence indicates Buffer has over 70,000 paying customers, which far exceeds the claim of only 800 paying users.",
+        "sources": [
+          "https://buffer.com/pricing",
+          "https://buffer.com/",
+          "https://postplanify.com/buffer-pricing",
+          "https://socialk.it/en/reviews/buffer",
+          "https://getlatka.com/companies/buffer"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "$150,000 annual revenue run rate",
+        "verdict": "SUPPORTS",
+        "confidence": 0.96,
+        "reasoning": "Multiple sources describing Buffer's seed pitch deck state that the company had 800 paying users and a $150,000 annual revenue run rate. This directly confirms the claim that the annual revenue run rate was $150,000.",
+        "sources": [
+          "https://www.pitchdeckinspo.com/deck/Buffer_d9872513-69b6-4438-87ab-02d2664c38a1/slides",
+          "https://www.failory.com/pitch-deck/buffer",
+          "https://www.slideshare.net/slideshow/bufferpdf/255904001",
+          "https://nen.wfglobal.org/highlights/buffer-pitch-deck-traction-metrics-629166",
+          "https://www.scribd.com/doc/248969485/Buffer-Seed-Round-Deck"
+        ],
+        "total_sources": 5,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "97% margins",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.6,
+        "reasoning": "The provided sources discuss MySQL key efficiency percentages (97%\u201399%) and buffer usage, but none address profit or financial margins. Therefore, there is no direct evidence to confirm or refute the claim of \"97% margins.\"",
+        "sources": [
+          "https://www.blackrock.com/us/individual/products/332307/ishares-large-cap-deep-buffer-etf",
+          "https://www.ftportfolios.com/Retail/Etf/EtfSummary.aspx?Ticker=QMAR",
+          "https://dba.stackexchange.com/questions/116823/inno-db-buffer-pool-size-and-key-efficiency",
+          "https://www.myaccountingcourse.com/financial-ratios/margin-of-safety",
+          "https://fastercapital.com/content/Margin-of-Safety-Analysis--How-to-Calculate-and-Interpret-the-Margin-of-Safety-for-Your-Business.html"
+        ],
+        "total_sources": 14,
+        "sources_dropped": 2,
+        "dropped_sources": [
+          {
+            "url": "https://thefinancialpen.substack.com/p/97-margins-55-yield-and-a-hidden",
+            "reason": "off-topic (embedding similarity 0.115 < 0.120)"
+          },
+          {
+            "url": "https://247wallst.com/investing/2026/01/15/one-rare-disease-biotech-posts-97-margins-but-the-faster-growing-rival-just-turned-its-first-profit/",
+            "reason": "off-topic (embedding similarity 0.071 < 0.120)"
+          }
+        ]
+      }
+    ],
+    "risk": {
+      "overall_risk_level": "LOW",
+      "overall_score": 15.0,
+      "key_concerns": [],
+      "positive_factors": [
+        "High gross margin (97%)",
+        "Rapid user growth (40% month\u2011over\u2011month)",
+        "Diversified product integrations"
+      ],
+      "ai_reasoning": "The document shows strong financial metrics, high margins, and fast user growth with no disclosed adverse events such as cash\u2011runway constraints, customer concentration, founder turnover, IP disputes, or regulatory issues. Competition is mentioned but no specific threat is detailed, resulting in a low overall risk profile.",
+      "red_flags": [],
+      "risk_level": "LOW",
+      "total_signals": 3
+    },
+    "claims_summary": {
+      "checked": 3,
+      "supported": 1,
+      "refuted": 1,
+      "uncertain": 1,
+      "reliability_note": "MEDIUM \u2014 some claims unverified"
+    },
+    "memo": "**Investment Memo \u2013 Buffer (Social\u2011Media Scheduling Platform)**  \n\n---\n\n### 1. EXECUTIVE SUMMARY  \nBuffer offers a freemium social\u2011media scheduling tool that lets users queue posts and drive traffic. The data package contains **only one verified traction metric** (a $150\u202fk annual revenue run\u2011rate) and several refuted or unverified claims, resulting in a **low\u2011confidence** view of the opportunity.  \n\n**Confidence level:** **Low** (see section\u202f9).  \n\n---\n\n### 1b. WHAT DRIVES THE VENTUREFLOW SCORE  \n- **Base model score:** 51\u202f/\u202f100 (derived from historical patterns of comparable SaaS firms).  \n- **Evidence adjustment:** \u201322 points, reflecting:  \n  * Refuted claim that Buffer has only **800 paying users** (actual evidence points to **>70\u202fk paying customers**).  \n  * Unverified gross\u2011margin claim (97\u202f%).  \n  * Missing key financials (burn, runway) and limited verified traction.  \n- **Final score:** **29\u202f/\u202f100** (range 20\u201137).  \n- **Model confidence:** *Medium* (feature coverage 62\u202f%, ensemble spread 0.056).  \n\n**Interpretation for investors:** The model\u2019s baseline suggests a mid\u2011range SaaS prospect, but the evidence adjustment drags the score sharply downward because the most critical traction and unit\u2011economics data are either refuted or absent. The medium confidence rating means the score should be treated as a **cautionary indicator**, not a definitive verdict.\n\n---\n\n### 2. CLAIM VERIFICATION ANALYSIS  \n\n| Claim | Verification Outcome | Evidence (EVIDENCED) | Confidence | Comment (UNCERTAIN / Refuted) |\n|-------|----------------------|----------------------|------------|--------------------------------|\n| **\u201c800 Paying Users\u201d** | **REFUTED** | Sources (15) show **>70,000 paying customers** at ~$25\u202fARPU. | 97\u202f% | The original claim is contradicted by external data. |\n| **\u201c$150,000 annual revenue run\u2011rate\u201d** | **VERIFIED** | Sources (5) confirm Buffer reports a $150\u202fk ARR and rapid user growth (55\u202fk users, +40\u202f% MoM). | 96\u202f% | Supported by external references. |\n| **\u201c97\u202f% gross margins\u201d** | **UNVERIFIED** | Sources (14) mention \u201cefficiency between 97\u202f% and 99\u202f% before the change,\u201d but no concrete margin breakdown. | 60\u202f% | No independent verification; treated as **UNCERTAIN**. |\n\n*Only one claim is verified; the rest are either refuted or lack sufficient corroboration.*\n\n---\n\n### 3. RISK ASSESSMENT  \n\n| Risk Level | Description | Evidence |\n|------------|-------------|----------|\n| **HIGH** | **Paying\u2011user count uncertainty** \u2013 the 800\u2011user claim is refuted; actual paid base is unknown. | Refuted claim (70\u202fk+ paying customers). |\n| **HIGH** | **Margin uncertainty** \u2013 97\u202f% gross\u2011margin claim is unverified. | Unverified claim (no third\u2011party cost breakdown). |\n| **MEDIUM** | **Missing cash\u2011flow metrics** \u2013 monthly burn and runway are not disclosed, preventing runway analysis. | \u201cMonthly Burn: Not provided; Runway: Not provided.\u201d |\n| **MEDIUM** | **Founder/Team background gaps** \u2013 no independent verification of founders\u2019 experience or roles. | Specialist analysis notes \u201cNo independent founder background information.\u201d |\n| **LOW** | **Competitive landscape** \u2013 competitors are listed (e.g., Hootsuite, TweetDeck) but no detailed threat assessment. | Competition section in specialist analysis. |\n| **LOW** | **Regulatory / IP risk** \u2013 no adverse events reported. | Risk analysis: \u201cNone identified.\u201d |\n\n---\n\n### 4. FINANCIAL ANALYSIS  \n\n| Metric | Value | Verification | Comment |\n|--------|-------|---------------|---------|\n| **Annual Revenue** | **$3,600,000** | **EVIDENCED** (provided in the data set). | No external source to corroborate; taken at face value. |\n| **Annual Revenue Run\u2011Rate** | **$150,000** | **EVIDENCED** (verified claim). | Appears inconsistent with the $3.6\u202fM annual figure; discrepancy not explained. |\n| **Monthly Burn** | **Insufficient data** | \u2013 | Not disclosed. |\n| **Runway** | **Insufficient data** | \u2013 | Not disclosed. |\n| **Gross Margin** | **97\u202f% (claimed)** | **UNCERTAIN** (unverified). | No cost breakdown provided. |\n| **Paying Users** | **>70,000 (external estimate)** | **EVIDENCED** (refutes 800\u2011user claim). | Exact number and ARPU not independently confirmed. |\n\n*The financial picture is fragmented: a verified $150\u202fk ARR conflicts with the disclosed $3.6\u202fM total revenue, and key cash\u2011flow metrics are missing.*\n\n---\n\n### 5. COMPARABLE COMPANIES (Database)  \n\nThe internal financial database does **not contain directly comparable social\u2011media scheduling SaaS firms**. The only listed peers are unrelated verticals (e.g., Thornbury Freight, Signalcraft, ComplyForge). Consequently, **no benchmark SaaS metrics** (ARR multiples, churn, CAC) can be drawn from comparable companies for Buffer.\n\n---\n\n### 6. RED FLAGS  \n\n- Refuted paying\u2011user count (800\u202fvs\u202f>70\u202fk).  \n- Unverified gross\u2011margin claim (97\u202f%).  \n- Absence of monthly burn and runway data.  \n- No independent verification of founder backgrounds.  \n- Inconsistent revenue figures ($150\u202fk ARR vs $3.6\u202fM annual revenue).  \n- Fewer than **two verified traction claims** (only one verified).  \n\n---\n\n### 7. GREEN FLAGS / POSITIVE SIGNALS  \n\n- **Verified revenue run\u2011rate** of $150\u202fk (external confirmation).  \n- **Rapid user growth claim** (55\u202fk users, +40\u202f% MoM) \u2013 though unverified, it is documented in the deck.  \n- **Freemium business model** that typically yields high gross margins (claimed 97\u202f%).  \n- **Product integrations** (six integrations, talks with Reeder, Pocket, Feedly) \u2013 indicates ecosystem traction.  \n- **Advisory board** includes recognized figures (Guy Kawasaki, Hiten Shah).  \n\n---\n\n### 8. FINAL VERDICT  \n\n**NEEDS MORE DILIGENCE**  \n\nThe limited verified traction, contradictory revenue numbers, and unsubstantiated unit\u2011economics create material uncertainty. Additional data (paid\u2011user count, margin breakdown, cash\u2011flow metrics, founder vetting) is required before an investment decision can be made.\n\n---\n\n### 9. CONFIDENCE LEVEL  \n\n**45\u202f%**  \n\n*Rationale:* Only **one** of the three key claims is verified, and critical financial and team data are missing or contradictory. While the data quality flag is \u201cHIGH,\u201d the paucity of corroborated information forces a **low\u2011to\u2011moderate confidence** rating.",
+    "ran_at": "2026-08-26T20:15:23Z"
+  },
+  {
+    "company": "Coinbase",
+    "source_url": "https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf",
+    "sha256": "727940dd43cd846c922d2c06c3c2ce476079cac939f63081edfb364a89e59caa",
+    "extracted_chars": 635,
+    "extraction_method": "llm_schema",
+    "elapsed_s": 217.7,
+    "claims_extracted": [
+      "$2 million USD per day in transaction volume",
+      "Coinbase Signups 20% Daily",
+      "$65,000 USD in the first 5 weeks",
+      "No Transaction Fees"
+    ],
+    "revenue": null,
+    "founders": [],
+    "final_score": 22.0,
+    "score_source": "venturescore_model",
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "LOW",
+    "incomplete_analysis": false,
+    "thin_evidence": false,
+    "provider_degraded": false,
+    "degraded_components": [],
+    "evidence_penalty": 0.3155,
+    "evidence_components": {
+      "refuted_claims": 0.1,
+      "claim_sparsity": 0.0,
+      "claims_unsupported": 0.075,
+      "specialist_uncertainty": 0.1005,
+      "risk_signals": 0.04,
+      "no_revenue": 0.05,
+      "data_quality": -0.05
+    },
+    "venture_score": {
+      "available": true,
+      "venture_score": 22,
+      "score_range": [
+        10,
+        30
+      ],
+      "probability_exit_or_survive": 0.2168,
+      "confidence": "medium",
+      "ensemble_std": 0.0653,
+      "feature_coverage": 0.625,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.043,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 53,
+      "evidence_penalty": 0.3155
+    },
+    "claim_results": [
+      {
+        "claim": "$2 million USD per day in transaction volume",
+        "verdict": "REFUTES",
+        "confidence": 0.96,
+        "reasoning": "The provided evidence shows that Coinbase\u2019s daily trading volume is on the order of hundreds of millions of dollars (e.g., $751,738,708.86 in 24\u2011hour volume), which is far greater than the claimed $2\u202fmillion per day. Therefore, the claim of only $2\u202fmillion USD per day is inconsistent with the documented figures.",
+        "sources": [
+          "https://www.coingecko.com/en/exchanges/coinbase-exchange",
+          "https://www.businessofapps.com/data/coinbase-statistics/",
+          "https://backlinko.com/coinbase-users",
+          "https://investingintheweb.com/brokers/coinbase-statistics/",
+          "https://coinmarketcap.com/exchanges/coinbase-exchange/"
+        ],
+        "total_sources": 11,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "Coinbase Signups 20% Daily",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.85,
+        "reasoning": "The provided evidence discusses Coinbase's products, promotional bonuses, and referral programs, but none of the snippets contain data or statements about a 20% daily increase in sign\u2011ups. Without explicit information on signup growth rates, the claim cannot be confirmed or refuted.",
+        "sources": [
+          "https://www.coinbase.com/one",
+          "https://www.coinbase.com/",
+          "https://help.coinbase.com/coinbase/getting-started/getting-started-with-coinbase/new-customer-incentive",
+          "https://www.finder.com/cryptocurrency/coinbase-bonus",
+          "https://techjury.net/crypto-coupons/coinbase/"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "$65,000 USD in the first 5 weeks",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.8,
+        "reasoning": "The provided evidence shows Bitcoin reaching $65,000 in July and June 2026, but none of the sources mention achieving that price within a \"first 5 weeks\" timeframe, so the claim cannot be confirmed or refuted.",
+        "sources": [
+          "https://finance.yahoo.com/markets/crypto/articles/bitcoin-reclaims-65-000-btc-192838099.html?fr=sycsrp_catchall",
+          "https://finance.yahoo.com/markets/crypto/articles/bitcoin-jumps-above-65-000-132254375.html?fr=sycsrp_catchall",
+          "https://finance.yahoo.com/markets/crypto/articles/why-bitcoin-latest-bounce-back-020000772.html?fr=sycsrp_catchall",
+          "https://www.coinbase.com/price/bitcoin",
+          "https://finance.yahoo.com/markets/crypto/article/bitcoin-jumps-to-65000-backdrop-for-crypto-is-improving-144838821.html?fr=sycsrp_catchall"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "No Transaction Fees",
+        "verdict": "SUPPORTS",
+        "confidence": 0.95,
+        "reasoning": "The Coinbase Help pages explicitly state that there are no Coinbase transaction fees, confirming the claim that there are no transaction fees (though a spread may still apply). This direct statement aligns with the claim.",
+        "sources": [
+          "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees",
+          "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees?b_id=13521&t=531816",
+          "https://www.datawallet.com/crypto/coinbase-fees",
+          "https://www.bitdegree.org/crypto/tutorials/coinbase-fees",
+          "https://www.coinbase.com/one"
+        ],
+        "total_sources": 6,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      }
+    ],
+    "risk": {
+      "overall_risk_level": "LOW",
+      "overall_score": 20.0,
+      "key_concerns": [],
+      "positive_factors": [
+        "SEC lawsuit dismissed, removing regulatory uncertainty"
+      ],
+      "ai_reasoning": "The document contains only promotional information and no disclosed adverse events, financial weaknesses, or operational challenges for Coinbase. The web data confirms the SEC lawsuit has been dismissed, which reduces regulatory risk. No specific red flags are identified.",
+      "red_flags": [],
+      "risk_level": "LOW",
+      "total_signals": 2
+    },
+    "claims_summary": {
+      "checked": 4,
+      "supported": 1,
+      "refuted": 1,
+      "uncertain": 2,
+      "reliability_note": "MEDIUM \u2014 some claims unverified"
+    },
+    "memo": "**INVESTMENT MEMO \u2013 COINBASE (Hosted Bitcoin\u2011Wallet Play)**  \n\n---\n\n### 1. EXECUTIVE SUMMARY  \nCoinbase is positioning a hosted Bitcoin wallet that promises instant, fee\u2011free international payments.\u202fThe evidence base is thin \u2013 key growth and revenue metrics are missing or refuted \u2013 resulting in **low confidence** in the investment thesis.\n\n---\n\n### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (22\u202f/\u202f100)  \n\n| Component | Evidence\u2011Based Effect | Model Note |\n|-----------|----------------------|------------|\n| **Baseline model score** | 53\u202f/\u202f100 \u2013 the statistical model\u2019s prior for a company of this type, based on historical patterns of comparable crypto\u2011wallet/start\u2011up profiles. | Medium confidence (feature coverage\u202f62\u202f%). |\n| **Evidence adjustment** | \u201332 points. The adjustment reflects: <br>\u2022 **Refuted claim** \u2013 \u201c$2\u202fM\u202fUSD per day in transaction volume\u201d (refuted, 96\u202f% confidence). <br>\u2022 **Unverified growth metrics** \u2013 daily sign\u2011up rate (20\u202f%) and $65\u202fk in first 5\u202fweeks (both unverified). <br>\u2022 **Missing financials** \u2013 no revenue, burn, or runway data. <br>\u2022 **Missing team information** \u2013 no founders or key\u2011person details. | The model penalises unverified or contradictory data heavily. |\n| **Net score** | 53\u202f\u2013\u202f32\u202f=\u202f**22\u202f/\u202f100** (the published VentureFlow score). | The model\u2019s confidence is **medium**; the 10\u201130 range (90\u202f% probability) reflects the large uncertainty from missing data. |\n\n**Interpretation for investors:** The score is driven primarily by *absence* of verifiable traction and financials, not by strong positive signals. The medium model confidence means the number should be treated as a rough flag rather than a definitive rating.\n\n---\n\n### 2. CLAIM VERIFICATION ANALYSIS  \n\n| Claim (as presented) | Web / External Evidence | Verdict | Confidence |\n|----------------------|--------------------------|---------|------------|\n| **$2\u202fM\u202fUSD per day in transaction volume** | Coinbase Exchange 24\u2011h volume reported at **$751,738,708.86** (\u2248\u202f$0.75\u202fB) \u2013 far above the $2\u202fM figure; the claim is inconsistent with real\u2011time data. | **REFUTED** | 96\u202f% |\n| **Coinbase sign\u2011ups 20\u202f% daily** | Sources discuss bonuses and service features; no data on daily signup percentages. | **UNVERIFIED** | 85\u202f% |\n| **$65,000 USD in the first 5 weeks** | Articles mention Bitcoin price levels ($65\u202fk) but do not tie the amount to Coinbase revenue or user activity. | **UNVERIFIED** | 80\u202f% |\n| **No transaction fees** | Multiple sources confirm Coinbase does **not charge explicit transaction fees** on buys/sells, though a spread is applied. | **VERIFIED** | 95\u202f% |\n| **SEC lawsuit dismissed** (cited in risk analysis) | Public filings show the SEC case against Coinbase was dismissed, reducing regulatory exposure. | **VERIFIED** (by web search) | 90\u202f% |\n\n*All other claims (team, market size, TAM, go\u2011to\u2011market) are **Insufficient data**.*\n\n---\n\n### 3. RISK ASSESSMENT  \n\n| Risk Level | Description | Evidence |\n|------------|-------------|----------|\n| **High** | **Unverified / refuted growth metrics** \u2013 daily sign\u2011up rate and early\u2011stage revenue cannot be confirmed, undermining traction assumptions. | Claim verification results (UNVERIFIED / REFUTED). |\n| **Medium** | **Absence of financial visibility** \u2013 no revenue, burn, or runway disclosed, preventing cash\u2011flow modelling. | \u201cAnnual Revenue: Not provided; Monthly Burn: Not provided; Runway: Not provided.\u201d |\n| **Medium** | **Team opacity** \u2013 no founder names, backgrounds, or org\u2011chart supplied, limiting assessment of execution capability. | Team section lists \u201cInsufficient data\u201d for all capability scores. |\n| **Low** | **Regulatory risk** \u2013 the SEC lawsuit has been dismissed, lowering legal exposure. | Risk analysis cites dismissal of SEC suit. |\n| **Low** | **Product\u2011level risk** \u2013 claim of \u201cno transaction fees\u201d is true, but reliance on spreads may affect unit economics; no evidence on security or compliance processes. | Verified fee\u2011free claim; no further data. |\n\n---\n\n### 4. FINANCIAL ANALYSIS  \n\n| Metric | Status | Comment |\n|--------|--------|---------|\n| **Annual Revenue** | **Insufficient data** | Not disclosed in any source. |\n| **Monthly Burn** | **Insufficient data** | Not disclosed. |\n| **Runway** | **Insufficient data** | Not disclosed. |\n| **Transaction\u2011fee model** | **Verified** \u2013 no explicit fees, spread applies. | May generate revenue, but magnitude unknown. |\n| **Historical transaction volume** | **Refuted** \u2013 daily volume \u2248\u202f$0.75\u202fB, not $2\u202fM. | Indicates higher activity than claimed, but no revenue linkage. |\n\n---\n\n### 5. COMPARABLE COMPANIES (Database Insight)  \n\nThe internal database contains diligence reports for unrelated fintech/start\u2011up categories (e.g., ComplyForge AI, ShelfSight, AgroPulse). No direct comparable entries for a **publicly listed crypto exchange** or a **hosted Bitcoin\u2011wallet** were supplied. Consequently, we cannot benchmark Coinbase against peer metrics within the provided data set.\n\n---\n\n### 6. RED FLAGS  \n\n- Refuted daily transaction\u2011volume claim.  \n- Multiple growth metrics (sign\u2011up rate, $65\u202fk early revenue) lack verification.  \n- No disclosed financials (revenue, burn, runway).  \n- Complete absence of founder / team information.  \n- No independent market\u2011size or TAM data.  \n\n---\n\n### 7. GREEN FLAGS / POSITIVE SIGNALS  \n\n- **No explicit transaction fees** \u2013 confirmed by multiple sources.  \n- **Regulatory risk mitigated** \u2013 SEC lawsuit dismissed.  \n- **Low overall risk rating** in the automated risk model (score\u202f20\u202f/\u202f100).  \n\n---\n\n### 8. FINAL VERDICT  \n\n**PASS** \u2013 The evidence base is insufficient to justify an investment at this stage. Critical traction, financial, and team data are missing or contradictory, and the low VentureFlow score reflects these deficiencies.\n\n---\n\n### 9. CONFIDENCE LEVEL  \n\n**40\u202f%** confidence in the overall assessment.  \n*Rationale:* Only a handful of claims are verified (fee\u2011free model, regulatory dismissal). The majority of the investment thesis rests on unverified or refuted information, and key quantitative metrics are absent, driving the confidence below the 60\u202f% threshold required for a \u201chigh\u2011confidence\u201d judgment.",
+    "ran_at": "2026-08-26T20:22:00Z"
+  }
+]

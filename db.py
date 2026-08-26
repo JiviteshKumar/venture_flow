@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import logging
 import os
 from collections.abc import Iterator
@@ -169,6 +170,135 @@ def ensure_schema() -> None:
         )
     else:
         logger.info("Applied %s Neon schema migration(s)", applied)
+
+
+
+def record_analysed_company(
+    *,
+    report: dict[str, Any],
+    report_id: Any | None = None,
+    source_filename: str | None = None,
+    source_sha256: str | None = None,
+    owner_org_id: str | None = None,
+) -> str | None:
+    """Write one row to `analysed_companies` from a finished report.
+
+    See migrations/009_analysed_companies.sql for why this table exists. In
+    short: everything the product knows about a company lives inside a JSON blob
+    today, which makes every cross-portfolio question ("which companies have
+    under six months of runway", "which analyses ran while the provider was
+    down") a full scan and a re-parse in Python.
+
+    Best-effort by design. A failure to write the analytics row must never fail
+    an analysis the user is waiting on -- the report itself is already persisted
+    by `persist_report`, and this is a derived projection of it. Returns the new
+    row id, or None if it could not be written.
+
+    `owner_org_id` is accepted and stored but is None everywhere today, because
+    no authentication exists. That is the honest state: the column means
+    "pre-auth, globally visible" until accounts arrive.
+    """
+    sections = report.get("sections") or {}
+    financial = sections.get("financial_state") or {}
+    venture = sections.get("venture_score") or {}
+    claims = sections.get("claims") or {}
+    name = report.get("company") or report.get("company_name") or ""
+    if not name:
+        logger.warning("record_analysed_company called without a company name; skipping")
+        return None
+
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+    def _number(value: Any) -> float | None:
+        try:
+            return float(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    try:
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO analysed_companies (
+                    owner_org_id, company_name, company_slug, sector, report_id,
+                    source_filename, source_sha256, deck_year, extracted_chars, text_layer,
+                    final_score, model_only_score, evidence_penalty, recommendation, risk_level,
+                    provider_degraded, incomplete_analysis, thin_evidence,
+                    claims_checked, claims_supported, claims_refuted,
+                    annual_revenue, monthly_burn, cash_on_hand, runway_months,
+                    burn_multiple, largest_customer_share, growth_multiple,
+                    financial_evidence, degraded_components, evidence_components
+                ) VALUES (
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s
+                )
+                RETURNING id::text AS id
+                """,
+                (
+                    owner_org_id, name, slug, report.get("sector"), report_id,
+                    source_filename, source_sha256, report.get("deck_year"),
+                    report.get("extracted_chars"), report.get("text_layer"),
+                    _number(report.get("final_score")),
+                    _number(venture.get("model_only_score")),
+                    _number(report.get("evidence_penalty")),
+                    report.get("recommendation"), report.get("risk_level"),
+                    bool(report.get("provider_degraded")),
+                    bool(report.get("incomplete_analysis")),
+                    bool(report.get("thin_evidence")),
+                    int(claims.get("checked") or 0),
+                    int(claims.get("supported") or 0),
+                    int(claims.get("refuted") or 0),
+                    _number(financial.get("annual_revenue")),
+                    _number(financial.get("monthly_burn")),
+                    _number(financial.get("cash_on_hand")),
+                    _number(financial.get("runway_months")),
+                    _number(financial.get("burn_multiple")),
+                    _number(financial.get("largest_customer_share")),
+                    _number(financial.get("growth_multiple")),
+                    json.dumps(financial.get("evidence") or {}, default=str),
+                    json.dumps(report.get("degraded_components") or [], default=str),
+                    json.dumps(sections.get("evidence_components") or {}, default=str),
+                ),
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return row["id"] if row else None
+    except Exception:  # noqa: BLE001
+        logger.exception("Could not record analysed company %s", name)
+        return None
+
+
+def companies_with_short_runway(
+    max_months: float = 6.0, owner_org_id: str | None = None, limit: int = 50
+) -> list[dict[str, Any]]:
+    """The portfolio question this table was added to make answerable.
+
+    Excludes degraded and incomplete analyses on purpose: a runway figure from a
+    run whose provider was down is not a finding about the company.
+    """
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT company_name, runway_months, monthly_burn, cash_on_hand,
+                   final_score, recommendation, analysed_at
+            FROM analysed_companies
+            WHERE runway_months IS NOT NULL
+              AND runway_months <= %s
+              AND provider_degraded = FALSE
+              AND incomplete_analysis = FALSE
+              AND (owner_org_id IS NOT DISTINCT FROM %s)
+            ORDER BY runway_months ASC
+            LIMIT %s
+            """,
+            (max_months, owner_org_id, limit),
+        )
+        return list(cur.fetchall())
 
 
 def find_similar_companies(

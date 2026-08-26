@@ -57,5 +57,13 @@ def test_due_diligence_caps_score_when_specialists_and_claims_fail(monkeypatch, 
     monkeypatch.setattr(ventureflow_agent, "get_client", lambda: fake_client)
 
     report = ventureflow_agent.run_due_diligence("Test Co", "A" * 120, ["unverified"], revenue=1)
-    assert report["incomplete_analysis"] is True
-    assert report["final_score"] <= 30
+    # New contract: the deck had text, so the analysis did not "fail" -- but
+    # every specialist returned zero and no claim could be verified, which is
+    # reported as thin evidence, priced smoothly into the score, and blocked
+    # from producing a decisive verdict. The old assertion here was
+    # `final_score <= 30`, which a constant-score bug satisfies; see
+    # tests/test_venturescore.py for the comparative version that does not.
+    assert report["incomplete_analysis"] is False
+    assert report["thin_evidence"] is True
+    assert report["evidence_penalty"] > 0
+    assert report["recommendation"] == "NEEDS MORE DILIGENCE"

@@ -7,6 +7,7 @@ load_dotenv()
 import json
 from ddgs import DDGS
 
+from agents.deck_financials import analyse as analyse_financials
 from groq_client import MODEL, get_client
 
 # ----------------------------
@@ -201,6 +202,8 @@ Respond with ONLY valid JSON:
             "key_concerns": [],
             "positive_factors": [],
             "ai_reasoning": "Error in analysis",
+            "_degraded": True,
+            "_degraded_reason": "risk analysis provider call failed",
             "red_flags": [],
         }
 
@@ -210,8 +213,31 @@ Respond with ONLY valid JSON:
 def score_risk(text: str, company: str = "") -> dict:
     print(f"\n🔍 Running risk analysis for: {company}")
 
-    # 1. Detect signals from input text
+    # 1. Detect signals from input text.
+    #
+    # Two detectors, deliberately. RISK_SIGNALS is a dictionary of SEC-filing
+    # vocabulary and it is genuinely good at what it was built for -- F1 0.815
+    # on ml/eval/risk_benchmark.jsonl. What it cannot do is read a pitch deck:
+    # measured on the same benchmark it missed ALL THREE deck-register red
+    # flags, because a founder writes "our anchor customer represents $1.9M of
+    # that figure" rather than "customer concentration", and "monthly burn is
+    # $410K against $1.1M cash on hand" rather than "going concern".
+    #
+    # agents/deck_financials covers that register by parsing the quantities and
+    # computing the relationships between them. It composes with the dictionary
+    # rather than replacing it, because the two are strong on different document
+    # types and the pipeline sees both.
     text_signals = detect_signals(text)
+
+    financials = analyse_financials(text)
+    for signal in financials["signals"]:
+        text_signals.setdefault(signal["category"], []).append({
+            "signal": signal["signal"],
+            "context": signal["context"],
+            "severity": signal["severity"],
+            "detector": signal["detector"],
+            "why": signal["why"],
+        })
 
     # 2. Fetch web results
     web_results = search_company_risks(company)
@@ -242,5 +268,14 @@ def score_risk(text: str, company: str = "") -> dict:
     result["red_flags"] = result.get("red_flags") or []
     result["ai_reasoning"] = result.get("ai_reasoning") or "Risk analysis completed from available evidence."
     result["total_signals"] = total_text_signals + total_web_signals
+
+    # The company's financial position, computed rather than asked for. Carried
+    # on the risk result so the report can state runway, burn multiple and
+    # customer concentration as facts derived from the deck, each with the
+    # sentence it came from, instead of leaving them to an LLM that may or may
+    # not have noticed them.
+    result["financial_state"] = financials["state"]
+    result["financial_metrics"] = financials["metrics"]
+    result["deck_signals"] = financials["signals"]
 
     return result

@@ -1,0 +1,440 @@
+[
+  {
+    "company": "Buffer",
+    "source_url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
+    "sha256": "ac2d84ea4a340b6c96f5a02f066febd2c0a11c4cbc66e07d8ab00423f7805295",
+    "deck_year": "2011",
+    "extracted_chars": 2012,
+    "extraction_method": "regex_fallback",
+    "elapsed_s": 58.3,
+    "claims_extracted": [
+      "Business Model \u2022 Freemium model with consistent 2% conversion from Free to Paid plans \u2022 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user \u2022 At 1M users, our projected revenue is $3.6M",
+      "Landscape \u2022 Of 200M daily Tweets, 55% contain links \u2022 4 billion items shared on Facebook per day \u2022 Zuckerberg\u2019s Law shows exponential growth of sharing \u2022 Traffic through social is soon to surpass traffic from search",
+      "Can Increase Clicks by 200%\u201d"
+    ],
+    "revenue": 150000.0,
+    "founders": [
+      {
+        "name": "Joel Gascoigne",
+        "role": "Co-Founder, took the idea to revenue in 7 weeks, Masters in CS",
+        "background": ""
+      },
+      {
+        "name": "Leo Widrich",
+        "role": "Co-Founder, marketeer, took Buffer from 200 to 55,000 users",
+        "background": ""
+      },
+      {
+        "name": "Hiten Shah",
+        "role": "CEO / Co-Founder of KISSmetrics.",
+        "background": "Previously started CrazyEgg & ACS founders@bufferapp.com"
+      }
+    ],
+    "final_score": 47.0,
+    "score_source": "venturescore_model",
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "UNKNOWN",
+    "incomplete_analysis": false,
+    "thin_evidence": false,
+    "provider_degraded": true,
+    "degraded_components": [
+      {
+        "component": "market",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "bull_case",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "team",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "bear_case",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "risk_analysis",
+        "reason": "risk analysis provider call failed"
+      }
+    ],
+    "evidence_penalty": 0.11,
+    "evidence_components": {
+      "refuted_claims": 0.0,
+      "claim_sparsity": 0.0,
+      "claims_unsupported": 0.1,
+      "specialist_uncertainty": 0.0,
+      "risk_signals": 0.06,
+      "no_revenue": 0.0,
+      "data_quality": -0.05
+    },
+    "venture_score": {
+      "available": true,
+      "venture_score": 47,
+      "score_range": [
+        38,
+        55
+      ],
+      "probability_exit_or_survive": 0.4673,
+      "confidence": "medium",
+      "ensemble_std": 0.0596,
+      "feature_coverage": 0.625,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0881,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 58,
+      "evidence_penalty": 0.11
+    },
+    "claim_results": [
+      {
+        "claim": "Business Model \u2022 Freemium model with consistent 2% conversion from Free to Paid plans \u2022 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user \u2022 At 1M users, our projected revenue is $3.6M",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://tracxn.com/d/companies/buffer/__PMOwk-9jAhpVSPYDdrNeiN69ciLnRz6cl94NLkGVXeU",
+          "https://buffer.com/resources/bufferupdates/",
+          "https://www.crunchbase.com/organization/buffer",
+          "https://buffer.com/about",
+          "https://www.crunchbase.com/organization/buffer/news_and_analysis"
+        ],
+        "total_sources": 5,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "Landscape \u2022 Of 200M daily Tweets, 55% contain links \u2022 4 billion items shared on Facebook per day \u2022 Zuckerberg\u2019s Law shows exponential growth of sharing \u2022 Traffic through social is soon to surpass traffic from search",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://getlatka.com/companies/buffer",
+          "https://sacra.com/c/buffer/",
+          "https://www.linkedin.com/pulse/july-numbers-new-revenue-high-271k-profit-bufferapp-5mkuf",
+          "https://pitchbook.com/profiles/company/53541-28",
+          "https://tracxn.com/d/companies/buffer/__PMOwk-9jAhpVSPYDdrNeiN69ciLnRz6cl94NLkGVXeU"
+        ],
+        "total_sources": 9,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "Can Increase Clicks by 200%\u201d",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://www.adweek.com/performance-marketing/using-buffer-increases-clicks-by-200-doubles-retweets/",
+          "https://buffer.com/",
+          "https://www.amraandelma.com/high-converting-cta-statistics/",
+          "https://wisernotify.com/blog/call-to-action-stats/",
+          "https://www.quicksprout.com/call-to-action-button/"
+        ],
+        "total_sources": 5,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      }
+    ],
+    "risk": {
+      "overall_risk_level": "UNKNOWN",
+      "overall_score": 30.0,
+      "key_concerns": [],
+      "positive_factors": [],
+      "ai_reasoning": "Error in analysis",
+      "_degraded": true,
+      "_degraded_reason": "risk analysis provider call failed",
+      "red_flags": [],
+      "risk_level": "UNKNOWN",
+      "total_signals": 3,
+      "financial_state": {
+        "runway_months": null,
+        "runway_source": null,
+        "monthly_burn": null,
+        "cash_on_hand": null,
+        "arr": 150000.0,
+        "mrr": null,
+        "revenue": 150000.0,
+        "annual_revenue": 150000.0,
+        "burn_multiple": null,
+        "largest_customer_share": null,
+        "growth_multiple": null,
+        "evidence": {
+          "arr": "\u2022 $150,000 annual revenue run rate",
+          "revenue": "\u2022 $150,000 annual revenue run rate"
+        }
+      },
+      "financial_metrics": {
+        "arr": {
+          "value": 150000.0,
+          "label": "annual revenue run",
+          "evidence": "\u2022 $150,000 annual revenue run rate"
+        },
+        "revenue": {
+          "value": 150000.0,
+          "label": "revenue",
+          "evidence": "\u2022 $150,000 annual revenue run rate"
+        }
+      },
+      "deck_signals": []
+    },
+    "claims_summary": {
+      "checked": 3,
+      "supported": 0,
+      "refuted": 0,
+      "uncertain": 3,
+      "reliability_note": "MEDIUM \u2014 some claims unverified"
+    },
+    "memo": "1. EXECUTIVE SUMMARY\nBuffer has been reviewed with HIGH data quality (100/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 3\n- Supported: 0\n- Refuted: 0\n- Uncertain: 3\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: $150,000\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Polly (Consumer, Summer 2017) -- Shut down, similarity 0.74\n- Datarank (B2B, Summer 2013) -- Acquired/Public, similarity 0.69\n- Fridge (Consumer, Summer 2010) -- Acquired/Public, similarity 0.65\n- Wildfire (Consumer, Summer 2017) -- Acquired/Public, similarity 0.62\n- CO2Stats (B2B, Summer 2008) -- Shut down, similarity 0.60\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+    "ran_at": "2026-08-26T20:31:35Z"
+  },
+  {
+    "company": "Coinbase",
+    "source_url": "https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf",
+    "sha256": "727940dd43cd846c922d2c06c3c2ce476079cac939f63081edfb364a89e59caa",
+    "deck_year": "2012",
+    "extracted_chars": 635,
+    "extraction_method": "llm_schema",
+    "elapsed_s": 71.5,
+    "claims_extracted": [
+      "$2 million USD per day in transaction volume",
+      "Coinbase Signups 20% Daily",
+      "$65,000 USD in the first 5 weeks",
+      "No Transaction Fees",
+      "Your hosted bitcoin wallet"
+    ],
+    "revenue": null,
+    "founders": [],
+    "final_score": 38.0,
+    "score_source": "venturescore_model",
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "UNKNOWN",
+    "incomplete_analysis": false,
+    "thin_evidence": false,
+    "provider_degraded": true,
+    "degraded_components": [
+      {
+        "component": "market",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "bull_case",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "team",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "bear_case",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "risk_analysis",
+        "reason": "risk analysis provider call failed"
+      }
+    ],
+    "evidence_penalty": 0.16,
+    "evidence_components": {
+      "refuted_claims": 0.0,
+      "claim_sparsity": 0.0,
+      "claims_unsupported": 0.1,
+      "specialist_uncertainty": 0.0,
+      "risk_signals": 0.06,
+      "no_revenue": 0.05,
+      "data_quality": -0.05
+    },
+    "venture_score": {
+      "available": true,
+      "venture_score": 38,
+      "score_range": [
+        26,
+        46
+      ],
+      "probability_exit_or_survive": 0.3771,
+      "confidence": "medium",
+      "ensemble_std": 0.069,
+      "feature_coverage": 0.625,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0479,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 54,
+      "evidence_penalty": 0.16
+    },
+    "claim_results": [
+      {
+        "claim": "$2 million USD per day in transaction volume",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://www.coingecko.com/en/exchanges/coinbase-exchange",
+          "https://www.businessofapps.com/data/coinbase-statistics/",
+          "https://investingintheweb.com/brokers/coinbase-statistics/",
+          "https://backlinko.com/coinbase-users",
+          "https://help.coinbase.com/en/exchange/trading-and-funding/exchange-fees"
+        ],
+        "total_sources": 14,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "Coinbase Signups 20% Daily",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://help.coinbase.com/en/coinbase/getting-started/getting-started-with-coinbase/new-customer-incentive",
+          "https://www.coinbase.com/",
+          "https://www.finder.com/cryptocurrency/coinbase-bonus",
+          "https://www.wallstreetsurvivor.com/how-to-get-free-crypto-on-coinbase/",
+          "https://www.coinbase.com/one"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "$65,000 USD in the first 5 weeks",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://finance.yahoo.com/markets/crypto/articles/bitcoin-reclaims-65-000-btc-192838099.html?fr=sycsrp_catchall",
+          "https://finance.yahoo.com/markets/crypto/articles/bitcoin-jumps-above-65-000-132254375.html?fr=sycsrp_catchall",
+          "https://finance.yahoo.com/markets/crypto/articles/why-bitcoin-latest-bounce-back-020000772.html?fr=sycsrp_catchall",
+          "https://www.coinbase.com/price/bitcoin",
+          "https://finance.yahoo.com/markets/crypto/article/bitcoin-jumps-to-65000-backdrop-for-crypto-is-improving-144838821.html?fr=sycsrp_catchall"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "No Transaction Fees",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees",
+          "https://help.coinbase.com/en/coinbase/trading-and-funding/pricing-and-fees/fees?b_id=13521&t=531816",
+          "https://www.datawallet.com/crypto/coinbase-fees",
+          "https://www.bitdegree.org/crypto/tutorials/coinbase-fees",
+          "https://www.coinbase.com/one"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "Your hosted bitcoin wallet",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "Claim verification is temporarily unavailable.",
+        "sources": [
+          "https://investor.coinbase.com/news/default.aspx",
+          "https://compworth.com/company/coinbase",
+          "https://www.coinbase.com/blog/coinbase-q2-earnings-everything-exchange-drives-3rd-consecutive-quarter-of-record-crypto-trading-volume-market-share-revenue-diversification-and-resilience",
+          "https://coingeek.com/coinbase-loses-400-million-1-5-million-customers-and-14-of-staff/",
+          "https://www.businessofapps.com/data/coinbase-statistics/"
+        ],
+        "total_sources": 10,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      }
+    ],
+    "risk": {
+      "overall_risk_level": "UNKNOWN",
+      "overall_score": 30.0,
+      "key_concerns": [],
+      "positive_factors": [],
+      "ai_reasoning": "Error in analysis",
+      "_degraded": true,
+      "_degraded_reason": "risk analysis provider call failed",
+      "red_flags": [],
+      "risk_level": "UNKNOWN",
+      "total_signals": 2,
+      "financial_state": {
+        "runway_months": null,
+        "runway_source": null,
+        "monthly_burn": null,
+        "cash_on_hand": null,
+        "arr": null,
+        "mrr": null,
+        "revenue": null,
+        "annual_revenue": null,
+        "burn_multiple": null,
+        "largest_customer_share": null,
+        "growth_multiple": null,
+        "evidence": {}
+      },
+      "financial_metrics": {},
+      "deck_signals": []
+    },
+    "claims_summary": {
+      "checked": 5,
+      "supported": 0,
+      "refuted": 0,
+      "uncertain": 5,
+      "reliability_note": "MEDIUM \u2014 some claims unverified"
+    },
+    "memo": "1. EXECUTIVE SUMMARY\nCoinbase has been reviewed with HIGH data quality (85/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 0\n- Uncertain: 5\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- inai (Fintech, Summer 2021) -- Acquired/Public, similarity 0.65\n- Cashmere (Fintech, Winter 2022) -- Shut down, similarity 0.63\n- Proxy (Consumer, Summer 2016) -- Acquired/Public, similarity 0.61\n- Serica (Fintech, Summer 2015) -- Shut down, similarity 0.61\n- Payfura (Fintech, Summer 2022) -- Shut down, similarity 0.60\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+    "ran_at": "2026-08-26T20:32:48Z"
+  }
+]

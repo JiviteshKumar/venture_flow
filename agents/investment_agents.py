@@ -13,6 +13,39 @@ from groq_client import MODEL, get_client
 logger = logging.getLogger(__name__)
 
 
+def _describe_provider_failure(exc: Exception) -> str:
+    """Name the infrastructure failure so downstream can tell it from a real
+    low-confidence answer."""
+    text = f"{type(exc).__name__}: {exc}"
+    lowered = text.lower()
+    if "rate_limit" in lowered or "429" in lowered:
+        return "provider rate limit / quota exhausted"
+    if "timeout" in lowered or "timed out" in lowered:
+        return "provider timeout"
+    if "connection" in lowered or "network" in lowered:
+        return "provider unreachable"
+    if "authentication" in lowered or "401" in lowered or "api key" in lowered:
+        return "provider credentials rejected"
+    return f"provider error ({type(exc).__name__})"
+
+
+def _degraded(fallback: dict[str, Any], reason: str) -> dict[str, Any]:
+    """Tag a fallback so the pipeline can distinguish an INFRASTRUCTURE failure
+    from a genuine confidence-0 judgement about the company.
+
+    Without this marker the two are identical downstream -- both are a dict
+    with confidence 0 -- and `ventureflow_agent` treated the pair the same,
+    capping the headline score at 30. Measured on 40 stored reports: 25 were
+    capped and 19 of those were capped purely because Groq returned 429 to all
+    four agents. The product was reporting an exhausted API quota as a verdict
+    on the company, and 18 of 40 decks scored an identical 30/100 as a result.
+    """
+    out = dict(fallback)
+    out["_degraded"] = True
+    out["_degraded_reason"] = reason
+    return out
+
+
 def _json_agent(role: str, task: str, evidence: str, fallback: dict[str, Any]) -> dict[str, Any]:
     """Run one specialist and return a safe fallback on provider/JSON failure."""
     prompt = f"""You are the {role} in a VC due-diligence team.
@@ -72,18 +105,18 @@ EVIDENCE:
                 "Specialist agent %s returned empty content (finish_reason=%s); using fallback",
                 role, choice.finish_reason,
             )
-            return fallback
+            return _degraded(fallback, f"empty completion (finish_reason={choice.finish_reason})")
         if choice.finish_reason == "length":
             # Truncated despite the larger budget -- the object is unparseable
             # by definition, so say so plainly rather than logging a confusing
             # JSONDecodeError for what is really a budget problem.
             logger.warning("Specialist agent %s hit the token limit; using fallback", role)
-            return fallback
+            return _degraded(fallback, "response truncated at the token limit")
         parsed = json.loads(raw)
-        return parsed if isinstance(parsed, dict) else fallback
-    except Exception:
+        return parsed if isinstance(parsed, dict) else _degraded(fallback, "response was not a JSON object")
+    except Exception as exc:
         logger.exception("Specialist agent failed: %s", role)
-        return fallback
+        return _degraded(fallback, _describe_provider_failure(exc))
 
 
 def _evidence_block(
