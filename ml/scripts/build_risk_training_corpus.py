@@ -149,12 +149,19 @@ def _text_hash(text: str) -> str:
     return hashlib.sha256(_normalise(text).encode("utf-8")).hexdigest()
 
 
-# Counted, not swallowed. The first full run of this script collected 100
-# excerpts where ~950 were expected, and the cause was invisible: SEC throttles
-# sustained traffic with 403s, and every failed fetch hit a bare `continue`. A
-# rate limit was being recorded as "these filings contain no risk language",
-# which is the same defect -- infrastructure failure reported as a finding --
-# that this codebase has now hit in three separate places.
+# Counted, not swallowed. The first full run collected 100 excerpts where ~950
+# were expected, and the cause was INVISIBLE: every failed fetch hit a bare
+# `continue`, so whatever went wrong was recorded as "these filings contain no
+# risk language". That is the same defect -- infrastructure failure reported as
+# a finding -- that this codebase has now hit in three separate places.
+#
+# Being precise about what is and is not established: the shortfall was fixed by
+# halving the request rate (0.15s -> 0.3s) and adding backoff, after which the
+# same command collected 941 excerpts. SEC throttling is the obvious
+# explanation, but it is NOT confirmed -- the re-run recorded zero 403s, and it
+# also ran slower, so the counters cannot retroactively diagnose the original
+# failure. What they guarantee is that the next one will be visible rather than
+# silent, which was the actual problem.
 FETCH_STATS = {"ok": 0, "http_403": 0, "http_other": 0, "exception": 0, "retried": 0}
 
 
