@@ -1,0 +1,341 @@
+{
+  "what_this_measures": "Reproducibility (spread across repeats of the same deck) and directional validity (evidence-rich deck must score above evidence-thin) of the specialist agents' confidence number, after the prompt was changed to define confidence as the fraction of the assessment resting on quotable evidence.",
+  "model_temperature": 0.1,
+  "degraded_calls_excluded": 1,
+  "total_calls": 24,
+  "summary": {
+    "market": {
+      "rich": {
+        "n": 4,
+        "values": [
+          0.78,
+          0.9,
+          0.78,
+          0.75
+        ],
+        "mean": 0.8025,
+        "stdev": 0.0665,
+        "range": [
+          0.75,
+          0.9
+        ]
+      },
+      "thin": {
+        "n": 2,
+        "values": [
+          0.7,
+          0.7
+        ],
+        "mean": 0.7,
+        "stdev": 0.0,
+        "range": [
+          0.7,
+          0.7
+        ]
+      },
+      "directionally_correct": true,
+      "gap_rich_minus_thin": 0.1025
+    },
+    "team": {
+      "rich": {
+        "n": 4,
+        "values": [
+          0.78,
+          0.86,
+          0.78,
+          0.78
+        ],
+        "mean": 0.8,
+        "stdev": 0.04,
+        "range": [
+          0.78,
+          0.86
+        ]
+      },
+      "thin": {
+        "n": 1,
+        "values": [
+          0.55
+        ],
+        "mean": 0.55,
+        "stdev": null,
+        "range": [
+          0.55,
+          0.55
+        ]
+      },
+      "directionally_correct": true,
+      "gap_rich_minus_thin": 0.25
+    },
+    "bull_case": {
+      "rich": {
+        "n": 4,
+        "values": [
+          0.92,
+          0.92,
+          0.92,
+          0.88
+        ],
+        "mean": 0.91,
+        "stdev": 0.02,
+        "range": [
+          0.88,
+          0.92
+        ]
+      },
+      "thin": {
+        "n": 2,
+        "values": [
+          0.7,
+          0.78
+        ],
+        "mean": 0.74,
+        "stdev": 0.0566,
+        "range": [
+          0.7,
+          0.78
+        ]
+      },
+      "directionally_correct": true,
+      "gap_rich_minus_thin": 0.17
+    },
+    "bear_case": {
+      "rich": {
+        "n": 4,
+        "values": [
+          0.72,
+          0.78,
+          0.78,
+          0.72
+        ],
+        "mean": 0.75,
+        "stdev": 0.0346,
+        "range": [
+          0.72,
+          0.78
+        ]
+      },
+      "thin": {
+        "n": 2,
+        "values": [
+          0.78,
+          0.68
+        ],
+        "mean": 0.73,
+        "stdev": 0.0707,
+        "range": [
+          0.68,
+          0.78
+        ]
+      },
+      "directionally_correct": true,
+      "gap_rich_minus_thin": 0.02
+    }
+  },
+  "runs": [
+    {
+      "condition": "rich",
+      "attempt": 1,
+      "agents": {
+        "market": {
+          "confidence": 0.78,
+          "confidence_basis": "3 findings with verbatim excerpts, rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 3
+        },
+        "team": {
+          "confidence": 0.78,
+          "confidence_basis": "6 findings quote deck verbatim, others inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "bull_case": {
+          "confidence": 0.92,
+          "confidence_basis": "7 findings quoted verbatim from deck, no external data",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 8
+        },
+        "bear_case": {
+          "confidence": 0.72,
+          "confidence_basis": "4 findings quote deck verbatim; no external verification",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 4
+        }
+      }
+    },
+    {
+      "condition": "rich",
+      "attempt": 2,
+      "agents": {
+        "market": {
+          "confidence": 0.9,
+          "confidence_basis": "4 findings quoted verbatim, no inference",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "team": {
+          "confidence": 0.86,
+          "confidence_basis": "5 findings quoted deck verbatim; other points inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "bull_case": {
+          "confidence": 0.92,
+          "confidence_basis": "8 findings quoted verbatim from deck, no inference",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 8
+        },
+        "bear_case": {
+          "confidence": 0.78,
+          "confidence_basis": "5 findings quote deck verbatim, 1 inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 6
+        }
+      }
+    },
+    {
+      "condition": "rich",
+      "attempt": 3,
+      "agents": {
+        "market": {
+          "confidence": 0.78,
+          "confidence_basis": "3 findings quote deck verbatim; numbers unverified",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 4
+        },
+        "team": {
+          "confidence": 0.78,
+          "confidence_basis": "5 findings quoted deck verbatim; other points inferred.",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "bull_case": {
+          "confidence": 0.92,
+          "confidence_basis": "7 findings quote deck verbatim; rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 9
+        },
+        "bear_case": {
+          "confidence": 0.78,
+          "confidence_basis": "5 findings quote deck verbatim; other points inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 7
+        }
+      }
+    },
+    {
+      "condition": "rich",
+      "attempt": 4,
+      "agents": {
+        "market": {
+          "confidence": 0.75,
+          "confidence_basis": "Three findings quote deck verbatim; rest inferred.",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 3
+        },
+        "team": {
+          "confidence": 0.78,
+          "confidence_basis": "3 findings quote deck verbatim, others inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "bull_case": {
+          "confidence": 0.88,
+          "confidence_basis": "All 6 signals quote deck verbatim; no external inference for data points.",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 6
+        },
+        "bear_case": {
+          "confidence": 0.72,
+          "confidence_basis": "3 findings quote deck verbatim; rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 3
+        }
+      }
+    },
+    {
+      "condition": "thin",
+      "attempt": 1,
+      "agents": {
+        "market": {
+          "confidence": 0.7,
+          "confidence_basis": "2 findings with verbatim excerpts, rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 2
+        },
+        "team": {
+          "confidence": 0.55,
+          "confidence_basis": "2 findings quoted verbatim, rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "bull_case": {
+          "confidence": 0.7,
+          "confidence_basis": "5 findings quote deck verbatim; rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 8
+        },
+        "bear_case": {
+          "confidence": 0.78,
+          "confidence_basis": "5 findings quote deck verbatim; rest inferred from missing data",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        }
+      }
+    },
+    {
+      "condition": "thin",
+      "attempt": 2,
+      "agents": {
+        "market": {
+          "confidence": 0.7,
+          "confidence_basis": "2 findings quoted verbatim, rest inferred",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 1
+        },
+        "team": {
+          "confidence": null,
+          "confidence_basis": "No specialist output was produced.",
+          "degraded": true,
+          "degraded_reason": "provider rate limit / quota exhausted",
+          "n_signals": 0
+        },
+        "bull_case": {
+          "confidence": 0.78,
+          "confidence_basis": "5 findings quote deck verbatim, no external verification",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 5
+        },
+        "bear_case": {
+          "confidence": 0.68,
+          "confidence_basis": "3 findings quote deck verbatim, rest inferred due to lack of data",
+          "degraded": false,
+          "degraded_reason": null,
+          "n_signals": 3
+        }
+      }
+    }
+  ]
+}

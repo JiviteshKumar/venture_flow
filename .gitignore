@@ -106,3 +106,13 @@ ml/eval/*.llm_cache.jsonl
 # mismatch on re-fetch means the mirror changed the file, which is worth
 # knowing rather than papering over.
 ml/eval/decks/*.pdf
+
+# Arm-specific risk model binaries. The SHIPPED model
+# (ml/models/risk_disclosure_model.pkl) is committed; the text-only and
+# deck-feature variants are ~3.5MB each and are exactly reproducible:
+#   python ml/scripts/train_risk_disclosure_model.py --out-suffix _textonly
+#   python ml/scripts/train_risk_disclosure_model.py --deck-features --out-suffix _deckfeat
+# Their REPORTS are committed, because those carry the before/after numbers and
+# the leakage audit, which is what the comparison actually needs.
+ml/models/risk_disclosure_model_textonly.pkl
+ml/models/risk_disclosure_model_deckfeat.pkl

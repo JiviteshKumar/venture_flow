@@ -3,6 +3,215 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 27 Aug 2026, twelfth pass: infrastructure, monitoring, and three bugs the tests found
+
+Six workstreams. Two of them turned out to be substantially already built, one
+was blocked by a hard external limit, and the testing pass found three real
+bugs — two of which this session had introduced itself, and one that had been
+sitting in the test suite silently.
+
+### What the brief said versus what the repository actually contained
+
+Checked before building, and worth recording because two items were largely done:
+
+- **Worker queue** — `/analyze` already returned 202 with a job id,
+  `analysis_jobs` already existed with real stage tracking, and the frontend
+  already polled `/analyze/status/{id}`. The genuine gap was failure handling,
+  not the queue.
+- **Comparables** — `comparables.py` already carried a `caveat` string naming
+  the YC-only population. What it lacked was any way for the UI to state that
+  scope prominently.
+- **Memo faithfulness** — `eval_memo_faithfulness.py` already measured the
+  *exact* half (0.9907 over 214 assertions) and its docstring already said it
+  did not attempt entailment. The new work is the entailment half.
+
+### A. Worker queue: the failure nobody handled
+
+Analysis runs in a FastAPI BackgroundTask, which lives in the API process and
+nowhere else. When Render's free tier restarts — idle spin-down, deploy, OOM —
+every in-flight job dies while its row still says `running`, and the frontend
+polls a spinner that can never resolve.
+
+`db.reclaim_orphaned_jobs()` now fails jobs past a 25-minute staleness window,
+distinguishing `running` ("interrupted mid-analysis") from `pending` ("never
+picked up") because those are different facts about the user's deck. It runs at
+startup and on every status poll.
+
+**Running it against the live database for the first time reclaimed a real job
+that had been stuck in `running` since 22 August** — five days of telling any
+poller it was still working.
+
+Also added: `MAX_CONCURRENT_ANALYSES` load shedding. BackgroundTasks are
+unbounded by default, and on 512MB the realistic outcome of accepting fifty
+decks is an OOM kill that turns one overload into fifty orphaned jobs. A
+retryable 429 is a better failure than accepting work that cannot finish.
+
+Analysis logic is untouched. `tests/test_report_unchanged_by_queue.py` compares
+the report field-by-field through the queue against the same analysis called
+directly.
+
+### B. Monitoring: the events a crash tracker never sees
+
+Every bug found in the last four sessions was found by a human reading stdout,
+and **none of them were crashes.** They were typed fallbacks: the code caught
+the exception, degraded politely, logged a line, and returned a plausible
+answer. An error tracker watching only unhandled exceptions would have caught
+zero of them.
+
+`observability.py` therefore tracks two different things: exceptions (via
+Sentry, optional and env-gated exactly like `rate_limiter.py`'s Redis), and
+**degradation events** — a 429, an extraction failure, a specialist fallback, a
+relevance gate that dropped every source. Logs are JSON lines; `job_id`
+propagates through a contextvar so four concurrent agents no longer interleave
+untraceably; `/observability` exposes in-process aggregates. No dashboard.
+
+### C. Comparables: correctly scoped, because broader is not obtainable
+
+Checked rather than assumed. **Crunchbase's API returns 401 without a paid
+licence**, its free Open Data Map is no longer published, and the startup
+datasets on public model hubs are unattributed third-party scrapes with no
+verifiable provenance.
+
+Nor is there room inside YC: yc-oss publishes 6,194 companies, of which
+**1,903 have a determinable outcome and 1,560 are already used** — 82% of the
+addressable pool. The other 4,291 are still Active and have no outcome to
+compare against.
+
+So the honest fix was the feature's language, not its data. The population is
+now a structured field, the caveat leads with "YC-ONLY POPULATION", and the UI
+states the scope in a banner **above** the table rather than an 11px grey
+footnote below it. A reader asking "why these five companies" gets a real
+answer, including that a company with no YC analogue still gets five rows
+because the search returns its nearest available matches however distant.
+
+### D. Specialist confidence: defined, then measured, then found wanting
+
+`confidence` was never defined. The prompt specified its *format* ("a bare
+number between 0 and 1") and one directional hint, and nothing said confidence
+in what. It feeds `specialist_uncertainty = (1 - mean) * 0.15`, so an undefined
+quantity was moving the headline score.
+
+Redefined as the fraction of the assessment resting on quotable evidence, with
+five calibration bands and checkable rules. Then measured — 23 live calls,
+4 agents, evidence-rich versus evidence-thin decks:
+
+| agent | rich mean | sd | thin mean | sd | gap | direction |
+|---|---|---|---|---|---|---|
+| market | 0.802 | 0.067 | 0.700 | 0.000 | +0.102 | correct |
+| team | 0.800 | 0.040 | 0.550 | — | +0.250 | correct |
+| bull_case | 0.910 | 0.020 | 0.740 | 0.057 | +0.170 | correct |
+| bear_case | 0.750 | 0.035 | 0.730 | 0.071 | +0.020 | correct, but ~zero |
+
+**Reproducible** — sd 0.02–0.07 at temperature 0.1. **Directionally correct in
+all four.** But two honest problems:
+
+1. `bear_case`'s gap of +0.020 is smaller than its own standard deviation. It
+   does not meaningfully discriminate.
+2. **Absolute calibration is still wrong.** A deck of pure adjectives — no
+   figures, no dates, no named entities — scored 0.68–0.78, where the prompt's
+   own bands say 0.15–0.34. The `confidence_basis` field showed why: agents
+   reported *"5 findings quote deck verbatim"*. They were quoting verbatim.
+   They were quoting marketing copy. **The rule counted quotes, not facts.**
+
+The prompt now requires a "checkable particular" — a figure, date, named entity
+or contract term — and floors adjective-only decks below 0.35. **That revision
+is UNVERIFIED**: the daily token budget was exhausted before it could be
+re-measured. The numbers above are for the first revision.
+
+### E. Memo entailment: NOT RUN, blocked by the daily cap
+
+The instrument is built (`ml/scripts/eval_memo_entailment.py`) and does not
+work yet, because:
+
+```
+tokens per day (TPD): Limit 200000, Used 198489, Requested 2041
+```
+
+Worth recording the misdiagnosis: the first failure was read as the 8,000
+tokens-per-*minute* ceiling. Per-minute pacing was added and did not help, which
+is what identified the daily cap. Estimated cost when quota returns is ~5,000
+tokens per report, ~40,000 for the 8-report sample; quota trickles back at
+roughly 8,300/hour, so it needs about five hours of accumulated allowance.
+`ml/eval/memo_entailment_results.json` records this as `NOT RUN` rather than
+leaving a file that reads as "0 assertions, nothing found".
+
+### F. Deck features in the risk model: measurable gain, and a decision not to promote
+
+Premise re-verified from the stored artifact first: 0.992 AUC on SEC filing
+prose, 0.667 on deck prose.
+
+16 structured features from `agents/deck_financials`, each with a written
+leakage verdict in `agents/deck_risk_features.py` — 11 candidates audited, 5
+rejected. The most dangerous rejection is `retrieval_phrase`: the corpus label
+*is* that phrase's bucket, so using it would hand the model its own label.
+
+| arm | SEC AUC | deck AUC | F1 | boilerplate FP | deck recall |
+|---|---|---|---|---|---|
+| text only | 0.992 | 0.667 | 0.720 | 0.077 | 0.000 |
+| **text + deck features** | **1.000** | **0.778** | **0.897** | **0.077** | **0.667** |
+
+**Decision: it still does not get a vote on whether a risk fires.** Three
+reasons, all measured:
+
+1. The bootstrap 95% CI on the deck AUC is **[0.200, 1.000]**. With n=6 that
+   interval cannot support a promotion.
+2. At the chosen threshold it would still fire on the benchmark's risk-free
+   team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193). The
+   deterministic rules get 3/3 with zero false positives.
+3. Two of the three deck positives score exactly 1.000 *because the features
+   encode those same rules* — most of the apparent gain is the model re-reading
+   them rather than adding independent signal.
+
+It ships as the severity model only. Ensemble unchanged at F1 0.933,
+boilerplate FP 0.077, ranking AUC 0.990.
+
+### G. Three bugs the tests found
+
+**1. The severity model was silently dead.** The feature-augmented model uses a
+custom transformer. Defined inside the training script, pickle saved it as
+`__main__.DeckFeatureTransformer` — a path that resolves in no other process.
+`agents/risk_disclosure` loaded it, failed, and reported `available: False` with
+`severity() -> None`, exactly as its degradation contract promises. **Nothing
+crashed, no test failed, and every benchmark number was identical** — because
+the evaluation harness re-*trains* rather than re-*loads*. The transformer now
+lives in `agents/deck_risk_features`, and a test asserts a file written by the
+trainer can be read back by the application.
+
+**2. An unknown request field was silently dropped.** The pipeline parameter is
+`claims_to_verify`; the API field is `claims`. Posting the former returned 202,
+a job id, and a completed analysis that had verified **zero claims**, with
+nothing reporting a problem. Found by making that exact mistake while writing
+these tests. `DiligenceRequest` now sets `extra="forbid"`; the frontend sends
+only declared fields, so nothing breaks and the typo becomes a 422.
+
+**3. A test-isolation leak that had been there all along.**
+`tests/test_demo_gate.py` calls `importlib.reload(api)` with `DEMO_ACCESS_TOKEN`
+set. monkeypatch restores the environment variable, but `api.DEMO_ACCESS_TOKEN`
+is a module-level constant read once at import, and `api` is a singleton shared
+by the whole suite. **Every API test running after that file got 401.** It was
+invisible while that file was the only one testing the gate, and surfaced when
+21 new tests appeared that all passed alone and failed together.
+
+A fourth, caught before it cost anything: the first concurrency test opened a
+`TestClient` per thread *with lifespan*, which runs `ensure_schema` against real
+Neon. Six racing migrations blew the join timeout, fixtures tore down beneath
+running threads, and the un-stubbed module executed the **real agent pipeline** —
+live DuckDuckGo and Groq calls in a test written to spend no quota.
+
+**Test counts: 193 passing at the start of this session, 250 at the end, 0
+failing.**
+
+### Also fixed
+
+`groq_client.py` called itself "the single source of truth for the Groq client"
+while depending on some other module having already called `load_dotenv()`. Any
+script importing the agents directly got an empty key, which the SDK turns into
+an empty `Authorization: Bearer ` header, which httpx rejects, which the SDK
+re-raises as `APIConnectionError`. So a missing credential was reported as
+"provider unreachable" — and an evaluation harness recorded 24 specialist calls
+as a provider outage before the real cause was found. It now loads its own
+credential, with `override=False` so a real environment variable still wins.
+
 ## Update — 27 Aug 2026, eleventh pass: run it on real decks, and find out it lies about growth
 
 The headline: **the pipeline was tested on real pitch decks for the first time,

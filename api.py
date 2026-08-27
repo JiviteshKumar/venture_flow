@@ -17,10 +17,10 @@ from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from chatbot import chat_with_document, store_document
-from db import add_comment, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, record_analysed_company, record_decision, stats, update_analysis_job
+from db import add_comment, count_active_jobs, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, reclaim_orphaned_jobs, record_analysed_company, record_decision, stats, update_analysis_job
 from db import healthcheck as neon_healthcheck
 from document_extractor import SUPPORTED_FORMATS, UnsupportedDocument, extract_document, is_supported
 from rate_limiter import is_allowed as rate_limit_is_allowed
@@ -28,7 +28,13 @@ from structured_extractor import extract_structured
 from ventureflow_agent import run_due_diligence
 
 load_dotenv()
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+import observability
+
+# Structured logging BEFORE anything else logs, so no line escapes in plain
+# text. Replaces logging.basicConfig, which produced unqueryable stdout -- the
+# format every bug in the last three sessions had to be found by reading.
+observability.configure_logging()
+observability.init_sentry()
 logger = logging.getLogger("ventureflow.api")
 
 MAX_TEXT_CHARS = 50_000
@@ -265,15 +271,48 @@ async def warn_if_deployed_and_ungated() -> None:
         )
 
 
+async def _reclaim_jobs_lost_to_the_last_restart() -> None:
+    """Every in-flight analysis dies when this process does.
+
+    BackgroundTasks live in the API process and nowhere else, so a Render
+    restart -- idle spin-down, deploy, OOM -- kills every running analysis while
+    its row still says 'running'. Without this, those rows stay that way
+    forever and the frontend polls a spinner that can never resolve. Running it
+    at startup is what makes a restart recoverable rather than permanent.
+
+    Best-effort: a failure here must not stop the API booting, because an API
+    that will not start is strictly worse than one with a few stale job rows.
+    """
+    try:
+        reclaimed = await run_in_threadpool(reclaim_orphaned_jobs)
+        if reclaimed:
+            logger.warning(
+                "Startup reclaimed %s job(s) orphaned by a previous restart", len(reclaimed),
+            )
+    except Exception:
+        logger.exception("Could not reclaim orphaned analysis jobs at startup")
+
+
 @app.on_event("startup")
 async def initialize_database_schema() -> None:
-    """Bring Neon to the application schema before accepting analysis jobs."""
+    """Bring Neon to the application schema before accepting analysis jobs.
+
+    Registered BEFORE the orphan reclamation below, and that ordering matters:
+    reclamation writes to analysis_jobs, so on a database that has never been
+    migrated it would fail against a table that does not exist yet. FastAPI runs
+    startup handlers in registration order.
+    """
     try:
         await run_in_threadpool(ensure_schema)
     except Exception:
         # Keep health diagnostics available if Neon is temporarily unreachable.
         # Analysis persistence will still return its existing clear 503 response.
         logger.exception("Neon schema migration unavailable during startup")
+
+
+@app.on_event("startup")
+async def reclaim_orphaned_jobs_at_startup() -> None:
+    await _reclaim_jobs_lost_to_the_last_restart()
 
 
 @app.on_event("shutdown")
@@ -302,6 +341,22 @@ async def unhandled_error(request: Request, exc: Exception):
 
 
 class DiligenceRequest(BaseModel):
+    # Reject unknown fields instead of silently dropping them.
+    #
+    # Pydantic's default is to ignore an unrecognised key, and the specific way
+    # that bites here is nasty: the pipeline function this model feeds takes a
+    # parameter named `claims_to_verify`, while the API field is `claims`. A
+    # client using the internal name -- an entirely reasonable mistake, and one
+    # made while writing this session's own tests -- got a 202, a job id, and a
+    # completed analysis that had verified ZERO claims, with nothing anywhere
+    # reporting a problem.
+    #
+    # Silently analysing something other than what was submitted is worse than
+    # refusing the request. The frontend sends exactly the fields declared
+    # below (see apiClient.startAnalysis), so forbidding extras breaks no
+    # existing caller and turns that failure into a 422 naming the bad field.
+    model_config = ConfigDict(extra="forbid")
+
     company_name: str = Field(min_length=1, max_length=160)
     company_description: str = Field(default="", max_length=MAX_TEXT_CHARS)
     claims: list[str] = Field(default_factory=list, max_length=MAX_CLAIMS)
@@ -943,6 +998,17 @@ def _describe_failure(exc: BaseException) -> str:
 
 
 async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:
+    # Every log line emitted anywhere inside this analysis -- including from the
+    # four specialist agents running concurrently -- carries this job id. That
+    # is the specific thing that made past debugging sessions painful: four
+    # agents interleaving output with no way to tell which run each belonged to.
+    with observability.job_context(
+        job_id=job_id, company=request_data.get("company_name"),
+    ):
+        await _run_analysis_job_inner(job_id, request_data)
+
+
+async def _run_analysis_job_inner(job_id: str, request_data: dict[str, Any]) -> None:
     try:
         await run_in_threadpool(update_analysis_job, job_id, "running")
 
@@ -962,6 +1028,10 @@ async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:
         await run_in_threadpool(update_analysis_job, job_id, "complete", report.model_dump())
     except Exception as exc:
         logger.exception("Analysis job %s failed", job_id)
+        observability.track_degradation(
+            "analysis_job_failed", component="analysis_job",
+            reason=f"{type(exc).__name__}: {exc}"[:200],
+        )
         message = _describe_failure(exc)
         try:
             await run_in_threadpool(
@@ -973,8 +1043,40 @@ async def _run_analysis_job(job_id: str, request_data: dict[str, Any]) -> None:
             logger.exception("Could not mark analysis job %s as failed", job_id)
 
 
+# How many analyses may be in flight at once in this process.
+#
+# BackgroundTasks are unbounded by default: accept fifty decks and the process
+# will try to run fifty analyses, each holding a thread, a Groq client and a
+# few MB of extracted text. Render's free tier gives 512MB and one instance, so
+# the realistic outcome is an OOM kill that takes every in-flight job with it --
+# turning one overload into fifty orphaned jobs.
+#
+# Refusing work with a 429 the caller can retry is a better failure than
+# accepting work that cannot be completed. Set low because the ceiling here is
+# memory, not CPU, and because Groq's own per-minute token budget makes more
+# than a handful of concurrent analyses pointless anyway.
+MAX_CONCURRENT_ANALYSES = int(os.getenv("MAX_CONCURRENT_ANALYSES", "3"))
+
+
 @app.post("/analyze", response_model=AnalysisJobResponse, status_code=202)
 async def analyze_company(request: DiligenceRequest, background_tasks: BackgroundTasks):
+    # Shed load rather than accept work this process cannot finish.
+    try:
+        active = await run_in_threadpool(count_active_jobs)
+    except Exception:
+        # If the count is unavailable, accept the job. Failing an analysis
+        # because a bookkeeping query failed would be a worse trade.
+        logger.exception("Could not count active analysis jobs; accepting anyway")
+        active = 0
+    if active >= MAX_CONCURRENT_ANALYSES:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"{active} analyses are already running. This deployment runs at most "
+                f"{MAX_CONCURRENT_ANALYSES} at once. Please retry in a few minutes."
+            ),
+        )
+
     try:
         job_id = await run_in_threadpool(create_analysis_job, request.model_dump())
     except Exception as exc:
@@ -993,8 +1095,35 @@ async def analysis_status(job_id: str):
         raise HTTPException(status_code=503, detail="Analysis status is currently unavailable.") from exc
     if not job:
         raise HTTPException(status_code=404, detail="Analysis job not found.")
+
+    # Reclaim on read, not only at startup.
+    #
+    # Startup reclamation handles a process that died and came back. It does not
+    # handle the case where THIS process is alive but the job's worker thread is
+    # not -- an OOM-killed thread, or a task that was never scheduled. The
+    # frontend polls this endpoint every few seconds, so checking here is what
+    # bounds how long a user can watch a dead job's spinner.
+    if job["status"] in ("pending", "running"):
+        try:
+            reclaimed = await run_in_threadpool(reclaim_orphaned_jobs)
+            if any(r["job_id"] == job_id for r in reclaimed):
+                job = await run_in_threadpool(get_analysis_job, job_id)
+        except Exception:
+            logger.exception("Orphan reclamation during status poll failed")
+
     report = DiligenceResponse(**job["result"]) if job["status"] == "complete" and job.get("result") else None
     return AnalysisJobResponse(job_id=job["job_id"], status=job["status"], report=report, error=job.get("error_message"), stage=job.get("stage"))
+
+
+@app.get("/observability")
+async def observability_snapshot():
+    """Aggregate degradation counts since this process started.
+
+    Deliberately not a dashboard. The question worth answering is "how often is
+    the analysis actually degraded in practice", and until now nothing anywhere
+    could answer it -- every degradation was a log line nobody aggregated.
+    """
+    return observability.snapshot()
 
 
 @app.get("/database/stats")

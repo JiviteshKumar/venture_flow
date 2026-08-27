@@ -27,6 +27,11 @@ import io
 import logging
 from pathlib import Path
 
+try:
+    import observability
+except Exception:  # noqa: BLE001
+    observability = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -334,6 +339,13 @@ def extract_document(filename: str, data: bytes) -> dict:
         text_layer = "none" if not stripped else "sparse"
     else:
         text_layer = "present"
+
+    if text_layer != "present" and observability is not None:
+        observability.track_degradation(
+            "no_text_layer", component="document_extractor",
+            reason=f"{page_count} page(s), {len(stripped)} chars extracted",
+            extension=extension, text_layer=text_layer,
+        )
 
     return {
         "text": text,

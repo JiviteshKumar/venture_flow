@@ -1,0 +1,29 @@
+{
+  "status": "NOT RUN -- blocked by Groq daily token cap",
+  "what_this_measures": "Whether the memo's PROSE assertions are entailed by the report's own structured evidence. Complements eval_memo_faithfulness.py, which checks exact restatement of numeric fields and scored 0.9907 over 214 assertions.",
+  "why_not_run": "Groq free tier enforces a rolling 200,000 tokens-per-day cap scoped to the ORGANISATION. At the time of the attempt the API returned: 'Rate limit reached ... on tokens per day (TPD): Limit 200000, Used 198489, Requested 2041.' Earlier work in the same session -- the deck re-runs and the specialist-confidence evaluation -- had consumed the budget. Quota trickles back at roughly 8,300 tokens/hour, so the 8-report sample below needs about 5 hours of accumulated allowance.",
+  "attempts": [
+    {
+      "attempt": 1,
+      "outcome": "all 7 reports RateLimitError",
+      "misdiagnosis": "initially read as the 8,000 tokens-per-MINUTE ceiling; per-minute pacing was added and did not help, which is what identified the daily cap as the real limit"
+    },
+    {
+      "attempt": 2,
+      "outcome": "all reports RateLimitError after 62s backoff waits; confirmed TPD via the raw 429 body"
+    }
+  ],
+  "estimated_cost_when_rerun": {
+    "measured_tokens_per_call": {
+      "memo_decomposition": 519,
+      "adjudication": "~2000-3000"
+    },
+    "estimated_per_report": 5000,
+    "sample_size": 8,
+    "estimated_total": 40000
+  },
+  "how_to_run": "python ml/scripts/eval_memo_entailment.py --limit 8 --token-budget 45000",
+  "n_reports_scored": 0,
+  "total_assertions": 0,
+  "supported_rate": null
+}

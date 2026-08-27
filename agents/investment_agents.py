@@ -8,6 +8,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
+import observability
 from groq_client import MODEL, get_client
 
 logger = logging.getLogger(__name__)
@@ -43,6 +44,13 @@ def _degraded(fallback: dict[str, Any], reason: str) -> dict[str, Any]:
     out = dict(fallback)
     out["_degraded"] = True
     out["_degraded_reason"] = reason
+    # Aggregated, not just logged. These are the events that matter most and
+    # crash-only error tracking sees none of them: the code caught the
+    # exception, degraded politely, and returned a plausible answer.
+    observability.track_degradation(
+        "specialist_fallback", component=out.get("_component", "specialist_agent"),
+        reason=reason,
+    )
     return out
 
 
@@ -55,12 +63,62 @@ def _json_agent(role: str, task: str, evidence: str, fallback: dict[str, Any]) -
 RULES:
 - Use only the supplied deck evidence and claim-verification results.
 - Never invent a market size, founder background, customer, competitor, or metric.
-- If evidence is absent, use "Insufficient data" and lower confidence.
+- If evidence is absent, say "Insufficient data".
 - Every non-empty finding must include a short verbatim evidence excerpt.
 - Return ONLY valid JSON matching the requested shape.
+
+WHAT "confidence" MEANS HERE -- read this before choosing a number.
+
+`confidence` is NOT how promising the company is, NOT how strong your case is,
+and NOT how likely the company is to succeed. It is one thing only:
+
+    the fraction of THIS assessment that rests on specific, quotable evidence
+    in the material above, rather than on your own general knowledge or
+    inference about companies of this kind.
+
+A devastating bear case built entirely on quoted deck text is HIGH confidence.
+An enthusiastic bull case built on plausible reasoning about the category is LOW
+confidence. The number describes your evidence, not your conclusion.
+
+Calibration anchors -- pick the band that matches, then a value inside it:
+
+  0.85-1.00  Nearly every finding quotes the deck verbatim, and the load-bearing
+             numbers were checked by claim verification.
+  0.60-0.84  Most findings quote the deck, but key figures are unverified or
+             the deck states them without support.
+  0.35-0.59  Roughly half your assessment is quoted evidence; the rest is
+             reasonable inference about this kind of company.
+  0.15-0.34  Little quotable evidence. You are mostly reasoning from general
+             knowledge of the category.
+  0.00-0.14  No usable evidence for this specific question.
+
+What counts as evidence, and what does not. This distinction decides the number.
+
+EVIDENCE is a checkable particular: a figure, a date, a named customer or
+partner, a headcount, a named prior employer, a stated contract term. Something
+a diligence analyst could go and verify, and could be wrong about.
+
+NOT EVIDENCE, however literally the deck says it: adjectives and claims of
+significance -- "massive market", "transformative technology", "passionate
+team", "strong relationships", "early traction has been encouraging", "uniquely
+positioned". Quoting one of these verbatim does not make it evidence. It is the
+deck asserting a conclusion, which is the thing you are supposed to assess.
+
+Three rules that make this checkable:
+- If your `signals` list is empty, confidence MUST be below 0.15.
+- Confidence above 0.60 requires at least two findings whose excerpts each
+  contain a checkable particular as defined above.
+- A deck consisting mainly of adjectives and claims of significance, with few or
+  no figures, dates or named entities, MUST score below 0.35 however
+  enthusiastically it is written and however faithfully you quote it.
+
 - "confidence" MUST be a bare number between 0 and 1 (e.g. 0.35).
   Never write it as a word such as "low"/"medium"/"high", never as a
   percentage string, and never omit it.
+- "confidence_basis" MUST be one short sentence naming what you counted: how
+  many of your findings carry a checkable particular (and what kind -- figures,
+  dates, named entities), and what you had to infer. Counting bare quotes is
+  not enough; say what the quotes actually contained.
 
 EVIDENCE:
 {evidence[:5000]}
@@ -116,7 +174,7 @@ EVIDENCE:
         return parsed if isinstance(parsed, dict) else _degraded(fallback, "response was not a JSON object")
     except Exception as exc:
         logger.exception("Specialist agent failed: %s", role)
-        return _degraded(fallback, _describe_provider_failure(exc))
+        return _degraded({**fallback, "_component": role}, _describe_provider_failure(exc))
 
 
 def _evidence_block(
@@ -171,25 +229,25 @@ def run_investment_agents(
         "market": (
             "market-validation analyst",
             "Assess market definition, buyer/problem evidence, growth signals and competition mentioned in the deck. Return JSON with keys confidence, market_definition, signals (finding/evidence), gaps, recommendation.",
-            {"confidence": 0, "market_definition": "Insufficient data", "signals": [], "gaps": ["Insufficient market evidence in the deck."], "recommendation": "Validate market size and buyer demand."},
+            {"confidence": 0, "confidence_basis": "No specialist output was produced.", "market_definition": "Insufficient data", "signals": [], "gaps": ["Insufficient market evidence in the deck."], "recommendation": "Validate market size and buyer demand."},
         ),
         "team": (
             "founder and team diligence analyst",
             "Assess team capabilities, hiring gaps and execution evidence. Use both the deck text and the FOUNDER BACKGROUND CHECKS section, which is independent web evidence about the named founders. "
-            "Return JSON with keys confidence, overall_assessment, capabilities (area/score/evidence), strengths, gaps, questions. "
+            "Return JSON with keys confidence, confidence_basis, overall_assessment, capabilities (area/score/evidence), strengths, gaps, questions. "
             "`capabilities` must hold 4-6 named capability areas scored 0-100 (for example Technical Depth, Domain Experience, Commercial Execution, Prior Startup Experience, Team Completeness), each with a short verbatim evidence excerpt. "
             "Return capabilities as an empty list ONLY when there is genuinely no team evidence of any kind -- a scored area with nothing behind it is worse than an absent one.",
-            {"confidence": 0, "overall_assessment": "Insufficient team information", "capabilities": [], "strengths": [], "gaps": ["Deck does not provide enough team evidence."], "questions": ["Provide founder biographies and relevant operating experience."]},
+            {"confidence": 0, "confidence_basis": "No specialist output was produced.", "overall_assessment": "Insufficient team information", "capabilities": [], "strengths": [], "gaps": ["Deck does not provide enough team evidence."], "questions": ["Provide founder biographies and relevant operating experience."]},
         ),
         "bull_case": (
             "bull-case investment analyst",
-            "Build the strongest evidence-backed investment case. Include only verified claims or direct deck evidence. Return JSON with keys confidence, thesis, signals (finding/evidence), conditions_to_invest.",
-            {"confidence": 0, "thesis": "Insufficient evidence for a bull case", "signals": [], "conditions_to_invest": ["Verify key commercial and product claims."]},
+            "Build the strongest evidence-backed investment case. Include only verified claims or direct deck evidence. Return JSON with keys confidence, confidence_basis, thesis, signals (finding/evidence), conditions_to_invest.",
+            {"confidence": 0, "confidence_basis": "No specialist output was produced.", "thesis": "Insufficient evidence for a bull case", "signals": [], "conditions_to_invest": ["Verify key commercial and product claims."]},
         ),
         "bear_case": (
             "bear-case investment analyst",
-            "Build the strongest evidence-backed downside case using refuted/unverified claims, red flags and missing evidence. Return JSON with keys confidence, thesis, signals (finding/evidence), diligence_required.",
-            {"confidence": 0, "thesis": "Insufficient evidence for a complete bear case", "signals": [], "diligence_required": ["Validate financials, market demand and team execution."]},
+            "Build the strongest evidence-backed downside case using refuted/unverified claims, red flags and missing evidence. Return JSON with keys confidence, confidence_basis, thesis, signals (finding/evidence), diligence_required.",
+            {"confidence": 0, "confidence_basis": "No specialist output was produced.", "thesis": "Insufficient evidence for a complete bear case", "signals": [], "diligence_required": ["Validate financials, market demand and team execution."]},
         ),
     }
     # Run the specialists with limited concurrency rather than all four at once.

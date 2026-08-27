@@ -126,3 +126,50 @@ def test_the_keyword_detectors_false_positive_on_safe_harbour_is_the_statute_nam
     signals = detect_signals(SAFE_HARBOUR)
     assert "legal_risk" in signals
     assert any(hit["signal"] == "litigation" for hit in signals["legal_risk"])
+
+
+def test_the_saved_model_loads_in_a_process_that_did_not_train_it():
+    """Regression guard for a silent outage this session introduced and caught.
+
+    The feature-augmented model uses a custom sklearn transformer. When that
+    class was defined inside the training script, pickle saved it by reference
+    as `__main__.DeckFeatureTransformer` -- a path that resolves in NO other
+    process. `agents/risk_disclosure` loaded the file, hit an unpickling error,
+    and behaved exactly as its degradation contract promises: `available: False`
+    and `severity() -> None`.
+
+    The dangerous part is what did NOT happen. Nothing crashed, no test failed,
+    and every benchmark number stayed identical -- because the evaluation
+    harness re-TRAINS the model rather than re-LOADING it. The product had
+    silently lost its severity model while all the evidence said it was fine.
+
+    So this asserts the property that actually matters: a file written by the
+    trainer can be read back by the application. The transformer now lives in
+    `agents/deck_risk_features`, which both can import.
+    """
+    import pickle
+
+    from agents.risk_disclosure import MODEL_PATH
+
+    if not MODEL_PATH.exists():
+        pytest.skip("model file not present in this checkout")
+
+    with MODEL_PATH.open("rb") as handle:
+        bundle = pickle.load(handle)
+
+    assert "model" in bundle and "threshold" in bundle
+    module = type(bundle["model"]).__module__
+    assert not module.startswith("__main__"), (
+        f"model pickled with a __main__ reference ({module}); it will not load "
+        f"outside the training script"
+    )
+    # And it must actually score, not merely unpickle.
+    assert 0.0 <= float(bundle["model"].predict_proba([GOING_CONCERN])[0][1]) <= 1.0
+
+
+def test_the_deck_feature_transformer_is_importable_from_the_app():
+    """The specific import path the pickle depends on."""
+    from agents.deck_risk_features import DeckFeatureTransformer, FEATURE_NAMES
+
+    features = DeckFeatureTransformer().transform([GOING_CONCERN])
+    assert features.shape == (1, len(FEATURE_NAMES))

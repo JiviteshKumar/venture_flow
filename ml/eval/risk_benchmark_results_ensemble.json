@@ -1231,16 +1231,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.4485714285714286,
+          "score": 1.424996191926885,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.9485714285714286,
+            "model_probability": 0.924996191926885,
             "model_fired": true,
             "total_signals": 1,
-            "score": 1.4485714285714286
+            "score": 1.424996191926885
           }
         },
         {
@@ -1255,16 +1255,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.5,
+          "score": 1.4784615384615385,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 1.0,
+            "model_probability": 0.9784615384615385,
             "model_fired": true,
             "total_signals": 1,
-            "score": 1.5
+            "score": 1.4784615384615385
           }
         },
         {
@@ -1280,16 +1280,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.133974363529767,
+          "score": 1.222773969704663,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.6339743635297671,
-            "model_fired": false,
+            "model_probability": 0.7227739697046628,
+            "model_fired": true,
             "total_signals": 1,
-            "score": 1.133974363529767
+            "score": 1.222773969704663
           }
         },
         {
@@ -1305,16 +1305,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.5,
+          "score": 1.4784615384615385,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 1.0,
+            "model_probability": 0.9784615384615385,
             "model_fired": true,
             "total_signals": 1,
-            "score": 1.5
+            "score": 1.4784615384615385
           }
         },
         {
@@ -1329,16 +1329,16 @@
           "predicted_categories": [
             "legal_risk"
           ],
-          "score": 1.9527272727272726,
+          "score": 1.9367948717948718,
           "detail": {
             "keyword_categories": [
               "legal_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.9527272727272728,
+            "model_probability": 0.9367948717948718,
             "model_fired": true,
             "total_signals": 2,
-            "score": 1.9527272727272726
+            "score": 1.9367948717948718
           }
         },
         {
@@ -1355,17 +1355,17 @@
             "financial_risk",
             "legal_risk"
           ],
-          "score": 1.98,
+          "score": 1.9367948717948718,
           "detail": {
             "keyword_categories": [
               "financial_risk",
               "legal_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.9800000000000001,
+            "model_probability": 0.9367948717948718,
             "model_fired": true,
             "total_signals": 3,
-            "score": 1.98
+            "score": 1.9367948717948718
           }
         },
         {
@@ -1380,16 +1380,16 @@
           "predicted_categories": [
             "legal_risk"
           ],
-          "score": 1.8462987012987013,
+          "score": 1.8301243970550902,
           "detail": {
             "keyword_categories": [
               "legal_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.8462987012987014,
+            "model_probability": 0.8301243970550901,
             "model_fired": true,
             "total_signals": 3,
-            "score": 1.8462987012987013
+            "score": 1.8301243970550902
           }
         },
         {
@@ -1404,16 +1404,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 0.890503775294473,
+          "score": 1.3052992222299153,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.390503775294473,
-            "model_fired": false,
+            "model_probability": 0.8052992222299153,
+            "model_fired": true,
             "total_signals": 1,
-            "score": 0.890503775294473
+            "score": 1.3052992222299153
           }
         },
         {
@@ -1428,16 +1428,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.4135135135135135,
+          "score": 1.3920979020979023,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.9135135135135135,
+            "model_probability": 0.8920979020979022,
             "model_fired": true,
             "total_signals": 1,
-            "score": 1.4135135135135135
+            "score": 1.3920979020979023
           }
         },
         {
@@ -1452,16 +1452,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.457215695066223,
+          "score": 1.4034615384615385,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.957215695066223,
+            "model_probability": 0.9034615384615385,
             "model_fired": true,
             "total_signals": 1,
-            "score": 1.457215695066223
+            "score": 1.4034615384615385
           }
         },
         {
@@ -1476,16 +1476,16 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.33,
+          "score": 1.2277739697046628,
           "detail": {
             "keyword_categories": [
               "financial_risk"
             ],
             "deck_signals": [],
-            "model_probability": 0.8300000000000001,
+            "model_probability": 0.7277739697046628,
             "model_fired": true,
             "total_signals": 1,
-            "score": 1.33
+            "score": 1.2277739697046628
           }
         },
         {
@@ -1498,14 +1498,14 @@
           "gold_severity": "MEDIUM",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.49601728880798646,
+          "score": 0.4846154615461547,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.49601728880798646,
+            "model_probability": 0.4846154615461547,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.49601728880798646
+            "score": 0.4846154615461547
           }
         },
         {
@@ -1538,14 +1538,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.43893896726607257,
+          "score": 0.35781967761993594,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.43893896726607257,
+            "model_probability": 0.35781967761993594,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.43893896726607257
+            "score": 0.35781967761993594
           }
         },
         {
@@ -1556,14 +1556,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.22376524989400665,
+          "score": 0.17651640806156582,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.22376524989400665,
+            "model_probability": 0.17651640806156582,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.22376524989400665
+            "score": 0.17651640806156582
           }
         },
         {
@@ -1574,14 +1574,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.278,
+          "score": 0.3456457645764576,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.278,
+            "model_probability": 0.3456457645764576,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.278
+            "score": 0.3456457645764576
           }
         },
         {
@@ -1628,14 +1628,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.19935004326110534,
+          "score": 0.22043696132207233,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.19935004326110534,
+            "model_probability": 0.22043696132207233,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.19935004326110534
+            "score": 0.22043696132207233
           }
         },
         {
@@ -1646,14 +1646,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.36087836894288505,
+          "score": 0.3456457645764576,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.36087836894288505,
+            "model_probability": 0.3456457645764576,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.36087836894288505
+            "score": 0.3456457645764576
           }
         },
         {
@@ -1664,14 +1664,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.23257943095391398,
+          "score": 0.17981404713142182,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.23257943095391398,
+            "model_probability": 0.17981404713142182,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.23257943095391398
+            "score": 0.17981404713142182
           }
         },
         {
@@ -1682,14 +1682,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.18090898703884303,
+          "score": 0.13194567392738615,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.18090898703884303,
+            "model_probability": 0.13194567392738615,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.18090898703884303
+            "score": 0.13194567392738615
           }
         },
         {
@@ -1705,16 +1705,16 @@
           "predicted_categories": [
             "operational_risk"
           ],
-          "score": 0.960722349545879,
+          "score": 1.5,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [
               "largest customer is 79% of revenue"
             ],
-            "model_probability": 0.460722349545879,
-            "model_fired": false,
+            "model_probability": 1.0,
+            "model_fired": true,
             "total_signals": 1,
-            "score": 0.960722349545879
+            "score": 1.5
           }
         },
         {
@@ -1729,17 +1729,17 @@
           "predicted_categories": [
             "financial_risk"
           ],
-          "score": 1.6058371086278063,
+          "score": 2.0,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [
               "runway of 2.7 months",
               "burn multiple of 10.79x"
             ],
-            "model_probability": 0.6058371086278063,
-            "model_fired": false,
+            "model_probability": 1.0,
+            "model_fired": true,
             "total_signals": 2,
-            "score": 1.6058371086278063
+            "score": 2.0
           }
         },
         {
@@ -1756,17 +1756,17 @@
             "legal_risk",
             "management_risk"
           ],
-          "score": 1.460722349545879,
+          "score": 1.1933699261234796,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [
               "founder or executive departure disclosed",
               "unresolved intellectual-property assignment"
             ],
-            "model_probability": 0.460722349545879,
+            "model_probability": 0.19336992612347967,
             "model_fired": false,
             "total_signals": 2,
-            "score": 1.460722349545879
+            "score": 1.1933699261234796
           }
         },
         {
@@ -1777,14 +1777,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.4298979767860224,
+          "score": 0.3475974553977137,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.4298979767860224,
+            "model_probability": 0.3475974553977137,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.4298979767860224
+            "score": 0.3475974553977137
           }
         },
         {
@@ -1795,14 +1795,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.10800000000000001,
+          "score": 0.15444444444444444,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.10800000000000001,
+            "model_probability": 0.15444444444444444,
             "model_fired": false,
             "total_signals": 0,
-            "score": 0.10800000000000001
+            "score": 0.15444444444444444
           }
         },
         {
@@ -1813,14 +1813,14 @@
           "gold_severity": "NONE",
           "predicted_risk": false,
           "predicted_categories": [],
-          "score": 0.6907925453479489,
+          "score": 0.690979097909791,
           "detail": {
             "keyword_categories": [],
             "deck_signals": [],
-            "model_probability": 0.6907925453479489,
+            "model_probability": 0.690979097909791,
             "model_fired": true,
             "total_signals": 0,
-            "score": 0.6907925453479489
+            "score": 0.690979097909791
           }
         }
       ]

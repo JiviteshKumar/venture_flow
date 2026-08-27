@@ -56,8 +56,10 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
+from agents.deck_risk_features import DeckFeatureTransformer  # noqa: E402
 
 CORPUS_PATH = ROOT / "ml" / "data" / "risk_training_corpus.jsonl"
 EVAL_PATH = ROOT / "ml" / "eval" / "risk_benchmark.jsonl"
@@ -109,7 +111,7 @@ def assert_disjoint(train_rows: list[dict], eval_rows: list[dict]) -> None:
           f"the {len(eval_rows)} hand-labelled eval excerpts.")
 
 
-def build_pipeline():
+def build_pipeline(use_deck_features: bool = False):
     from sklearn.calibration import CalibratedClassifierCV
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.linear_model import LogisticRegression
@@ -132,6 +134,19 @@ def build_pipeline():
     # the coefficients are directly inspectable -- a reviewer can ask which
     # phrases drive a positive and get an answer. Calibrated because the
     # pipeline consumes a probability, not a class.
+    if use_deck_features:
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.pipeline import Pipeline as _P
+
+        # Scaled, because the structured block mixes 0/1 indicators with
+        # runway in months and a burn multiple. Unscaled, the largest-magnitude
+        # column would dominate a linear model's coefficients for reasons that
+        # have nothing to do with signal.
+        features = FeatureUnion([
+            ("text", features),
+            ("deck", _P([("extract", DeckFeatureTransformer()), ("scale", StandardScaler())])),
+        ])
+
     base = LogisticRegression(max_iter=2000, C=4.0, class_weight="balanced")
     return Pipeline([
         ("features", features),
@@ -203,6 +218,12 @@ def evaluate_on_benchmark(model, eval_rows: list[dict], threshold: float) -> dic
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--deck-features", action="store_true",
+                        help="augment TF-IDF with structured deck features "
+                             "(see ml/scripts/deck_risk_features.py for the leakage audit)")
+    parser.add_argument("--out-suffix", default="",
+                        help="suffix for the model/report filenames, so an arm "
+                             "does not overwrite the control")
     parser.add_argument("--threshold", type=float, default=None,
                         help="operating threshold; default is chosen on the "
                              "in-distribution held-out split, never on the benchmark")
@@ -233,7 +254,7 @@ def main() -> int:
     print(f"Grouped split: {len(train_index)} train / {len(test_index)} test, "
           f"0 filings shared")
 
-    model = build_pipeline()
+    model = build_pipeline(use_deck_features=args.deck_features)
     model.fit(train_texts, y_train)
 
     from sklearn.metrics import classification_report, roc_auc_score
@@ -273,7 +294,7 @@ def main() -> int:
 
     # Refit on everything before the out-of-distribution evaluation, which is
     # the number that actually decides whether this ships.
-    final = build_pipeline()
+    final = build_pipeline(use_deck_features=args.deck_features)
     final.fit(texts, labels)
     benchmark = evaluate_on_benchmark(final, eval_rows, chosen)
 
@@ -305,13 +326,29 @@ def main() -> int:
     print("\n  Prior Risk/Tone model, same benchmark: AUC 0.333 (below chance), "
           "all 28 predicted `neutral`.")
 
-    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with MODEL_PATH.open("wb") as handle:
-        pickle.dump({"model": final, "threshold": chosen}, handle)
+    model_path = (MODEL_PATH.with_name(MODEL_PATH.stem + args.out_suffix + MODEL_PATH.suffix)
+                  if args.out_suffix else MODEL_PATH)
+    report_path = (REPORT_PATH.with_name(REPORT_PATH.stem + args.out_suffix + REPORT_PATH.suffix)
+                   if args.out_suffix else REPORT_PATH)
+
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    with model_path.open("wb") as handle:
+        pickle.dump({"model": final, "threshold": chosen,
+                     "uses_deck_features": args.deck_features}, handle)
 
     provenance_path = ROOT / "ml" / "data" / "risk_training_corpus.provenance.json"
     provenance = json.loads(provenance_path.read_text(encoding="utf-8")) if provenance_path.exists() else {}
-    REPORT_PATH.write_text(json.dumps({
+    audit = []
+    if args.deck_features:
+        from agents.deck_risk_features import LEAKAGE_AUDIT, FEATURE_NAMES
+        audit = LEAKAGE_AUDIT
+        rejected = sum(1 for a in audit if a["verdict"].startswith("REJECTED"))
+        print(f"\nStructured features used: {len(FEATURE_NAMES)}; "
+              f"leakage audit records {len(audit)} candidate(s), {rejected} rejected.")
+
+    report_path.write_text(json.dumps({
+        "arm": "text+deck_features" if args.deck_features else "text_only",
+        "leakage_audit": audit,
         "trained_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "n_train_total": len(rows),
         "n_positive": positives,

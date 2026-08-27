@@ -96,12 +96,46 @@ def find_comparables(description: str, top_k: int = 5) -> dict[str, Any]:
         return {
             "available": True,
             "comparables": comparables,
-            "source": "1,560 real Y Combinator companies (yc-oss/api), TF-IDF+SVD text similarity",
+            "source": "1,560 Y Combinator companies (yc-oss/api), TF-IDF+SVD text similarity",
+            # Stated as a first-class field, not buried at the end of a
+            # footnote. "Why these five companies" deserves an answer a reader
+            # can act on, and the honest answer is that the search space is one
+            # accelerator's portfolio -- so a company with no YC analogue gets
+            # the nearest YC company regardless of how far away that is.
+            "population": {
+                "name": "Y Combinator alumni with a recorded outcome",
+                "n": 1560,
+                "universe": "yc-oss/api, 6,194 YC companies total",
+                "labelled_available": 1903,
+                "coverage_of_labelled": 0.82,
+                "excluded": (
+                    "4,291 YC companies are still Active and therefore have no "
+                    "outcome to compare against; the remaining ~343 labelled "
+                    "companies fall outside this product's tech-startup scope or "
+                    "carry no usable description text."
+                ),
+                "not_included": (
+                    "Non-YC startups of any kind. No accelerator-independent, "
+                    "European, Asian, bootstrapped or later-stage population is "
+                    "represented."
+                ),
+                "why_not_broader": (
+                    "Crunchbase's API returns 401 without a paid licence and its "
+                    "free Open Data Map is no longer published; the startup "
+                    "datasets on public model hubs are unattributed third-party "
+                    "scrapes with no verifiable provenance. Broadening this "
+                    "population is a budget item, not an engineering one."
+                ),
+            },
             "caveat": (
-                "A text-similarity match over company descriptions, not a "
-                "market-data-verified comp set -- treat these as leads to "
-                "look into, not as validated comparables or valuation guidance. "
-                "Also YC-only, same population caveat as the Outcome Model."
+                "YC-ONLY POPULATION. These are the nearest matches among 1,560 Y "
+                "Combinator companies -- not the nearest companies in the market. "
+                "A startup with no YC analogue still gets five rows here, because "
+                "the search always returns its closest available matches however "
+                "distant they are. It is also a text-similarity match over "
+                "descriptions, not a market-data-verified comp set: treat these "
+                "as leads to look into, not as validated comparables or valuation "
+                "guidance."
             ),
         }
     except Exception:

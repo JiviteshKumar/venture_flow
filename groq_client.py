@@ -13,7 +13,28 @@ from __future__ import annotations
 
 import os
 
+from dotenv import load_dotenv
 from groq import Groq
+
+# Load .env HERE, in the module that owns the credential.
+#
+# This module called itself "the single source of truth for the Groq client"
+# while depending on some *other* module having already called load_dotenv().
+# api.py and ventureflow_agent.py do; a script that imports
+# `agents.investment_agents` directly does not, and there is nothing in the
+# import graph that makes that obvious.
+#
+# The failure mode is quiet and expensive. With no key the SDK builds a
+# request with an empty `Authorization: Bearer ` header, httpx rejects it as an
+# illegal header value, and the SDK re-raises that as APIConnectionError -- so
+# a missing credential is reported as "provider unreachable". An evaluation
+# harness ran 24 specialist calls against that and recorded every one as a
+# provider outage; it correctly refused to score them, but the diagnosis it
+# offered pointed at Groq rather than at a missing .env load.
+#
+# `override=False` so a real environment variable (Render, CI) always wins over
+# a local .env file.
+load_dotenv(override=False)
 
 # Model choice, 22 Aug 2026: this was "llama-3.3-70b-versatile" until Groq
 # decommissioned it -- the key still authenticates fine, but that model id now

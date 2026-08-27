@@ -1081,6 +1081,42 @@ const Analysis = () => {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     <SLabel>Competitive Landscape</SLabel>
+                    {/*
+                      The population scope is stated ABOVE the table, not in an
+                      11px footnote below it.
+
+                      "Why these five companies" has an honest answer -- they are
+                      the nearest matches inside one accelerator's portfolio --
+                      and a reader who does not see that will read the table as
+                      "these are this company's competitors", which it is not. A
+                      startup with no YC analogue still gets five rows, because
+                      the search always returns its closest available matches
+                      however distant they are.
+
+                      Broadening the population is a budget item, not an
+                      engineering one: Crunchbase's API returns 401 without a
+                      paid licence. Until that changes, a correctly-scoped
+                      feature beats a silently-overclaimed one.
+                    */}
+                    {ycComparables.length > 0 && (
+                      <div style={{
+                        background: "rgba(234,179,8,0.08)",
+                        border: "1px solid rgba(234,179,8,0.35)",
+                        borderRadius: 6, padding: "8px 10px", margin: "8px 0 12px",
+                      }}>
+                        <p style={{ color: "#EAB308", fontSize: 12, fontWeight: 600, margin: 0 }}>
+                          Y Combinator companies only
+                        </p>
+                        <p style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
+                          Matched against{" "}
+                          {marketComparables?.population?.n?.toLocaleString?.() ?? "1,560"}{" "}
+                          YC alumni with a recorded outcome — not against the market.
+                          No non-YC startups are represented. These are the nearest
+                          available matches, not necessarily close ones: treat them as
+                          leads to investigate, not as validated comparables.
+                        </p>
+                      </div>
+                    )}
                     {competitors.length ? <>
                       <table className="an-comp-table">
                         <thead>

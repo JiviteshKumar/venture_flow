@@ -19,3 +19,7 @@ uvicorn[standard]
 # Optional: only imported if REDIS_URL is set (rate_limiter.py falls back to
 # in-memory limiting without it). Uncomment if you're running >1 instance.
 # redis
+# Optional: error tracking. Only imported if SENTRY_DSN is set (observability.py
+# degrades to structured JSON logs without it, and says so at /observability).
+# Same optional-dependency pattern as redis above.
+# sentry-sdk[fastapi]

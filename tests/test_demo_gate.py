@@ -31,6 +31,30 @@ ORIGIN = "https://venture-flow-livid.vercel.app"
 GATED_ROUTES = ["/reports", "/database/stats", "/reports/1", "/reports/1/comments"]
 
 
+@pytest.fixture(autouse=True)
+def restore_api_module_state():
+    """Reload `api` with a clean environment after every test in this file.
+
+    Without this, the file leaks its gated state into the whole suite. The
+    helper below sets DEMO_ACCESS_TOKEN in the environment and then calls
+    `importlib.reload(api)`. monkeypatch faithfully restores the environment
+    variable at teardown -- but `api.DEMO_ACCESS_TOKEN` is a MODULE-LEVEL
+    constant read once at import, so the reloaded module keeps the token, and
+    `api` is a singleton shared by every other test file.
+
+    The result: every API test that ran after this file got 401 Unauthorized.
+    It stayed invisible because this was the only file testing the gate, and it
+    surfaced when 21 new worker-queue tests were added -- all of which passed in
+    isolation and failed in the suite.
+
+    Reloading at teardown, with the environment already restored, puts the
+    module back to its real configuration.
+    """
+    yield
+    import api
+    importlib.reload(api)
+
+
 def _client(monkeypatch, token: str | None):
     if token is None:
         monkeypatch.delenv("DEMO_ACCESS_TOKEN", raising=False)

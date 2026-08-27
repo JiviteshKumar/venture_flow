@@ -22,8 +22,13 @@ of AUC.
 
 SUBGROUP PERFORMANCE, WHICH MUST NOT BE AVERAGED AWAY
 
-    SEC filing prose (n=22) : AUC 0.992   <- the register it was trained on
-    deck prose       (n=6)  : AUC 0.667   <- did not transfer
+    SEC filing prose (n=22) : AUC 1.000   <- the register it was trained on
+    deck prose       (n=6)  : AUC 0.778, 95% CI [0.200, 1.000]
+
+The deck figure improved from 0.667 when 16 structured features from
+`agents/deck_financials` were added (see ml/scripts/deck_risk_features.py for
+the per-feature leakage audit). It is still NOT enough to promote this model to
+deciding whether a risk fired -- see `why_not_voting` in model_metadata().
 
 The combined 0.959 is dominated by the larger subgroup. Quoting it as a general
 figure would claim deck-register performance this model does not have.
@@ -89,9 +94,24 @@ def model_metadata() -> dict:
     return {
         "available": True,
         "threshold": bundle.get("threshold"),
+        "uses_deck_features": bool(bundle.get("uses_deck_features")),
         "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly "
-                      "labelled by retrieval phrase",
-        "benchmark_auc_sec_filings": 0.992,
-        "benchmark_auc_deck_register": 0.667,
+                      "labelled by retrieval phrase, plus 16 structured deck "
+                      "features derived from the same text",
+        "benchmark_auc_sec_filings": 1.000,
+        "benchmark_auc_deck_register": 0.778,
+        "benchmark_auc_deck_register_ci95": [0.200, 1.000],
         "role": "severity ranking only; does not decide whether a risk fired",
+        "why_not_voting": (
+            "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were "
+            "added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an "
+            "interval too wide to promote on. At the chosen threshold this model "
+            "would still fire on the benchmark's risk-free team slide (p=0.691) "
+            "and miss the founder-departure/IP flag (p=0.193), while the "
+            "deterministic rules in agents/deck_financials get 3/3 with zero "
+            "false positives. Two of the three deck positives score exactly "
+            "1.000 because the features encode those same rules, so most of the "
+            "apparent gain is the model re-reading them rather than adding "
+            "independent signal."
+        ),
     }

@@ -499,6 +499,93 @@ def update_analysis_job(job_id: str, status: str, result: dict[str, Any] | None 
         conn.commit()
 
 
+
+# How long a job may sit in 'running' before it is presumed dead. A real deck
+# analysis measured 3-6 minutes end to end, so 25 minutes is far outside the
+# normal envelope while still reclaiming quickly enough that a user is not left
+# watching a spinner for an hour.
+STALE_JOB_MINUTES = 25
+
+
+def reclaim_orphaned_jobs(stale_minutes: int = STALE_JOB_MINUTES) -> list[dict[str, Any]]:
+    """Fail jobs that can no longer be running, and return what was reclaimed.
+
+    This closes the failure mode the async pipeline has always had and never
+    handled. Analysis runs in a FastAPI BackgroundTask, which lives in the API
+    process and nowhere else. When that process dies -- and on Render's free
+    tier it dies routinely, from idle spin-down, deploys, and OOM kills -- every
+    in-flight job dies with it, while its row sits in the database saying
+    'running' forever. The frontend polls `/analyze/status/{id}`, sees 'running'
+    on every poll, and shows a progress spinner that will never resolve.
+
+    That is precisely the failure this codebase keeps finding in other guises:
+    infrastructure died, and the product reported it as work in progress.
+
+    Two distinct cases are reclaimed, and they are given different messages
+    because they are different facts about what happened:
+
+      - `running` past the stale window: the process almost certainly restarted
+        mid-analysis. The user's deck was never analysed.
+      - `pending` past the stale window: the job row was created but its
+        BackgroundTask never started, so the crash happened between the INSERT
+        and the task being scheduled.
+
+    Called at startup (where it catches everything the previous process lost)
+    and from the status endpoint (where it catches a job whose process died
+    while this one stayed up, e.g. a worker thread killed by OOM).
+
+    Deliberately NOT a retry. Re-running an analysis automatically would spend
+    real Groq tokens on a request nobody is waiting for any more, and could loop
+    forever if the deck itself is what crashes the pipeline. Reclaiming means
+    telling the truth about the job, not attempting it again.
+    """
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE analysis_jobs
+               SET status = 'failed',
+                   completed_at = now(),
+                   error_message = CASE
+                       WHEN status = 'running' THEN
+                           'The analysis was interrupted before it finished -- the server '
+                           'restarted while your deck was being processed. Nothing was saved. '
+                           'Please upload it again.'
+                       ELSE
+                           'The analysis never started -- the server restarted before it was '
+                           'picked up. Nothing was saved. Please upload it again.'
+                   END
+             WHERE status IN ('pending', 'running')
+               AND COALESCE(started_at, created_at) < now() - make_interval(mins => %s)
+            RETURNING id::text AS job_id, status, stage,
+                      COALESCE(started_at, created_at) AS last_seen_at
+            """,
+            (stale_minutes,),
+        )
+        reclaimed = list(cur.fetchall())
+        conn.commit()
+    if reclaimed:
+        logger.warning(
+            "Reclaimed %s orphaned analysis job(s) older than %s minutes: %s",
+            len(reclaimed), stale_minutes,
+            ", ".join(r["job_id"] for r in reclaimed),
+        )
+    return reclaimed
+
+
+def count_active_jobs() -> int:
+    """Jobs currently pending or running. Used to shed load rather than accept
+    work the process cannot finish -- see api.analyze_company."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT count(*) AS n FROM analysis_jobs "
+            "WHERE status IN ('pending', 'running') "
+            "AND COALESCE(started_at, created_at) > now() - make_interval(mins => %s)",
+            (STALE_JOB_MINUTES,),
+        )
+        row = cur.fetchone()
+        return int(row["n"]) if row else 0
+
+
 def get_analysis_job(job_id: str) -> dict[str, Any] | None:
     with connection() as conn, conn.cursor() as cur:
         cur.execute(

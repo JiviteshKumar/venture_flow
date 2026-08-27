@@ -205,6 +205,23 @@ export interface AnalyzeResponse {
       }>;
       source?: string;
       caveat?: string;
+      /**
+       * The search population, stated as structured data rather than left in
+       * prose, so the UI can show the scope above the table instead of burying
+       * it in a footnote. Comparables come from Y Combinator alumni only;
+       * a company with no YC analogue still gets five rows, because the search
+       * returns its nearest available matches however distant they are.
+       */
+      population?: {
+        name?: string;
+        n?: number;
+        universe?: string;
+        labelled_available?: number;
+        coverage_of_labelled?: number;
+        excluded?: string;
+        not_included?: string;
+        why_not_broader?: string;
+      };
     };
     bull_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; conditions_to_invest: string[] };
     bear_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; diligence_required: string[] };

@@ -10,6 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 
+import observability
 from agents.evidence_filter import filter_sources
 from groq_client import MODEL, get_client
 logger = logging.getLogger(__name__)
@@ -310,8 +311,12 @@ Respond with ONLY valid JSON, no other text:
             "key_evidence": "",
         }
 
-    except Exception:
+    except Exception as exc:
         logger.exception("Groq claim-verification request failed")
+        observability.track_degradation(
+            "claim_verification_failed", component="claim_verifier",
+            reason=f"{type(exc).__name__}: {exc}"[:200],
+        )
         return {
             "verdict":      "NOT_ENOUGH_INFO",
             "confidence":   0.0,
@@ -368,6 +373,15 @@ def verify_claim(
 
     # A model must never be allowed to infer a verdict without retrieved evidence.
     if not evidence["snippets"] and not evidence["full_texts"]:
+        # "The web had nothing" and "the gate removed everything the web had"
+        # are different facts about a company, and only one of them is about
+        # the company at all.
+        observability.track_degradation(
+            "no_evidence_retrieved", component="claim_verifier",
+            reason=("all sources dropped by the relevance gate"
+                    if evidence.get("dropped") else "search returned nothing"),
+            sources_dropped=len(evidence.get("dropped", [])),
+        )
         empty = {
             "claim": claim_text,
             "verdict": "NOT_ENOUGH_INFO",
