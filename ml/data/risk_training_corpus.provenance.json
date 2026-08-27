@@ -1,0 +1,27 @@
+{
+  "source": "SEC EDGAR full-text search (efts.sec.gov) and EDGAR Archives",
+  "source_kind": "primary regulatory filings, public domain",
+  "retrieved_at": "2026-08-27T06:08:26Z",
+  "method": "weak supervision by retrieval phrase (Ratner et al., NeurIPS 2016)",
+  "label_noise": "labels are the retrieval phrase's bucket, NOT human judgement",
+  "n_excerpts": 941,
+  "n_positive": 464,
+  "n_negative": 477,
+  "n_labelling_functions": 38,
+  "unique_filings": 614,
+  "eval_disjointness": {
+    "eval_set": "ml\\eval\\risk_benchmark.jsonl",
+    "excluded_by_text_hash": 0,
+    "excluded_by_containment": 3,
+    "excluded_by_accession": 24,
+    "duplicates_dropped": 141
+  },
+  "user_agent": "VentureFlow research (contact jiviteshkumar54@gmail.com)",
+  "fetch_stats": {
+    "ok": 792,
+    "http_403": 0,
+    "http_other": 9,
+    "exception": 0,
+    "retried": 0
+  }
+}

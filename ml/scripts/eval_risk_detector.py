@@ -181,6 +181,78 @@ def detector_keyword_plus_financials(row: dict[str, Any]) -> tuple[bool, list[st
     }
 
 
+def detector_ensemble(row: dict[str, Any]) -> tuple[bool, list[str], dict[str, Any]]:
+    """Three detectors, each on the register it is actually good at.
+
+    Measured on this benchmark, split by subgroup:
+
+        SEC keyword dictionary   filings: strong      decks: misses all 3
+        risk_disclosure_model    filings: AUC 0.992   decks: AUC 0.667
+        deck_financials          filings: silent      decks: 3/3, 0 false positives
+
+    The trained model and the deck reader are near-complements, and neither
+    subsumes the other. That is not a disappointing result to be averaged away
+    -- it is the reason the ensemble exists. Reporting only the trained model's
+    combined AUC of 0.959 would claim deck performance it does not have, because
+    that figure is dominated by the 22 SEC excerpts.
+
+    OR-combination rather than a learned stacker, deliberately: fitting a
+    combiner on 28 examples would be fitting to the test set, and there is no
+    second labelled set to fit it on. The trained model contributes its
+    calibrated probability as a severity signal even when it does not fire.
+    """
+    from agents.deck_financials import deck_risk_signals
+    from agents.risk_detector import detect_signals
+
+    keyword = detect_signals(row["text"])
+    deck = deck_risk_signals(row["text"])
+
+    model_fired, model_prob = False, None
+    try:
+        import pickle
+        from pathlib import Path
+
+        path = Path(__file__).resolve().parents[1] / "models" / "risk_disclosure_model.pkl"
+        with path.open("rb") as handle:
+            bundle = pickle.load(handle)
+        model_prob = float(bundle["model"].predict_proba([row["text"]])[0][1])
+        model_fired = model_prob >= bundle["threshold"]
+    except Exception as exc:  # noqa: BLE001
+        # Absent model file degrades this arm to keyword+deck rather than
+        # failing the run -- and says so, so a missing model is never mistaken
+        # for a model that found nothing.
+        print(f"    risk_disclosure_model unavailable ({type(exc).__name__}); "
+              f"ensemble running without it")
+
+    matched = sorted(set(keyword) | {e["category"] for e in deck})
+    # The trained model does NOT get a vote on whether a risk fired.
+    #
+    # Measured: letting it vote raises ranking AUC 0.941 -> 0.990 and doubles the
+    # boilerplate false-positive rate, 0.077 -> 0.154, because it fires on the
+    # benchmark's risk-free team slide (p=0.691, higher than two of the three
+    # genuine deck red flags). For a detector that runs over documents which are
+    # overwhelmingly hedged prose, that trade is bad: the false-positive rate is
+    # the headline metric precisely because recall is cheap to buy.
+    #
+    # So it contributes SEVERITY, not firing. The discrete detectors decide
+    # whether something is flagged; the model's calibrated probability orders
+    # what was flagged, which is where its 0.992 AUC on filing prose pays off
+    # without costing precision.
+    fired = bool(keyword) or bool(deck)
+    total = sum(len(v) for v in keyword.values()) + len(deck)
+    return fired, matched, {
+        "keyword_categories": sorted(keyword),
+        "deck_signals": [e["signal"] for e in deck],
+        "model_probability": model_prob,
+        "model_fired": model_fired,
+        "total_signals": total,
+        # Score used for ranking AUC: the trained model's probability when it is
+        # available, nudged by the discrete detectors so a deck red flag the
+        # model cannot see still ranks above silent boilerplate.
+        "score": float((model_prob or 0.0) + 0.5 * min(2, total)),
+    }
+
+
 _tone_state: dict[str, Any] | None = None
 
 
@@ -274,6 +346,7 @@ def detector_llm_high_only(row: dict[str, Any]) -> tuple[bool, list[str], dict[s
 DETECTORS: dict[str, Callable[[dict[str, Any]], tuple[bool, list[str], dict[str, Any]]]] = {
     "keyword": detector_keyword,
     "keyword_plus_financials": detector_keyword_plus_financials,
+    "ensemble": detector_ensemble,
     "tone_model": detector_tone_model,
     "llm_medium_plus": detector_llm_medium_plus,
     "llm_high_only": detector_llm_high_only,

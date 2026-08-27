@@ -8,6 +8,7 @@ import json
 from ddgs import DDGS
 
 from agents.deck_financials import analyse as analyse_financials
+from agents import risk_disclosure
 from groq_client import MODEL, get_client
 
 # ----------------------------
@@ -277,5 +278,15 @@ def score_risk(text: str, company: str = "") -> dict:
     result["financial_state"] = financials["state"]
     result["financial_metrics"] = financials["metrics"]
     result["deck_signals"] = financials["signals"]
+
+    # Calibrated severity from the model trained on real filing prose. It orders
+    # what the discrete detectors flagged; it deliberately does NOT get a vote on
+    # whether anything is flagged -- see agents/risk_disclosure, where the
+    # measurement behind that decision is recorded (letting it vote doubles the
+    # boilerplate false-positive rate).
+    #
+    # None means "not scored", never "not risky", and is reported as such.
+    result["disclosure_severity"] = risk_disclosure.severity(text)
+    result["disclosure_model"] = risk_disclosure.model_metadata()
 
     return result

@@ -1,0 +1,395 @@
+{
+  "trained_at": "2026-08-27T06:10:45Z",
+  "n_train_total": 941,
+  "n_positive": 464,
+  "n_filings": 614,
+  "split": "GroupShuffleSplit by EDGAR accession (no filing spans the split)",
+  "held_out_in_distribution": {
+    "accuracy": 0.9664,
+    "roc_auc": 0.9972,
+    "report": {
+      "0": {
+        "precision": 0.983739837398374,
+        "recall": 0.952755905511811,
+        "f1-score": 0.968,
+        "support": 127.0
+      },
+      "1": {
+        "precision": 0.9478260869565217,
+        "recall": 0.9819819819819819,
+        "f1-score": 0.9646017699115044,
+        "support": 111.0
+      },
+      "accuracy": 0.9663865546218487,
+      "macro avg": {
+        "precision": 0.9657829621774479,
+        "recall": 0.9673689437468964,
+        "f1-score": 0.9663008849557522,
+        "support": 238.0
+      },
+      "weighted avg": {
+        "precision": 0.9669901470662495,
+        "recall": 0.9663865546218487,
+        "f1-score": 0.9664151111772142,
+        "support": 238.0
+      }
+    }
+  },
+  "disjoint_benchmark": {
+    "threshold": 0.6444767301663854,
+    "precision": 0.9,
+    "recall": 0.6,
+    "f1": 0.72,
+    "accuracy": 0.75,
+    "boilerplate_false_positive_rate": 0.0769,
+    "ranking_auc": 0.959,
+    "ranking_auc_sec_filings": 0.9917,
+    "ranking_auc_deck_register": 0.6667,
+    "n": 28,
+    "n_sec": 22,
+    "n_deck": 6,
+    "deck_register_recall": 0.0,
+    "per_excerpt": [
+      {
+        "id": "sec_going_concern_usprecious",
+        "gold": true,
+        "prob": 0.9486,
+        "pred": true
+      },
+      {
+        "id": "sec_going_concern_salamon",
+        "gold": true,
+        "prob": 1.0,
+        "pred": true
+      },
+      {
+        "id": "sec_material_weakness_meridian",
+        "gold": true,
+        "prob": 0.634,
+        "pred": false
+      },
+      {
+        "id": "sec_material_weakness_vividseats",
+        "gold": true,
+        "prob": 1.0,
+        "pred": true
+      },
+      {
+        "id": "sec_sec_subpoena_lvs",
+        "gold": true,
+        "prob": 0.9527,
+        "pred": true
+      },
+      {
+        "id": "sec_subpoena_restatement_cpiaero",
+        "gold": true,
+        "prob": 0.98,
+        "pred": true
+      },
+      {
+        "id": "sec_wells_notice_competitivetech",
+        "gold": true,
+        "prob": 0.8463,
+        "pred": true
+      },
+      {
+        "id": "sec_restatement_maxwell",
+        "gold": true,
+        "prob": 0.3905,
+        "pred": false
+      },
+      {
+        "id": "sec_restatement_bam",
+        "gold": true,
+        "prob": 0.9135,
+        "pred": true
+      },
+      {
+        "id": "sec_covenant_breach_ameri",
+        "gold": true,
+        "prob": 0.9572,
+        "pred": true
+      },
+      {
+        "id": "sec_covenant_default_zynex",
+        "gold": true,
+        "prob": 0.83,
+        "pred": true
+      },
+      {
+        "id": "sec_cfo_resignation_littlefield",
+        "gold": true,
+        "prob": 0.496,
+        "pred": false
+      },
+      {
+        "id": "sec_safe_harbor_meridian",
+        "gold": false,
+        "prob": 0.0,
+        "pred": false
+      },
+      {
+        "id": "sec_riskfactor_summary_budajuice",
+        "gold": false,
+        "prob": 0.4389,
+        "pred": false
+      },
+      {
+        "id": "sec_additional_capital_lotterydotcom",
+        "gold": false,
+        "prob": 0.2238,
+        "pred": false
+      },
+      {
+        "id": "sec_critical_audit_matter_endeavor",
+        "gold": false,
+        "prob": 0.278,
+        "pred": false
+      },
+      {
+        "id": "sec_asc606_policy_solarcapital",
+        "gold": false,
+        "prob": 0.0,
+        "pred": false
+      },
+      {
+        "id": "sec_asc606_policy_chicagorivet",
+        "gold": false,
+        "prob": 0.0,
+        "pred": false
+      },
+      {
+        "id": "sec_8k_item202_chubb",
+        "gold": false,
+        "prob": 0.1994,
+        "pred": false
+      },
+      {
+        "id": "sec_8k_board_appointment_skyway",
+        "gold": false,
+        "prob": 0.3609,
+        "pred": false
+      },
+      {
+        "id": "sec_econ_conditions_ranger",
+        "gold": false,
+        "prob": 0.2326,
+        "pred": false
+      },
+      {
+        "id": "sec_competition_rentrak",
+        "gold": false,
+        "prob": 0.1809,
+        "pred": false
+      },
+      {
+        "id": "deck_customer_concentration",
+        "gold": true,
+        "prob": 0.4607,
+        "pred": false
+      },
+      {
+        "id": "deck_runway_crunch",
+        "gold": true,
+        "prob": 0.6058,
+        "pred": false
+      },
+      {
+        "id": "deck_founder_departure_ip",
+        "gold": true,
+        "prob": 0.4607,
+        "pred": false
+      },
+      {
+        "id": "deck_product_description",
+        "gold": false,
+        "prob": 0.4299,
+        "pred": false
+      },
+      {
+        "id": "deck_market_sizing",
+        "gold": false,
+        "prob": 0.108,
+        "pred": false
+      },
+      {
+        "id": "deck_team_slide",
+        "gold": false,
+        "prob": 0.6908,
+        "pred": true
+      }
+    ]
+  },
+  "threshold_selection": "max-F1 on the grouped in-distribution held-out split",
+  "threshold_sensitivity_on_benchmark_FOR_TRANSPARENCY_ONLY": [
+    {
+      "threshold": 0.1,
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1": 0.75,
+      "boilerplate_false_positive_rate": 0.7692,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.15,
+      "precision": 0.625,
+      "recall": 1.0,
+      "f1": 0.7692,
+      "boilerplate_false_positive_rate": 0.6923,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.2,
+      "precision": 0.6818,
+      "recall": 1.0,
+      "f1": 0.8108,
+      "boilerplate_false_positive_rate": 0.5385,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.25,
+      "precision": 0.75,
+      "recall": 1.0,
+      "f1": 0.8571,
+      "boilerplate_false_positive_rate": 0.3846,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.3,
+      "precision": 0.7895,
+      "recall": 1.0,
+      "f1": 0.8824,
+      "boilerplate_false_positive_rate": 0.3077,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.35,
+      "precision": 0.7895,
+      "recall": 1.0,
+      "f1": 0.8824,
+      "boilerplate_false_positive_rate": 0.3077,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.4,
+      "precision": 0.8235,
+      "recall": 0.9333,
+      "f1": 0.875,
+      "boilerplate_false_positive_rate": 0.2308,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.45,
+      "precision": 0.9333,
+      "recall": 0.9333,
+      "f1": 0.9333,
+      "boilerplate_false_positive_rate": 0.0769,
+      "deck_register_recall": 1.0
+    },
+    {
+      "threshold": 0.5,
+      "precision": 0.9167,
+      "recall": 0.7333,
+      "f1": 0.8148,
+      "boilerplate_false_positive_rate": 0.0769,
+      "deck_register_recall": 0.3333
+    },
+    {
+      "threshold": 0.55,
+      "precision": 0.9167,
+      "recall": 0.7333,
+      "f1": 0.8148,
+      "boilerplate_false_positive_rate": 0.0769,
+      "deck_register_recall": 0.3333
+    },
+    {
+      "threshold": 0.6,
+      "precision": 0.9167,
+      "recall": 0.7333,
+      "f1": 0.8148,
+      "boilerplate_false_positive_rate": 0.0769,
+      "deck_register_recall": 0.3333
+    },
+    {
+      "threshold": 0.65,
+      "precision": 0.9,
+      "recall": 0.6,
+      "f1": 0.72,
+      "boilerplate_false_positive_rate": 0.0769,
+      "deck_register_recall": 0.0
+    },
+    {
+      "threshold": 0.7,
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.75,
+      "boilerplate_false_positive_rate": 0.0,
+      "deck_register_recall": 0.0
+    },
+    {
+      "threshold": 0.75,
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.75,
+      "boilerplate_false_positive_rate": 0.0,
+      "deck_register_recall": 0.0
+    },
+    {
+      "threshold": 0.8,
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.75,
+      "boilerplate_false_positive_rate": 0.0,
+      "deck_register_recall": 0.0
+    },
+    {
+      "threshold": 0.85,
+      "precision": 1.0,
+      "recall": 0.4667,
+      "f1": 0.6364,
+      "boilerplate_false_positive_rate": 0.0,
+      "deck_register_recall": 0.0
+    },
+    {
+      "threshold": 0.9,
+      "precision": 1.0,
+      "recall": 0.4667,
+      "f1": 0.6364,
+      "boilerplate_false_positive_rate": 0.0,
+      "deck_register_recall": 0.0
+    }
+  ],
+  "prior_model_for_comparison": {
+    "name": "risk_tone_model (Financial PhraseBank + TFNS)",
+    "own_test_accuracy": 0.767,
+    "benchmark_ranking_auc": 0.333,
+    "note": "below chance; predicted `neutral` on all 28 excerpts"
+  },
+  "training_data_provenance": {
+    "source": "SEC EDGAR full-text search (efts.sec.gov) and EDGAR Archives",
+    "source_kind": "primary regulatory filings, public domain",
+    "retrieved_at": "2026-08-27T06:08:26Z",
+    "method": "weak supervision by retrieval phrase (Ratner et al., NeurIPS 2016)",
+    "label_noise": "labels are the retrieval phrase's bucket, NOT human judgement",
+    "n_excerpts": 941,
+    "n_positive": 464,
+    "n_negative": 477,
+    "n_labelling_functions": 38,
+    "unique_filings": 614,
+    "eval_disjointness": {
+      "eval_set": "ml\\eval\\risk_benchmark.jsonl",
+      "excluded_by_text_hash": 0,
+      "excluded_by_containment": 3,
+      "excluded_by_accession": 24,
+      "duplicates_dropped": 141
+    },
+    "user_agent": "VentureFlow research (contact jiviteshkumar54@gmail.com)",
+    "fetch_stats": {
+      "ok": 792,
+      "http_403": 0,
+      "http_other": 9,
+      "exception": 0,
+      "retried": 0
+    }
+  }
+}
