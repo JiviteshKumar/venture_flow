@@ -1,0 +1,46 @@
+{
+  "what_this_establishes": "The true out-of-sample AUC for both scoring models, on sets verified disjoint by identifier rather than assumed.",
+  "outcome_model": {
+    "model": "Outcome Model (ml/inference.py, shipped variant combined_deployable)",
+    "split": "trainer's own stratified 80/20 test split, SEED=42",
+    "index_overlap_train_test": 0,
+    "name_overlap_train_test": 2,
+    "n_scored": 312,
+    "n_skipped": 0,
+    "n_success": 145,
+    "n_failure": 167,
+    "auc": 0.6459,
+    "auc_ci95": [
+      0.5841,
+      0.7084
+    ],
+    "trainer_reported_auc": 0.6459,
+    "superseded_void_number": 0.9747,
+    "why_the_void_number_was_wrong": "Measured on a 261-company set drawn from outcome_dataset.jsonl, which is this model's own training file. All 261 were in training."
+  },
+  "venturescore": {
+    "model": "VentureFlow Score (ml/venturescore.py) vs _legacy_formula_score",
+    "split": "companies absent from venturescore_dataset.jsonl, matched by name",
+    "name_overlap_with_training": 0,
+    "n_scored": 261,
+    "n_success": 91,
+    "n_failure": 170,
+    "venturescore_auc": 0.6356,
+    "venturescore_auc_ci95": [
+      0.5617,
+      0.7021
+    ],
+    "legacy_formula_auc": 0.5,
+    "legacy_formula_note": "Exactly 0.5 by construction: the formula reads no company feature, so every company receives the identical score and every pair ties.",
+    "superseded_in_sample_number": 0.668,
+    "why_the_in_sample_number_was_wrong": "eval_score_baseline.py samples 300 companies from venturescore_dataset.jsonl, the model's own training file, and the shipped pickle is fitted on all 1,298 rows.",
+    "industry_mix": {
+      "Consumer": 162,
+      "Healthcare": 62,
+      "Industrials": 28,
+      "Real Estate and Construction": 8,
+      "Unspecified": 1
+    },
+    "scope_caveat": "This holdout is a LEFTOVER, not a random sample. Zero B2B and zero Fintech: the tech-only filter kept those for training, so the residue is disproportionately what this product is NOT designed to evaluate. A genuine out-of-sample measurement on an out-of-scope population."
+  }
+}

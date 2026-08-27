@@ -500,7 +500,18 @@ def extract_company_info(text: str) -> dict:
     }
 
     clean_text          = re.sub(r'\n{3,}', '\n\n', text)
+    # 1,200 characters is a PROMPT budget, not a description of the deck, and
+    # it was silently doing duty as both. `desc_len` is a real feature of the
+    # score model, so capping here made it a near-constant 1199/1200 for every
+    # deck long enough to hit the cap -- measured across seven real decks, six
+    # of the seven reported 1199 or 1200, destroying the one text-shape signal a
+    # deck reliably supplies.
+    #
+    # The cap stays on `description` because downstream prompts depend on it.
+    # `description_full` carries the untruncated text for consumers that want
+    # the real length.
     info["description"] = clean_text[:1200].strip()
+    info["description_full"] = clean_text.strip()
 
     # Revenue — requires explicit label + number >= $1,000
     revenue_patterns = [

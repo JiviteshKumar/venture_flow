@@ -43,6 +43,31 @@ from ventureflow_agent import run_due_diligence
 DECK_DIR = ROOT / "ml" / "eval" / "decks"
 OUT_PATH = ROOT / "ml" / "eval" / "real_deck_runs.json"
 
+# The funding round each deck was raising, taken from how the deck itself is
+# published rather than from anything this project inferred.
+#
+# Stage matters more than any other single input: sweeping it across
+# Seed/Early/Growth moves the VentureFlow Score 42 points, against 24 for
+# industry and 25 for the entire deck text. It was hardcoded to None in the
+# pipeline until this session, which is a direct cause of every real deck
+# landing in a 9-point band.
+#
+# Supplied rather than extracted, and that distinction is deliberate: a VC
+# reading a deck knows which round is being raised, so this is information the
+# product legitimately has. It is recorded here so the source is auditable and
+# so nobody mistakes it for something the extractor found.
+DECK_STAGE = {
+    "Airbnb": "Seed",      # 2009 seed deck
+    "Uber": "Seed",        # 2008 UberCab seed deck
+    "Buffer": "Seed",      # 2011 seed round deck
+    "Intercom": "Seed",    # 2011 first deck
+    "Coinbase": "Seed",    # 2012 seed deck
+    "Mint": "Seed",        # 2007 deck
+    "Front": "Early",      # published as "front-series-a"
+}
+
+
+
 
 def _load_done() -> dict[str, dict]:
     if not OUT_PATH.exists():
@@ -83,12 +108,16 @@ def run_one(entry: dict) -> dict:
         runway_months=structured.get("runway_months"),
         founders=structured.get("founders"),
         deck_date=entry.get("deck_year", ""),
+        stage=DECK_STAGE.get(company, ""),
     )
     elapsed = round(time.time() - started, 1)
 
     claims = (report.get("sections", {}).get("claims") or {}).get("details", []) or []
     return {
         "company": company,
+        "stage_supplied": DECK_STAGE.get(company, ""),
+        "evidence_fusion": (report.get("sections", {}) or {}).get("evidence_fusion"),
+        "venture_score_section": (report.get("sections", {}) or {}).get("venture_score"),
         "source_url": entry["source_url"],
         "sha256": entry["sha256"],
         "deck_year": entry.get("deck_year", ""),

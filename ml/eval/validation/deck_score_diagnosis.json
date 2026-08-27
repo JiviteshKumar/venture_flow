@@ -1,0 +1,158 @@
+{
+  "question": "Why does the VentureFlow Score cluster at 55-64 on real decks?",
+  "per_deck": [
+    {
+      "company": "Airbnb",
+      "score": 58,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 1199
+    },
+    {
+      "company": "Buffer",
+      "score": 58,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 1199
+    },
+    {
+      "company": "Coinbase",
+      "score": 55,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 635
+    },
+    {
+      "company": "Front",
+      "score": 56,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 1199
+    },
+    {
+      "company": "Intercom",
+      "score": 64,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 1200
+    },
+    {
+      "company": "Mint",
+      "score": 58,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 1200
+    },
+    {
+      "company": "Uber",
+      "score": 58,
+      "coverage": 0.625,
+      "confidence": "medium",
+      "imputed": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit",
+        "stage"
+      ],
+      "chars": 1200
+    }
+  ],
+  "observed_spread": 9,
+  "observed_sd": 2.85,
+  "leverage_text_probes": {
+    "shortest plausible deck": 39,
+    "longest deck in corpus": 64,
+    "keyword-dense AI/SaaS": 57,
+    "keyword-free prose": 59
+  },
+  "leverage_by_industry": {
+    "B2B": 73,
+    "Consumer": 49,
+    "Fintech": 61,
+    "Healthcare": 54,
+    "Industrials": 55,
+    "None": 58
+  },
+  "leverage_by_stage": {
+    "Seed": 73,
+    "Early": 47,
+    "Growth": 89,
+    "None": 73
+  },
+  "max_range_text_only": 25,
+  "max_range_industry_only": 24,
+  "max_range_stage_only": 42,
+  "verdict": "(a) EXTRACTION STARVATION",
+  "interpretation": "The model's discriminative features are YC metadata -- curated industry/subindustry taxonomy, stage, geography, remote status, tag counts. A pitch deck supplies almost none of them. What a deck DOES supply (free text) is the weakest input the model has: the trainer's own ablation put text-only ROC-AUC at 0.5721 against 0.6613 for structured features. So the score on a deck is close to a prior plus noise, and no improvement in extraction changes that, because the missing inputs are facts a deck does not contain."
+}

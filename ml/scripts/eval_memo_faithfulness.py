@@ -279,6 +279,12 @@ def check_report(report: dict[str, Any]) -> dict[str, Any]:
 def load_reports(report_id: str | None, from_file: str | None, limit: int) -> list[dict]:
     if from_file:
         payload = json.loads(Path(from_file).read_text(encoding="utf-8"))
+        # A single report, {"report": {...}}, or a LIST of runs -- the shape
+        # ml/eval/real_deck_runs.json uses. Accepting only the first two meant
+        # this could not be pointed at the deck corpus, which is the one set of
+        # reports produced by the current pipeline.
+        if isinstance(payload, list):
+            return [row.get("report", row) for row in payload if isinstance(row, dict)]
         return [payload.get("report", payload)]
 
     from db import close_pool, get_report, list_reports

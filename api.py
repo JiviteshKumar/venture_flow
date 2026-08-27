@@ -418,6 +418,18 @@ class DiligenceRequest(BaseModel):
     team_size: int | None = Field(default=None, ge=0, le=100_000)
     github_url: str | None = Field(default=None, max_length=300)
     founders: list[str] = Field(default_factory=list, max_length=5)
+    # Funding stage. Measured as the single largest lever the score model has:
+    # sweeping it across Seed/Early/Growth moves the score 42 points, against 24
+    # for industry and 25 for the entire text. It was hardcoded to None in
+    # ventureflow_agent, so that range was permanently unused and every deck
+    # landed in a 9-point band.
+    #
+    # Free text rather than an enum: the model's encoder was fitted with
+    # handle_unknown="ignore", so an unrecognised value degrades to the same
+    # "unknown" that None produced before -- no worse than today, and better
+    # whenever the caller knows.
+    stage: str = Field(default="", max_length=40)
+
     # The deck's vintage, as a four-digit year, when the caller knows it.
     #
     # This is the temporal anchor claim verification needs: without it the
@@ -717,6 +729,7 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
             team_size=request.team_size,
             github_url=request.github_url,
             founders=request.founders,
+            stage=request.stage,
             deck_date=request.deck_date,
             on_stage=on_stage,
         )

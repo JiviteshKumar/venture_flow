@@ -1,0 +1,70 @@
+{
+  "what_this_tests": "Whether supplying the deck's vintage changes a live claim verdict, on real metrics that were true when written and are false today. A correct outcome is NOT necessarily SUPPORTS -- evidence for a small company's old metrics may not exist -- it is the ABSENCE of a confident REFUTES.",
+  "n_confident_refutations": 0,
+  "results": [
+    {
+      "company": "Buffer",
+      "deck_year": "2011",
+      "claim": "Buffer has 800 paying users.",
+      "arm": "WITHOUT deck date",
+      "as_of": "",
+      "verdict": "NOT_ENOUGH_INFO",
+      "confidence": 0.0,
+      "reasoning": "Claim verification is temporarily unavailable.",
+      "sources": [
+        "https://socialbu.com/blog/buffer-pricing",
+        "https://getlatka.com/companies/buffer",
+        "https://research.com/software/reviews/buffer"
+      ],
+      "is_confident_refutation": false
+    },
+    {
+      "company": "Buffer",
+      "deck_year": "2011",
+      "claim": "Buffer has 800 paying users.",
+      "arm": "WITH deck date",
+      "as_of": "2011",
+      "verdict": "NOT_ENOUGH_INFO",
+      "confidence": 0.0,
+      "reasoning": "Claim verification is temporarily unavailable.",
+      "sources": [
+        "https://socialbu.com/blog/buffer-pricing",
+        "https://getlatka.com/companies/buffer",
+        "https://research.com/software/reviews/buffer"
+      ],
+      "is_confident_refutation": false
+    },
+    {
+      "company": "Coinbase",
+      "deck_year": "2012",
+      "claim": "Coinbase processes $2M per day in transaction volume.",
+      "arm": "WITHOUT deck date",
+      "as_of": "",
+      "verdict": "NOT_ENOUGH_INFO",
+      "confidence": 0.0,
+      "reasoning": "Claim verification is temporarily unavailable.",
+      "sources": [
+        "https://backlinko.com/coinbase-users",
+        "https://www.daytrading.com/coinbase",
+        "https://www.webopedia.com/crypto/exchanges/coinbase-review/"
+      ],
+      "is_confident_refutation": false
+    },
+    {
+      "company": "Coinbase",
+      "deck_year": "2012",
+      "claim": "Coinbase processes $2M per day in transaction volume.",
+      "arm": "WITH deck date",
+      "as_of": "2012",
+      "verdict": "NOT_ENOUGH_INFO",
+      "confidence": 0.0,
+      "reasoning": "Claim verification is temporarily unavailable.",
+      "sources": [
+        "https://backlinko.com/coinbase-users",
+        "https://www.daytrading.com/coinbase",
+        "https://www.webopedia.com/crypto/exchanges/coinbase-review/"
+      ],
+      "is_confident_refutation": false
+    }
+  ]
+}

@@ -459,6 +459,7 @@ def run_due_diligence(
     github_url:            str  = None,
     founders:             list = None,
     deck_date:            str  = "",
+    stage:                str  = "",
     on_stage=None,
 ) -> dict:
 
@@ -910,10 +911,58 @@ def run_due_diligence(
             description=company_description or filing_text or "",
             one_liner=(company_description or "")[:120],
             industry=sector,
-            stage=None,
+            # Was hardcoded None. Measured: sweeping stage across
+            # Seed/Early/Growth moves the score 42 points -- more than industry
+            # (24) and more than the entire text (25). Hardcoding it discarded
+            # the model's largest single lever and is a direct cause of every
+            # real deck landing in a 9-point band.
+            stage=stage or None,
             location=None,
         )
-        venture_score_result = blend_with_evidence(venture_score_result, evidence_penalty)
+        # Bidirectional evidence fusion.
+        #
+        # `_evidence_components` already fed claim verification, risk detection
+        # and specialist confidence into the score -- the framing that they only
+        # reached the memo was wrong. What was wrong was the ASYMMETRY. Measured
+        # by sweeping the evidence inputs to their extremes:
+        #
+        #     worst-case evidence -> +0.785 penalty (clamped to 0.60, -60 points)
+        #     best-case evidence  -> -0.025          (i.e. +2.5 points)
+        #
+        # A deck whose every claim was independently verified, with no risk
+        # signals and disclosed financials, could earn 2.5 points, while a deck
+        # with refuted claims lost 60. The pipeline could prove a company sound
+        # and barely move the number.
+        #
+        # ml/evidence_fusion gives the positive direction real weight (up to
+        # +20 points) while keeping the negative side dominant at -60, because
+        # for a diligence tool the cost of missing a red flag exceeds the cost of
+        # under-crediting a good deck. It is arithmetic over structured counts,
+        # never over free text, so the memo still cannot author the number.
+        try:
+            from ml.evidence_fusion import extract_features, fuse
+
+            fusion_features = extract_features(
+                claim_results, risk_result, specialist_results,
+                revenue=revenue, burn_rate=burn_rate, runway_months=runway_months,
+            )
+            fusion = fuse(
+                venture_score_result.get("probability_exit_or_survive", 0.5),
+                fusion_features,
+            )
+            # blend_with_evidence subtracts, so a positive delta is passed
+            # negated. Reusing it keeps one code path for the range clamping and
+            # the score_range shift.
+            venture_score_result = blend_with_evidence(
+                venture_score_result, -fusion["delta"],
+            )
+            venture_score_result["evidence_fusion"] = fusion
+            report["sections"]["evidence_fusion"] = fusion
+        except Exception:
+            # Never let the fusion take down a report. Falling back to the
+            # one-directional penalty is strictly the previous behaviour.
+            logger.exception("Evidence fusion failed; falling back to the penalty term")
+            venture_score_result = blend_with_evidence(venture_score_result, evidence_penalty)
     except Exception:
         logger.exception("VentureFlow Score model unavailable")
         venture_score_result = {"available": False, "reason": "VentureFlow Score raised an unexpected error."}

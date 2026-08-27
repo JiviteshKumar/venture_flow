@@ -3,6 +3,161 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 27 Aug 2026, fourteenth pass: the score finally reads the deck, and two invalid numbers are retired
+
+Five jobs. The scoring core changed for the first time since it was built, and
+the reason it needed to was not the one assumed going in.
+
+**Tests: 287 passing at the start, 320 at the end, 0 failing**, stable across
+randomised orderings.
+
+### Part 1 — the previous session's fixes hold, and are now tested through the live path
+
+All three verified present: `_YEAR_RE` matches real text (`"Founded in 2011"` →
+`2011`), `deck_date` exists on `DiligenceRequest`, and every pipeline argument is
+keyword-bound.
+
+The gap was that nothing tested the route a *user* takes.
+`tests/test_deck_date_through_live_api.py` now POSTs to `/analyze` and asserts on
+what `verify_claim` actually receives — that `as_of` is the string `"2011"` and
+not a callable, that an absent date is inferred from deck text, that an undated
+deck yields `""` rather than a fabricated year, and that the stage callback
+reaches its own parameter. That is the test whose absence let the original bug
+live in production while every offline measurement said it was fixed.
+
+### Part 2 — two numbers retired, and one accusation withdrawn
+
+**Outcome Model 0.9747 → VOID. True out-of-sample AUC: 0.6459**, CI95
+[0.5841, 0.7084], n=312.
+
+An accusation from the previous session needs withdrawing: the Outcome Model's
+*trainer* was never at fault. It does a proper stratified 80/20 split, fits
+TF-IDF on the training portion only, and reports honest test metrics. The flawed
+artefact was the ad-hoc 261-company "holdout" built by removing companies
+present in `venturescore_dataset.jsonl` — which makes a set out-of-sample for
+the VentureFlow Score and says nothing about a model trained on
+`outcome_dataset.jsonl`. Reconstructing the trainer's own split reproduces
+0.6459 exactly, which is good evidence the reconstruction is right.
+
+**Score baseline 0.668 → VOID. True out-of-sample AUC: 0.6356**, CI95
+[0.5617, 0.7021], n=261, against the legacy formula's 0.5000 on the same set.
+
+`ml/scripts/verify_out_of_sample.py` prints the overlap counts rather than
+promising disjointness: index overlap 0, name overlap 0.
+
+Both models land near 0.64. That is modest, real, and the first honestly
+measured figure either has had.
+
+### Part 3 — a documented negative result: there are no failure decks
+
+The seven-deck set is all winners, so it cannot compute an AUC. The obvious fix
+is decks from companies that died. **Zero were obtained**, and the reason is
+structural rather than effort-limited:
+
+- Probed 15 publicly-failed companies on the aggregator already in use. **1 of
+  15 responded** — WeWork — and it extracts to **0 characters across 36 pages**,
+  a deck of slide images with no text layer.
+- Open search returns *post-mortems*, not decks: CB Insights' 483, postmortem.io,
+  failory's cemetery, Substack teardowns of Fast's deck. Thousands of write-ups
+  about dead startups; their decks are not published.
+- The one candidate with a slide URL (Quibi on SlideShare) serves 3KB of HTML,
+  and SlideShare is already on this project's deck-mirror blocklist.
+
+Decks become public because companies become famous, and companies become famous
+by succeeding. The survivorship filter operates on data availability itself.
+Recorded in `ml/eval/validation/FAILURE_DECK_SOURCING.md`, along with the one
+realistic path forward: build the OCR/vision reader and unlock WeWork plus five
+other known image-only decks. That is engineering with a known target rather
+than a search problem.
+
+**The split was therefore NOT rebalanced.** Re-splitting an all-positive set
+achieves nothing.
+
+### Part 4 — diagnosis first, and the answer was the opposite of the guess
+
+The question was whether the 55–64 clustering came from (a) extraction
+starvation or (b) the model's features simply not existing in a deck. The prior
+assumption in these notes was (b). **Measured, it is (a).**
+
+`ml/scripts/diagnose_deck_score_clustering.py` sweeps each input to its extremes:
+
+| lever | range it can move the score |
+|---|---|
+| observed across 7 real decks | **9 points** |
+| deck text alone | 25 points |
+| industry alone | 24 points |
+| **stage alone** | **42 points** |
+
+The model *can* move 42 points on stage — and `ventureflow_agent` hardcoded
+`stage=None` for every analysis ever run. `DiligenceRequest` had no stage field
+either. Separately, `pdf_extractor` capped `description` at 1,200 characters;
+`desc_len` is a real model feature, so six of seven decks reported 1199 or 1200
+and the one text-shape signal a deck reliably supplies was flattened too.
+
+Both fixed: `stage` threaded from request to model, and `description_full` added
+alongside the prompt-budget cap.
+
+**On the fusion, a second assumption also needed correcting.** The framing that
+agent findings never reach the score and only feed the memo is not true —
+`_evidence_components` already fed claim verification, risk and specialist
+confidence into it. Sweeping those inputs:
+
+    worst-case evidence -> -60 points
+    best-case evidence  -> +2.5 points
+
+The defect is **asymmetry**, not absence. The pipeline could prove a company
+sound and move the number two and a half points. `ml/evidence_fusion.py` gives
+the positive direction real weight (+20 max) while keeping the negative side
+dominant (−60), because for a diligence tool the cost of missing a red flag
+exceeds the cost of under-crediting a good deck. It is arithmetic over
+structured counts — no free text enters — so the memo still cannot author the
+number it is supposed to explain.
+
+**Not a fitted layer, and the reason is stated rather than hidden:** fitting
+needs examples labelled (evidence state, outcome), and the seven decks with
+known outcomes are all successes. Fitting on one class is not possible.
+
+Every feature carries a leakage verdict. The one worth reading is
+`supported_fraction`: **web corroboration is confounded with fame**, because a
+company that went public has extensive coverage while one that quietly died
+returns NOT_ENOUGH_INFO regardless of whether its deck was honest. Rewarding it
+partly rewards "is already famous", which is hindsight wearing a prediction's
+clothes. Kept, but at the smallest positive weight — and the test suite enforces
+that it *stays* smallest, after an earlier revision had it as the largest while
+the docstring claimed the opposite.
+
+### Part 4 results, per company
+
+| company | split | outcome | old | new | Δ | degraded |
+|---|---|---|---|---|---|---|
+| Uber | train | public | 15 | **44** | +29 | yes |
+| Coinbase | train | public | 22 | **55** | +33 | yes |
+| Buffer | train | operating | 29 | **45** | +16 | yes |
+| Mint | train | acquired | 30 | **46** | +16 | yes |
+| Intercom | train | operating | 39 | **46** | +7 | yes |
+| Front | train | operating | 37 | **28** | −9 | yes |
+| Airbnb | **test** | public | 17 | *not run* | — | — |
+
+Spread widened from 24 points (15–39) to 38 (17–55), sd 9.4 → 13.0. The
+direction is right: the old pipeline scored two eventual IPOs at 15 and 22.
+
+**Every one of these carries a caveat that has to travel with it.** All six runs
+came back `provider_degraded=True`, so they are measurements of the pipeline
+running *without* its specialist agents. And **the test split was not run**,
+because quota ran out first — so there is no held-out deck number, good or bad.
+
+### Part 5 — blocked, with the reason measured
+
+`tokens per day (TPD): Limit 200000, Used 199171`. The six deck runs consumed the
+daily budget, so memo entailment, live temporal verification and the Part D
+confidence re-check all remain unrun and are recorded as such rather than
+estimated.
+
+The more useful finding underneath: **a full deck analysis costs ~24,000 tokens
+and cannot complete inside the free tier's 8,000-tokens-per-minute ceiling.**
+Every one of the six degraded partway even at `GROQ_AGENT_CONCURRENCY=1`, and
+degraded runs still spend tokens. This is not a pacing bug to tune around; it is
+a statement about what this product can do on this plan.
 ## Update — 27 Aug 2026, thirteenth pass: a static-analysis sweep finds the headline fix was never running
 
 Four jobs, no Groq. The bug sweep was the one that mattered: it found that the
