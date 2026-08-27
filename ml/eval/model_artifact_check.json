@@ -1,0 +1,40 @@
+{
+  "what_this_checks": "That every trained artifact can be LOADED AND USED by a fresh interpreter, not merely that the file exists. Written after the risk severity model was found silently unloadable outside its trainer, with no test or benchmark reflecting the fact.",
+  "results": [
+    {
+      "artifact": "VentureFlow Score (ml/venturescore.py)",
+      "status": "OK",
+      "detail": "venture_score=61 confidence=medium"
+    },
+    {
+      "artifact": "Outcome Model (ml/inference.py)",
+      "status": "OK",
+      "detail": "outcome probability=0.5720 band=mixed"
+    },
+    {
+      "artifact": "Risk disclosure model (agents/risk_disclosure.py)",
+      "status": "OK",
+      "detail": "severity(going concern)=0.935 uses_deck_features=True"
+    },
+    {
+      "artifact": "Text embedder (embeddings.py)",
+      "status": "OK",
+      "detail": "embedding dims=64"
+    },
+    {
+      "artifact": "Comparables corpus (comparables.py)",
+      "status": "OK",
+      "detail": "comparables=5 population=1560"
+    },
+    {
+      "artifact": "Claim model (retired baseline, must still load)",
+      "status": "OK",
+      "detail": "claim model trees=900 encoders=dict"
+    },
+    {
+      "artifact": "Risk/Tone model (retired, kept as documented negative result)",
+      "status": "OK",
+      "detail": "risk/tone trees=900 encoders=dict"
+    }
+  ]
+}

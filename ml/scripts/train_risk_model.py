@@ -58,7 +58,6 @@ def load_sentiment_rows() -> list[dict]:
     TFNS ships as plain CSV with integer labels.
     """
     import csv
-    import io
     import zipfile
 
     from huggingface_hub import hf_hub_download

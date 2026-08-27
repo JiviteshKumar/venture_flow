@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
-import re
 import logging
 import os
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -155,7 +155,7 @@ def ensure_schema() -> None:
             cur.execute(f'SAVEPOINT "{savepoint}"')
             try:
                 cur.execute(migration.read_text(encoding="utf-8"))
-            except Exception as exc:  # noqa: BLE001 - one bad migration must not block the rest
+            except Exception as exc:
                 cur.execute(f'ROLLBACK TO SAVEPOINT "{savepoint}"')
                 failed.append(migration.name)
                 logger.error("Migration %s failed and was skipped: %s", migration.name, exc)
@@ -269,7 +269,7 @@ def record_analysed_company(
             row = cur.fetchone()
             conn.commit()
             return row["id"] if row else None
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("Could not record analysed company %s", name)
         return None
 

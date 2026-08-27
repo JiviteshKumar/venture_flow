@@ -1,3 +1,4 @@
+import functools
 import logging
 import os
 import re
@@ -5,24 +6,57 @@ import secrets
 import uuid
 from typing import Any
 
+from dotenv import load_dotenv
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
+from fastapi.concurrency import run_in_threadpool
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
 # Imported first, for its import-time side effect: it forces stdout/stderr to
 # UTF-8 so the pipeline's progress prints cannot raise UnicodeEncodeError on
 # Windows. That exception was killing risk analysis on every run and claim
 # verification intermittently -- see console_safety.py for the full write-up.
 # This has to happen before any module that prints is imported.
 import console_safety  # noqa: F401  (imported for side effect)
-
-from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.concurrency import run_in_threadpool
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
 from chatbot import chat_with_document, store_document
-from db import add_comment, count_active_jobs, count_decisions, create_analysis_job, ensure_schema, set_analysis_job_stage, find_similar_companies, get_analysis_job, get_report, get_score_history, list_comments, list_reports, persist_report, reclaim_orphaned_jobs, record_analysed_company, record_decision, stats, update_analysis_job
+from config_check import check_configuration
+from config_check import enforce as enforce_configuration
+from db import (
+    add_comment,
+    count_active_jobs,
+    count_decisions,
+    create_analysis_job,
+    ensure_schema,
+    find_similar_companies,
+    get_analysis_job,
+    get_report,
+    get_score_history,
+    list_comments,
+    list_reports,
+    persist_report,
+    reclaim_orphaned_jobs,
+    record_analysed_company,
+    record_decision,
+    set_analysis_job_stage,
+    stats,
+    update_analysis_job,
+)
 from db import healthcheck as neon_healthcheck
-from document_extractor import SUPPORTED_FORMATS, UnsupportedDocument, extract_document, is_supported
+from document_extractor import (
+    SUPPORTED_FORMATS,
+    UnsupportedDocument,
+    extract_document,
+    is_supported,
+)
 from rate_limiter import is_allowed as rate_limit_is_allowed
 from structured_extractor import extract_structured
 from ventureflow_agent import run_due_diligence
@@ -249,6 +283,15 @@ app.add_middleware(
 
 
 @app.on_event("startup")
+def current_config_report():
+    """The configuration check, evaluated against this process's live settings."""
+    return check_configuration(
+        origins=origins,
+        allowed_origin_regex=ALLOWED_ORIGIN_REGEX,
+        demo_access_token=DEMO_ACCESS_TOKEN,
+    )
+
+
 async def warn_if_deployed_and_ungated() -> None:
     """Say something loud if this looks deployed but has no passphrase.
 
@@ -269,6 +312,12 @@ async def warn_if_deployed_and_ungated() -> None:
             "any anonymous caller, and report ids are sequential integers. Set "
             "DEMO_ACCESS_TOKEN to gate it."
         )
+
+    # The full check, covering every variable production needs rather than this
+    # one case. Logs each problem at CRITICAL, and raises when STRICT_CONFIG is
+    # set. The warning above is kept because it names the specific failure this
+    # deployment actually suffered.
+    enforce_configuration(current_config_report())
 
 
 async def _reclaim_jobs_lost_to_the_last_restart() -> None:
@@ -369,6 +418,25 @@ class DiligenceRequest(BaseModel):
     team_size: int | None = Field(default=None, ge=0, le=100_000)
     github_url: str | None = Field(default=None, max_length=300)
     founders: list[str] = Field(default_factory=list, max_length=5)
+    # The deck's vintage, as a four-digit year, when the caller knows it.
+    #
+    # This is the temporal anchor claim verification needs: without it the
+    # verifier reads a 2011 metric against 2026 evidence and reports the
+    # difference as a refutation, which is how four true historical claims were
+    # called lies at 0.96-0.97 confidence.
+    #
+    # Optional, and empty is honest: when it is absent the pipeline falls back
+    # to inferring a year from the deck text, and when that finds nothing the
+    # verifier is told the vintage is unknown rather than being given a guess.
+    deck_date: str = Field(default="", max_length=4)
+
+    @field_validator("deck_date")
+    @classmethod
+    def check_deck_year(cls, value: str) -> str:
+        value = (value or "").strip()
+        if value and not re.fullmatch(r"(19[89]\d|20[0-4]\d)", value):
+            raise ValueError("deck_date must be a four-digit year between 1980 and 2049")
+        return value
 
     @field_validator(
         "company_name",
@@ -437,6 +505,13 @@ class AnalysisJobResponse(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    # Reject unknown fields. Same reasoning as DiligenceRequest: a misspelled
+    # or renamed key that Pydantic silently ignores means the server acts on
+    # something other than what the caller sent, with no error anywhere. A
+    # 422 naming the bad field is strictly better than a confident wrong
+    # result. The frontend sends only the fields declared here.
+    model_config = ConfigDict(extra="forbid")
+
     session_id: str = Field(min_length=1, max_length=100)
     question: str = Field(min_length=1, max_length=2_000)
 
@@ -569,13 +644,31 @@ def root():
 
 @app.get("/health")
 def health():
+    """Liveness, database reachability, AND configuration.
+
+    Configuration is reported here because a CRITICAL log line is only seen by
+    someone already reading logs, and the misconfiguration this guards against
+    went unnoticed for an unknown period precisely because nobody was. An uptime
+    check watching this endpoint sees `status: misconfigured` immediately.
+
+    Deliberately does NOT return a 5xx for a config problem: the service is
+    genuinely running and refusing traffic would turn a security gap into an
+    outage. The payload carries the truth; the status code carries liveness.
+    """
+    config = current_config_report()
     try:
-        return {
-            "status": "healthy",
-            "database": "connected" if neon_healthcheck() else "unavailable",
-        }
-    except Exception:  # noqa: BLE001 - health must not expose connection failures
-        return {"status": "degraded", "database": "unavailable"}
+        database = "connected" if neon_healthcheck() else "unavailable"
+        status = "healthy"
+    except Exception:
+        database, status = "unavailable", "degraded"
+
+    if not config.ok:
+        status = "misconfigured"
+    return {
+        "status": status,
+        "database": database,
+        "config": config.as_dict(),
+    }
 
 
 async def _perform_analysis(request: DiligenceRequest, on_stage=None):
@@ -587,20 +680,46 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
         )
     except Exception:
         logger.warning("Portfolio comparison unavailable", exc_info=True)
+    # KEYWORD arguments, deliberately, and not positional ones.
+    #
+    # This call used to pass twelve positional arguments ending in `on_stage`.
+    # `run_due_diligence`'s twelfth parameter is `deck_date`, not `on_stage`, so
+    # every production analysis did two wrong things at once and reported
+    # neither:
+    #
+    #   * `deck_date` received the stage CALLBACK -- a truthy function object --
+    #     which flowed into `as_of=deck_date or _infer_deck_vintage(...)` and was
+    #     formatted into the claim-verification prompt as "<function record_stage
+    #     at 0x...>". The temporal grounding added to stop the verifier judging a
+    #     2011 metric against 2026 evidence was therefore inert for every real
+    #     user; it worked only in ml/scripts/run_real_deck_corpus.py, which
+    #     passes deck_date by keyword, which is why the corpus results looked
+    #     correct.
+    #
+    #   * `on_stage` fell back to None, so the pipeline never reported progress.
+    #     The `stage` column added in migration 008 -- the whole point of which
+    #     was letting a user tell a slow analysis from a hung one -- was never
+    #     written outside tests, which stub _perform_analysis and so never
+    #     exercised this line.
+    #
+    # Binding by keyword makes the parameter order unable to cause this again.
     report = await run_in_threadpool(
-        run_due_diligence,
-        request.company_name,
-        request.company_description,
-        request.claims,
-        request.filing_text,
-        request.revenue,
-        request.burn_rate,
-        request.runway_months,
-        request.sector,
-        request.team_size,
-        request.github_url,
-        request.founders,
-        on_stage,
+        functools.partial(
+            run_due_diligence,
+            company_name=request.company_name,
+            company_description=request.company_description,
+            claims_to_verify=request.claims,
+            filing_text=request.filing_text,
+            revenue=request.revenue,
+            burn_rate=request.burn_rate,
+            runway_months=request.runway_months,
+            sector=request.sector,
+            team_size=request.team_size,
+            github_url=request.github_url,
+            founders=request.founders,
+            deck_date=request.deck_date,
+            on_stage=on_stage,
+        )
     )
     report = _normalize_report(report, request.company_name)
     report["similar_companies"] = similar_companies
@@ -748,7 +867,7 @@ async def _extract_uploaded_document(
 
 @app.post("/upload-pdf", response_model=PDFExtractResponse)
 async def upload_pdf(
-    file: UploadFile = File(...),  # noqa: B008 - FastAPI multipart declaration
+    file: UploadFile = File(...),
     company_name: str = Form(default="Unknown Company", max_length=160),
 ):
     """Kept at its original path because the frontend and scripts/batch_deck_test.py
@@ -758,7 +877,7 @@ async def upload_pdf(
 
 @app.post("/upload-document", response_model=PDFExtractResponse)
 async def upload_document(
-    file: UploadFile = File(...),  # noqa: B008 - FastAPI multipart declaration
+    file: UploadFile = File(...),
     company_name: str = Form(default="Unknown Company", max_length=160),
 ):
     return await _extract_uploaded_document(file, company_name)
@@ -814,6 +933,13 @@ def saved_report(report_id: str):
 
 
 class DecisionRequest(BaseModel):
+    # Reject unknown fields. Same reasoning as DiligenceRequest: a misspelled
+    # or renamed key that Pydantic silently ignores means the server acts on
+    # something other than what the caller sent, with no error anywhere. A
+    # 422 naming the bad field is strictly better than a confident wrong
+    # result. The frontend sends only the fields declared here.
+    model_config = ConfigDict(extra="forbid")
+
     decision: str = Field(pattern="^(invest|pass)$")
     notes: str = Field(default="", max_length=2000)
 
@@ -920,6 +1046,13 @@ async def saved_report_export(report_id: str, fmt: str):
 
 
 class CommentRequest(BaseModel):
+    # Reject unknown fields. Same reasoning as DiligenceRequest: a misspelled
+    # or renamed key that Pydantic silently ignores means the server acts on
+    # something other than what the caller sent, with no error anywhere. A
+    # 422 naming the bad field is strictly better than a confident wrong
+    # result. The frontend sends only the fields declared here.
+    model_config = ConfigDict(extra="forbid")
+
     author_name: str = Field(default="Anonymous", max_length=80)
     body: str = Field(min_length=1, max_length=4000)
 

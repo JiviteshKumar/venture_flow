@@ -1,11 +1,16 @@
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import json, logging, time
+import json
+import logging
 from concurrent.futures import ThreadPoolExecutor
+
 import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
@@ -13,6 +18,7 @@ from ddgs import DDGS
 import observability
 from agents.evidence_filter import filter_sources
 from groq_client import MODEL, get_client
+
 logger = logging.getLogger(__name__)
 
 def search_web(query: str, max_results: int = 8) -> list:

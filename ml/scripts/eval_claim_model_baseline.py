@@ -40,9 +40,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
-
-from ml.scripts.eval_claim_verifier import compute_metrics  # noqa: E402
+import console_safety  # noqa: F401  (imported for side effect)
+from ml.scripts.eval_claim_verifier import compute_metrics
 
 MODEL_PATH = ROOT / "ml" / "models" / "claim_model.txt"
 ENCODERS_PATH = ROOT / "ml" / "models" / "claim_model_encoders.pkl"

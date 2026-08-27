@@ -90,13 +90,7 @@ _WORD = re.compile(r"[a-z0-9]+")
 # Words carrying no topical signal, so their overlap is not evidence of
 # relevance. Kept minimal -- an aggressive stoplist would quietly become a
 # second, unmeasured relevance model.
-_STOP = frozenset("""
-a an the and or but if of for to in on at by with from as is are was were be
-been being it its this that these those we our us you your they their he she
-has have had do does did will would can could should may might must not no
-than then so such about into over under more most other some any each which
-who whom what when where why how all both few own same too very just
-""".split())
+_STOP = frozenset(["a", "an", "the", "and", "or", "but", "if", "of", "for", "to", "in", "on", "at", "by", "with", "from", "as", "is", "are", "was", "were", "be", "been", "being", "it", "its", "this", "that", "these", "those", "we", "our", "us", "you", "your", "they", "their", "he", "she", "has", "have", "had", "do", "does", "did", "will", "would", "can", "could", "should", "may", "might", "must", "not", "no", "than", "then", "so", "such", "about", "into", "over", "under", "more", "most", "other", "some", "any", "each", "which", "who", "whom", "what", "when", "where", "why", "how", "all", "both", "few", "own", "same", "too", "very", "just"])
 
 # Corporate suffixes and category words stripped before name matching, so that
 # "Inc" or "AI" cannot carry a match on their own. Without this, every AI
@@ -115,7 +109,7 @@ def domain_of(url: str) -> str:
         host = (urlparse(url).hostname or "").lower()
     except ValueError:
         return ""
-    return host[4:] if host.startswith("www.") else host
+    return host.removeprefix("www.")
 
 
 def _host_in(url: str, domains: frozenset[str]) -> bool:

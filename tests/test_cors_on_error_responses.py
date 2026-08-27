@@ -107,8 +107,9 @@ def test_disallowed_origin_is_still_refused_on_error_paths(client, monkeypatch):
 def test_client_key_prefers_forwarded_header_only_when_trusted(monkeypatch):
     """Behind Render's load balancer request.client.host is the proxy, so
     without this every visitor shares one rate-limit bucket."""
-    import api
     from starlette.datastructures import Headers
+
+    import api
 
     class _Req:
         def __init__(self, headers, host):

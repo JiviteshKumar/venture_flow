@@ -51,8 +51,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
-from agents.investment_agents import run_investment_agents  # noqa: E402
+import console_safety  # noqa: F401  (Windows cp1252 guard)
+from agents.investment_agents import run_investment_agents
 
 OUT_PATH = ROOT / "ml" / "eval" / "specialist_confidence_results.json"
 

@@ -10,7 +10,6 @@ concurrent load" are different claims and only one of them needs an LLM.
 
 import sys
 import threading
-import time
 from pathlib import Path
 
 import pytest

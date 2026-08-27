@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 
-from agents.claim_verifier import search_web, fetch_page_text
+from agents.claim_verifier import search_web
 from groq_client import MODEL, get_client
 
 logger = logging.getLogger(__name__)

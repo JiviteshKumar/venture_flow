@@ -169,7 +169,7 @@ def test_the_saved_model_loads_in_a_process_that_did_not_train_it():
 
 def test_the_deck_feature_transformer_is_importable_from_the_app():
     """The specific import path the pickle depends on."""
-    from agents.deck_risk_features import DeckFeatureTransformer, FEATURE_NAMES
+    from agents.deck_risk_features import FEATURE_NAMES, DeckFeatureTransformer
 
     features = DeckFeatureTransformer().transform([GOING_CONCERN])
     assert features.shape == (1, len(FEATURE_NAMES))

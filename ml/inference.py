@@ -37,7 +37,7 @@ def _load() -> None:
         with open(MODEL_DIR / "outcome_model_encoders.pkl", "rb") as f:
             encoders = pickle.load(f)
         _state = {"booster": booster, **encoders}
-    except Exception as exc:  # noqa: BLE001 - this must never crash the caller
+    except Exception as exc:
         _load_error = str(exc)
 
 

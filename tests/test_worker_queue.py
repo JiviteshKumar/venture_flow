@@ -15,9 +15,7 @@ failed a job that had been stuck in 'running' since 22 August.
 """
 
 import sys
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -137,7 +135,7 @@ def test_a_healthy_running_job_is_not_reclaimed(client, monkeypatch):
     job = {"job_id": "alive-1", "status": "running", "result": None,
            "error_message": None, "stage": "Detecting risk signals"}
     monkeypatch.setattr(api, "get_analysis_job", lambda job_id: job)
-    monkeypatch.setattr(api, "reclaim_orphaned_jobs", lambda: [])
+    monkeypatch.setattr(api, "reclaim_orphaned_jobs", list)
 
     body = client.get("/analyze/status/alive-1").json()
     assert body["status"] == "running"

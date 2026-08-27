@@ -26,7 +26,7 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from db import list_decisions_with_reports  # noqa: E402
+from db import list_decisions_with_reports
 
 MIN_DECISIONS = 15
 FEATURE_NAMES = [

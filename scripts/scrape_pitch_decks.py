@@ -38,8 +38,8 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
-from document_extractor import extract_document  # noqa: E402
+import console_safety  # noqa: F401  (Windows cp1252 guard)
+from document_extractor import extract_document
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -215,7 +215,7 @@ def search_pdf_urls(query: str, max_results: int = 12) -> list[str]:
                 href = result.get("href") or ""
                 if href and href not in urls:
                     urls.append(href)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"    search failed: {type(exc).__name__}: {exc}")
     return urls
 
@@ -232,7 +232,7 @@ def download_pdf(url: str, timeout: int = 30) -> bytes | None:
         response = requests.get(
             url, timeout=timeout, headers={"User-Agent": USER_AGENT}, allow_redirects=True
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"    download failed: {type(exc).__name__}")
         return None
     if response.status_code != 200:
@@ -285,7 +285,7 @@ def main() -> int:
             # no matter how real the PDF is.
             try:
                 extracted = extract_document(f"{_slug(company)}.pdf", data)
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"    extractor rejected it: {type(exc).__name__}: {exc}")
                 continue
             text = extracted.get("text", "") or ""

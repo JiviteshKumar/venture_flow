@@ -32,7 +32,6 @@ signal in `ventureflow_agent.py`.
 
 from __future__ import annotations
 
-import math
 import pickle
 import re
 from pathlib import Path
@@ -71,7 +70,7 @@ def _load() -> None:
     try:
         with open(MODEL_PATH, "rb") as f:
             _state = pickle.load(f)
-    except Exception as exc:  # noqa: BLE001 - must never crash the caller
+    except Exception as exc:
         _load_error = str(exc)
 
 
@@ -213,7 +212,7 @@ def score_company(
                 "the YC population, and not an investment verdict."
             ),
         }
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return {"available": False, "reason": f"VentureFlow Score failed: {exc}"}
 
 

@@ -25,17 +25,17 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from document_extractor import (  # noqa: E402
+from document_extractor import (
     SUPPORTED_FORMATS,
     UnsupportedDocument,
     extract_document,
     is_supported,
 )
-from pdf_extractor import extract_founders  # noqa: E402
-from report_docx import build_report_docx  # noqa: E402
-from report_document import build_report_blocks  # noqa: E402
-from report_markdown import build_report_markdown  # noqa: E402
-from report_pdf import build_report_pdf  # noqa: E402
+from pdf_extractor import extract_founders
+from report_document import build_report_blocks
+from report_docx import build_report_docx
+from report_markdown import build_report_markdown
+from report_pdf import build_report_pdf
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 DECK_FORMATS = ["sample_deck.pdf", "sample_deck.pptx", "sample_deck.docx", "sample_deck.md"]

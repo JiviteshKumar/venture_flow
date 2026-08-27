@@ -1,0 +1,1733 @@
+{
+  "what_this_measures": "Whether the TRAINED SCORE ALONE ranks real companies by their real outcome. Regex extraction, no Groq, no agents, no claim verification, no risk LLM, no memo.",
+  "what_this_does_not_measure": "The product. Everything a user actually reads is LLM-generated and none of it ran here. Regex extraction is also materially worse than the LLM schema extractor, so the deck arm's inputs are degraded relative to production.",
+  "deck_set": {
+    "per_deck": [
+      {
+        "company": "Airbnb",
+        "split": "test",
+        "deck_year": "2009",
+        "outcome": "public",
+        "success": 1,
+        "extracted_chars": 2472,
+        "regex_claims_found": 2,
+        "regex_revenue": null,
+        "venture_score": 58.0,
+        "outcome_probability": 0.443,
+        "model_confidence": "medium",
+        "outcome_band": "mixed"
+      },
+      {
+        "company": "Buffer",
+        "split": "train",
+        "deck_year": "2011",
+        "outcome": "operating",
+        "success": 1,
+        "extracted_chars": 2012,
+        "regex_claims_found": 3,
+        "regex_revenue": 150000.0,
+        "venture_score": 58.0,
+        "outcome_probability": 0.536,
+        "model_confidence": "medium",
+        "outcome_band": "mixed"
+      },
+      {
+        "company": "Coinbase",
+        "split": "train",
+        "deck_year": "2012",
+        "outcome": "public",
+        "success": 1,
+        "extracted_chars": 635,
+        "regex_claims_found": 0,
+        "regex_revenue": null,
+        "venture_score": 55.0,
+        "outcome_probability": 0.235,
+        "model_confidence": "medium",
+        "outcome_band": "unfavorable"
+      },
+      {
+        "company": "Front",
+        "split": "train",
+        "deck_year": "2016",
+        "outcome": "operating",
+        "success": 1,
+        "extracted_chars": 4095,
+        "regex_claims_found": 4,
+        "regex_revenue": 7000000.0,
+        "venture_score": 56.0,
+        "outcome_probability": 0.354,
+        "model_confidence": "medium",
+        "outcome_band": "unfavorable"
+      },
+      {
+        "company": "Intercom",
+        "split": "train",
+        "deck_year": "2011",
+        "outcome": "operating",
+        "success": 1,
+        "extracted_chars": 2355,
+        "regex_claims_found": 1,
+        "regex_revenue": null,
+        "venture_score": 64.0,
+        "outcome_probability": 0.333,
+        "model_confidence": "medium",
+        "outcome_band": "unfavorable"
+      },
+      {
+        "company": "Mint",
+        "split": "train",
+        "deck_year": "2007",
+        "outcome": "acquired",
+        "success": 1,
+        "extracted_chars": 9873,
+        "regex_claims_found": 1,
+        "regex_revenue": null,
+        "venture_score": 58.0,
+        "outcome_probability": 0.299,
+        "model_confidence": "medium",
+        "outcome_band": "unfavorable"
+      },
+      {
+        "company": "Uber",
+        "split": "train",
+        "deck_year": "2008",
+        "outcome": "public",
+        "success": 1,
+        "extracted_chars": 5390,
+        "regex_claims_found": 3,
+        "regex_revenue": null,
+        "venture_score": 58.0,
+        "outcome_probability": 0.48,
+        "model_confidence": "medium",
+        "outcome_band": "mixed"
+      }
+    ],
+    "per_split": {
+      "train": {
+        "n": 6,
+        "n_success": 6,
+        "n_failure": 0,
+        "scores": [
+          58.0,
+          55.0,
+          56.0,
+          64.0,
+          58.0,
+          58.0
+        ],
+        "mean_score": 58.17,
+        "auc": null,
+        "auc_is_none_because": "only one outcome class present -- AUC is undefined, not zero"
+      },
+      "test": {
+        "n": 1,
+        "n_success": 1,
+        "n_failure": 0,
+        "scores": [
+          58.0
+        ],
+        "mean_score": 58.0,
+        "auc": null,
+        "auc_is_none_because": "only one outcome class present -- AUC is undefined, not zero"
+      }
+    }
+  },
+  "deck_set_caveat": "All seven companies succeeded, so AUC is undefined on both splits. This arm cannot measure discrimination and is reported for completeness, not as evidence.",
+  "yc_holdout": {
+    "n_scored": 261,
+    "n_skipped": 0,
+    "n_success": 91,
+    "n_failure": 170,
+    "base_rate": 0.3487,
+    "venturescore_auc": 0.6378,
+    "venturescore_auc_ci95": [
+      0.5648,
+      0.7063
+    ],
+    "venturescore_mean_success": 39.67,
+    "venturescore_mean_failure": 27.83,
+    "outcome_model_auc_IN_SAMPLE_NOT_A_VALIDATION": 0.9747,
+    "outcome_model_auc_ci95_IN_SAMPLE": [
+      0.9545,
+      0.9901
+    ],
+    "outcome_model_caveat": "This figure is IN-SAMPLE and must not be quoted as validation. All 261 companies are in train_outcome_model.py's training file. A high value here is what an in-sample measurement looks like, not evidence of skill.",
+    "industry_mix": {
+      "Consumer": 162,
+      "Healthcare": 62,
+      "Industrials": 28,
+      "Real Estate and Construction": 8,
+      "Unspecified": 1
+    },
+    "scope_caveat": "The holdout is a LEFTOVER, not a random sample, and its composition shows it: Consumer 162, Healthcare 62, Industrials 28, Real Estate 8 -- and ZERO B2B and ZERO Fintech. That is the tech-only scope filter working in reverse. venturescore_dataset.jsonl kept the tech companies, so what is left over is disproportionately the ones this product is explicitly NOT designed to evaluate. The VentureFlow Score AUC below is therefore a genuine out-of-sample measurement on an OUT-OF-SCOPE population, which is weaker evidence than an in-scope holdout would be and is the best available today.",
+    "per_company": [
+      {
+        "name": "1000Memories",
+        "label": 1,
+        "venture_score": 19.0,
+        "outcome_probability": 0.772
+      },
+      {
+        "name": "20n",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.196
+      },
+      {
+        "name": "54Gene",
+        "label": 0,
+        "venture_score": 68.0,
+        "outcome_probability": 0.556
+      },
+      {
+        "name": "99dresses",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.116
+      },
+      {
+        "name": "Adla",
+        "label": 0,
+        "venture_score": 16.0,
+        "outcome_probability": 0.101
+      },
+      {
+        "name": "Aisle50",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.792
+      },
+      {
+        "name": "Allotrope Medical",
+        "label": 1,
+        "venture_score": 26.0,
+        "outcome_probability": 0.877
+      },
+      {
+        "name": "Almond",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.161
+      },
+      {
+        "name": "Amulyte",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.209
+      },
+      {
+        "name": "Anja Health",
+        "label": 1,
+        "venture_score": 27.0,
+        "outcome_probability": 0.9
+      },
+      {
+        "name": "Anyvite",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.15
+      },
+      {
+        "name": "Auctomatic",
+        "label": 1,
+        "venture_score": 21.0,
+        "outcome_probability": 0.21
+      },
+      {
+        "name": "AudioFocus",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.421
+      },
+      {
+        "name": "Auro Robotics",
+        "label": 1,
+        "venture_score": 22.0,
+        "outcome_probability": 0.958
+      },
+      {
+        "name": "AuroraQ",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.16
+      },
+      {
+        "name": "Avo",
+        "label": 0,
+        "venture_score": 67.0,
+        "outcome_probability": 0.918
+      },
+      {
+        "name": "Bagaveev Corporation",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.124
+      },
+      {
+        "name": "BarSense",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.075
+      },
+      {
+        "name": "Bikanta",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.175
+      },
+      {
+        "name": "BillionToOne",
+        "label": 1,
+        "venture_score": 71.0,
+        "outcome_probability": 0.944
+      },
+      {
+        "name": "Blink",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.157
+      },
+      {
+        "name": "Blok",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.129
+      },
+      {
+        "name": "BloomThat",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.829
+      },
+      {
+        "name": "Boosted",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.935
+      },
+      {
+        "name": "Bountii",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.119
+      },
+      {
+        "name": "boxouse",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.338
+      },
+      {
+        "name": "Brave Care",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.099
+      },
+      {
+        "name": "BufferBox",
+        "label": 1,
+        "venture_score": 26.0,
+        "outcome_probability": 0.848
+      },
+      {
+        "name": "Burrow",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.953
+      },
+      {
+        "name": "Byte Kitchen",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.734
+      },
+      {
+        "name": "Cache",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.149
+      },
+      {
+        "name": "California Dreamin",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.174
+      },
+      {
+        "name": "Cambridge Cancer Genomics",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.099
+      },
+      {
+        "name": "CAPSULE",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.107
+      },
+      {
+        "name": "Cardpool",
+        "label": 1,
+        "venture_score": 21.0,
+        "outcome_probability": 0.798
+      },
+      {
+        "name": "CareLedger",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.11
+      },
+      {
+        "name": "Carsabi",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.238
+      },
+      {
+        "name": "Cartcam",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.262
+      },
+      {
+        "name": "Caviar",
+        "label": 1,
+        "venture_score": 71.0,
+        "outcome_probability": 0.922
+      },
+      {
+        "name": "Charge Running",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.228
+      },
+      {
+        "name": "Chariot",
+        "label": 1,
+        "venture_score": 22.0,
+        "outcome_probability": 0.885
+      },
+      {
+        "name": "Chirply",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.181
+      },
+      {
+        "name": "Coco Controller",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.073
+      },
+      {
+        "name": "Collections",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.132
+      },
+      {
+        "name": "Coral Genomics",
+        "label": 1,
+        "venture_score": 22.0,
+        "outcome_probability": 0.749
+      },
+      {
+        "name": "Correlia Biosystems",
+        "label": 0,
+        "venture_score": 72.0,
+        "outcome_probability": 0.204
+      },
+      {
+        "name": "Covetly",
+        "label": 0,
+        "venture_score": 15.0,
+        "outcome_probability": 0.029
+      },
+      {
+        "name": "Crohnology (by Healthy Labs)",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.143
+      },
+      {
+        "name": "CrowdMed",
+        "label": 0,
+        "venture_score": 28.0,
+        "outcome_probability": 0.192
+      },
+      {
+        "name": "Cue",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.921
+      },
+      {
+        "name": "Current Foods",
+        "label": 1,
+        "venture_score": 12.0,
+        "outcome_probability": 0.74
+      },
+      {
+        "name": "dNovo",
+        "label": 0,
+        "venture_score": 26.0,
+        "outcome_probability": 0.176
+      },
+      {
+        "name": "DoorDash",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.923
+      },
+      {
+        "name": "Downtobid",
+        "label": 1,
+        "venture_score": 22.0,
+        "outcome_probability": 0.51
+      },
+      {
+        "name": "Drapr",
+        "label": 1,
+        "venture_score": 21.0,
+        "outcome_probability": 0.737
+      },
+      {
+        "name": "Dressd",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.207
+      },
+      {
+        "name": "Dropprint Genomics",
+        "label": 1,
+        "venture_score": 30.0,
+        "outcome_probability": 0.896
+      },
+      {
+        "name": "Duffl",
+        "label": 0,
+        "venture_score": 67.0,
+        "outcome_probability": 0.636
+      },
+      {
+        "name": "Eat Blueprint",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.158
+      },
+      {
+        "name": "Echo Locker",
+        "label": 1,
+        "venture_score": 19.0,
+        "outcome_probability": 0.765
+      },
+      {
+        "name": "Encepheal Therapeutics",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.162
+      },
+      {
+        "name": "Endpoint Health",
+        "label": 0,
+        "venture_score": 72.0,
+        "outcome_probability": 0.142
+      },
+      {
+        "name": "Engage Bio",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.807
+      },
+      {
+        "name": "Envyl",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.209
+      },
+      {
+        "name": "Exec",
+        "label": 1,
+        "venture_score": 19.0,
+        "outcome_probability": 0.815
+      },
+      {
+        "name": "Faction",
+        "label": 0,
+        "venture_score": 28.0,
+        "outcome_probability": 0.323
+      },
+      {
+        "name": "Fancy",
+        "label": 1,
+        "venture_score": 19.0,
+        "outcome_probability": 0.199
+      },
+      {
+        "name": "Farmstead",
+        "label": 0,
+        "venture_score": 65.0,
+        "outcome_probability": 0.135
+      },
+      {
+        "name": "FastFarma",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.445
+      },
+      {
+        "name": "Feather",
+        "label": 1,
+        "venture_score": 72.0,
+        "outcome_probability": 0.695
+      },
+      {
+        "name": "Felix Biotechnology",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.14
+      },
+      {
+        "name": "Fiix",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.77
+      },
+      {
+        "name": "FitFu",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.187
+      },
+      {
+        "name": "Flytenow",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.153
+      },
+      {
+        "name": "Fobo",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.71
+      },
+      {
+        "name": "Foodoro",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.278
+      },
+      {
+        "name": "Forcyte Biotechnologies",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.198
+      },
+      {
+        "name": "FREY",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.114
+      },
+      {
+        "name": "Futureleague",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.313
+      },
+      {
+        "name": "GetGoing",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.185
+      },
+      {
+        "name": "Ginkgo Bioworks",
+        "label": 1,
+        "venture_score": 64.0,
+        "outcome_probability": 0.555
+      },
+      {
+        "name": "Glio",
+        "label": 0,
+        "venture_score": 16.0,
+        "outcome_probability": 0.528
+      },
+      {
+        "name": "Gobble",
+        "label": 1,
+        "venture_score": 71.0,
+        "outcome_probability": 0.449
+      },
+      {
+        "name": "Gobillion",
+        "label": 0,
+        "venture_score": 17.0,
+        "outcome_probability": 0.09
+      },
+      {
+        "name": "Graft Concepts",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.116
+      },
+      {
+        "name": "Green Energy Exchange",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.658
+      },
+      {
+        "name": "Grouper",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.172
+      },
+      {
+        "name": "GTRACK Technologies",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.083
+      },
+      {
+        "name": "Halolife",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.137
+      },
+      {
+        "name": "HauteDay",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.031
+      },
+      {
+        "name": "Heimdal",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.059
+      },
+      {
+        "name": "Hello Chair",
+        "label": 0,
+        "venture_score": 26.0,
+        "outcome_probability": 0.16
+      },
+      {
+        "name": "HelpNow",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.106
+      },
+      {
+        "name": "Hexel",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.297
+      },
+      {
+        "name": "Hingeto",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.764
+      },
+      {
+        "name": "HomeBreeze",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.068
+      },
+      {
+        "name": "Homejoy",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.94
+      },
+      {
+        "name": "iCracked",
+        "label": 1,
+        "venture_score": 69.0,
+        "outcome_probability": 0.72
+      },
+      {
+        "name": "Inevitable Tech",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.131
+      },
+      {
+        "name": "Inflow",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.338
+      },
+      {
+        "name": "InnaMed",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.101
+      },
+      {
+        "name": "Innov8",
+        "label": 1,
+        "venture_score": 28.0,
+        "outcome_probability": 0.694
+      },
+      {
+        "name": "Inporia",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.165
+      },
+      {
+        "name": "Instacart",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.973
+      },
+      {
+        "name": "Jellyfish Art",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.148
+      },
+      {
+        "name": "Kapacity.io",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.804
+      },
+      {
+        "name": "Kicksend",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.353
+      },
+      {
+        "name": "Klarismo",
+        "label": 0,
+        "venture_score": 35.0,
+        "outcome_probability": 0.093
+      },
+      {
+        "name": "Known Medicine",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.212
+      },
+      {
+        "name": "L.",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.457
+      },
+      {
+        "name": "Lavo Life Sciences",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.141
+      },
+      {
+        "name": "Lawn Love",
+        "label": 1,
+        "venture_score": 31.0,
+        "outcome_probability": 0.867
+      },
+      {
+        "name": "Layer By Layer",
+        "label": 1,
+        "venture_score": 21.0,
+        "outcome_probability": 0.725
+      },
+      {
+        "name": "Le Tote",
+        "label": 0,
+        "venture_score": 67.0,
+        "outcome_probability": 0.23
+      },
+      {
+        "name": "LitHit",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.144
+      },
+      {
+        "name": "Looklive",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.066
+      },
+      {
+        "name": "Loop Genomics",
+        "label": 1,
+        "venture_score": 68.0,
+        "outcome_probability": 0.906
+      },
+      {
+        "name": "Lovd",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.114
+      },
+      {
+        "name": "Lucira Health",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.944
+      },
+      {
+        "name": "Lully",
+        "label": 0,
+        "venture_score": 26.0,
+        "outcome_probability": 0.257
+      },
+      {
+        "name": "Luminist Labs",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.851
+      },
+      {
+        "name": "Lumoid",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.77
+      },
+      {
+        "name": "Mable",
+        "label": 1,
+        "venture_score": 27.0,
+        "outcome_probability": 0.755
+      },
+      {
+        "name": "MadEats",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.68
+      },
+      {
+        "name": "MadeSolid",
+        "label": 0,
+        "venture_score": 17.0,
+        "outcome_probability": 0.066
+      },
+      {
+        "name": "Membo",
+        "label": 0,
+        "venture_score": 26.0,
+        "outcome_probability": 0.246
+      },
+      {
+        "name": "Meson",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.151
+      },
+      {
+        "name": "Mezli",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.15
+      },
+      {
+        "name": "MilkRun",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.163
+      },
+      {
+        "name": "Milo",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.154
+      },
+      {
+        "name": "MoFE",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.077
+      },
+      {
+        "name": "Momentus",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.815
+      },
+      {
+        "name": "Move Loot",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.096
+      },
+      {
+        "name": "Movity",
+        "label": 1,
+        "venture_score": 25.0,
+        "outcome_probability": 0.886
+      },
+      {
+        "name": "Moxion Power Co.",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.664
+      },
+      {
+        "name": "Mylk Guys",
+        "label": 0,
+        "venture_score": 16.0,
+        "outcome_probability": 0.12
+      },
+      {
+        "name": "Nebia",
+        "label": 1,
+        "venture_score": 69.0,
+        "outcome_probability": 0.959
+      },
+      {
+        "name": "Necto",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.094
+      },
+      {
+        "name": "Neverland",
+        "label": 0,
+        "venture_score": 16.0,
+        "outcome_probability": 0.092
+      },
+      {
+        "name": "NFTScoring",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.132
+      },
+      {
+        "name": "Nino Foods",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.086
+      },
+      {
+        "name": "No Lean Season",
+        "label": 0,
+        "venture_score": 29.0,
+        "outcome_probability": 0.187
+      },
+      {
+        "name": "Nomiku",
+        "label": 0,
+        "venture_score": 28.0,
+        "outcome_probability": 0.202
+      },
+      {
+        "name": "Notable Labs",
+        "label": 1,
+        "venture_score": 64.0,
+        "outcome_probability": 0.587
+      },
+      {
+        "name": "NURX",
+        "label": 1,
+        "venture_score": 68.0,
+        "outcome_probability": 0.878
+      },
+      {
+        "name": "Nutrigene",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.109
+      },
+      {
+        "name": "Obie",
+        "label": 1,
+        "venture_score": 76.0,
+        "outcome_probability": 0.624
+      },
+      {
+        "name": "Octopart",
+        "label": 1,
+        "venture_score": 31.0,
+        "outcome_probability": 0.792
+      },
+      {
+        "name": "Ohm",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.169
+      },
+      {
+        "name": "Oklo",
+        "label": 1,
+        "venture_score": 72.0,
+        "outcome_probability": 0.924
+      },
+      {
+        "name": "OneStopKitchen",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.144
+      },
+      {
+        "name": "Oolu",
+        "label": 1,
+        "venture_score": 72.0,
+        "outcome_probability": 0.846
+      },
+      {
+        "name": "Opez",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.091
+      },
+      {
+        "name": "Orchata",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.12
+      },
+      {
+        "name": "OrderAhead",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.758
+      },
+      {
+        "name": "Ordinary Seafood",
+        "label": 0,
+        "venture_score": 13.0,
+        "outcome_probability": 0.131
+      },
+      {
+        "name": "Outfit",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.089
+      },
+      {
+        "name": "OutSail Technologies",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.152
+      },
+      {
+        "name": "Pardes Biosciences",
+        "label": 1,
+        "venture_score": 21.0,
+        "outcome_probability": 0.767
+      },
+      {
+        "name": "Passerine Aircraft",
+        "label": 0,
+        "venture_score": 17.0,
+        "outcome_probability": 0.126
+      },
+      {
+        "name": "PayDragon",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.112
+      },
+      {
+        "name": "Pebble",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.398
+      },
+      {
+        "name": "Penta Medical",
+        "label": 0,
+        "venture_score": 17.0,
+        "outcome_probability": 0.179
+      },
+      {
+        "name": "People & Pages",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.34
+      },
+      {
+        "name": "Perception Biosystems",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.078
+      },
+      {
+        "name": "Perfekto",
+        "label": 0,
+        "venture_score": 29.0,
+        "outcome_probability": 0.124
+      },
+      {
+        "name": "Picplum",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.089
+      },
+      {
+        "name": "PipeBio",
+        "label": 1,
+        "venture_score": 35.0,
+        "outcome_probability": 0.808
+      },
+      {
+        "name": "PlateJoy",
+        "label": 1,
+        "venture_score": 67.0,
+        "outcome_probability": 0.735
+      },
+      {
+        "name": "Playground",
+        "label": 0,
+        "venture_score": 65.0,
+        "outcome_probability": 0.184
+      },
+      {
+        "name": "Poppy",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.158
+      },
+      {
+        "name": "PreDxion Bio",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.299
+      },
+      {
+        "name": "Pretty Instant",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.682
+      },
+      {
+        "name": "Project Wedding",
+        "label": 1,
+        "venture_score": 24.0,
+        "outcome_probability": 0.689
+      },
+      {
+        "name": "Proxy",
+        "label": 1,
+        "venture_score": 68.0,
+        "outcome_probability": 0.889
+      },
+      {
+        "name": "Purple Plate",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.135
+      },
+      {
+        "name": "Quadrant Eye",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.059
+      },
+      {
+        "name": "Queenly",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.08
+      },
+      {
+        "name": "Rare Door",
+        "label": 0,
+        "venture_score": 17.0,
+        "outcome_probability": 0.075
+      },
+      {
+        "name": "Reebeez",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.28
+      },
+      {
+        "name": "RegistryLove",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.042
+      },
+      {
+        "name": "Restocks",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.311
+      },
+      {
+        "name": "Reverie Labs",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.04
+      },
+      {
+        "name": "Robby Technologies",
+        "label": 0,
+        "venture_score": 21.0,
+        "outcome_probability": 0.2
+      },
+      {
+        "name": "RoverRide",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.295
+      },
+      {
+        "name": "Ruth Health",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.24
+      },
+      {
+        "name": "Safely Finance",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.127
+      },
+      {
+        "name": "Scanwell Health",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.875
+      },
+      {
+        "name": "Secured",
+        "label": 0,
+        "venture_score": 69.0,
+        "outcome_probability": 0.799
+      },
+      {
+        "name": "Sendme, Inc",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.06
+      },
+      {
+        "name": "Seva Coffee",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.142
+      },
+      {
+        "name": "Shield Bio",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.118
+      },
+      {
+        "name": "Shift Labs",
+        "label": 1,
+        "venture_score": 26.0,
+        "outcome_probability": 0.921
+      },
+      {
+        "name": "Shiok Meats",
+        "label": 1,
+        "venture_score": 27.0,
+        "outcome_probability": 0.843
+      },
+      {
+        "name": "Shopular",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.959
+      },
+      {
+        "name": "Shout",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.136
+      },
+      {
+        "name": "Shoutfit",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.039
+      },
+      {
+        "name": "Silver",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.14
+      },
+      {
+        "name": "SimpleCitizen",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.733
+      },
+      {
+        "name": "SimplyListed",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.109
+      },
+      {
+        "name": "Skip",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.117
+      },
+      {
+        "name": "Slingshot",
+        "label": 1,
+        "venture_score": 25.0,
+        "outcome_probability": 0.811
+      },
+      {
+        "name": "Solve",
+        "label": 1,
+        "venture_score": 19.0,
+        "outcome_probability": 0.728
+      },
+      {
+        "name": "Songkick",
+        "label": 1,
+        "venture_score": 28.0,
+        "outcome_probability": 0.738
+      },
+      {
+        "name": "Soomgo",
+        "label": 1,
+        "venture_score": 62.0,
+        "outcome_probability": 0.418
+      },
+      {
+        "name": "SourceBeacon",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.151
+      },
+      {
+        "name": "Soylent",
+        "label": 1,
+        "venture_score": 69.0,
+        "outcome_probability": 0.952
+      },
+      {
+        "name": "Spero Foods",
+        "label": 0,
+        "venture_score": 70.0,
+        "outcome_probability": 0.122
+      },
+      {
+        "name": "Spoil",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.16
+      },
+      {
+        "name": "Spoken",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.249
+      },
+      {
+        "name": "SpoonRocket",
+        "label": 1,
+        "venture_score": 21.0,
+        "outcome_probability": 0.736
+      },
+      {
+        "name": "Standard Cyborg",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.117
+      },
+      {
+        "name": "Starsky Robotics",
+        "label": 0,
+        "venture_score": 65.0,
+        "outcome_probability": 0.239
+      },
+      {
+        "name": "Start Closing",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.115
+      },
+      {
+        "name": "Style Lend",
+        "label": 0,
+        "venture_score": 15.0,
+        "outcome_probability": 0.03
+      },
+      {
+        "name": "StyleBee",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.116
+      },
+      {
+        "name": "Sudden Coffee",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.116
+      },
+      {
+        "name": "Sunfolding",
+        "label": 0,
+        "venture_score": 72.0,
+        "outcome_probability": 0.378
+      },
+      {
+        "name": "Supr Daily",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.832
+      },
+      {
+        "name": "Swapbox",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.174
+      },
+      {
+        "name": "Talyn Air",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.796
+      },
+      {
+        "name": "Taste",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.097
+      },
+      {
+        "name": "Tastemaker",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.346
+      },
+      {
+        "name": "Techmate",
+        "label": 1,
+        "venture_score": 22.0,
+        "outcome_probability": 0.842
+      },
+      {
+        "name": "Teespring",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.964
+      },
+      {
+        "name": "Teleo",
+        "label": 1,
+        "venture_score": 23.0,
+        "outcome_probability": 0.761
+      },
+      {
+        "name": "The Buttermilk Company",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.357
+      },
+      {
+        "name": "The Mercer Club",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.18
+      },
+      {
+        "name": "The Supplant Company",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.132
+      },
+      {
+        "name": "Thread",
+        "label": 0,
+        "venture_score": 69.0,
+        "outcome_probability": 0.21
+      },
+      {
+        "name": "Ticket Stumbler",
+        "label": 0,
+        "venture_score": 22.0,
+        "outcome_probability": 0.094
+      },
+      {
+        "name": "Together Video Chat",
+        "label": 1,
+        "venture_score": 19.0,
+        "outcome_probability": 0.813
+      },
+      {
+        "name": "Trident Bioscience",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.201
+      },
+      {
+        "name": "Unfurl",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.125
+      },
+      {
+        "name": "Unima",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.496
+      },
+      {
+        "name": "Unwind Me",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.833
+      },
+      {
+        "name": "Upfront",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.042
+      },
+      {
+        "name": "UroDev Medical",
+        "label": 1,
+        "venture_score": 22.0,
+        "outcome_probability": 0.828
+      },
+      {
+        "name": "UtilityScore (formerly Pando)",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.171
+      },
+      {
+        "name": "V-Flow Medical",
+        "label": 0,
+        "venture_score": 26.0,
+        "outcome_probability": 0.252
+      },
+      {
+        "name": "VetPronto",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.205
+      },
+      {
+        "name": "Viacycle",
+        "label": 0,
+        "venture_score": 23.0,
+        "outcome_probability": 0.227
+      },
+      {
+        "name": "VIDA & Co.",
+        "label": 1,
+        "venture_score": 20.0,
+        "outcome_probability": 0.797
+      },
+      {
+        "name": "View3",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.137
+      },
+      {
+        "name": "VINEBOX (Usual Beverage Co.)",
+        "label": 0,
+        "venture_score": 69.0,
+        "outcome_probability": 0.145
+      },
+      {
+        "name": "Vive",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.111
+      },
+      {
+        "name": "Viya",
+        "label": 0,
+        "venture_score": 26.0,
+        "outcome_probability": 0.1
+      },
+      {
+        "name": "Volansi",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.945
+      },
+      {
+        "name": "Volt Health",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.389
+      },
+      {
+        "name": "Volumetric",
+        "label": 1,
+        "venture_score": 31.0,
+        "outcome_probability": 0.3
+      },
+      {
+        "name": "Voodoo Manufacturing",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.068
+      },
+      {
+        "name": "Wheelys Caf\u00e9",
+        "label": 0,
+        "venture_score": 25.0,
+        "outcome_probability": 0.297
+      },
+      {
+        "name": "Willing",
+        "label": 1,
+        "venture_score": 70.0,
+        "outcome_probability": 0.937
+      },
+      {
+        "name": "Xberts",
+        "label": 0,
+        "venture_score": 14.0,
+        "outcome_probability": 0.043
+      },
+      {
+        "name": "Zanbazaar",
+        "label": 0,
+        "venture_score": 19.0,
+        "outcome_probability": 0.096
+      },
+      {
+        "name": "Zenamins",
+        "label": 0,
+        "venture_score": 24.0,
+        "outcome_probability": 0.228
+      },
+      {
+        "name": "ZeroDown",
+        "label": 1,
+        "venture_score": 73.0,
+        "outcome_probability": 0.969
+      },
+      {
+        "name": "ZipX",
+        "label": 1,
+        "venture_score": 24.0,
+        "outcome_probability": 0.746
+      },
+      {
+        "name": "Zoomer",
+        "label": 0,
+        "venture_score": 27.0,
+        "outcome_probability": 0.431
+      },
+      {
+        "name": "ZowPow",
+        "label": 0,
+        "venture_score": 20.0,
+        "outcome_probability": 0.155
+      },
+      {
+        "name": "zPREDICTA",
+        "label": 1,
+        "venture_score": 27.0,
+        "outcome_probability": 0.156
+      }
+    ]
+  },
+  "yc_holdout_note": "Genuinely out-of-sample: every company is absent from venturescore_dataset.jsonl. Contrast with ml/eval/score_baseline_comparison.json, whose 300-company sample is 300/300 inside the training file."
+}

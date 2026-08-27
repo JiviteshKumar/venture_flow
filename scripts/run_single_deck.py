@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
+import console_safety  # noqa: F401  (imported for side effect)
 
 POLL_INTERVAL_S = 5
 JOB_TIMEOUT_S = 900

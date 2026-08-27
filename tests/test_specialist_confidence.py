@@ -32,8 +32,8 @@ def _prompt_text() -> str:
     captured = {}
 
     class FakeClient:
-        class chat:  # noqa: N801
-            class completions:  # noqa: N801
+        class chat:
+            class completions:
                 @staticmethod
                 def create(**kwargs):
                     captured["prompt"] = kwargs["messages"][-1]["content"]

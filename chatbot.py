@@ -1,13 +1,16 @@
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import json
 import logging
-from rag_engine import build_context, format_context_for_llm
+
 from groq_client import MODEL, get_client
+from rag_engine import build_context, format_context_for_llm
 
 logger = logging.getLogger(__name__)
 

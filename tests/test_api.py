@@ -12,13 +12,17 @@ def test_analyze_rejects_invalid_payload():
 def test_analyze_returns_persisted_report(monkeypatch):
     monkeypatch.setattr(api, "create_analysis_job", lambda _: "job-id")
     updates = []
-    monkeypatch.setattr(api, "update_analysis_job", lambda *args: updates.append(args))
+    monkeypatch.setattr(api, "update_analysis_job", lambda *args, **kw: updates.append(args))
     monkeypatch.setattr(api, "find_similar_companies", lambda *_: [{"name": "Existing Co", "similarity": 0.8}])
     monkeypatch.setattr(api, "persist_report", lambda **_: "report-id")
     monkeypatch.setattr(
         api,
         "run_due_diligence",
-        lambda *_: {
+        # **kwargs, because api.py now binds every pipeline argument by
+        # keyword. A positional-only stub raises TypeError inside the job, which
+        # the queue faithfully records as a failed analysis -- so this test
+        # would fail for a reason that has nothing to do with what it checks.
+        lambda *_a, **_k: {
             "company": "New Co",
             "final_score": 70,
             "recommendation": "INVEST",
@@ -51,7 +55,7 @@ def test_analyze_returns_a_clear_error_when_persistence_fails(monkeypatch):
     updates = []
     monkeypatch.setattr(api, "update_analysis_job", lambda *args: updates.append(args))
     monkeypatch.setattr(api, "find_similar_companies", lambda *_: [])
-    monkeypatch.setattr(api, "run_due_diligence", lambda *_: {"sections": {}})
+    monkeypatch.setattr(api, "run_due_diligence", lambda *_a, **_k: {"sections": {}})
 
     def fail_persist(**_):
         raise RuntimeError("schema is missing dd_reports.raw_output")

@@ -3,6 +3,175 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 27 Aug 2026, thirteenth pass: a static-analysis sweep finds the headline fix was never running
+
+Four jobs, no Groq. The bug sweep was the one that mattered: it found that the
+previous session's most important fix — temporal grounding for claim
+verification — **had never executed for a single real user**, and that the
+published score-discrimination figure is measured on training data.
+
+**Tests: 250 passing at the start, 287 at the end, 0 failing**, stable across
+five randomised orderings (seeds 1, 2, 3, 7, 99).
+
+### The big one: three bugs in a single call site, none of which errored
+
+`ruff` flagged `PLE2510 invalid-character-backspace` in `ventureflow_agent.py`.
+That turned out to be the visible end of a chain.
+
+**1. A regex containing literal backspace bytes.** `_YEAR_RE` was
+`re.compile(r"\x08(19[89]\d|20[0-4]\d)\x08")` — two actual 0x08 control
+characters where `\b` word boundaries belong. Almost certainly an editor or
+paste accident, and **invisible in every diff and review since**, because a
+backspace renders as nothing. The pattern demanded a control character either
+side of the year, so it matched no real text and `_infer_deck_vintage()`
+returned `""` for every deck ever analysed.
+
+**2. Twelve positional arguments, one parameter apart.** `api.py` called
+`run_due_diligence(...)` with twelve positional arguments ending in `on_stage`.
+The twelfth parameter is `deck_date`. So in production:
+
+- `deck_date` received the **stage callback** — a truthy function object — which
+  flowed into `as_of=deck_date or _infer_deck_vintage(...)` and was formatted
+  into the claim-verification prompt as `<function record_stage at 0x...>`;
+- `on_stage` fell back to `None`, so **the `stage` column added in migration 008
+  was never written outside tests**. The frontend's real-progress display, the
+  entire point of that migration, showed nothing in production.
+
+**3. The API never had a `deck_date` field at all**, so even a correct call had
+nothing to pass.
+
+Together: the temporal grounding added to stop the verifier judging a 2011
+metric against 2026 evidence — the fix for the worst bug this project has found,
+where four true historical claims were called lies at 0.96–0.97 confidence —
+**was inert for every real user**. It worked only in
+`ml/scripts/run_real_deck_corpus.py`, which passes `deck_date` by keyword. That
+is precisely why the offline corpus results looked correct while the product was
+broken, and it is a warning about validating through a different code path than
+the one users hit.
+
+Fixed: real `\b` escapes, `functools.partial` with every argument bound by
+keyword, a validated `deck_date` field on `DiligenceRequest`.
+`tests/test_pipeline_argument_binding.py` asserts the call stays keyword-bound,
+that every keyword names a real parameter, and — sweeping the whole backend —
+that no source file contains a stray control character.
+
+### The score-discrimination figure is in-sample
+
+`ml/scripts/eval_score_baseline.py` draws its 300-company sample from
+`ml/data/venturescore_dataset.jsonl`, which is the file
+`train_venturescore_model.py` fits on. Measured: **300 of 300 evaluated
+companies are in the training file.** The published "VentureFlow Score 0.668 vs
+legacy formula 0.500" is an in-sample number.
+
+Two things separate cleanly here. The comparison's *conclusion* survives — the
+legacy formula scores exactly 0.500 because it reads no company feature at all,
+and leakage cannot change that. What does not survive is 0.668 as an estimate of
+held-out performance. Mitigating: the trainer's own cross-validated ROC-AUC is
+0.67, essentially identical, which suggests the model is not badly overfit. That
+is evidence, not a substitute for a holdout.
+
+### Other artifacts: all seven load
+
+The dead severity model was fixed last session, but fixing one proves nothing
+about the others. `ml/scripts/check_model_artifacts.py` loads every trained
+artifact **in a clean subprocess** — because a module already imported in the
+current process masks exactly the `__main__` reference problem — and requires
+each to produce real output, not merely import. **7/7 pass.** Now a test, so it
+runs on every commit rather than when someone remembers.
+
+### Two more silent-field-drop routes, and two more isolation leaks
+
+`ChatRequest`, `DecisionRequest` and `CommentRequest` all still ignored unknown
+fields. All four request models now set `extra="forbid"`. Response models
+deliberately stay permissive: they are constructed from stored dicts, and
+forbidding extras there would break loading older reports.
+
+Running the suite under `pytest-randomly` found two leaks of the same class as
+the demo-gate one:
+
+- **`rate_limiter._memory_windows`** is a module-level defaultdict, and every
+  TestClient request shares one client key. Once the suite made 30 requests in a
+  minute the production rate limiter began returning 429 to whichever unrelated
+  test asked next — surfacing as `assert 429 == 401` in a demo-gate test and as
+  `KeyError: 'job_id'` in two worker-queue tests.
+- **`observability` counters** accumulate process-wide.
+
+`tests/conftest.py` now resets both before every test, and adds a *detector*
+rather than a reset for the demo-gate token: silently clearing it would hide the
+leak instead of reporting it.
+
+### Deployment config can no longer fail silently
+
+`config_check.py` declares what production requires, checks it at startup, and
+surfaces the result three ways: a CRITICAL log line per missing variable naming
+what breaks, `/health` reporting `status: misconfigured` with the list, and an
+opt-in `STRICT_CONFIG=true` that refuses to boot.
+
+Refusing to boot is **not** the default, deliberately: on a single-instance free
+tier that converts a security gap into a total outage. `/health` returns 200 for
+the same reason — the service is genuinely running, and the payload carries the
+truth while the status code carries liveness.
+
+Run against the live settings it reproduces the actual production state exactly:
+`DEMO_ACCESS_TOKEN` critical, `ALLOWED_ORIGIN_REGEX` and `TRUST_PROXY_HEADERS`
+warnings.
+
+### The validation harness, and what it can and cannot prove
+
+`ml/eval/validation/` now holds a split locked before any result was seen —
+deterministic (SHA-256 of the company name, low bit), because a random split can
+be re-rolled until the numbers look good and nothing in the artifact would show
+it had been.
+
+**The deck set cannot validate anything, and the reason is structural.** All
+seven companies succeeded: Airbnb, Uber and Coinbase went public, Mint was
+acquired, Buffer, Intercom and Front still operate. There is not one shutdown.
+That is the selection mechanism — decks become public because companies become
+famous, and companies become famous by succeeding. **With no negative class
+there is no AUC, no precision and no recall**; a model returning a constant 95
+scores perfectly. The 6/1 train/test split is recorded but neither side can
+support a conclusion.
+
+Deck provenance is also weaker than this project's own standard, and is recorded
+rather than fixed: all seven come from `media.genppt.com`, a third-party
+aggregator, not first-party publication. A search for companies hosting their own
+decks largely failed — company blogs are reachable but the deck *files* are not
+served from them, and results are dominated by aggregators re-hosting the same
+files. The honest options were weaker provenance or a padded set; padding is
+worse.
+
+**The YC holdout is the only arm that can measure discrimination**, and it comes
+with its own caveat. 261 companies absent from `venturescore_dataset.jsonl`, both
+classes present (91 success / 170 failure):
+
+| model | AUC | 95% CI | validity |
+|---|---|---|---|
+| VentureFlow Score | **0.6378** | [0.5648, 0.7063] | genuinely out-of-sample |
+| Outcome Model | 0.9747 | [0.9545, 0.9901] | **IN-SAMPLE — not a validation** |
+
+The Outcome Model figure is void: `train_outcome_model.py` fits on
+`outcome_dataset.jsonl`, the file this holdout was drawn *from*, and 261 of 261
+holdout companies are in its training data. Recorded with its own invalidation
+attached rather than quietly dropped.
+
+And the VentureFlow Score's 0.6378 carries a scope caveat that has to be stated:
+the holdout is a **leftover, not a random sample**. Its composition is Consumer
+162, Healthcare 62, Industrials 28, Real Estate 8 — and **zero B2B, zero
+Fintech**. That is the tech-only scope filter working in reverse: the training
+file kept the tech companies, so the residue is disproportionately the companies
+this product is explicitly *not* designed to evaluate. It is a real
+out-of-sample measurement on an out-of-scope population — weaker than an
+in-scope holdout, and the best available today.
+
+### The ML-only run on real decks
+
+Regex extraction, trained models only, no Groq. Every deck scored between 55 and
+64 (mean 58.2, spread ~2.6 points across Airbnb, Uber, Coinbase, Mint, Buffer,
+Intercom and Front). This is the known "the score barely reads deck text"
+problem, now confirmed on real decks rather than inferred. Regex extraction also
+produced very little to work with — Coinbase's deck yielded 635 characters and
+zero claims.
+
 ## Update — 27 Aug 2026, twelfth pass: infrastructure, monitoring, and three bugs the tests found
 
 Six workstreams. Two of them turned out to be substantially already built, one

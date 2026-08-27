@@ -30,16 +30,16 @@ import json
 import re
 import sys
 import time
+from html import unescape as html_unescape
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
-from html import unescape as html_unescape
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
+import console_safety  # noqa: F401  (imported for side effect)
 
 OUT_PATH = ROOT / "ml" / "eval" / "risk_excerpts_raw.jsonl"
 

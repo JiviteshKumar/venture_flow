@@ -104,7 +104,7 @@ class JsonFormatter(logging.Formatter):
             payload["exception"] = self.formatException(record.exc_info)
         try:
             return json.dumps(payload, default=str)
-        except Exception:  # noqa: BLE001
+        except Exception:
             # Logging must never raise. A log line that cannot be serialised is
             # still worth emitting in a degraded form.
             return json.dumps({"ts": payload["ts"], "level": payload["level"],
@@ -164,7 +164,7 @@ def init_sentry() -> str:
         )
         _sentry = sentry_sdk
         _sentry_state = f"active ({ENVIRONMENT})"
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         _sentry_state = f"failed to initialise ({type(exc).__name__})"
         logger.exception("Sentry initialisation failed")
     return _sentry_state
@@ -186,7 +186,7 @@ def job_context(job_id: str | None = None, company: str | None = None):
                 scope.set_tag("job_id", job_id)
             if company:
                 scope.set_tag("company", company)
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
     try:
         yield
@@ -241,7 +241,7 @@ def track_degradation(
                 category="degradation", level="warning",
                 message=f"{event} in {component}", data=record,
             )
-    except Exception:  # noqa: BLE001
+    except Exception:
         pass
 
 

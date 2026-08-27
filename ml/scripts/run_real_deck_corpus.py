@@ -35,10 +35,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
-from document_extractor import extract_document  # noqa: E402
-from structured_extractor import extract_structured  # noqa: E402
-from ventureflow_agent import run_due_diligence  # noqa: E402
+import console_safety  # noqa: F401  (Windows cp1252 guard)
+from document_extractor import extract_document
+from structured_extractor import extract_structured
+from ventureflow_agent import run_due_diligence
 
 DECK_DIR = ROOT / "ml" / "eval" / "decks"
 OUT_PATH = ROOT / "ml" / "eval" / "real_deck_runs.json"
@@ -161,7 +161,7 @@ def main() -> int:
         print(f"\n{'#' * 70}\n# {company}  ({entry['extracted_chars']:,} chars)\n{'#' * 70}")
         try:
             rows[company] = run_one(entry)
-        except Exception:  # noqa: BLE001
+        except Exception:
             # Record the failure instead of losing the run. A deck that breaks
             # the pipeline is a finding, and the decks that already succeeded
             # cost real quota that must not be thrown away.

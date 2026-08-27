@@ -38,7 +38,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
+import console_safety  # noqa: F401  (imported for side effect)
 
 RAW_PATH = ROOT / "ml" / "eval" / "risk_excerpts_raw.jsonl"
 OUT_PATH = ROOT / "ml" / "eval" / "risk_benchmark.jsonl"

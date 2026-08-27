@@ -161,7 +161,7 @@ def read_deck(
 
     try:
         images = render_pages(pdf_bytes, max_pages=max_pages)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Slide rendering failed")
         return {"available": False, "reason": f"Could not render pages: {exc}",
                 "text": "", "pages_read": 0}
@@ -179,7 +179,7 @@ def read_deck(
             for index, image in enumerate(images, 1):
                 content = _read_one(image, candidate)
                 per_page.append({"page": index, "content": content})
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             # A model the account cannot call should fall through to the next
             # candidate; a quota failure should not be silently retried forever.
             logger.warning("Vision model %s failed: %s", candidate, exc)

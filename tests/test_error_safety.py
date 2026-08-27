@@ -1,5 +1,5 @@
-from agents import claim_verifier
 import ventureflow_agent
+from agents import claim_verifier
 
 
 def test_fallback_memo_does_not_expose_provider_error():

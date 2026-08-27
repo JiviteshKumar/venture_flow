@@ -24,7 +24,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import api
-from tests.test_worker_queue_integration import FakeJobStore, REPORT_FIELDS
+from tests.test_worker_queue_integration import REPORT_FIELDS, FakeJobStore
 
 FIXED_DECK = {
     "company_name": "Northwind Robotics",

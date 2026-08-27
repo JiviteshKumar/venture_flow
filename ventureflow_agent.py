@@ -1,25 +1,30 @@
 import logging
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Must precede the agent imports below: forces stdout/stderr to UTF-8 so their
 # progress prints cannot raise UnicodeEncodeError on Windows. See
 # console_safety.py -- this was silently killing risk analysis on every run.
+from dotenv import load_dotenv
+
 import console_safety  # noqa: F401  (imported for side effect)
 
-from dotenv import load_dotenv
 load_dotenv()
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 import json
 import re
+
 from agents.claim_verifier import verify_claim
-from agents.risk_detector import score_risk
 from agents.investment_agents import run_investment_agents
-from rag_engine import build_context, format_context_for_llm
+from agents.risk_detector import score_risk
 from groq_client import MODEL, get_client
+from rag_engine import build_context, format_context_for_llm
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +122,18 @@ NEEDS MORE DILIGENCE. The available evidence is not strong enough for an investm
 9. CONFIDENCE LEVEL
 {min(75, max(20, quality.get('score', 50)))}%. Confidence is constrained by data quality and the number of independently verified claims.{error_note}"""
 
-_YEAR_RE = re.compile(r"(19[89]\d|20[0-4]\d)")
+# The escapes below are word boundaries. This line previously held two
+# LITERAL BACKSPACE BYTES (0x08) where those belong -- almost certainly an
+# editor or paste accident, and invisible in every diff and review since,
+# because a backspace renders as nothing at all.
+#
+# The pattern therefore demanded an actual control character either side of
+# the year, matched no real text, and _infer_deck_vintage() returned "" for
+# every deck ever analysed. Together with the argument-order bug fixed in
+# api.py, that left claim verification with no temporal anchor whatsoever in
+# production -- which is the grounding added specifically to stop the verifier
+# judging a 2011 metric against 2026 evidence and calling growth a lie.
+_YEAR_RE = re.compile(r"\b(19[89]\d|20[0-4]\d)\b")
 
 
 def _infer_deck_vintage(text: str) -> str:
@@ -888,7 +904,8 @@ def run_due_diligence(
         name: round(value, 4) for name, value in evidence_components.items()
     }
     try:
-        from ml.venturescore import blend_with_evidence, score_company as _venture_score
+        from ml.venturescore import blend_with_evidence
+        from ml.venturescore import score_company as _venture_score
         venture_score_result = _venture_score(
             description=company_description or filing_text or "",
             one_liner=(company_description or "")[:120],

@@ -83,7 +83,7 @@ def _get_json(url: str) -> dict:
 def _describe_http_error(exc: urllib.error.HTTPError) -> str:
     try:
         detail = json.loads(exc.read()).get("detail", "")
-    except Exception:  # noqa: BLE001 - error reporting must not raise
+    except Exception:
         detail = ""
     return f"HTTP {exc.code} {detail}".strip()
 
@@ -101,7 +101,7 @@ def run_deck(api: str, pdf: Path) -> dict:
         result["error"] = f"upload failed: {_describe_http_error(exc)}"
         result["elapsed_s"] = round(time.time() - started, 1)
         return result
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         result["error"] = f"upload failed: {type(exc).__name__}: {exc}"
         result["elapsed_s"] = round(time.time() - started, 1)
         return result
@@ -134,7 +134,7 @@ def run_deck(api: str, pdf: Path) -> dict:
         result["error"] = f"analyze submit failed: {_describe_http_error(exc)}"
         result["elapsed_s"] = round(time.time() - started, 1)
         return result
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         result["error"] = f"analyze submit failed: {type(exc).__name__}: {exc}"
         result["elapsed_s"] = round(time.time() - started, 1)
         return result
@@ -154,7 +154,7 @@ def run_deck(api: str, pdf: Path) -> dict:
         time.sleep(POLL_INTERVAL_S)
         try:
             status = _get_json(f"{api}/analyze/status/{job_id}")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             result["error"] = f"status poll failed: {type(exc).__name__}: {exc}"
             result["elapsed_s"] = round(time.time() - started, 1)
             return result
@@ -221,7 +221,7 @@ def main() -> int:
 
     try:
         health = _get_json(f"{args.api}/health")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Cannot reach the API at {args.api}: {exc}")
         return 1
     print(f"API health: {health}")

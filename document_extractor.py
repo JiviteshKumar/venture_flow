@@ -29,7 +29,7 @@ from pathlib import Path
 
 try:
     import observability
-except Exception:  # noqa: BLE001
+except Exception:
     observability = None
 
 logger = logging.getLogger(__name__)

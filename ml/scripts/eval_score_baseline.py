@@ -44,10 +44,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
-
-from ml import venturescore  # noqa: E402
-from ventureflow_agent import _evidence_penalty, _legacy_formula_score  # noqa: E402
+import console_safety  # noqa: F401  (imported for side effect)
+from ml import venturescore
+from ventureflow_agent import _evidence_penalty, _legacy_formula_score
 
 DATA_PATH = ROOT / "ml" / "data" / "venturescore_dataset.jsonl"
 OUT_PATH = ROOT / "ml" / "research" / "score_baseline_comparison.json"

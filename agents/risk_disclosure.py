@@ -56,7 +56,7 @@ def _load() -> dict | None:
     try:
         with MODEL_PATH.open("rb") as handle:
             _bundle = pickle.load(handle)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.info(
             "Risk disclosure model not available (%s) -- severity ranking will be "
             "unavailable; discrete detectors are unaffected.", exc,
@@ -80,7 +80,7 @@ def severity(text: str) -> float | None:
         return None
     try:
         return float(bundle["model"].predict_proba([text[:6000]])[0][1])
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("Risk severity scoring failed")
         return None
 

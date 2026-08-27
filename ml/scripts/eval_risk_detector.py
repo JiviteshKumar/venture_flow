@@ -38,13 +38,14 @@ from __future__ import annotations
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
+import console_safety  # noqa: F401  (imported for side effect)
 
 BENCHMARK_PATH = ROOT / "ml" / "eval" / "risk_benchmark.jsonl"
 RESULTS_PATH = ROOT / "ml" / "eval" / "risk_benchmark_results.json"
@@ -217,7 +218,7 @@ def detector_ensemble(row: dict[str, Any]) -> tuple[bool, list[str], dict[str, A
             bundle = pickle.load(handle)
         model_prob = float(bundle["model"].predict_proba([row["text"]])[0][1])
         model_fired = model_prob >= bundle["threshold"]
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         # Absent model file degrades this arm to keyword+deck rather than
         # failing the run -- and says so, so a missing model is never mistaken
         # for a model that found nothing.
@@ -531,7 +532,7 @@ def main() -> None:
             continue
         m = result["metrics"]
         print(f"{name:<18}{m['precision']:>7}{m['recall']:>8}{m['f1']:>7}{m['accuracy']:>7}"
-              f"{m['boilerplate_false_positive_rate']:>17}{str(m['score_roc_auc']):>8}")
+              f"{m['boilerplate_false_positive_rate']:>17}{m['score_roc_auc']!s:>8}")
     print("=" * 78)
     print(f"\nFull per-excerpt results saved to {args.out}")
 

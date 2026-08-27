@@ -43,7 +43,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from agents.deck_financials import derive_state, deck_risk_signals  # noqa: E402
+from agents.deck_financials import deck_risk_signals, derive_state
 
 # (feature, verdict, reasoning). Reproduced in the model report so the audit
 # travels with the numbers rather than living only in a commit message.
@@ -220,10 +220,10 @@ class DeckFeatureTransformer:
     not a matching scikit-learn class hierarchy.
     """
 
-    def fit(self, X, y=None):  # noqa: N803
+    def fit(self, X, y=None):
         return self
 
-    def transform(self, X):  # noqa: N803
+    def transform(self, X):
         import numpy as _np
 
         return _np.asarray([extract_features(t) for t in X], dtype=float)

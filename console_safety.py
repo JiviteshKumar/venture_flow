@@ -59,7 +59,7 @@ def configure_streams() -> None:
             continue
         try:
             reconfigure(encoding="utf-8", errors="replace")
-        except Exception:  # noqa: BLE001 - never break startup over console setup
+        except Exception:
             pass
 
 

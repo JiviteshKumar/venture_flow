@@ -72,7 +72,7 @@ import requests
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
+import console_safety  # noqa: F401  (Windows cp1252 guard)
 
 OUT_PATH = ROOT / "ml" / "data" / "risk_training_corpus.jsonl"
 EVAL_PATH = ROOT / "ml" / "eval" / "risk_benchmark.jsonl"
@@ -176,7 +176,7 @@ def _get(url: str, **kwargs) -> requests.Response:
         time.sleep(0.3 * (attempt + 1))
         try:
             response = requests.get(url, headers=HEADERS, timeout=45, **kwargs)
-        except Exception:  # noqa: BLE001
+        except Exception:
             FETCH_STATS["exception"] += 1
             if attempt == 3:
                 raise
@@ -341,7 +341,7 @@ def main() -> int:
                 if response.status_code != 200:
                     continue
                 text = _to_text(response.text)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 continue
 
             source = hit.get("_source", {})

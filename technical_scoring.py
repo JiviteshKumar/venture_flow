@@ -124,7 +124,7 @@ def score_repo(github_url: str, timeout: float = 8.0) -> dict[str, Any]:
     except requests.RequestException as exc:
         logger.warning("GitHub API unavailable for %s/%s: %s", owner, repo, exc)
         return {"available": False, "reason": f"GitHub API unavailable: {exc}"}
-    except Exception as exc:  # noqa: BLE001 - this must never raise into the caller
+    except Exception as exc:
         logger.exception("Unexpected error scoring repo %s/%s", owner, repo)
         return {"available": False, "reason": f"Unexpected error: {exc}"}
 

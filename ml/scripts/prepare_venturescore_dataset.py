@@ -204,7 +204,7 @@ TECH_TAG_GROUPS: dict[str, tuple[str, ...]] = {
 }
 
 # Stripped before deciding whether a former name is a genuine rebrand.
-LEGAL_SUFFIX_RE = re.compile(r"[\s,\.]*\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|gmbh|sa|bv|pbc)\b[\s,\.\)]*$", re.I)
+LEGAL_SUFFIX_RE = re.compile(r"[\s,\.]*\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|gmbh|sa|bv|pbc)\b[\s,\.\)]*$", re.IGNORECASE)
 
 
 def _normalise_company_name(name: str) -> str:

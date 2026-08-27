@@ -1,0 +1,17 @@
+{
+  "locked_at_manifest_sha256": "3afc92978d74188bd1d940bff9decbaf47116726cc40bea1701f22414cd573fc",
+  "assignment_rule": "sha256(company_name.lower()) low bit -> 1=test, 0=train",
+  "why_deterministic": "A random split can be re-rolled until the numbers look better and nothing in the artifact would show it had been. This one is reproducible from the company name alone.",
+  "rule": "TEST-SPLIT COMPANIES ARE NOT TO BE INSPECTED until the final evaluation. Do not read their scores, tune against them, or use them to choose a threshold. Verify with --verify before reporting any test-split number.",
+  "train": [
+    "Buffer",
+    "Coinbase",
+    "Front",
+    "Intercom",
+    "Mint",
+    "Uber"
+  ],
+  "test": [
+    "Airbnb"
+  ]
+}

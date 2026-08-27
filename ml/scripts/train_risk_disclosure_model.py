@@ -58,8 +58,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
-from agents.deck_risk_features import DeckFeatureTransformer  # noqa: E402
+import console_safety  # noqa: F401  (Windows cp1252 guard)
+from agents.deck_risk_features import DeckFeatureTransformer
 
 CORPUS_PATH = ROOT / "ml" / "data" / "risk_training_corpus.jsonl"
 EVAL_PATH = ROOT / "ml" / "eval" / "risk_benchmark.jsonl"
@@ -115,7 +115,7 @@ def build_pipeline(use_deck_features: bool = False):
     from sklearn.calibration import CalibratedClassifierCV
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.linear_model import LogisticRegression
-    from sklearn.pipeline import Pipeline, FeatureUnion
+    from sklearn.pipeline import FeatureUnion, Pipeline
 
     # Word and character n-grams together. Character n-grams matter here because
     # disclosure language is formulaic at the sub-word level ("non-compliance",
@@ -135,8 +135,8 @@ def build_pipeline(use_deck_features: bool = False):
     # phrases drive a positive and get an answer. Calibrated because the
     # pipeline consumes a probability, not a class.
     if use_deck_features:
-        from sklearn.preprocessing import StandardScaler
         from sklearn.pipeline import Pipeline as _P
+        from sklearn.preprocessing import StandardScaler
 
         # Scaled, because the structured block mixes 0/1 indicators with
         # runway in months and a burn multiple. Unscaled, the largest-magnitude
@@ -244,7 +244,7 @@ def main() -> int:
         raise SystemExit("Corpus is too small or too imbalanced to train on honestly.")
 
     # Grouped split: no filing appears on both sides.
-    from sklearn.model_selection import GroupShuffleSplit, cross_val_score, GroupKFold
+    from sklearn.model_selection import GroupShuffleSplit
 
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.25, random_state=17)
     train_index, test_index = next(splitter.split(texts, labels, groups))
@@ -340,7 +340,7 @@ def main() -> int:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8")) if provenance_path.exists() else {}
     audit = []
     if args.deck_features:
-        from agents.deck_risk_features import LEAKAGE_AUDIT, FEATURE_NAMES
+        from agents.deck_risk_features import FEATURE_NAMES, LEAKAGE_AUDIT
         audit = LEAKAGE_AUDIT
         rejected = sum(1 for a in audit if a["verdict"].startswith("REJECTED"))
         print(f"\nStructured features used: {len(FEATURE_NAMES)}; "

@@ -49,7 +49,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (imported for side effect)
+import console_safety  # noqa: F401  (imported for side effect)
 
 OUT_PATH = ROOT / "ml" / "eval" / "memo_faithfulness_results.json"
 
@@ -304,7 +304,7 @@ def load_reports(report_id: str | None, from_file: str | None, limit: int) -> li
     finally:
         try:
             close_pool()
-        except Exception:  # noqa: BLE001 - teardown must not fail the run
+        except Exception:
             pass
 
 

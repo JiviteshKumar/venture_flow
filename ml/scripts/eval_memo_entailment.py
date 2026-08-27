@@ -60,8 +60,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
-from groq_client import MODEL, get_client  # noqa: E402
+import console_safety  # noqa: F401  (Windows cp1252 guard)
+from groq_client import MODEL, get_client
 
 OUT_PATH = ROOT / "ml" / "eval" / "memo_entailment_results.json"
 
@@ -205,7 +205,7 @@ def _call_json(prompt: str, max_tokens: int) -> tuple[dict, int]:
                 temperature=0.0,
                 max_tokens=max_tokens,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             if "rate" not in f"{type(exc).__name__}{exc}".lower() or attempt == 3:
                 raise
             # Wait out the window rather than hammering it.
@@ -307,7 +307,7 @@ def main() -> int:
         print(f"[{len(results) + 1}] {company} ...", end=" ", flush=True)
         try:
             outcome = evaluate_report(report, company)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"FAILED ({type(exc).__name__})")
             results.append({"company": company, "error": f"{type(exc).__name__}: {exc}"[:300]})
             continue

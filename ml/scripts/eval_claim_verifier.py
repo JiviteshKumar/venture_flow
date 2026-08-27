@@ -53,7 +53,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # Windows stdout is cp1252 and both this script and agents/claim_verifier.py
 # print LLM-produced text containing typographic characters. Without this the
 # run dies with UnicodeEncodeError partway through -- see console_safety.py.
-import console_safety  # noqa: E402,F401  (imported for side effect)
+import console_safety  # noqa: F401  (imported for side effect)
 
 ROOT = Path(__file__).resolve().parents[2]
 BENCHMARK_PATH = ROOT / "ml" / "eval" / "claim_benchmark.jsonl"

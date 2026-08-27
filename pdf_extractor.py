@@ -1,9 +1,12 @@
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import re
-import pdfplumber
 import io
+import re
+
+import pdfplumber
 
 # --- Multi-column layout handling -------------------------------------------
 #
@@ -193,7 +196,7 @@ def extract_page_text(page) -> str:
     """
     try:
         words = page.extract_words()
-    except Exception:  # noqa: BLE001 - never let layout analysis break extraction
+    except Exception:
         return page.extract_text() or ""
 
     if len(words) < MIN_WORDS_FOR_COLUMN_DETECTION:
@@ -483,7 +486,7 @@ def extract_founders(text: str, max_founders: int = 5) -> list:
             if len(founders) >= max_founders:
                 break
         return founders
-    except Exception as exc:  # noqa: BLE001 - extraction must never fail the upload
+    except Exception as exc:
         print(f"Founder extraction error: {exc}")
         return []
 

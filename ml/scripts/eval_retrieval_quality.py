@@ -45,10 +45,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-import console_safety  # noqa: E402,F401  (Windows cp1252 guard)
-from agents.claim_verifier import build_queries, search_web  # noqa: E402
-from agents.evidence_filter import (  # noqa: E402
-    domain_of, filter_sources, is_noise_domain, mentions_company,
+import console_safety  # noqa: F401  (Windows cp1252 guard)
+from agents.claim_verifier import build_queries, search_web
+from agents.evidence_filter import (
+    domain_of,
+    filter_sources,
+    is_noise_domain,
+    mentions_company,
 )
 
 DECK_RUNS = ROOT / "ml" / "eval" / "real_deck_runs.json"
