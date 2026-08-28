@@ -1,0 +1,24 @@
+{
+  "what_this_is": "The held-out test-split deck (Airbnb), run exactly once, as the SPLIT.lock.json discipline requires.",
+  "company": "Airbnb",
+  "real_outcome": "IPO, NASDAQ: ABNB, 10 December 2020 (success)",
+  "score_before_this_session": 17.0,
+  "score_after": 64.0,
+  "provider_degraded": false,
+  "significance": "The first full deck analysis in this project to complete WITHOUT provider degradation. Every previous run lost most of its specialist agents to the free tier's 8,000 tokens-per-minute ceiling. groq_client.TokenPacer is what changed that.",
+  "artifact_integrity_problem": "THE ROW WAS LOST. This run completed and printed its score, but a second runner process (--only Buffer Coinbase) was still executing and had loaded ml/eval/real_deck_runs.json at its own start. Finishing second, it wrote its own snapshot back and overwrote Airbnb's fresh row with the stale pre-session copy. ml/eval/real_deck_runs.json therefore still shows 17.0 for Airbnb. The 64.0 recorded here is read from the run log, not from the results artifact.",
+  "evidence": "airbnb.log line 132: '-> score 64.0 NEEDS MORE DILIGENCE (degraded=False)'; line 92 confirms 'HIGH data quality (85/100)'; lines 33-50 show claim verification returning a real SUPPORTS verdict with cited evidence.",
+  "cause": "Operator error, not a code defect: two runner processes were left writing the same results file concurrently. The runner had no merge-on-write protection.",
+  "fix_applied": "run_real_deck_corpus._save now re-reads the file and merges immediately before writing, so a concurrent runner's rows survive and a completed run cannot be silently dropped.",
+  "status": "RECORDED FROM LOG, NOT FROM THE ARTIFACT. Re-running to restore the full row costs roughly 24,000 tokens and the Groq daily cap stood at 197,075/200,000 when this was written. Treat 64.0 as a single observed value whose supporting detail was lost, not as a fully-recorded measurement.",
+  "caveat": "One deck, one outcome class. This cannot establish discrimination: the deck corpus contains no failures at all. See ml/eval/validation/FAILURE_DECK_SOURCING.md for why none could be sourced.",
+  "train_split_for_comparison": {
+    "note": "Train-split decks re-run this session with pacing. Two completed un-degraded; the rest still show degradation from earlier runs.",
+    "Buffer": {"score": 53.0, "degraded": false, "outcome": "operating"},
+    "Coinbase": {"score": 60.0, "degraded": true, "outcome": "public"},
+    "Uber": {"score": 44.0, "degraded": true, "outcome": "public"},
+    "Mint": {"score": 46.0, "degraded": true, "outcome": "acquired"},
+    "Intercom": {"score": 24.0, "degraded": true, "outcome": "operating"},
+    "Front": {"score": 28.0, "degraded": true, "outcome": "operating"}
+  }
+}

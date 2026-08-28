@@ -87,3 +87,26 @@ def guard_demo_gate_state():
             "gate must restore module state (see test_demo_gate.py's "
             "restore_api_module_state fixture)."
         )
+
+
+@pytest.fixture(autouse=True)
+def disable_groq_pacing():
+    """Never sleep for a rate limiter in a test.
+
+    groq_client.pace_for blocks to keep the pipeline inside the free tier's
+    8,000 tokens/minute, which is correct in production and catastrophic in a
+    suite: the tests mock the provider, so no tokens are actually spent, but the
+    pacer still counts the estimate and starts inserting 60-second waits. The
+    first run after pacing landed went from four minutes to a timeout.
+
+    Reset the window too, so a test that does exercise the pacer directly starts
+    from a clean budget rather than inheriting another test's spend.
+    """
+    import groq_client
+
+    original = groq_client.PACING_ENABLED
+    groq_client.PACING_ENABLED = False
+    groq_client._pacer._window_start = 0.0
+    groq_client._pacer._spent = 0
+    yield
+    groq_client.PACING_ENABLED = original

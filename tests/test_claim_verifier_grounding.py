@@ -71,13 +71,23 @@ def test_the_judge_is_told_a_present_day_figure_does_not_refute_a_past_one(monke
 
 
 def test_an_unknown_deck_date_still_biases_away_from_refutes(monkeypatch):
-    """Vintage is often unavailable. The guard must degrade toward caution, not
-    switch off -- an absent date must not restore the old behaviour."""
+    """Vintage is often unavailable -- Coinbase's deck yields no inferable year
+    at all -- so the unknown-date branch is what protects those decks, and it
+    must carry the full instruction rather than a softened hint.
+
+    This wording is load-bearing and was measured. With the old one-line hint,
+    "Coinbase processes $2M per day" with no date returned REFUTES at 0.92
+    confidence against 2026 evidence. With the wording below it returns
+    NOT_ENOUGH_INFO at 0.90. Same claim, same evidence, same model.
+    """
     seen = _capture_prompt(monkeypatch)
     cv.groq_judge("800 Paying Users", EVIDENCE, as_of="")
     lowered = seen["prompt"].lower()
     assert "date of this claim is unknown" in lowered
-    assert "describes the past, not today" in lowered
+    # The reasoning the model has to be given, not just the conclusion.
+    assert "growth looks like" in lowered
+    assert "must answer not_enough_info" in lowered
+    assert "reserve refutes" in lowered
 
 
 def test_the_judge_is_told_a_deck_cannot_corroborate_itself(monkeypatch):

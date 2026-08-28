@@ -22,7 +22,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, ValidationError
 
 import pdf_extractor as _regex_extractor
-from groq_client import MODEL, get_client
+from groq_client import MODEL, get_client, pace_for
 
 logger = logging.getLogger(__name__)
 
@@ -85,15 +85,17 @@ Rules:
   name to a live web search and produce a background check on nobody."""
 
 
-def extract_structured(text: str) -> dict[str, Any]:
+def extract_structured(text: str, company: str = "") -> dict[str, Any]:
     """Best-effort schema-validated extraction. Always returns a usable dict
     with `description`, `revenue`, `burn_rate`, `runway_months`, `claims`,
     and `_method` (one of "llm_schema", "regex_fallback", "empty") recording
     which path actually produced the result."""
     if not text or not text.strip():
-        return {**_regex_fallback(""), "_method": "empty"}
+        return {**_regex_fallback("", company), "_method": "empty"}
 
     try:
+        # Free-tier pacing -- see groq_client.TokenPacer.
+        pace_for(len(prompt), 1200)
         response = get_client().chat.completions.create(
             model=MODEL,
             messages=[
@@ -131,11 +133,30 @@ def extract_structured(text: str) -> dict[str, Any]:
             "Structured extraction LLM call failed, falling back to regex: %s", exc
         )
 
-    return {**_regex_fallback(text), "_method": "regex_fallback"}
+    return {**_regex_fallback(text, company), "_method": "regex_fallback"}
 
 
-def _regex_fallback(text: str) -> dict[str, Any]:
+def _regex_fallback(text: str, company: str = "") -> dict[str, Any]:
     info = _regex_extractor.extract_company_info(text)
     claims = _regex_extractor.extract_claims_from_text(text)
     founders = _regex_extractor.extract_founders(text)
-    return {**info, "claims": claims, "founders": founders}
+
+    # Deck metadata the score model consumes and nothing was producing.
+    # `stage` and `sector` are the model's two largest levers -- 42 and 24
+    # points of range -- and every analysis ever run passed "unknown" for both.
+    # `deck_metadata` abstains rather than guesses: measured on the seven-deck
+    # corpus it returns 3 correct values, 0 wrong, and 11 "not stated".
+    from deck_metadata import extract as extract_metadata
+
+    metadata = extract_metadata(text, company=company)
+    return {
+        **info,
+        "claims": claims,
+        "founders": founders,
+        "stage": metadata.stage,
+        "sector": metadata.sector,
+        "team_size": metadata.team_size,
+        "github_url": metadata.github_url,
+        "domain": metadata.domain,
+        "metadata_evidence": metadata.evidence,
+    }

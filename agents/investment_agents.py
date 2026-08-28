@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import observability
-from groq_client import MODEL, get_client
+from groq_client import MODEL, get_client, pace_for
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +146,10 @@ EVIDENCE:
     # the live API), which removes the malformed-output class entirely rather
     # than parsing around it.
     try:
+        # Stay inside the free tier's 8,000 tokens/minute. Without this the
+        # pipeline bursts its whole budget in seconds and every later call
+        # 429s, which is how six of six real deck runs came back degraded.
+        pace_for(len(prompt), 2000)
         result = get_client().chat.completions.create(
             model=MODEL,
             messages=[

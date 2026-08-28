@@ -52,7 +52,14 @@ const analysisSteps = [
 const howItWorksSteps = [
   {
     number: "01", icon: Upload, title: "Upload Deck",
-    desc: "Drop your pitch deck in PDF. Our parser extracts text, charts, tables, and embedded data.",
+    // "charts, tables, and embedded data" was false. document_extractor reads
+    // a PDF's TEXT LAYER and nothing else -- there is no chart reader, no table
+    // parser, and no OCR. The proof is in this project's own corpus: six
+    // well-known decks (Dropbox, LinkedIn, YouTube, Facebook, WeWork, BuzzFeed)
+    // are valid, human-legible PDFs that extract to exactly ZERO characters,
+    // because every page is a slide image. A parser that read charts would
+    // return something for those.
+    desc: "Drop your deck as a text-based PDF, PowerPoint, or Word file. The parser reads the document's text layer — scanned or image-only decks cannot be read and are rejected with an explanation.",
     color: "#1D6FE8", bg: "rgba(29,111,232,0.07)",
   },
   {
@@ -91,7 +98,11 @@ const miniPreviewCards = [
     label: "Bull Case", icon: TrendingUp, color: "#0EA66A",
     bg: "rgba(14,166,106,0.06)", border: "rgba(14,166,106,0.18)",
     tag: "BULL", tagBg: "rgba(14,166,106,0.12)", tagColor: "#0EA66A",
-    snippet: "Claims verified. Market signals strong. Proprietary data moat confirmed.",
+    // Illustrative preview copy, but it previously asserted a "proprietary data
+    // moat confirmed" -- a conclusion this pipeline cannot reach, shown to a
+    // user before they have uploaded anything. Softened to what a bull agent
+    // genuinely produces: evidence-grounded findings, not confirmations.
+    snippet: "Traction figures quoted from the deck. Market framing supported by two verified claims.",
     score: 74,
   },
   {

@@ -86,12 +86,43 @@ def test_an_empty_description_degrades_without_claiming_no_comparables_exist():
     assert out.get("reason")
 
 
-def test_a_nonsense_description_still_returns_matches_which_is_the_point_of_the_caveat():
-    """This is the behaviour the caveat exists to disclose: the search always
-    returns its nearest available matches however distant they are, so five rows
-    appearing is not evidence that five relevant comparables exist."""
+def test_a_nonsense_description_now_returns_nothing_rather_than_five_rows():
+    """Behaviour deliberately reversed this session.
+
+    The tab used to return exactly five rows for every query however distant,
+    which presents "the nearest things in a 1,560-company corpus" as though it
+    meant "these are comparable companies". A similarity floor now lets it
+    return fewer -- including none -- with an explicit empty state.
+    """
     out = comparables.find_comparables("zzzz qqqq xxxx vvvv")
     if not out.get("available"):
         pytest.skip("comparables unavailable")
-    assert out["comparables"], "nearest-match search returns rows regardless"
-    assert "however distant" in out["caveat"]
+    assert out["comparables"] == []
+    assert out["no_close_matches"] is True
+    assert "No close comparables found" in out["caveat"]
+    assert out["best_similarity"] < out["threshold"]
+
+
+def test_a_real_description_still_returns_comparables():
+    """The floor must not suppress genuine matches."""
+    out = comparables.find_comparables(
+        "An AI developer tools platform that automates code review for "
+        "enterprise engineering teams."
+    )
+    if not out.get("available"):
+        pytest.skip("comparables unavailable")
+    assert out["comparables"], "the floor suppressed a genuine match"
+    assert out.get("no_close_matches") is False
+
+
+def test_the_caveat_states_that_similarity_is_lexical_not_semantic():
+    """Measured counter-example, disclosed because the number invites the
+    opposite reading: "a commercial laundry servicing hotels" scores 0.83
+    against this corpus while "an AI developer tools platform" scores 0.76."""
+    out = comparables.find_comparables(
+        "An AI developer tools platform for enterprise engineering teams."
+    )
+    if not out.get("available"):
+        pytest.skip("comparables unavailable")
+    assert "LEXICAL, NOT SEMANTIC" in out["caveat"]
+    assert "commercial laundry" in out["caveat"]

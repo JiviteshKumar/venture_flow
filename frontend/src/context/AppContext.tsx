@@ -181,8 +181,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
           claims: upload.detected_claims,
           filing_text: upload.extracted_text,
           revenue: upload.revenue,
-          burn_rate: null,
+          // Was hardcoded `null`. The regex extractor has always produced a
+          // burn rate; the upload response model simply did not declare the
+          // field, so Pydantic dropped it, and this line then wrote null over
+          // the hole. Two independent layers of the same defect meant burn rate
+          // never once reached the pipeline from a real upload, which silently
+          // cost a third of evidence_fusion.financial_disclosure and both of
+          // deck_financials' burn-multiple and runway signals.
+          burn_rate: upload.burn_rate ?? null,
           runway_months: upload.runway_months,
+          // Deck metadata the score model consumes. `stage` alone is worth 42
+          // points of range and `sector` 24; both were "unknown" on every
+          // analysis this product has ever run. Undefined when the deck did not
+          // say -- the extractor abstains rather than guessing.
+          stage: upload.stage ?? undefined,
+          sector: upload.sector ?? undefined,
+          team_size: upload.team_size ?? null,
+          github_url: upload.github_url ?? undefined,
+          domain: upload.domain ?? undefined,
           // What the user confirmed on the form, falling back to whatever the
           // extractor found. Empty is a legitimate answer -- most decks have
           // no team slide -- and the Founder Analysis tab now says so instead

@@ -1115,6 +1115,51 @@ const Analysis = () => {
                           available matches, not necessarily close ones: treat them as
                           leads to investigate, not as validated comparables.
                         </p>
+                        {/*
+                          Measured, and stated because the number invites the
+                          opposite reading: cosine similarity on this TF-IDF
+                          embedder is LEXICAL. "A commercial laundry servicing
+                          hotels" scores 0.83 against this corpus while "an AI
+                          developer tools platform" scores 0.76. A high
+                          percentage means shared wording, not that two
+                          businesses are alike.
+                        */}
+                        <p style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
+                          The similarity percentage measures shared wording, not
+                          business relevance — an unrelated company can score
+                          higher than a relevant one. Read the names, not the number.
+                        </p>
+                      </div>
+                    )}
+
+                    {/*
+                      The honest empty state. This tab used to return exactly
+                      five rows for every query however distant, presenting "the
+                      nearest things in a 1,560-company corpus" as though it
+                      meant "these are comparable companies".
+                    */}
+                    {marketComparables?.no_close_matches && (
+                      <div style={{
+                        background: "rgba(148,163,184,0.08)",
+                        border: "1px solid rgba(148,163,184,0.3)",
+                        borderRadius: 6, padding: "12px 14px", margin: "8px 0 12px",
+                      }}>
+                        <p style={{ color: "#CBD5E1", fontSize: 13, fontWeight: 600, margin: 0 }}>
+                          No close comparables found
+                        </p>
+                        <p style={{ color: "#94A3B8", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>
+                          The nearest company in the Y Combinator corpus scored{" "}
+                          {typeof marketComparables.best_similarity === "number"
+                            ? `${Math.round(marketComparables.best_similarity * 100)}%`
+                            : "below"}{" "}
+                          similarity, under the{" "}
+                          {typeof marketComparables.threshold === "number"
+                            ? `${Math.round(marketComparables.threshold * 100)}%`
+                            : ""}{" "}
+                          floor. Nothing is shown rather than presenting distant
+                          matches as comparable. This is the expected result for a
+                          company with no YC analogue.
+                        </p>
                       </div>
                     )}
                     {competitors.length ? <>

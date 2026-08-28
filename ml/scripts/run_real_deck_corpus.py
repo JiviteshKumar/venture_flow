@@ -79,6 +79,33 @@ def _load_done() -> dict[str, dict]:
 
 
 def _save(rows: dict[str, dict]) -> None:
+    # Re-read and merge immediately before writing.
+    #
+    # Two runner processes writing this file concurrently silently lose a run.
+    # It happened: a `--only Airbnb --force` run completed un-degraded at 64.0
+    # while an earlier `--only Buffer Coinbase` run was still going. Both had
+    # loaded the file at start; the one that finished second wrote its own
+    # snapshot back and overwrote Airbnb's fresh row with the stale copy it had
+    # loaded minutes earlier. The log recorded the score; the artifact did not.
+    #
+    # That is expensive in a way this script is specifically meant to prevent --
+    # a deck run costs roughly 24,000 tokens of a 200,000/day budget, and the
+    # loss is silent. Merging on write means a concurrent runner's rows survive;
+    # rows this process actually produced still win, because they are newer.
+    try:
+        if OUT_PATH.exists():
+            on_disk = {
+                row["company"]: row
+                for row in json.loads(OUT_PATH.read_text(encoding="utf-8"))
+                if isinstance(row, dict) and row.get("company")
+            }
+            merged = {**on_disk, **rows}
+            rows = merged
+    except Exception:
+        # A corrupt or half-written file must not stop this process recording
+        # what it just spent real quota to produce.
+        pass
+
     OUT_PATH.write_text(
         json.dumps(list(rows.values()), indent=2, default=str), encoding="utf-8"
     )

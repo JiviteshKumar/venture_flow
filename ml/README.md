@@ -1,5 +1,10 @@
 # VentureFlow ML layer
 
+> **Canonical reference:** `ml/research/METHODOLOGY.md` is the single source of
+> truth for what is validated, what is void, and what must not be demonstrated.
+> Where this file disagrees with it, that document is correct and this one is a bug.
+
+
 Real trained models, not prompts. This directory is the start of what the
 [Ship List](https://claude.ai/code/artifact/0becb4ec-7ed0-491d-8cfa-b520d404050d)
 calls "Make the model real."
@@ -383,7 +388,15 @@ Two, both run against the same inputs as the systems they benchmark:
   `_legacy_formula_score()`, the pre-ML fallback, on real labeled YC companies
   with the evidence state held fixed. Result in
   `ml/research/score_baseline_comparison.json`: the model reaches ROC-AUC
-  **0.668** and the legacy formula **0.500**, returning one identical value for
+  **0.668** — **VOID as of 28 Aug 2026**, because that 300-company sample is
+  drawn from `ml/data/venturescore_dataset.jsonl`, the model's own training
+  file: 300 of 300 evaluated companies are in training. The true out-of-sample
+  figure is **0.6356, CI95 [0.5617, 0.7021], n=261**
+  (`ml/scripts/verify_out_of_sample.py`). See `ml/research/METHODOLOGY.md`
+  §3.1 and §4.
+
+  The legacy formula's **0.500** is unaffected and stands, returning one
+  identical value for
   all 300 companies — it takes no company feature as input, so it cannot rank
   two companies against each other at all. The comparison is therefore not
   "the model is somewhat better"; it is that all company-level discrimination

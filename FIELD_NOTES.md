@@ -3,6 +3,162 @@
 What changed in this pass, and why. Read this before the next session picks up
 where this one left off.
 
+## Update — 28 Aug 2026, fifteenth pass: nine of twelve fields never reached the score
+
+The `stage=None` hardcode was treated as the pattern rather than the incident,
+and the sweep found that **only 3 of 12 structured fields the scoring model and
+report consume actually carried real deck content from a real upload.** It is
+now 12 of 12.
+
+**Tests: 320 passing at the start, 336 at the end, 0 failing.**
+`ml/research/METHODOLOGY.md` is now the canonical document; FIELD_NOTES,
+ml/README and the UI were corrected to agree with it.
+
+### The sweep — `ml/scripts/audit_signal_path.py`
+
+Walks every consumed field hop by hop (extractor → upload response → UI payload
+→ request model → pipeline → consumer) and reports where the chain breaks. Six
+real breaks, in three distinct shapes:
+
+**Silently dropped by a response model.** `burn_rate` has always been produced
+by the regex extractor. `PDFExtractResponse` did not declare it, Pydantic
+discards undeclared keys, and it never reached the browser.
+
+**Then hardcoded over anyway.** `AppContext.tsx` sent `burn_rate: null` as a
+literal. Two independent layers of the same defect on one field, either of which
+alone would have been enough. Burn rate has never once reached the pipeline from
+a real upload — costing a third of `evidence_fusion.financial_disclosure` and
+both of `deck_financials`' burn-multiple and runway signals.
+
+**Never extracted at all.** `stage`, `sector`, `team_size`, `github_url` and
+`domain` each existed on the request model, were threaded through the pipeline,
+and were read by a consumer — with nothing upstream ever filling them. Last
+session fixed `stage` *one layer down* and left it broken one layer up: the
+field was threaded, and no extractor produced it. `technical_scoring.py`, fully
+built since the third pass, has never executed for the same reason.
+
+### `deck_metadata.py` — abstaining is the point
+
+Extracts stage, sector, team size, GitHub URL and domain, and returns `None`
+whenever the deck does not say. Measured on the seven-deck corpus for stage and
+sector: **3 correct, 0 wrong, 11 not-stated.**
+
+That ratio is deliberate. A fabricated stage moves the score 42 points on the
+strength of an invention, and the report would present it identically to a stage
+the deck actually stated.
+
+Three real errors were found and fixed while tuning it, each recorded as a test:
+
+- Front's **Series A** deck was labelled "Seed" because it contains "record of
+  capital efficiency Seed to Series A" — a history line. Progression phrases now
+  resolve to the later round.
+- Uber's 2008 **consumer** deck was labelled "B2B" on one occurrence of
+  "infrastructure" inside a sentence about something else. A sector now needs
+  corroboration, not a single passing mention.
+- Airbnb's deck yielded the domain **`pitchdeckcoach.com`** — the aggregator's
+  own watermark — and, once that was blocked, `couchsurfing.com`, a competitor
+  named on the market slide. A domain must now corroborate the company name or
+  it is refused.
+
+### The claim verifier no longer calls growth a lie — confirmed live
+
+Previously "structurally verified" and never tested against a real verdict. Now
+tested, and the first result was a **false pass from my own harness**: four runs
+returned "Claim verification is temporarily unavailable" and were counted as
+"not a confident refutation" — technically true, entirely meaningless.
+Infrastructure failure recorded as a finding, in the very script written to
+check for exactly that. The harness now excludes unavailable runs rather than
+scoring them.
+
+With that fixed, the real A/B:
+
+| claim | deck date | verdict | conf |
+|---|---|---|---|
+| Coinbase "$2M/day" (2012) | withheld, old prompt | **REFUTES** | **0.92** |
+| Coinbase "$2M/day" | supplied | NOT_ENOUGH_INFO | 0.90 |
+| Coinbase "$2M/day" | withheld, new prompt | NOT_ENOUGH_INFO | 0.90 |
+| Buffer "800 paying users" (2011) | either | NOT_ENOUGH_INFO | 0.80–0.90 |
+
+The defect reproduces without the date and disappears with it. But **Coinbase's
+deck yields no inferable year at all**, so the no-date path is the production
+path for it — and that path still failed. The unknown-date prompt branch was
+rewritten to carry the full reasoning ("a larger present-day number does not
+contradict a smaller past number — it is what growth looks like"), and the
+no-date arm now returns NOT_ENOUGH_INFO at 0.90.
+
+Vintage inference was also wrong on six of seven decks, always too late, because
+it took the first year it found — copyright lines, re-publication stamps,
+forward-looking projections. Taking the **earliest** plausible year cut mean
+absolute error from ~3.3 years to ~1.5, with Buffer and Mint now exact.
+
+### A deck can now complete without degrading
+
+`~24,000 tokens per deck` against `8,000 tokens/minute` is not a batching
+problem — it is three minutes of budget, minimum. The pipeline was spending it
+all in the first seconds and every subsequent call 429'd; six of six real runs
+came back `provider_degraded` even at concurrency 1.
+
+`groq_client.TokenPacer` paces the spend across the window. **The held-out
+Airbnb run completed with `degraded=False` — the first full deck analysis in
+this project's history to do so.** It takes three to four minutes instead of
+forty seconds, which is the correct trade for an analysis a user waits on.
+
+### The test-split result, and the row that was lost
+
+**Airbnb (held-out, run once): 17.0 → 64.0, un-degraded.** Real outcome: IPO.
+
+The row did not survive. A second runner process was still executing and had
+loaded the results file at its own start; finishing later, it wrote its snapshot
+back and overwrote Airbnb with the stale pre-session row. The score is in the
+run log; the artifact still shows 17.0. That is operator error — two writers on
+one file — and `_save` now re-reads and merges immediately before writing so it
+cannot recur. Recorded as such in `ml/eval/validation/test_split_run.json`
+rather than reported as a clean measurement.
+
+### Comparables: a threshold, and an admission the threshold does not do much
+
+The tab returned exactly five rows for every query however distant. It now
+applies a similarity floor and returns fewer — including none, with an explicit
+empty state.
+
+The floor was set from measurement (genuine in-corpus matches score min 0.536,
+median 0.698), but the more important measurement is the one that limits what it
+can claim: **"a commercial laundry servicing hotels in the Midwest" scores 0.827
+against this corpus, while "an AI developer tools platform" scores 0.760.**
+Cosine similarity on this TF-IDF embedder is lexical, not semantic. The floor
+removes the detached tail and does not make the number a relevance measure, and
+both the caveat and the UI now say so in those words.
+
+### Overclaims corrected in the product's own copy
+
+- The upload page claimed the parser "extracts text, charts, tables, and
+  embedded data". It reads a text layer and nothing else — which is precisely
+  why six well-known decks in this repository extract to zero characters.
+- A preview card asserted "Proprietary data moat confirmed", a conclusion this
+  pipeline cannot reach, shown before any upload.
+- The score panel said "trained on 1,560 companies with known outcomes" without
+  naming the population, and showed only the cross-validated AUC. It now names
+  Y Combinator and shows the held-out 0.636 alongside, with the zero-B2B,
+  zero-Fintech limitation stated.
+- `FIELD_NOTES.md` and `ml/README.md` still presented **0.668 vs 0.500** as a
+  live result. The 0.668 is void — that sample is 300 of 300 inside the training
+  file — and both are now marked in place, with the formula's 0.500 explicitly
+  preserved because it survives the leak.
+
+### Image-only decks fail with the real reason
+
+`"Could not extract readable text"` reads like a corrupt file and invites a
+retry of the same upload. The message now names the cause and the remedy, and
+distinguishes zero text from too-little text.
+
+### Not done
+
+**The memo entailment evaluation still has never run** — second consecutive
+session. The daily cap stood at 197,075/200,000 when the budget ran out, spent
+on the two items ranked above it: the live temporal verification and the test
+split. Recorded in `ml/eval/memo_entailment_results.json` with its cost estimate
+and the prerequisite that it must run against the current pipeline, not against
+pre-session reports.
 ## Update — 27 Aug 2026, fourteenth pass: the score finally reads the deck, and two invalid numbers are retired
 
 Five jobs. The scoring core changed for the first time since it was built, and
@@ -817,10 +973,21 @@ outlier rather than the start of a trend.
   threshold problem: financial *news* sentiment is the wrong training domain for
   filing prose, as Loughran & McDonald established in 2011.
 - **VentureFlow Score vs `_legacy_formula_score()`** on 300 real labeled YC
-  companies with the evidence state held fixed: **0.668 vs 0.500**. The formula
-  returns one identical value for all 300 because it reads no company feature
-  at all. The finding is not "the model is better" — it is that the baseline
-  has no company-level discrimination to be better than.
+  companies with the evidence state held fixed: **0.668 vs 0.500**.
+
+  > **SUPERSEDED, 28 Aug 2026 — the 0.668 is VOID.** The 300-company sample is
+  > drawn from `ml/data/venturescore_dataset.jsonl`, which is the file the
+  > model is fitted on: 300 of 300 evaluated companies are in training. The
+  > true out-of-sample figure is **0.6356, CI95 [0.5617, 0.7021], n=261**
+  > (`ml/scripts/verify_out_of_sample.py`).
+  >
+  > The formula's **0.500 stands** — it reads no company feature, so every
+  > company ties, and no amount of leakage changes that. So the conclusion
+  > below survives even though the model's number did not.
+
+  The formula returns one identical value for all 300 because it reads no
+  company feature at all. The finding is not "the model is better" — it is that
+  the baseline has no company-level discrimination to be better than.
 
 ### The risk benchmark, built from real filings
 

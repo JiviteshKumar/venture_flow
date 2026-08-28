@@ -89,6 +89,20 @@ export interface UploadResponse {
    *  to before the analysis runs -- extraction is a starting point, not an
    *  authority on who founded the company. */
   detected_founders?: DetectedFounder[];
+  /**
+   * Deck metadata the scoring model consumes. Each is null when the deck did
+   * not say -- the extractor abstains rather than guessing, because a
+   * fabricated stage would move the score 42 points on the strength of an
+   * invention. `metadata_evidence` carries the matched text so the UI can show
+   * its work.
+   */
+  burn_rate?: number | null;
+  stage?: string | null;
+  sector?: string | null;
+  team_size?: number | null;
+  github_url?: string | null;
+  domain?: string | null;
+  metadata_evidence?: Record<string, string>;
   /** Which reader ran: "PDF" | "PowerPoint" | "Word" | "plain text" | "Markdown". */
   document_format?: string;
   extraction_method?: string;
@@ -205,6 +219,11 @@ export interface AnalyzeResponse {
       }>;
       source?: string;
       caveat?: string;
+      /** True when nothing cleared the similarity floor, so zero rows are shown. */
+      no_close_matches?: boolean;
+      best_similarity?: number;
+      threshold?: number;
+      n_below_threshold?: number;
       /**
        * The search population, stated as structured data rather than left in
        * prose, so the UI can show the scope above the table instead of burying
@@ -494,6 +513,12 @@ export const api = {
     burn_rate: number | null;
     runway_months: number | null;
     founders?: string[];
+    stage?: string;
+    sector?: string;
+    team_size?: number | null;
+    github_url?: string;
+    domain?: string;
+    deck_date?: string;
   }): Promise<AnalysisJob> => {
     const res = await apiClient.post<AnalysisJob>("/analyze", payload, { timeout: 30_000 });
     return res.data;

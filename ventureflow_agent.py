@@ -23,7 +23,7 @@ import re
 from agents.claim_verifier import verify_claim
 from agents.investment_agents import run_investment_agents
 from agents.risk_detector import score_risk
-from groq_client import MODEL, get_client
+from groq_client import MODEL, get_client, pace_for
 from rag_engine import build_context, format_context_for_llm
 
 logger = logging.getLogger(__name__)
@@ -139,28 +139,27 @@ _YEAR_RE = re.compile(r"\b(19[89]\d|20[0-4]\d)\b")
 def _infer_deck_vintage(text: str) -> str:
     """Best guess at when a deck was written, or "" if there is no basis.
 
-    Deliberately weak and deliberately conservative. It returns a year only when
-    one is actually printed in the deck, prefers the LATEST year that is not in
-    the future (a deck is written at least as late as the most recent year it
-    cites), and ignores forward-looking projections, which is why the pattern
-    stops at 2049 but the caller filters to <= the current year.
+    Takes the EARLIEST plausible year, not the first one encountered.
 
-    Returning "" is a perfectly good outcome: the judge's prompt already assumes
-    an undated point-in-time metric describes the past rather than today, so an
-    absent vintage weakens the guard without inverting it. Guessing a year would
-    be worse than not knowing one -- a wrong `as_of` would license exactly the
-    confident-but-wrong REFUTES this exists to prevent.
+    Measured across the seven-deck corpus, first-match inference was wrong on
+    six of seven and wrong in one direction -- always too late: Airbnb's 2009
+    deck inferred 2011, Mint's 2007 deck inferred 2012, Uber's 2008 deck
+    inferred 2010. The later years come from copyright lines, re-publication
+    stamps added by whoever re-hosted the file, and forward-looking market
+    projections. The deck's own vintage is at or before every year it mentions
+    as history, so the minimum is the better estimate.
+
+    Still only a guess, and a wrong-but-historical year is far less harmful than
+    none: the verifier's job here is to avoid reading a 2011 metric against 2026
+    evidence, and any plausible past anchor achieves that. When nothing is
+    found the prompt's unknown-date branch carries the same instruction
+    explicitly.
     """
-    import datetime
+    years = [int(y) for y in _YEAR_RE.findall(text or "")]
+    if not years:
+        return ""
+    return str(min(years))
 
-    if not text:
-        return ""
-    current_year = datetime.date.today().year
-    years = [int(y) for y in _YEAR_RE.findall(text)]
-    plausible = [y for y in years if 1995 <= y <= current_year]
-    if not plausible:
-        return ""
-    return str(max(plausible))
 
 
 def assess_data_quality(
@@ -966,7 +965,53 @@ def run_due_diligence(
     except Exception:
         logger.exception("VentureFlow Score model unavailable")
         venture_score_result = {"available": False, "reason": "VentureFlow Score raised an unexpected error."}
+    # Say which scored inputs the deck did not supply.
+    #
+    # The score model's two largest levers are stage (42 points of range) and
+    # industry (24). When a deck does not state them the model receives
+    # "unknown" for both and the number it returns is a population prior with
+    # very little of this company in it -- but the report used to present that
+    # number identically to one computed from a fully-specified deck.
+    #
+    # This does not change the score. It changes what the report is willing to
+    # claim about it, which is the honest half: a reader can see that the
+    # biggest input was missing and discount accordingly.
+    missing_inputs = []
+    if not stage:
+        missing_inputs.append({
+            "input": "stage",
+            "range_points": 42,
+            "consequence": "The largest single input to the score. Without it the "
+                           "model scores this deck as stage-unknown, which is a "
+                           "population average rather than a read on this company.",
+        })
+    if not sector:
+        missing_inputs.append({
+            "input": "industry/sector",
+            "range_points": 24,
+            "consequence": "The second-largest input. Absent, the model cannot "
+                           "place the company against its own sector's base rate.",
+        })
+    if missing_inputs:
+        venture_score_result["missing_inputs"] = missing_inputs
+        venture_score_result["degraded_inputs"] = True
+        venture_score_result["degraded_note"] = (
+            "This score was computed without "
+            + " and ".join(m["input"] for m in missing_inputs)
+            + ", which together account for up to "
+            + str(sum(m["range_points"] for m in missing_inputs))
+            + " points of the model's range. The deck did not state "
+            + ("them" if len(missing_inputs) > 1 else "it")
+            + ", and nothing was assumed in "
+            + ("their" if len(missing_inputs) > 1 else "its")
+            + " place. Treat the number as correspondingly less specific to this "
+            + "company."
+        )
+    else:
+        venture_score_result["degraded_inputs"] = False
+
     report["sections"]["venture_score"] = venture_score_result
+    report["score_inputs_missing"] = [m["input"] for m in missing_inputs]
 
     if venture_score_result.get("available"):
         model_block = (
@@ -1084,6 +1129,8 @@ If data quality is LOW, confidence must be below 60%.
 ---"""
 
     try:
+        # Free-tier pacing -- see groq_client.TokenPacer.
+        pace_for(len(user_message), 2500)
         response = get_client().chat.completions.create(
             model=MODEL,
             messages=[

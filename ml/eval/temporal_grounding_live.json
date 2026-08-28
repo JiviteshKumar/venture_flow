@@ -1,6 +1,11 @@
 {
   "what_this_tests": "Whether supplying the deck's vintage changes a live claim verdict, on real metrics that were true when written and are false today. A correct outcome is NOT necessarily SUPPORTS -- evidence for a small company's old metrics may not exist -- it is the ABSENCE of a confident REFUTES.",
+  "n_attempted": 4,
+  "n_verdicts_actually_reached": 4,
+  "n_provider_unavailable_not_scored": 0,
   "n_confident_refutations": 0,
+  "conclusive": true,
+  "caveat": "Only runs where the verifier reached a judgement are scored. A provider failure is excluded rather than counted as a pass -- an earlier version of this harness reported 0 confident refutations from four runs in which the verifier never executed.",
   "results": [
     {
       "company": "Buffer",
@@ -9,13 +14,15 @@
       "arm": "WITHOUT deck date",
       "as_of": "",
       "verdict": "NOT_ENOUGH_INFO",
-      "confidence": 0.0,
-      "reasoning": "Claim verification is temporarily unavailable.",
+      "confidence": 0.9,
+      "reasoning": "No evidence directly confirms or contradicts the specific figure of 800 paying users. The available data mentions over 70,000 paying customers in 2026, which is a later period and does not refute a past claim of 800 users.",
       "sources": [
         "https://socialbu.com/blog/buffer-pricing",
         "https://getlatka.com/companies/buffer",
         "https://research.com/software/reviews/buffer"
       ],
+      "total_sources": 14,
+      "provider_unavailable": false,
       "is_confident_refutation": false
     },
     {
@@ -25,13 +32,15 @@
       "arm": "WITH deck date",
       "as_of": "2011",
       "verdict": "NOT_ENOUGH_INFO",
-      "confidence": 0.0,
-      "reasoning": "Claim verification is temporarily unavailable.",
+      "confidence": 0.9,
+      "reasoning": "All available evidence reports Buffer's customer base in 2025\u20112026 (e.g., 57.5K customers, 70,000 paying customers, 79,130 customers), which is far later than the 2011 pitch\u2011deck timeframe of the claim. No data is provided for the number of paying users around 2011, so the claim cannot be confirmed or contradicted.",
       "sources": [
-        "https://socialbu.com/blog/buffer-pricing",
         "https://getlatka.com/companies/buffer",
-        "https://research.com/software/reviews/buffer"
+        "https://compworth.com/company/buffer",
+        "https://buffer.com/metrics"
       ],
+      "total_sources": 5,
+      "provider_unavailable": false,
       "is_confident_refutation": false
     },
     {
@@ -41,13 +50,15 @@
       "arm": "WITHOUT deck date",
       "as_of": "",
       "verdict": "NOT_ENOUGH_INFO",
-      "confidence": 0.0,
-      "reasoning": "Claim verification is temporarily unavailable.",
+      "confidence": 0.9,
+      "reasoning": "The available evidence reports Coinbase processing $516\u202fbillion in trading volume per quarter in 2026, which translates to roughly $5.7\u202fbillion per day\u2014far higher than $2\u202fmillion per day. However, the claim\u2019s date is unknown and could refer to an earlier period, so the later figure does not directly contradict the claim.",
       "sources": [
         "https://backlinko.com/coinbase-users",
-        "https://www.daytrading.com/coinbase",
-        "https://www.webopedia.com/crypto/exchanges/coinbase-review/"
+        "https://www.businessofapps.com/data/coinbase-statistics/",
+        "https://investingintheweb.com/brokers/coinbase-statistics/"
       ],
+      "total_sources": 15,
+      "provider_unavailable": false,
       "is_confident_refutation": false
     },
     {
@@ -57,13 +68,15 @@
       "arm": "WITH deck date",
       "as_of": "2012",
       "verdict": "NOT_ENOUGH_INFO",
-      "confidence": 0.0,
-      "reasoning": "Claim verification is temporarily unavailable.",
+      "confidence": 0.9,
+      "reasoning": "The available evidence reports Coinbase's trading volume in 2026 (e.g., $516\u202fbillion per quarter), which is far higher than $2\u202fmillion per day, but the claim refers to a 2012 pitch deck. Since the evidence pertains to a different time period, it cannot confirm or contradict the 2012 daily volume figure.",
       "sources": [
         "https://backlinko.com/coinbase-users",
         "https://www.daytrading.com/coinbase",
-        "https://www.webopedia.com/crypto/exchanges/coinbase-review/"
+        "https://www.bitdegree.org/crypto/tutorials/coinbase-fees"
       ],
+      "total_sources": 10,
+      "provider_unavailable": false,
       "is_confident_refutation": false
     }
   ]

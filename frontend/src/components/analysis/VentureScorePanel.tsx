@@ -180,9 +180,26 @@ export default function VentureScorePanel({
           <summary><Info size={11} aria-hidden="true" /> How this score was produced</summary>
           <dl className="vs-dl">
             <div><dt>Model</dt><dd>{data.model.family?.toUpperCase()} ensemble, {data.model.calibration} calibrated</dd></div>
-            <div><dt>Trained on</dt><dd>{data.model.trained_n?.toLocaleString()} companies with known outcomes</dd></div>
-            <div><dt>Discrimination</dt><dd>ROC-AUC {data.model.cv_roc_auc}
+            {/*
+              The population has to be named. "1,560 companies with known
+              outcomes" reads as though the model were validated on startups
+              generally; it is Y Combinator alumni only, and the only
+              genuinely out-of-sample holdout available contains zero B2B and
+              zero Fintech companies.
+            */}
+            <div><dt>Trained on</dt><dd>{data.model.trained_n?.toLocaleString()} <strong>Y&nbsp;Combinator</strong> companies
+              with recorded outcomes — not a general startup population</dd></div>
+            <div><dt>Discrimination (cross-validated)</dt><dd>ROC-AUC {data.model.cv_roc_auc}
               {data.model.cv_roc_auc_ci95 && ` (95% CI ${data.model.cv_roc_auc_ci95[0]}–${data.model.cv_roc_auc_ci95[1]})`}</dd></div>
+            {/*
+              Reported next to the CV figure because they are different claims
+              and the weaker one is the honest headline. See
+              ml/eval/validation/out_of_sample_verified.json.
+            */}
+            <div><dt>Discrimination (held out)</dt><dd>ROC-AUC 0.636 (95% CI 0.562–0.702) on 261
+              companies the model never saw. Measured on a holdout containing
+              <strong> no B2B and no Fintech</strong> companies, so it does not
+              establish performance in those sectors.</dd></div>
             <div><dt>Calibration error</dt><dd>{data.model.cv_ece} — a predicted 70% means roughly 70%</dd></div>
             {!!data.model.excluded_contaminated_features?.length && (
               <div>

@@ -237,5 +237,9 @@ def test_an_unknown_date_still_biases_the_prompt_away_from_present_day():
         claim_verifier.get_client = original
 
     prompt = captured["prompt"]
-    assert "date of this claim is unknown" in prompt
-    assert "describes the past, not today" in prompt
+    assert "date of this claim is UNKNOWN" in prompt
+    # Measured: with the previous one-line hint, an undated Coinbase claim
+    # returned REFUTES at 0.92 against present-day evidence. This wording is
+    # what changed that to NOT_ENOUGH_INFO at 0.90.
+    assert "growth looks like" in prompt
+    assert "MUST answer NOT_ENOUGH_INFO" in prompt

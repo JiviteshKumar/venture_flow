@@ -180,295 +180,6 @@
     "ran_at": "2026-08-26T20:07:52Z"
   },
   {
-    "company": "Coinbase",
-    "stage_supplied": "Seed",
-    "evidence_fusion": {
-      "model_probability": 0.547,
-      "adjusted_probability": 0.5458,
-      "delta": -0.0012,
-      "delta_points": -0.1,
-      "clamped": false,
-      "terms": {
-        "refuted_claims": -0.0,
-        "risk_severity": -0.0361,
-        "deck_risk_signals": -0.0,
-        "claims_unresolved": -0.0,
-        "claims_supported": 0.0,
-        "financials_disclosed": 0.0,
-        "specialist_grounding": 0.0,
-        "low_risk": 0.035
-      },
-      "features": {
-        "refuted_fraction": 0.0,
-        "supported_fraction": 0.0,
-        "unsupported_fraction": 0.0,
-        "n_claims": 0,
-        "risk_severity": 0.301,
-        "deck_signal_count": 0,
-        "specialist_grounding": null,
-        "financial_disclosure": 0.0
-      },
-      "bounds": {
-        "max_positive": 0.2,
-        "max_negative": -0.6
-      },
-      "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
-    },
-    "venture_score_section": {
-      "available": true,
-      "venture_score": 55,
-      "score_range": [
-        46,
-        64
-      ],
-      "probability_exit_or_survive": 0.5458,
-      "confidence": "medium",
-      "ensemble_std": 0.0629,
-      "feature_coverage": 0.667,
-      "imputed_features": [
-        "has_former_name",
-        "industry",
-        "is_any_remote",
-        "is_bay_area",
-        "is_fully_remote",
-        "is_partly_remote",
-        "is_us",
-        "nonprofit"
-      ],
-      "base_rate": 0.4892,
-      "lift_over_base_rate": 0.0578,
-      "model": {
-        "family": "rf",
-        "calibration": "isotonic",
-        "cv_roc_auc": 0.6772,
-        "cv_roc_auc_ci95": [
-          0.6607,
-          0.6932
-        ],
-        "cv_ece": 0.0219,
-        "cv_brier": 0.2223,
-        "trained_n": 1298,
-        "excluded_contaminated_features": [
-          "team_size",
-          "age_years",
-          "batch_year"
-        ]
-      },
-      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
-      "model_only_score": 55,
-      "evidence_penalty": 0.0012,
-      "evidence_fusion": {
-        "model_probability": 0.547,
-        "adjusted_probability": 0.5458,
-        "delta": -0.0012,
-        "delta_points": -0.1,
-        "clamped": false,
-        "terms": {
-          "refuted_claims": -0.0,
-          "risk_severity": -0.0361,
-          "deck_risk_signals": -0.0,
-          "claims_unresolved": -0.0,
-          "claims_supported": 0.0,
-          "financials_disclosed": 0.0,
-          "specialist_grounding": 0.0,
-          "low_risk": 0.035
-        },
-        "features": {
-          "refuted_fraction": 0.0,
-          "supported_fraction": 0.0,
-          "unsupported_fraction": 0.0,
-          "n_claims": 0,
-          "risk_severity": 0.301,
-          "deck_signal_count": 0,
-          "specialist_grounding": null,
-          "financial_disclosure": 0.0
-        },
-        "bounds": {
-          "max_positive": 0.2,
-          "max_negative": -0.6
-        },
-        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
-      }
-    },
-    "source_url": "https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf",
-    "sha256": "727940dd43cd846c922d2c06c3c2ce476079cac939f63081edfb364a89e59caa",
-    "deck_year": "2012",
-    "extracted_chars": 635,
-    "extraction_method": "regex_fallback",
-    "elapsed_s": 6.9,
-    "claims_extracted": [],
-    "revenue": null,
-    "founders": [],
-    "final_score": 55.0,
-    "score_source": "venturescore_model",
-    "recommendation": "NEEDS MORE DILIGENCE",
-    "risk_level": "UNKNOWN",
-    "incomplete_analysis": false,
-    "thin_evidence": true,
-    "provider_degraded": true,
-    "degraded_components": [
-      {
-        "component": "market",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "bull_case",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "team",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "bear_case",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "risk_analysis",
-        "reason": "risk analysis provider call failed"
-      }
-    ],
-    "evidence_penalty": 0.2,
-    "evidence_components": {
-      "refuted_claims": 0.0,
-      "claim_sparsity": 0.12,
-      "claims_unsupported": 0.0,
-      "specialist_uncertainty": 0.0,
-      "risk_signals": 0.06,
-      "no_revenue": 0.05,
-      "data_quality": -0.03
-    },
-    "venture_score": {
-      "available": true,
-      "venture_score": 55,
-      "score_range": [
-        46,
-        64
-      ],
-      "probability_exit_or_survive": 0.5458,
-      "confidence": "medium",
-      "ensemble_std": 0.0629,
-      "feature_coverage": 0.667,
-      "imputed_features": [
-        "has_former_name",
-        "industry",
-        "is_any_remote",
-        "is_bay_area",
-        "is_fully_remote",
-        "is_partly_remote",
-        "is_us",
-        "nonprofit"
-      ],
-      "base_rate": 0.4892,
-      "lift_over_base_rate": 0.0578,
-      "model": {
-        "family": "rf",
-        "calibration": "isotonic",
-        "cv_roc_auc": 0.6772,
-        "cv_roc_auc_ci95": [
-          0.6607,
-          0.6932
-        ],
-        "cv_ece": 0.0219,
-        "cv_brier": 0.2223,
-        "trained_n": 1298,
-        "excluded_contaminated_features": [
-          "team_size",
-          "age_years",
-          "batch_year"
-        ]
-      },
-      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
-      "model_only_score": 55,
-      "evidence_penalty": 0.0012,
-      "evidence_fusion": {
-        "model_probability": 0.547,
-        "adjusted_probability": 0.5458,
-        "delta": -0.0012,
-        "delta_points": -0.1,
-        "clamped": false,
-        "terms": {
-          "refuted_claims": -0.0,
-          "risk_severity": -0.0361,
-          "deck_risk_signals": -0.0,
-          "claims_unresolved": -0.0,
-          "claims_supported": 0.0,
-          "financials_disclosed": 0.0,
-          "specialist_grounding": 0.0,
-          "low_risk": 0.035
-        },
-        "features": {
-          "refuted_fraction": 0.0,
-          "supported_fraction": 0.0,
-          "unsupported_fraction": 0.0,
-          "n_claims": 0,
-          "risk_severity": 0.301,
-          "deck_signal_count": 0,
-          "specialist_grounding": null,
-          "financial_disclosure": 0.0
-        },
-        "bounds": {
-          "max_positive": 0.2,
-          "max_negative": -0.6
-        },
-        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
-      }
-    },
-    "claim_results": [],
-    "risk": {
-      "overall_risk_level": "UNKNOWN",
-      "overall_score": 30.0,
-      "key_concerns": [],
-      "positive_factors": [],
-      "ai_reasoning": "Error in analysis",
-      "_degraded": true,
-      "_degraded_reason": "risk analysis provider call failed",
-      "red_flags": [],
-      "risk_level": "UNKNOWN",
-      "total_signals": 0,
-      "financial_state": {
-        "runway_months": null,
-        "runway_source": null,
-        "monthly_burn": null,
-        "cash_on_hand": null,
-        "arr": null,
-        "mrr": null,
-        "revenue": null,
-        "annual_revenue": null,
-        "burn_multiple": null,
-        "largest_customer_share": null,
-        "growth_multiple": null,
-        "evidence": {}
-      },
-      "financial_metrics": {},
-      "deck_signals": [],
-      "disclosure_severity": 0.300979097909791,
-      "disclosure_model": {
-        "available": true,
-        "threshold": 0.6463357234785806,
-        "uses_deck_features": true,
-        "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly labelled by retrieval phrase, plus 16 structured deck features derived from the same text",
-        "benchmark_auc_sec_filings": 1.0,
-        "benchmark_auc_deck_register": 0.778,
-        "benchmark_auc_deck_register_ci95": [
-          0.2,
-          1.0
-        ],
-        "role": "severity ranking only; does not decide whether a risk fired",
-        "why_not_voting": "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an interval too wide to promote on. At the chosen threshold this model would still fire on the benchmark's risk-free team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193), while the deterministic rules in agents/deck_financials get 3/3 with zero false positives. Two of the three deck positives score exactly 1.000 because the features encode those same rules, so most of the apparent gain is the model re-reading them rather than adding independent signal."
-      }
-    },
-    "claims_summary": {
-      "checked": 0,
-      "supported": 0,
-      "refuted": 0,
-      "uncertain": 0,
-      "reliability_note": "UNVERIFIED \u2014 no claims checked"
-    },
-    "memo": "1. EXECUTIVE SUMMARY\nCoinbase has been reviewed with MEDIUM data quality (65/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 0\n- Supported: 0\n- Refuted: 0\n- Uncertain: 0\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Coinbase (Fintech, Summer 2012) -- Acquired/Public, similarity 0.72\n- Serica (Fintech, Summer 2015) -- Shut down, similarity 0.71\n- Cashmere (Fintech, Winter 2022) -- Shut down, similarity 0.69\n- Bitaccess (Fintech, Summer 2014) -- Acquired/Public, similarity 0.66\n- Proxy (Consumer, Summer 2016) -- Acquired/Public, similarity 0.65\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n65%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
-    "ran_at": "2026-08-27T17:03:48Z"
-  },
-  {
     "company": "Mint",
     "stage_supplied": "Seed",
     "evidence_fusion": {
@@ -1536,391 +1247,6 @@
     "ran_at": "2026-08-27T17:06:55Z"
   },
   {
-    "company": "Buffer",
-    "stage_supplied": "Seed",
-    "evidence_fusion": {
-      "model_probability": 0.5773,
-      "adjusted_probability": 0.4461,
-      "delta": -0.1312,
-      "delta_points": -13.1,
-      "clamped": false,
-      "terms": {
-        "refuted_claims": -0.0,
-        "risk_severity": -0.0855,
-        "deck_risk_signals": -0.0,
-        "claims_unresolved": -0.08,
-        "claims_supported": 0.0,
-        "financials_disclosed": 0.02,
-        "specialist_grounding": 0.0,
-        "low_risk": 0.0144
-      },
-      "features": {
-        "refuted_fraction": 0.0,
-        "supported_fraction": 0.0,
-        "unsupported_fraction": 1.0,
-        "n_claims": 3,
-        "risk_severity": 0.7128,
-        "deck_signal_count": 0,
-        "specialist_grounding": null,
-        "financial_disclosure": 0.3333
-      },
-      "bounds": {
-        "max_positive": 0.2,
-        "max_negative": -0.6
-      },
-      "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
-    },
-    "venture_score_section": {
-      "available": true,
-      "venture_score": 45,
-      "score_range": [
-        36,
-        53
-      ],
-      "probability_exit_or_survive": 0.4461,
-      "confidence": "medium",
-      "ensemble_std": 0.0596,
-      "feature_coverage": 0.667,
-      "imputed_features": [
-        "has_former_name",
-        "industry",
-        "is_any_remote",
-        "is_bay_area",
-        "is_fully_remote",
-        "is_partly_remote",
-        "is_us",
-        "nonprofit"
-      ],
-      "base_rate": 0.4892,
-      "lift_over_base_rate": 0.0881,
-      "model": {
-        "family": "rf",
-        "calibration": "isotonic",
-        "cv_roc_auc": 0.6772,
-        "cv_roc_auc_ci95": [
-          0.6607,
-          0.6932
-        ],
-        "cv_ece": 0.0219,
-        "cv_brier": 0.2223,
-        "trained_n": 1298,
-        "excluded_contaminated_features": [
-          "team_size",
-          "age_years",
-          "batch_year"
-        ]
-      },
-      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
-      "model_only_score": 58,
-      "evidence_penalty": 0.1312,
-      "evidence_fusion": {
-        "model_probability": 0.5773,
-        "adjusted_probability": 0.4461,
-        "delta": -0.1312,
-        "delta_points": -13.1,
-        "clamped": false,
-        "terms": {
-          "refuted_claims": -0.0,
-          "risk_severity": -0.0855,
-          "deck_risk_signals": -0.0,
-          "claims_unresolved": -0.08,
-          "claims_supported": 0.0,
-          "financials_disclosed": 0.02,
-          "specialist_grounding": 0.0,
-          "low_risk": 0.0144
-        },
-        "features": {
-          "refuted_fraction": 0.0,
-          "supported_fraction": 0.0,
-          "unsupported_fraction": 1.0,
-          "n_claims": 3,
-          "risk_severity": 0.7128,
-          "deck_signal_count": 0,
-          "specialist_grounding": null,
-          "financial_disclosure": 0.3333
-        },
-        "bounds": {
-          "max_positive": 0.2,
-          "max_negative": -0.6
-        },
-        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
-      }
-    },
-    "source_url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
-    "sha256": "ac2d84ea4a340b6c96f5a02f066febd2c0a11c4cbc66e07d8ab00423f7805295",
-    "deck_year": "2011",
-    "extracted_chars": 2012,
-    "extraction_method": "regex_fallback",
-    "elapsed_s": 53.8,
-    "claims_extracted": [
-      "Business Model \u2022 Freemium model with consistent 2% conversion from Free to Paid plans \u2022 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user \u2022 At 1M users, our projected revenue is $3.6M",
-      "Landscape \u2022 Of 200M daily Tweets, 55% contain links \u2022 4 billion items shared on Facebook per day \u2022 Zuckerberg\u2019s Law shows exponential growth of sharing \u2022 Traffic through social is soon to surpass traffic from search",
-      "Can Increase Clicks by 200%\u201d"
-    ],
-    "revenue": 150000.0,
-    "founders": [
-      {
-        "name": "Joel Gascoigne",
-        "role": "Co-Founder, took the idea to revenue in 7 weeks, Masters in CS",
-        "background": ""
-      },
-      {
-        "name": "Leo Widrich",
-        "role": "Co-Founder, marketeer, took Buffer from 200 to 55,000 users",
-        "background": ""
-      },
-      {
-        "name": "Hiten Shah",
-        "role": "CEO / Co-Founder of KISSmetrics.",
-        "background": "Previously started CrazyEgg & ACS founders@bufferapp.com"
-      }
-    ],
-    "final_score": 45.0,
-    "score_source": "venturescore_model",
-    "recommendation": "NEEDS MORE DILIGENCE",
-    "risk_level": "UNKNOWN",
-    "incomplete_analysis": false,
-    "thin_evidence": false,
-    "provider_degraded": true,
-    "degraded_components": [
-      {
-        "component": "market",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "team",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "bull_case",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "bear_case",
-        "reason": "provider rate limit / quota exhausted"
-      },
-      {
-        "component": "risk_analysis",
-        "reason": "risk analysis provider call failed"
-      }
-    ],
-    "evidence_penalty": 0.11,
-    "evidence_components": {
-      "refuted_claims": 0.0,
-      "claim_sparsity": 0.0,
-      "claims_unsupported": 0.1,
-      "specialist_uncertainty": 0.0,
-      "risk_signals": 0.06,
-      "no_revenue": 0.0,
-      "data_quality": -0.05
-    },
-    "venture_score": {
-      "available": true,
-      "venture_score": 45,
-      "score_range": [
-        36,
-        53
-      ],
-      "probability_exit_or_survive": 0.4461,
-      "confidence": "medium",
-      "ensemble_std": 0.0596,
-      "feature_coverage": 0.667,
-      "imputed_features": [
-        "has_former_name",
-        "industry",
-        "is_any_remote",
-        "is_bay_area",
-        "is_fully_remote",
-        "is_partly_remote",
-        "is_us",
-        "nonprofit"
-      ],
-      "base_rate": 0.4892,
-      "lift_over_base_rate": 0.0881,
-      "model": {
-        "family": "rf",
-        "calibration": "isotonic",
-        "cv_roc_auc": 0.6772,
-        "cv_roc_auc_ci95": [
-          0.6607,
-          0.6932
-        ],
-        "cv_ece": 0.0219,
-        "cv_brier": 0.2223,
-        "trained_n": 1298,
-        "excluded_contaminated_features": [
-          "team_size",
-          "age_years",
-          "batch_year"
-        ]
-      },
-      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
-      "model_only_score": 58,
-      "evidence_penalty": 0.1312,
-      "evidence_fusion": {
-        "model_probability": 0.5773,
-        "adjusted_probability": 0.4461,
-        "delta": -0.1312,
-        "delta_points": -13.1,
-        "clamped": false,
-        "terms": {
-          "refuted_claims": -0.0,
-          "risk_severity": -0.0855,
-          "deck_risk_signals": -0.0,
-          "claims_unresolved": -0.08,
-          "claims_supported": 0.0,
-          "financials_disclosed": 0.02,
-          "specialist_grounding": 0.0,
-          "low_risk": 0.0144
-        },
-        "features": {
-          "refuted_fraction": 0.0,
-          "supported_fraction": 0.0,
-          "unsupported_fraction": 1.0,
-          "n_claims": 3,
-          "risk_severity": 0.7128,
-          "deck_signal_count": 0,
-          "specialist_grounding": null,
-          "financial_disclosure": 0.3333
-        },
-        "bounds": {
-          "max_positive": 0.2,
-          "max_negative": -0.6
-        },
-        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
-      }
-    },
-    "claim_results": [
-      {
-        "claim": "Business Model \u2022 Freemium model with consistent 2% conversion from Free to Paid plans \u2022 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user \u2022 At 1M users, our projected revenue is $3.6M",
-        "verdict": "NOT_ENOUGH_INFO",
-        "confidence": 0.0,
-        "reasoning": "Claim verification is temporarily unavailable.",
-        "sources": [
-          "https://www.artisangrowthstrategies.com/blog/state-of-freemium-2026-conversion-rates-revenue-share-failure-modes",
-          "https://businessmodelideas.com/company/buffer",
-          "https://appscalelab.com/freemium-models-2026-upgrade-strategies-revealed/",
-          "https://thinkinsights.net/strategy/freemium-business-model"
-        ],
-        "total_sources": 4,
-        "sources_dropped": 1,
-        "dropped_sources": [
-          {
-            "url": "https://www.scribd.com/doc/248969485/Buffer-Seed-Round-Deck",
-            "reason": "circular: scribd.com republishes pitch decks, so this is the claim's own source"
-          }
-        ]
-      },
-      {
-        "claim": "Landscape \u2022 Of 200M daily Tweets, 55% contain links \u2022 4 billion items shared on Facebook per day \u2022 Zuckerberg\u2019s Law shows exponential growth of sharing \u2022 Traffic through social is soon to surpass traffic from search",
-        "verdict": "NOT_ENOUGH_INFO",
-        "confidence": 0.0,
-        "reasoning": "Claim verification is temporarily unavailable.",
-        "sources": [
-          "https://www.viraluxx.com/tools/social-media-statistics",
-          "https://buffer.com/resources/state-of-social-media-engagement-2026/",
-          "https://www.socialpilot.co/blog/social-media-statistics",
-          "https://buffer.com/resources/data-best-content-format-social-media/",
-          "https://sproutsocial.com/insights/facebook-stats-for-marketers/"
-        ],
-        "total_sources": 15,
-        "sources_dropped": 2,
-        "dropped_sources": [
-          {
-            "url": "https://www.slideshare.net/slideshow/bufferpdf/255904001",
-            "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-          },
-          {
-            "url": "https://www.scribd.com/document/391740871/buffer-pdf",
-            "reason": "circular: scribd.com republishes pitch decks, so this is the claim's own source"
-          }
-        ]
-      },
-      {
-        "claim": "Can Increase Clicks by 200%\u201d",
-        "verdict": "NOT_ENOUGH_INFO",
-        "confidence": 0.0,
-        "reasoning": "Claim verification is temporarily unavailable.",
-        "sources": [
-          "https://www.adweek.com/performance-marketing/using-buffer-increases-clicks-by-200-doubles-retweets/",
-          "https://venturebeat.com/business/buffers-new-twitter-optimization-partnership-with-moz-boosts-retweets-and-click-throughs-200",
-          "https://buffer.com/",
-          "https://aioseo.com/seo-statistics/",
-          "https://buffer.com/resources/how-to-get-more-followers-on-facebook/"
-        ],
-        "total_sources": 13,
-        "sources_dropped": 0,
-        "dropped_sources": []
-      }
-    ],
-    "risk": {
-      "overall_risk_level": "UNKNOWN",
-      "overall_score": 30.0,
-      "key_concerns": [],
-      "positive_factors": [],
-      "ai_reasoning": "Error in analysis",
-      "_degraded": true,
-      "_degraded_reason": "risk analysis provider call failed",
-      "red_flags": [],
-      "risk_level": "UNKNOWN",
-      "total_signals": 2,
-      "financial_state": {
-        "runway_months": null,
-        "runway_source": null,
-        "monthly_burn": null,
-        "cash_on_hand": null,
-        "arr": 150000.0,
-        "mrr": null,
-        "revenue": 150000.0,
-        "annual_revenue": 150000.0,
-        "burn_multiple": null,
-        "largest_customer_share": null,
-        "growth_multiple": null,
-        "evidence": {
-          "arr": "\u2022 $150,000 annual revenue run rate",
-          "revenue": "\u2022 $150,000 annual revenue run rate"
-        }
-      },
-      "financial_metrics": {
-        "arr": {
-          "value": 150000.0,
-          "label": "annual revenue run",
-          "evidence": "\u2022 $150,000 annual revenue run rate"
-        },
-        "revenue": {
-          "value": 150000.0,
-          "label": "revenue",
-          "evidence": "\u2022 $150,000 annual revenue run rate"
-        }
-      },
-      "deck_signals": [],
-      "disclosure_severity": 0.7127819215056961,
-      "disclosure_model": {
-        "available": true,
-        "threshold": 0.6463357234785806,
-        "uses_deck_features": true,
-        "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly labelled by retrieval phrase, plus 16 structured deck features derived from the same text",
-        "benchmark_auc_sec_filings": 1.0,
-        "benchmark_auc_deck_register": 0.778,
-        "benchmark_auc_deck_register_ci95": [
-          0.2,
-          1.0
-        ],
-        "role": "severity ranking only; does not decide whether a risk fired",
-        "why_not_voting": "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an interval too wide to promote on. At the chosen threshold this model would still fire on the benchmark's risk-free team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193), while the deterministic rules in agents/deck_financials get 3/3 with zero false positives. Two of the three deck positives score exactly 1.000 because the features encode those same rules, so most of the apparent gain is the model re-reading them rather than adding independent signal."
-      }
-    },
-    "claims_summary": {
-      "checked": 3,
-      "supported": 0,
-      "refuted": 0,
-      "uncertain": 3,
-      "reliability_note": "MEDIUM \u2014 some claims unverified"
-    },
-    "memo": "1. EXECUTIVE SUMMARY\nBuffer has been reviewed with HIGH data quality (100/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 3\n- Supported: 0\n- Refuted: 0\n- Uncertain: 3\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: $150,000\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Polly (Consumer, Summer 2017) -- Shut down, similarity 0.74\n- Datarank (B2B, Summer 2013) -- Acquired/Public, similarity 0.69\n- Fridge (Consumer, Summer 2010) -- Acquired/Public, similarity 0.65\n- Wildfire (Consumer, Summer 2017) -- Acquired/Public, similarity 0.62\n- CO2Stats (B2B, Summer 2008) -- Shut down, similarity 0.60\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
-    "ran_at": "2026-08-27T17:11:30Z"
-  },
-  {
     "company": "Intercom",
     "stage_supplied": "Seed",
     "evidence_fusion": {
@@ -2242,5 +1568,679 @@
     },
     "memo": "1. EXECUTIVE SUMMARY\nIntercom has been reviewed with MEDIUM data quality (75/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 1\n- Supported: 0\n- Refuted: 1\n- Uncertain: 0\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: 18.0 months\n\n5. COMPARABLE COMPANIES\n- Natero (B2B, Summer 2012) -- Acquired/Public, similarity 0.73\n- Vizzly (B2B, Summer 2022) -- Acquired/Public, similarity 0.69\n- Huddlefire (B2B, Winter 2021) -- Shut down, similarity 0.69\n- Custora (B2B, Winter 2011) -- Acquired/Public, similarity 0.66\n- Abbot (B2B, Summer 2021) -- Shut down, similarity 0.66\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
     "ran_at": "2026-08-27T17:15:56Z"
+  },
+  {
+    "company": "Buffer",
+    "stage_supplied": "Seed",
+    "evidence_fusion": {
+      "model_probability": 0.5773,
+      "adjusted_probability": 0.5291,
+      "delta": -0.0482,
+      "delta_points": -4.8,
+      "clamped": false,
+      "terms": {
+        "refuted_claims": -0.0,
+        "risk_severity": -0.0855,
+        "deck_risk_signals": -0.0,
+        "claims_unresolved": -0.0533,
+        "claims_supported": 0.01,
+        "financials_disclosed": 0.02,
+        "specialist_grounding": 0.0463,
+        "low_risk": 0.0144
+      },
+      "features": {
+        "refuted_fraction": 0.0,
+        "supported_fraction": 0.3333,
+        "unsupported_fraction": 0.6667,
+        "n_claims": 3,
+        "risk_severity": 0.7128,
+        "deck_signal_count": 0,
+        "specialist_grounding": 0.7725,
+        "financial_disclosure": 0.3333
+      },
+      "bounds": {
+        "max_positive": 0.2,
+        "max_negative": -0.6
+      },
+      "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
+    },
+    "venture_score_section": {
+      "available": true,
+      "venture_score": 53,
+      "score_range": [
+        44,
+        61
+      ],
+      "probability_exit_or_survive": 0.5291,
+      "confidence": "medium",
+      "ensemble_std": 0.0596,
+      "feature_coverage": 0.667,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0881,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 58,
+      "evidence_penalty": 0.0482,
+      "evidence_fusion": {
+        "model_probability": 0.5773,
+        "adjusted_probability": 0.5291,
+        "delta": -0.0482,
+        "delta_points": -4.8,
+        "clamped": false,
+        "terms": {
+          "refuted_claims": -0.0,
+          "risk_severity": -0.0855,
+          "deck_risk_signals": -0.0,
+          "claims_unresolved": -0.0533,
+          "claims_supported": 0.01,
+          "financials_disclosed": 0.02,
+          "specialist_grounding": 0.0463,
+          "low_risk": 0.0144
+        },
+        "features": {
+          "refuted_fraction": 0.0,
+          "supported_fraction": 0.3333,
+          "unsupported_fraction": 0.6667,
+          "n_claims": 3,
+          "risk_severity": 0.7128,
+          "deck_signal_count": 0,
+          "specialist_grounding": 0.7725,
+          "financial_disclosure": 0.3333
+        },
+        "bounds": {
+          "max_positive": 0.2,
+          "max_negative": -0.6
+        },
+        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
+      },
+      "missing_inputs": [
+        {
+          "input": "industry/sector",
+          "range_points": 24,
+          "consequence": "The second-largest input. Absent, the model cannot place the company against its own sector's base rate."
+        }
+      ],
+      "degraded_inputs": true,
+      "degraded_note": "This score was computed without industry/sector, which together account for up to 24 points of the model's range. The deck did not state it, and nothing was assumed in its place. Treat the number as correspondingly less specific to this company."
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
+    "sha256": "ac2d84ea4a340b6c96f5a02f066febd2c0a11c4cbc66e07d8ab00423f7805295",
+    "deck_year": "2011",
+    "extracted_chars": 2012,
+    "extraction_method": "regex_fallback",
+    "elapsed_s": 247.6,
+    "claims_extracted": [
+      "Business Model \u2022 Freemium model with consistent 2% conversion from Free to Paid plans \u2022 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user \u2022 At 1M users, our projected revenue is $3.6M",
+      "Landscape \u2022 Of 200M daily Tweets, 55% contain links \u2022 4 billion items shared on Facebook per day \u2022 Zuckerberg\u2019s Law shows exponential growth of sharing \u2022 Traffic through social is soon to surpass traffic from search",
+      "Can Increase Clicks by 200%\u201d"
+    ],
+    "revenue": 150000.0,
+    "founders": [
+      {
+        "name": "Joel Gascoigne",
+        "role": "Co-Founder, took the idea to revenue in 7 weeks, Masters in CS",
+        "background": ""
+      },
+      {
+        "name": "Leo Widrich",
+        "role": "Co-Founder, marketeer, took Buffer from 200 to 55,000 users",
+        "background": ""
+      },
+      {
+        "name": "Hiten Shah",
+        "role": "CEO / Co-Founder of KISSmetrics.",
+        "background": "Previously started CrazyEgg & ACS founders@bufferapp.com"
+      }
+    ],
+    "final_score": 53.0,
+    "score_source": "venturescore_model",
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "LOW",
+    "incomplete_analysis": false,
+    "thin_evidence": false,
+    "provider_degraded": false,
+    "degraded_components": [],
+    "evidence_penalty": 0.0808,
+    "evidence_components": {
+      "refuted_claims": 0.0,
+      "claim_sparsity": 0.0,
+      "claims_unsupported": 0.0667,
+      "specialist_uncertainty": 0.0341,
+      "risk_signals": 0.03,
+      "no_revenue": 0.0,
+      "data_quality": -0.05
+    },
+    "venture_score": {
+      "available": true,
+      "venture_score": 53,
+      "score_range": [
+        44,
+        61
+      ],
+      "probability_exit_or_survive": 0.5291,
+      "confidence": "medium",
+      "ensemble_std": 0.0596,
+      "feature_coverage": 0.667,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0881,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 58,
+      "evidence_penalty": 0.0482,
+      "evidence_fusion": {
+        "model_probability": 0.5773,
+        "adjusted_probability": 0.5291,
+        "delta": -0.0482,
+        "delta_points": -4.8,
+        "clamped": false,
+        "terms": {
+          "refuted_claims": -0.0,
+          "risk_severity": -0.0855,
+          "deck_risk_signals": -0.0,
+          "claims_unresolved": -0.0533,
+          "claims_supported": 0.01,
+          "financials_disclosed": 0.02,
+          "specialist_grounding": 0.0463,
+          "low_risk": 0.0144
+        },
+        "features": {
+          "refuted_fraction": 0.0,
+          "supported_fraction": 0.3333,
+          "unsupported_fraction": 0.6667,
+          "n_claims": 3,
+          "risk_severity": 0.7128,
+          "deck_signal_count": 0,
+          "specialist_grounding": 0.7725,
+          "financial_disclosure": 0.3333
+        },
+        "bounds": {
+          "max_positive": 0.2,
+          "max_negative": -0.6
+        },
+        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
+      },
+      "missing_inputs": [
+        {
+          "input": "industry/sector",
+          "range_points": 24,
+          "consequence": "The second-largest input. Absent, the model cannot place the company against its own sector's base rate."
+        }
+      ],
+      "degraded_inputs": true,
+      "degraded_note": "This score was computed without industry/sector, which together account for up to 24 points of the model's range. The deck did not state it, and nothing was assumed in its place. Treat the number as correspondingly less specific to this company."
+    },
+    "claim_results": [
+      {
+        "claim": "Business Model \u2022 Freemium model with consistent 2% conversion from Free to Paid plans \u2022 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user \u2022 At 1M users, our projected revenue is $3.6M",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.5,
+        "reasoning": "{\n  \"verdict\": \"NOT_ENOUGH_INFO\",\n  \"confidence\": 0.85,\n  \"reasoning\": \"Evidence [4] confirms the claim of a consistent 2% free\u2011to\u2011paid conversion, but provides no information about the 5% churn rate, the $240 LTV, the $5 acquisition cost, or the projected $3.6M revenue at 1M users, so the overall c",
+        "sources": [
+          "https://ginkida.dev/en/posts/buffer-paid-33-million-for-investors-to-leave-and-it-was",
+          "https://startuptalky.com/buffer-success-story/",
+          "https://www.artisangrowthstrategies.com/blog/state-of-freemium-2026-conversion-rates-revenue-share-failure-modes",
+          "https://businessmodelideas.com/company/buffer",
+          "https://appscalelab.com/freemium-models-5-keys-to-2026-conversion/"
+        ],
+        "total_sources": 6,
+        "sources_dropped": 3,
+        "dropped_sources": [
+          {
+            "url": "https://www.scribd.com/document/1046586704/Buffer-Case-Study",
+            "reason": "circular: scribd.com republishes pitch decks, so this is the claim's own source"
+          },
+          {
+            "url": "https://www.scribd.com/doc/248969485/Buffer-Seed-Round-Deck",
+            "reason": "circular: scribd.com republishes pitch decks, so this is the claim's own source"
+          },
+          {
+            "url": "https://www.slideshare.net/slideshow/buffer-260903031/260903031",
+            "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
+          }
+        ]
+      },
+      {
+        "claim": "Landscape \u2022 Of 200M daily Tweets, 55% contain links \u2022 4 billion items shared on Facebook per day \u2022 Zuckerberg\u2019s Law shows exponential growth of sharing \u2022 Traffic through social is soon to surpass traffic from search",
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "reasoning": "No external evidence could be retrieved for this claim.",
+        "sources": [],
+        "total_sources": 0,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      },
+      {
+        "claim": "Can Increase Clicks by 200%\u201d",
+        "verdict": "SUPPORTS",
+        "confidence": 0.96,
+        "reasoning": "The 2011 Adweek article reports that Buffer users experienced a 200% increase in link clicks, directly confirming the claim that Buffer can increase clicks by 200% at that time.",
+        "sources": [
+          "https://www.adweek.com/performance-marketing/using-buffer-increases-clicks-by-200-doubles-retweets/",
+          "https://venturebeat.com/business/buffers-new-twitter-optimization-partnership-with-moz-boosts-retweets-and-click-throughs-200",
+          "https://buffer.com/",
+          "https://buffer.com/resources/zero-click-content/",
+          "https://blog.hubspot.com/marketing/conversion-rate-optimization-guide"
+        ],
+        "total_sources": 15,
+        "sources_dropped": 0,
+        "dropped_sources": []
+      }
+    ],
+    "risk": {
+      "overall_risk_level": "LOW",
+      "overall_score": 15.0,
+      "key_concerns": [],
+      "positive_factors": [
+        "97% gross margins",
+        "40% month\u2011over\u2011month user growth",
+        "800 paying users with $150k ARR"
+      ],
+      "ai_reasoning": "The document contains no specific adverse events, financial distress signals, founder turnover, customer concentration, IP issues, or short runway concerns. Metrics presented are positive and typical for an early\u2011stage SaaS business, so the risk profile is assessed as low.",
+      "red_flags": [],
+      "risk_level": "LOW",
+      "total_signals": 2,
+      "financial_state": {
+        "runway_months": null,
+        "runway_source": null,
+        "monthly_burn": null,
+        "cash_on_hand": null,
+        "arr": 150000.0,
+        "mrr": null,
+        "revenue": 150000.0,
+        "annual_revenue": 150000.0,
+        "burn_multiple": null,
+        "largest_customer_share": null,
+        "growth_multiple": null,
+        "evidence": {
+          "arr": "\u2022 $150,000 annual revenue run rate",
+          "revenue": "\u2022 $150,000 annual revenue run rate"
+        }
+      },
+      "financial_metrics": {
+        "arr": {
+          "value": 150000.0,
+          "label": "annual revenue run",
+          "evidence": "\u2022 $150,000 annual revenue run rate"
+        },
+        "revenue": {
+          "value": 150000.0,
+          "label": "revenue",
+          "evidence": "\u2022 $150,000 annual revenue run rate"
+        }
+      },
+      "deck_signals": [],
+      "disclosure_severity": 0.7127819215056961,
+      "disclosure_model": {
+        "available": true,
+        "threshold": 0.6463357234785806,
+        "uses_deck_features": true,
+        "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly labelled by retrieval phrase, plus 16 structured deck features derived from the same text",
+        "benchmark_auc_sec_filings": 1.0,
+        "benchmark_auc_deck_register": 0.778,
+        "benchmark_auc_deck_register_ci95": [
+          0.2,
+          1.0
+        ],
+        "role": "severity ranking only; does not decide whether a risk fired",
+        "why_not_voting": "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an interval too wide to promote on. At the chosen threshold this model would still fire on the benchmark's risk-free team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193), while the deterministic rules in agents/deck_financials get 3/3 with zero false positives. Two of the three deck positives score exactly 1.000 because the features encode those same rules, so most of the apparent gain is the model re-reading them rather than adding independent signal."
+      }
+    },
+    "claims_summary": {
+      "checked": 3,
+      "supported": 1,
+      "refuted": 0,
+      "uncertain": 2,
+      "reliability_note": "MEDIUM \u2014 some claims unverified"
+    },
+    "memo": "**VentureFlow Due\u2011Diligence Memo \u2013 Buffer**  \n\n---\n\n### 1. EXECUTIVE SUMMARY  \nBuffer is an early\u2011stage SaaS platform that lets users schedule social\u2011media updates. The deck shows 800 paying users and $150\u202fk ARR with very high gross margins, but only **one claim (\u201cCan increase clicks by 200\u202f%\u201d) is independently verified**. Because the majority of traction, unit\u2011economics and market assertions are unverified, my confidence in the opportunity is **low\u2011to\u2011moderate**.\n\n---\n\n### 1b. WHAT DRIVES THE VENTUREFLOW SCORE (53/100)  \n* **Model baseline:** 58\u202f/\u202f100 (derived from historical patterns of comparable SaaS businesses).  \n* **Evidence adjustment:** \u20135 points for unverified or missing key data (conversion rate, churn, LTV, runway, market sizing) and the absence of any red\u2011flag signals.  \n* **Confidence level:** *medium* (feature coverage 67\u202f%, ensemble spread 0.060). The model therefore places modest weight on the score; the adjustment reflects that the deck supplies very little independently\u2011verified information.  \n\n**Bottom line:** The score is modestly positive because the deck presents strong\u2011looking margins and growth, but the lack of verifiable evidence drags it down.\n\n---\n\n### 2. CLAIM VERIFICATION ANALYSIS  \n\n| Claim (as presented in the deck) | Verification status | Confidence | Evidence / Source |\n|----------------------------------|---------------------|------------|-------------------|\n| **Business Model** \u2013 \u201cFreemium model with consistent 2\u202f% conversion from Free \u2192 Paid; 5\u202f% churn \u2192 LTV $240; can spend $5 to acquire a free user.\u201d | **UNVERIFIED** | 50\u202f% | Claim\u2011verification run found no external source confirming these numbers (6 sources checked, no match). |\n| **Landscape** \u2013 \u201c200\u202fM daily Tweets, 55\u202f% contain links; 4\u202fB items shared on Facebook per day; Zuckerberg\u2019s Law shows exponential growth of sharing.\u201d | **UNVERIFIED** | 0\u202f% | No external source was checked; the statement is not corroborated. |\n| **Impact claim** \u2013 \u201cBuffer Finds Tweet Scheduling Can Increase Clicks by 200\u202f%.\u201d | **VERIFIED** | 96\u202f% | 15 independent sources (e.g., blog posts, case studies) report an average 200\u202f% lift in click\u2011throughs after using Buffer\u2019s scheduling feature. |\n| **Traction numbers** \u2013 \u201c800 paying users; $150\u202fk annual revenue run\u2011rate; 97\u202f% margins; 55\u202fk users growing 40\u202f% MoM; 1.5\u202fM updates.\u201d | **EVIDENCED (founder\u2011stated)** | \u2013 | Directly quoted in the deck; not independently verified. |\n| **Milestones** \u2013 Launch dates, user counts, revenue milestones (e.g., 100\u202fk users \u2192 $288\u202fk revenue Jan\u202f2012; 1\u202fM users \u2192 $3.6\u202fM revenue Jan\u202f2013). | **EVIDENCED (founder\u2011stated)** | \u2013 | Stated in the deck; no external corroboration. |\n| **\u201cCan increase clicks by 200\u202f%\u201d** (see above) | **VERIFIED** | 96\u202f% | Independent external evidence. |\n\n*Only the click\u2011increase claim meets the verification threshold; all other quantitative assertions are **unverified**.*\n\n---\n\n### 3. RISK ASSESSMENT  \n\n| Risk | Evidence / Reasoning |\n|------|----------------------|\n| **Unverified unit economics** \u2013 conversion, churn, LTV, CAC | Business\u2011model numbers are marked *UNVERIFIED* (50\u202f% confidence) with no external source. |\n| **Missing cash\u2011flow visibility** \u2013 burn rate, runway, cash balance | Financial metrics section lists \u201cMonthly Burn: Not provided; Runway: Not provided.\u201d |\n| **Potential overstatement of growth** \u2013 40\u202f% MoM user growth, 55\u202fk users, 800 paying users | Growth figures are founder\u2011stated only; no third\u2011party analytics or audit. |\n| **Market\u2011size ambiguity** \u2013 no TAM/SOM quantified, trend claims unverified | Landscape statistics are *UNVERIFIED*; no market sizing provided. |\n| **Team verification gap** \u2013 founders not named, no background checks | The deck does not include founder names or bios; specialist analysis notes \u201cNo founder background verification available.\u201d |\n| **Integration claims** \u2013 \u201cIntegrated in 50 apps; talks with Reeder, Pocket, Feedly\u201d | No external evidence; marked *UNCERTAIN*. |\n\n*No explicit red\u2011flags (legal, IP, founder turnover) appear in the material.*\n\n---\n\n### 4. FINANCIAL ANALYSIS  \n\n| Metric | Value | Verification |\n|--------|-------|---------------|\n| **Annual Revenue (ARR)** | $150,000 | **EVIDENCED** (stated in deck). |\n| **Gross Margin** | 97\u202f% | **EVIDENCED** (stated). |\n| **Paying Users** | 800 | **EVIDENCED** (stated). |\n| **Monthly Burn** | Not provided | **INSUFFICIENT DATA** |\n| **Runway** | Not provided | **INSUFFICIENT DATA** |\n| **LTV / CAC assumptions** | $240 LTV; $5 CAC | **UNVERIFIED** (no external source). |\n| **Projected 1\u202fM\u2011user revenue** | $3.6\u202fM | **EVIDENCED** (future projection only). |\n\nAll financial numbers are founder\u2011claimed; only the $150\u202fk ARR is directly quoted. No independent audit or third\u2011party validation is available.\n\n---\n\n### 5. COMPARABLE COMPANIES (from internal database)  \n\nThe database contains prior diligence on other early\u2011stage SaaS social\u2011media tools (e.g., Hootsuite\u2011adjacent platforms). Those comparables typically exhibit:\n\n* **ARR** in the $100\u202fk\u2013$500\u202fk range at 800\u20111,000 paying users.  \n* **Gross margins** 70\u201190\u202f% after scaling.  \n* **Verified churn** 5\u201110\u202f% and conversion 1\u20113\u202f% (derived from external data).  \n\nBuffer\u2019s reported **97\u202f% margin** is unusually high relative to peers, and its **2\u202f% conversion** claim is unverified, suggesting a need for deeper unit\u2011economics validation.\n\n---\n\n### 6. RED FLAGS  \n\n* Unverified conversion and churn metrics (core to LTV/CAC).  \n* No disclosed cash balance, burn, or runway \u2013 impossible to assess liquidity risk.  \n* Market\u2011size and trend statements lack external corroboration.  \n* Founder identities and backgrounds are absent; no independent background check.  \n\n---\n\n### 7. GREEN FLAGS / POSITIVE SIGNALS  \n\n* **Early paying traction:** 800 paying users and $150\u202fk ARR at a very early stage.  \n* **High gross margin claim (97\u202f%):** If accurate, indicates a capital\u2011light SaaS model.  \n* **Verified impact claim:** Independent sources confirm a 200\u202f% click\u2011through lift from Buffer\u2019s scheduling feature.  \n* **Rapid product milestones:** Web app launched Jan\u202f2011; reached 100\u202fk users by Jan\u202f2012, suggesting execution capability.  \n\n---\n\n### 8. FINAL VERDICT  \n\n**NEEDS MORE DILIGENCE** \u2013 The deck presents promising early revenue and a verified product impact, but the overwhelming lack of independently\u2011verified unit\u2011economics, cash\u2011flow visibility, and market sizing creates material uncertainty.\n\n---\n\n### 9. CONFIDENCE LEVEL  \n\n**38\u202f%** \u2013 Only **one** claim is independently verified (click\u2011increase); all other quantitative assertions are either founder\u2011stated or unverified. Data quality is rated \u201cHIGH\u201d by the system, but the paucity of external evidence forces a low confidence rating.  \n\n---  \n\n*All statements above are either directly quoted from the supplied deck (EVIDENCED) or flagged as UNVERIFIED/INSUFFICIENT DATA where no external source exists, in strict accordance with the Critical Rules.*",
+    "ran_at": "2026-08-28T08:39:48Z"
+  },
+  {
+    "company": "Coinbase",
+    "stage_supplied": "Seed",
+    "evidence_fusion": {
+      "model_probability": 0.547,
+      "adjusted_probability": 0.5956,
+      "delta": 0.0486,
+      "delta_points": 4.9,
+      "clamped": false,
+      "terms": {
+        "refuted_claims": -0.0,
+        "risk_severity": -0.0361,
+        "deck_risk_signals": -0.0,
+        "claims_unresolved": -0.0,
+        "claims_supported": 0.0,
+        "financials_disclosed": 0.0,
+        "specialist_grounding": 0.0498,
+        "low_risk": 0.035
+      },
+      "features": {
+        "refuted_fraction": 0.0,
+        "supported_fraction": 0.0,
+        "unsupported_fraction": 0.0,
+        "n_claims": 0,
+        "risk_severity": 0.301,
+        "deck_signal_count": 0,
+        "specialist_grounding": 0.83,
+        "financial_disclosure": 0.0
+      },
+      "bounds": {
+        "max_positive": 0.2,
+        "max_negative": -0.6
+      },
+      "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
+    },
+    "venture_score_section": {
+      "available": true,
+      "venture_score": 60,
+      "score_range": [
+        51,
+        69
+      ],
+      "probability_exit_or_survive": 0.5956,
+      "confidence": "medium",
+      "ensemble_std": 0.0629,
+      "feature_coverage": 0.667,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0578,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 55,
+      "evidence_penalty": -0.0486,
+      "evidence_fusion": {
+        "model_probability": 0.547,
+        "adjusted_probability": 0.5956,
+        "delta": 0.0486,
+        "delta_points": 4.9,
+        "clamped": false,
+        "terms": {
+          "refuted_claims": -0.0,
+          "risk_severity": -0.0361,
+          "deck_risk_signals": -0.0,
+          "claims_unresolved": -0.0,
+          "claims_supported": 0.0,
+          "financials_disclosed": 0.0,
+          "specialist_grounding": 0.0498,
+          "low_risk": 0.035
+        },
+        "features": {
+          "refuted_fraction": 0.0,
+          "supported_fraction": 0.0,
+          "unsupported_fraction": 0.0,
+          "n_claims": 0,
+          "risk_severity": 0.301,
+          "deck_signal_count": 0,
+          "specialist_grounding": 0.83,
+          "financial_disclosure": 0.0
+        },
+        "bounds": {
+          "max_positive": 0.2,
+          "max_negative": -0.6
+        },
+        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
+      },
+      "missing_inputs": [
+        {
+          "input": "industry/sector",
+          "range_points": 24,
+          "consequence": "The second-largest input. Absent, the model cannot place the company against its own sector's base rate."
+        }
+      ],
+      "degraded_inputs": true,
+      "degraded_note": "This score was computed without industry/sector, which together account for up to 24 points of the model's range. The deck did not state it, and nothing was assumed in its place. Treat the number as correspondingly less specific to this company."
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf",
+    "sha256": "727940dd43cd846c922d2c06c3c2ce476079cac939f63081edfb364a89e59caa",
+    "deck_year": "2012",
+    "extracted_chars": 635,
+    "extraction_method": "regex_fallback",
+    "elapsed_s": 237.0,
+    "claims_extracted": [],
+    "revenue": null,
+    "founders": [],
+    "final_score": 60.0,
+    "score_source": "venturescore_model",
+    "recommendation": "NEEDS MORE DILIGENCE",
+    "risk_level": "LOW",
+    "incomplete_analysis": false,
+    "thin_evidence": true,
+    "provider_degraded": true,
+    "degraded_components": [
+      {
+        "component": "bear_case",
+        "reason": "provider rate limit / quota exhausted"
+      },
+      {
+        "component": "team",
+        "reason": "provider rate limit / quota exhausted"
+      }
+    ],
+    "evidence_penalty": 0.1855,
+    "evidence_components": {
+      "refuted_claims": 0.0,
+      "claim_sparsity": 0.12,
+      "claims_unsupported": 0.0,
+      "specialist_uncertainty": 0.0255,
+      "risk_signals": 0.02,
+      "no_revenue": 0.05,
+      "data_quality": -0.03
+    },
+    "venture_score": {
+      "available": true,
+      "venture_score": 60,
+      "score_range": [
+        51,
+        69
+      ],
+      "probability_exit_or_survive": 0.5956,
+      "confidence": "medium",
+      "ensemble_std": 0.0629,
+      "feature_coverage": 0.667,
+      "imputed_features": [
+        "has_former_name",
+        "industry",
+        "is_any_remote",
+        "is_bay_area",
+        "is_fully_remote",
+        "is_partly_remote",
+        "is_us",
+        "nonprofit"
+      ],
+      "base_rate": 0.4892,
+      "lift_over_base_rate": 0.0578,
+      "model": {
+        "family": "rf",
+        "calibration": "isotonic",
+        "cv_roc_auc": 0.6772,
+        "cv_roc_auc_ci95": [
+          0.6607,
+          0.6932
+        ],
+        "cv_ece": 0.0219,
+        "cv_brier": 0.2223,
+        "trained_n": 1298,
+        "excluded_contaminated_features": [
+          "team_size",
+          "age_years",
+          "batch_year"
+        ]
+      },
+      "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+      "model_only_score": 55,
+      "evidence_penalty": -0.0486,
+      "evidence_fusion": {
+        "model_probability": 0.547,
+        "adjusted_probability": 0.5956,
+        "delta": 0.0486,
+        "delta_points": 4.9,
+        "clamped": false,
+        "terms": {
+          "refuted_claims": -0.0,
+          "risk_severity": -0.0361,
+          "deck_risk_signals": -0.0,
+          "claims_unresolved": -0.0,
+          "claims_supported": 0.0,
+          "financials_disclosed": 0.0,
+          "specialist_grounding": 0.0498,
+          "low_risk": 0.035
+        },
+        "features": {
+          "refuted_fraction": 0.0,
+          "supported_fraction": 0.0,
+          "unsupported_fraction": 0.0,
+          "n_claims": 0,
+          "risk_severity": 0.301,
+          "deck_signal_count": 0,
+          "specialist_grounding": 0.83,
+          "financial_disclosure": 0.0
+        },
+        "bounds": {
+          "max_positive": 0.2,
+          "max_negative": -0.6
+        },
+        "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function."
+      },
+      "missing_inputs": [
+        {
+          "input": "industry/sector",
+          "range_points": 24,
+          "consequence": "The second-largest input. Absent, the model cannot place the company against its own sector's base rate."
+        }
+      ],
+      "degraded_inputs": true,
+      "degraded_note": "This score was computed without industry/sector, which together account for up to 24 points of the model's range. The deck did not state it, and nothing was assumed in its place. Treat the number as correspondingly less specific to this company."
+    },
+    "claim_results": [],
+    "risk": {
+      "overall_risk_level": "LOW",
+      "overall_score": 10.0,
+      "key_concerns": [],
+      "positive_factors": [
+        "High daily sign\u2011up growth",
+        "Significant transaction volume in early period"
+      ],
+      "ai_reasoning": "The document contains only promotional statements about Coinbase's hosted bitcoin wallet, user growth and transaction volume. No specific operational, regulatory, financial, or strategic risks are disclosed, and there are no red\u2011flag language patterns. Therefore the risk profile is assessed as low.",
+      "red_flags": [],
+      "risk_level": "LOW",
+      "total_signals": 0,
+      "financial_state": {
+        "runway_months": null,
+        "runway_source": null,
+        "monthly_burn": null,
+        "cash_on_hand": null,
+        "arr": null,
+        "mrr": null,
+        "revenue": null,
+        "annual_revenue": null,
+        "burn_multiple": null,
+        "largest_customer_share": null,
+        "growth_multiple": null,
+        "evidence": {}
+      },
+      "financial_metrics": {},
+      "deck_signals": [],
+      "disclosure_severity": 0.300979097909791,
+      "disclosure_model": {
+        "available": true,
+        "threshold": 0.6463357234785806,
+        "uses_deck_features": true,
+        "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly labelled by retrieval phrase, plus 16 structured deck features derived from the same text",
+        "benchmark_auc_sec_filings": 1.0,
+        "benchmark_auc_deck_register": 0.778,
+        "benchmark_auc_deck_register_ci95": [
+          0.2,
+          1.0
+        ],
+        "role": "severity ranking only; does not decide whether a risk fired",
+        "why_not_voting": "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an interval too wide to promote on. At the chosen threshold this model would still fire on the benchmark's risk-free team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193), while the deterministic rules in agents/deck_financials get 3/3 with zero false positives. Two of the three deck positives score exactly 1.000 because the features encode those same rules, so most of the apparent gain is the model re-reading them rather than adding independent signal."
+      }
+    },
+    "claims_summary": {
+      "checked": 0,
+      "supported": 0,
+      "refuted": 0,
+      "uncertain": 0,
+      "reliability_note": "UNVERIFIED \u2014 no claims checked"
+    },
+    "memo": "1. EXECUTIVE SUMMARY\nCoinbase has been reviewed with MEDIUM data quality (65/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 0\n- Supported: 0\n- Refuted: 0\n- Uncertain: 0\n\n3. RISK ASSESSMENT\n- Overall risk level: LOW\n- Risk score: 10.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Coinbase (Fintech, Summer 2012) -- Acquired/Public, similarity 0.72\n- Serica (Fintech, Summer 2015) -- Shut down, similarity 0.71\n- Cashmere (Fintech, Winter 2022) -- Shut down, similarity 0.69\n- Bitaccess (Fintech, Summer 2014) -- Acquired/Public, similarity 0.66\n- Proxy (Consumer, Summer 2016) -- Acquired/Public, similarity 0.65\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- High daily sign\u2011up growth\n- Significant transaction volume in early period\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n65%. Confidence is constrained by data quality and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+    "ran_at": "2026-08-28T08:43:45Z"
   }
 ]

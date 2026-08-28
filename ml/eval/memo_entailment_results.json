@@ -1,7 +1,7 @@
 {
-  "status": "NOT RUN -- blocked by Groq daily token cap",
+  "status": "NOT RUN -- Groq daily token cap exhausted (second consecutive session)",
   "what_this_measures": "Whether the memo's PROSE assertions are entailed by the report's own structured evidence. Complements eval_memo_faithfulness.py, which checks exact restatement of numeric fields and scored 0.9907 over 214 assertions.",
-  "why_not_run": "Groq free tier enforces a rolling 200,000 tokens-per-day cap scoped to the ORGANISATION. At the time of the attempt the API returned: 'Rate limit reached ... on tokens per day (TPD): Limit 200000, Used 198489, Requested 2041.' Earlier work in the same session -- the deck re-runs and the specialist-confidence evaluation -- had consumed the budget. Quota trickles back at roughly 8,300 tokens/hour, so the 8-report sample below needs about 5 hours of accumulated allowance.",
+  "why_not_run": "Groq free tier: tokens per day Limit 200000, Used 197075 at the time of the attempt. This session spent its budget on the two items ranked above it in the brief: live temporal-grounding verification (the highest-priority do-not-demo item, now closed) and the held-out test-split deck run. Both produced real results; this did not run at all.",
   "attempts": [
     {
       "attempt": 1,
@@ -14,16 +14,13 @@
     }
   ],
   "estimated_cost_when_rerun": {
-    "measured_tokens_per_call": {
-      "memo_decomposition": 519,
-      "adjudication": "~2000-3000"
-    },
-    "estimated_per_report": 5000,
-    "sample_size": 8,
-    "estimated_total": 40000
+    "per_report": 5000,
+    "sample_size": 7,
+    "total": 35000
   },
-  "how_to_run": "python ml/scripts/eval_memo_entailment.py --limit 8 --token-budget 45000",
+  "how_to_run": "python ml/scripts/eval_memo_entailment.py --limit 7 --token-budget 40000",
   "n_reports_scored": 0,
   "total_assertions": 0,
-  "supported_rate": null
+  "supported_rate": null,
+  "prerequisite": "Run against reports produced by the CURRENT pipeline. Scoring changed this session (evidence fusion, stage/sector extraction, pacing), so pre-session reports would measure a pipeline that no longer exists."
 }

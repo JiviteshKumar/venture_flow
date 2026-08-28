@@ -13,7 +13,7 @@ from ddgs import DDGS
 
 from agents import risk_disclosure
 from agents.deck_financials import analyse as analyse_financials
-from groq_client import MODEL, get_client
+from groq_client import MODEL, get_client, pace_for
 
 # ----------------------------
 # Risk keyword dictionary
@@ -169,6 +169,8 @@ Respond with ONLY valid JSON:
 }}"""
 
     try:
+        # Free-tier pacing -- see groq_client.TokenPacer.
+        pace_for(len(prompt), 800)
         response = get_client().chat.completions.create(
             model=MODEL,
             messages=[

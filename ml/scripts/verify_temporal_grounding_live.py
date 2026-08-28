@@ -71,19 +71,39 @@ def main() -> int:
             confidence = float(out.get("confidence") or 0)
             print(f"    verdict={verdict} confidence={confidence:.2f}")
             print(f"    reasoning: {str(out.get('reasoning'))[:200]}")
+            # A provider failure is NOT a passing result.
+            #
+            # The first version of this harness counted them as passes, because
+            # "temporarily unavailable" is not a confident REFUTES -- technically
+            # true and completely meaningless. It reported "0 confident
+            # refutations" from four runs in which the verifier never actually
+            # ran, which is precisely the defect this project keeps finding
+            # elsewhere: infrastructure failure recorded as a finding.
+            reasoning = str(out.get("reasoning") or "")
+            unavailable = (
+                "temporarily unavailable" in reasoning.lower()
+                or "no external evidence could be retrieved" in reasoning.lower()
+                or (verdict == "NOT_ENOUGH_INFO" and confidence == 0.0
+                    and not out.get("total_sources"))
+            )
             results.append({
                 "company": company, "deck_year": year, "claim": claim,
                 "arm": label, "as_of": as_of,
                 "verdict": verdict, "confidence": confidence,
-                "reasoning": str(out.get("reasoning"))[:600],
+                "reasoning": reasoning[:600],
                 "sources": out.get("sources", [])[:3],
+                "total_sources": out.get("total_sources", 0),
+                "provider_unavailable": unavailable,
                 # The failure mode under test.
                 "is_confident_refutation": verdict == "REFUTES" and confidence >= 0.8,
             })
             # Pace against the 8,000 tokens-per-minute ceiling.
             time.sleep(45)
 
-    scored = [r for r in results if "verdict" in r]
+    attempted = [r for r in results if "verdict" in r]
+    # Only runs where the verifier actually reached a judgement count.
+    scored = [r for r in attempted if not r["provider_unavailable"]]
+    unavailable = [r for r in attempted if r["provider_unavailable"]]
     bad = [r for r in scored if r["is_confident_refutation"]]
 
     print("\n" + "=" * 74)
@@ -93,9 +113,17 @@ def main() -> int:
         marker = "BAD " if r["is_confident_refutation"] else "ok  "
         print(f"  [{marker}] {r['company']:<9} {r['arm']:<19} "
               f"{r['verdict']:<16} conf={r['confidence']:.2f}")
-    print(f"\n  confident refutations of true historical claims: {len(bad)}")
-    if not bad:
-        print("  -> none. The failure this fix targets did not occur on these claims.")
+    print(f"\n  verdicts actually reached          : {len(scored)}/{len(attempted)}")
+    if unavailable:
+        print(f"  provider-unavailable, NOT SCORED   : {len(unavailable)} "
+              f"(these prove nothing either way)")
+    print(f"  confident refutations of true claims: {len(bad)}")
+    if not scored:
+        print("  -> INCONCLUSIVE. The verifier never reached a judgement, so this "
+              "run says nothing about the fix.")
+    elif not bad:
+        print("  -> The failure this fix targets did not occur on the claims that "
+              "were actually judged.")
     else:
         print("  -> the defect REPRODUCED; the fix is not sufficient.")
 
@@ -107,7 +135,17 @@ def main() -> int:
             "company's old metrics may not exist -- it is the ABSENCE of a "
             "confident REFUTES."
         ),
+        "n_attempted": len(attempted),
+        "n_verdicts_actually_reached": len(scored),
+        "n_provider_unavailable_not_scored": len(unavailable),
         "n_confident_refutations": len(bad),
+        "conclusive": bool(scored),
+        "caveat": (
+            "Only runs where the verifier reached a judgement are scored. A "
+            "provider failure is excluded rather than counted as a pass -- an "
+            "earlier version of this harness reported 0 confident refutations "
+            "from four runs in which the verifier never executed."
+        ),
         "results": results,
     }, indent=2), encoding="utf-8")
     print(f"\nWrote {OUT_PATH}")

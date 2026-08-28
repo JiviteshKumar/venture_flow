@@ -555,6 +555,23 @@ class PDFExtractResponse(BaseModel):
     # correct or add to before the analysis is submitted -- extraction is a
     # starting point, not an authority on who founded the company.
     detected_founders: list[DetectedFounder] = Field(default_factory=list)
+    # Deck metadata the scoring model consumes.
+    #
+    # These were extracted and then silently discarded here: Pydantic drops any
+    # key a response model does not declare, so `burn_rate` -- which the regex
+    # extractor has always produced -- never reached the browser, and the UI
+    # then hardcoded `burn_rate: null` on top of that. Two independent layers
+    # of the same defect on one field.
+    #
+    # None means "the deck did not say", never a default. `deck_metadata`
+    # abstains rather than guessing, so a null here is a real absence.
+    burn_rate: float | None = None
+    stage: str | None = None
+    sector: str | None = None
+    team_size: int | None = None
+    github_url: str | None = None
+    domain: str | None = None
+    metadata_evidence: dict[str, str] = Field(default_factory=dict)
     # "PDF" / "PowerPoint" / "Word" / "plain text" / "Markdown". Surfaced so
     # the UI can say which reader ran rather than implying everything is a PDF.
     document_format: str = "PDF"
@@ -845,12 +862,41 @@ async def _extract_uploaded_document(
             extract_document, file.filename or "", file_bytes
         )
         text = document["text"]
-        if len(text or "") < 50:
+
+        # Say WHY, because the two reasons need different actions from the user.
+        #
+        # A scanned or image-exported deck is a valid, human-legible PDF whose
+        # pages carry no text layer at all -- six well-known decks in this
+        # project's own corpus are like this (Dropbox, LinkedIn, YouTube,
+        # Facebook, WeWork, BuzzFeed), each extracting exactly 0 characters
+        # across 20-40 pages. "Could not extract readable text" reads like a
+        # corrupt file and invites the user to retry the same upload. Naming the
+        # cause tells them to export a text PDF instead.
+        layer = document.get("text_layer")
+        stripped = (text or "").strip()
+        if layer == "none" or not stripped:
             raise HTTPException(
                 status_code=422,
-                detail=f"Could not extract readable text from this {document['format']} file.",
+                detail=(
+                    f"This deck appears to be image-only: {document['page_count']} "
+                    f"page(s) were read and text extraction found no usable content. "
+                    f"That normally means the slides are pictures with no embedded "
+                    f"text layer. VentureFlow has no OCR, so nothing can be analysed "
+                    f"from this file. Please re-export it as a text-based PDF, or "
+                    f"paste the deck's text directly."
+                ),
             )
-        info = await run_in_threadpool(extract_structured, text)
+        if len(stripped) < 50:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Only {len(stripped)} characters of text could be read from this "
+                    f"{document['format']} file across {document['page_count']} page(s) "
+                    f"-- far too little to analyse. If the deck is mostly images, "
+                    f"re-export it as a text-based PDF."
+                ),
+            )
+        info = await run_in_threadpool(extract_structured, text, company_name)
         session_id = str(uuid.uuid4())
         store_document(session_id, text, company_name)
         return PDFExtractResponse(
@@ -866,6 +912,15 @@ async def _extract_uploaded_document(
                 DetectedFounder(**founder) for founder in (info.get("founders") or [])[:5]
             ],
             document_format=document["format"],
+            # Previously extracted and then dropped here, because Pydantic
+            # discards any key the response model does not declare.
+            burn_rate=info.get("burn_rate"),
+            stage=info.get("stage"),
+            sector=info.get("sector"),
+            team_size=info.get("team_size"),
+            github_url=info.get("github_url"),
+            domain=info.get("domain"),
+            metadata_evidence=info.get("metadata_evidence") or {},
         )
     except HTTPException:
         raise

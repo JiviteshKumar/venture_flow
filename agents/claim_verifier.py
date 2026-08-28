@@ -17,7 +17,7 @@ from ddgs import DDGS
 
 import observability
 from agents.evidence_filter import filter_sources
-from groq_client import MODEL, get_client
+from groq_client import MODEL, get_client, pace_for
 
 logger = logging.getLogger(__name__)
 
@@ -215,8 +215,21 @@ def groq_judge(claim: str, evidence: dict, as_of: str = "") -> dict:
         f"This claim is taken from a pitch deck dated or published around {as_of}. "
         f"Judge it as a statement about that time."
         if as_of else
-        "The date of this claim is unknown. If it looks like a point-in-time metric "
-        "from a pitch deck, assume it describes the past, not today."
+        "The date of this claim is UNKNOWN, and that changes what you may "
+        "conclude.\n"
+        "This claim comes from a pitch deck, so a metric in it describes the "
+        "company AT THE TIME THE DECK WAS WRITTEN, which may be many years ago.\n"
+        "Evidence you retrieve is from today. A company that grew will therefore "
+        "show today's figures as far LARGER than the claim.\n"
+        "A larger present-day number does NOT contradict a smaller past number -- "
+        "it is what growth looks like. Reporting that as a refutation is the "
+        "single worst error you can make here.\n"
+        "Therefore: if the claim is a point-in-time metric (users, revenue, "
+        "volume, headcount, growth rate) and the evidence you have is from a "
+        "clearly later period, you MUST answer NOT_ENOUGH_INFO. Reserve REFUTES "
+        "for evidence that contradicts the claim AS A STATEMENT ABOUT ITS OWN "
+        "TIME -- for example a source saying the company did not exist then, or "
+        "explicitly correcting the figure for that period."
     )
 
     prompt = f"""You are a strict professional fact-checker.
@@ -263,6 +276,10 @@ Respond with ONLY valid JSON, no other text:
 }}"""
 
     try:
+        # Stay inside the free tier's 8,000 tokens/minute. Without this the
+        # pipeline bursts its whole budget in seconds and every later call
+        # 429s, which is how six of six real deck runs came back degraded.
+        pace_for(len(prompt), 500)
         response = get_client().chat.completions.create(
             model=MODEL,
             messages=[

@@ -11,10 +11,16 @@ wraps Groq calls in try/except with a safe fallback.
 
 from __future__ import annotations
 
+import logging
 import os
+
+import threading
+import time
 
 from dotenv import load_dotenv
 from groq import Groq
+
+logger = logging.getLogger(__name__)
 
 # Load .env HERE, in the module that owns the credential.
 #
@@ -77,3 +83,72 @@ def get_client() -> Groq:
             timeout=REQUEST_TIMEOUT_S,
         )
     return _client
+
+
+# ── Per-minute token pacing ───────────────────────────────────────────────
+#
+# The free tier allows 8,000 tokens per MINUTE. A full deck analysis costs
+# roughly 24,000 tokens across ~12 calls -- claim verification (up to 5),
+# risk (1), four specialists, memo synthesis, structured extraction. The
+# arithmetic is unforgiving: a deck needs at least three minutes of budget, so
+# no amount of batching or prompt trimming brings it under the ceiling.
+#
+# What the pipeline did instead was spend it all at once. Claim verification
+# fires concurrently, specialists run two at a time, and the burst blew the
+# window within seconds. Every call after that returned 429, each component
+# degraded to its fallback, and the report came back "provider_degraded" with
+# most of its analysis missing -- measured on six of six real deck runs, even
+# at GROQ_AGENT_CONCURRENCY=1.
+#
+# So the fix is not to spend less, it is to spend at the rate the tier allows.
+# This pacer makes a deck take three to four minutes and COMPLETE, instead of
+# taking forty seconds and arriving hollow. Slower and correct beats fast and
+# degraded for an analysis a user waits on anyway.
+#
+# Deliberately process-local and approximate. It is not a distributed limiter
+# and does not need to be: the constraint is one process against one free-tier
+# key. Disable with GROQ_PACING=off if you move to a paid tier with real
+# headroom.
+class TokenPacer:
+    """Blocks until an estimated request fits inside the per-minute budget."""
+
+    def __init__(self, tokens_per_minute: int, safety: float = 0.85) -> None:
+        self.budget = max(1, int(tokens_per_minute * safety))
+        self._lock = threading.Lock()
+        self._window_start = time.monotonic()
+        self._spent = 0
+
+    def reserve(self, estimated_tokens: int) -> float:
+        """Wait if needed, then record the spend. Returns seconds waited."""
+        waited = 0.0
+        with self._lock:
+            now = time.monotonic()
+            if now - self._window_start >= 60.0:
+                self._window_start, self._spent = now, 0
+            if self._spent + estimated_tokens > self.budget:
+                waited = max(0.0, 60.0 - (now - self._window_start)) + 0.5
+        if waited:
+            logger.info("Pacing %.0fs to stay inside the per-minute token budget", waited)
+            time.sleep(waited)
+            with self._lock:
+                self._window_start, self._spent = time.monotonic(), 0
+        with self._lock:
+            self._spent += max(0, int(estimated_tokens))
+        return waited
+
+
+TOKENS_PER_MINUTE = int(os.getenv("GROQ_TOKENS_PER_MINUTE", "8000"))
+PACING_ENABLED = os.getenv("GROQ_PACING", "on").strip().lower() not in {"off", "0", "false"}
+_pacer = TokenPacer(TOKENS_PER_MINUTE)
+
+
+def pace_for(prompt_chars: int, max_tokens: int = 1000) -> float:
+    """Reserve budget for a call of roughly this size.
+
+    Four characters per token is the usual rough conversion and is close enough:
+    the pacer only needs to be approximately right to keep a burst from
+    exceeding the window.
+    """
+    if not PACING_ENABLED:
+        return 0.0
+    return _pacer.reserve(prompt_chars // 4 + max_tokens)
