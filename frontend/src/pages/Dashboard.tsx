@@ -12,26 +12,10 @@ import {
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import { api, authHeaders, ReportSummary } from "../services/apiClient";
+import { formatDate, formatDateShort, displayDeckId } from "../utils/format";
+import { ChartTooltip } from "../components/charts/ChartTooltip";
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: "rgba(255,255,255,0.98)",
-      border: "1px solid rgba(15,23,42,0.09)",
-      borderRadius: "12px",
-      padding: "12px 16px",
-      fontFamily: "'IBM Plex Mono', monospace",
-      fontSize: "11px",
-      boxShadow: "0 12px 40px rgba(15,23,42,0.14)",
-    }}>
-      <div style={{ color: "#94A3B8", marginBottom: "6px", fontSize: "9.5px", letterSpacing: "0.09em", textTransform: "uppercase" }}>{label}</div>
-      <div style={{ color: "#1D6FE8", fontSize: "15px", fontWeight: "600" }}>{payload[0].value}</div>
-    </div>
-  );
-};
 
 const MiniSparkline = ({ data, color }: { data: number[]; color: string }) => {
   const min = Math.min(...data), max = Math.max(...data);
@@ -42,7 +26,7 @@ const MiniSparkline = ({ data, color }: { data: number[]; color: string }) => {
     return `${x},${y}`;
   }).join(" ");
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }} aria-hidden="true">
       <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
       <circle cx={parseFloat(pts.split(" ").pop()!.split(",")[0])} cy={parseFloat(pts.split(" ").pop()!.split(",")[1])} r="2" fill={color} />
     </svg>
@@ -60,7 +44,7 @@ const EmptyDashboard = () => {
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", minHeight: "60vh", textAlign: "center",
-      padding: "40px 24px", fontFamily: "'Figtree', sans-serif",
+      padding: "40px 24px", fontFamily: "var(--font-sans)",
     }}>
       {isAnalyzing ? (
         <>
@@ -72,14 +56,14 @@ const EmptyDashboard = () => {
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             Analysis in progress…
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#94A3B8", marginBottom: 16 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
             {currentStage}
           </div>
           <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
             <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#94A3B8", marginTop: 8 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
             {progressPct}% complete · stay on this tab
           </div>
         </>
@@ -95,13 +79,13 @@ const EmptyDashboard = () => {
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             No analysis yet
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#94A3B8", marginBottom: 24, maxWidth: 320 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
             Upload a pitch deck to see your AI investment dashboard with live risk scores, claim verification, and comparable deals.
           </div>
           <button onClick={() => navigate("/upload")} style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "#1D6FE8", color: "#fff", border: "none",
-            borderRadius: 10, padding: "11px 22px", fontFamily: "'Figtree', sans-serif",
+            borderRadius: 10, padding: "11px 22px", fontFamily: "var(--font-sans)",
             fontSize: 14, fontWeight: 600, cursor: "pointer",
             boxShadow: "0 2px 8px rgba(29,111,232,0.28)",
           }}>
@@ -155,10 +139,10 @@ const Dashboard = () => {
 
   // If no report yet, show empty / analyzing state
   if (!report) return (
-    <div className="db-root" style={{ fontFamily: "'Figtree', sans-serif", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
+    <div className="db-root" style={{ fontFamily: "var(--font-sans)", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
       <div className="db-header" style={{ padding: "22px 32px 20px", background: "#fff", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "flex", alignItems: "flex-end", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
         <div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#94A3B8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Dashboard</div>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Dashboard</div>
           <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 28, fontWeight: 400, margin: 0, color: "#0B1120" }}>AI Investment Dashboard</h1>
         </div>
       </div>
@@ -177,10 +161,15 @@ const Dashboard = () => {
   const riskLabel = riskValue >= 70 ? "High Risk" : riskValue >= 40 ? "Moderate Risk" : "Low Risk";
   const scoreColor = score >= 75 ? "#0EA66A" : score >= 50 ? "#C47A0A" : "#D93025";
 
-  // Revenue / runway from upload or defaults
-  const revenueM = report.sections?.claims?.details?.length
-    ? (report.claims_supported / Math.max(report.claims_verified, 1) * 2.8).toFixed(1)
-    : "—";
+  // A `revenueM` value was computed here as
+  //     (claims_supported / claims_verified) * 2.8
+  // and labelled revenue in millions. That number is not revenue: it is a
+  // claim-verification ratio multiplied by a constant nobody can source. It
+  // was never rendered, so it misled no user, but it is exactly the kind of
+  // plausible-looking figure this product must not manufacture. Revenue is
+  // available honestly on `report.sections.financial_state` when the deck
+  // states it; anything that wants to show revenue should read that and show
+  // nothing when it is absent.
 
   // Real history once this company has been analyzed 2+ times
   // (GET /companies/{name}/history, backed by every persisted dd_reports
@@ -188,7 +177,7 @@ const Dashboard = () => {
   // state below, same as before this was wired up.
   const hasHistory = scoreHistory.length >= 2;
   const trendData = scoreHistory.map((point) => ({
-    name: new Date(point.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    name: formatDateShort(point.date),
     value: point.score,
   }));
 
@@ -233,13 +222,12 @@ const Dashboard = () => {
     ? Math.round((report.red_flags.length / totalConvictionSignals) * 100)
     : 50;
 
-  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  const deckId = `#${report.company.slice(0, 3).toUpperCase()}-${new Date().getFullYear()}-001`;
+  const today = formatDate(new Date());
+  const deckId = displayDeckId(report.company);
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Figtree:wght@300;400;500;600;700&display=swap');
 
         :root {
           --bg: #F0F2F5;
@@ -249,7 +237,7 @@ const Dashboard = () => {
           --border-strong: rgba(15,23,42,0.13);
           --text-primary: #0B1120;
           --text-secondary: #4A5568;
-          --text-muted: #94A3B8;
+          --text-muted: #5D6B7F;
           --blue: #1D6FE8;
           --green: #0EA66A;
           --amber: #C47A0A;
@@ -262,7 +250,7 @@ const Dashboard = () => {
         }
 
         .db-root {
-          font-family: 'Figtree', sans-serif;
+          font-family: var(--font-sans);
           color: var(--text-primary);
           min-height: 100vh;
           background: var(--bg);
@@ -693,9 +681,9 @@ const Dashboard = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="rgba(15,23,42,0.05)" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(15,23,42,0.08)", strokeWidth: 1 }} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(15,23,42,0.08)", strokeWidth: 1 }} />
                     <Area type="monotone" dataKey="value" stroke="#1D6FE8" strokeWidth={2.5} fill="url(#arrGrad)" dot={false} isAnimationActive animationDuration={1400} animationEasing="ease-out" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -709,7 +697,7 @@ const Dashboard = () => {
                   <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 40, color: scoreColor }}>
                     {Math.round(score)}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, color: "#94A3B8", textAlign: "center", maxWidth: 260 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, color: "#5D6B7F", textAlign: "center", maxWidth: 260 }}>
                     Today&rsquo;s score. Re-run analysis on this company later to build a real trend line here.
                   </div>
                 </div>
@@ -757,7 +745,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div style={{ padding: "12px", background: "rgba(29,111,232,0.04)", borderRadius: 9, border: "1px solid rgba(29,111,232,0.12)" }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#94A3B8", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Verdict</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Verdict</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#0B1120", letterSpacing: "-0.02em" }}>{report.recommendation}</div>
                   <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#4A5568", marginTop: 3 }}>
                     {report.key_concerns[0] || "Verify all claims before closing"}
@@ -791,7 +779,7 @@ const Dashboard = () => {
             <div className="panel">
               <div className="gauge-section">
                 <div className="slabel">Risk Assessment</div>
-                <svg width="100%" height="114" viewBox="0 0 220 114" style={{ display: "block", overflow: "visible" }}>
+                <svg width="100%" height="114" viewBox="0 0 220 114" style={{ display: "block", overflow: "visible" }} aria-hidden="true">
                   <defs>
                     <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
                       <stop offset="0%" stopColor="#0EA66A" />
@@ -852,7 +840,7 @@ const Dashboard = () => {
                   </div>
                 </motion.div>
               )) : (
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#94A3B8", textAlign: "center", padding: "16px 0" }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F", textAlign: "center", padding: "16px 0" }}>
                   No signals detected
                 </div>
               )}

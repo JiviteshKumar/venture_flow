@@ -1,6 +1,35 @@
 import axios from "axios";
 
+/**
+ * Where the API lives.
+ *
+ * `VITE_API_BASE_URL` is inlined by Vite at BUILD time, not read at runtime —
+ * setting it in Vercel after a deploy changes nothing until the next build.
+ *
+ * The `/api` fallback is only correct for a deployment that proxies that path
+ * to the backend on the same origin. This project's `vercel.json` rewrites
+ * `/(.*)` to `/index.html`, so on Vercel the fallback does NOT reach the API:
+ * every call returns the SPA's HTML with a 200, axios tries to parse it as
+ * JSON, and the UI reports a generic "Network Error". That failure is
+ * indistinguishable from the backend being down, which is why it stayed
+ * confusing for so long.
+ *
+ * So an unset variable in a production build is treated as the configuration
+ * error it is, and says so once, loudly, instead of degrading into a
+ * misleading network error.
+ */
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+
+if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL) {
+  console.error(
+    "[VentureFlow] VITE_API_BASE_URL was not set at build time, so API calls " +
+      "fall back to '/api'. On this project's Vercel config that path is " +
+      "rewritten to index.html and will return HTML instead of JSON — every " +
+      "request will surface as a generic network error. Set VITE_API_BASE_URL " +
+      "to the absolute backend origin (e.g. https://your-api.onrender.com) in " +
+      "the Vercel project's Environment Variables and redeploy.",
+  );
+}
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -71,6 +100,44 @@ export function authHeaders(extra: Record<string, string> = {}): Record<string, 
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
 
+/**
+ * How much of the deck reached a structured field (extraction_coverage.py).
+ *
+ * The number exists to separate two situations the report used to render
+ * identically: "the deck said little" and "we dropped most of what it said".
+ * A LOW verdict means the reader should suspect the parser before they suspect
+ * the founder, which is the opposite of what an unqualified "insufficient
+ * data" implies.
+ */
+export interface ExtractionCoverage {
+  available: boolean;
+  coverage_pct?: number;
+  line_coverage_pct?: number;
+  content_slides?: number;
+  represented_slides?: number;
+  image_only_slides?: number;
+  unrepresented_slides?: Array<{ slide: number; heading: string }>;
+  unmapped_examples?: string[];
+  verdict?: "HIGH" | "PARTIAL" | "LOW" | "EMPTY";
+  interpretation?: string;
+  reason?: string;
+}
+
+/**
+ * Which extraction path produced a report (ventureflow_agent).
+ *
+ * Exists because a silent fall back to the regex extractor is the defect this
+ * product spent a whole pass removing: it degraded every analysis for an
+ * unknown length of time and nothing in the output said so. A reader of the
+ * claims table is exactly the person who needs to know.
+ */
+export interface ExtractionProvenance {
+  method?: string;
+  is_fallback?: boolean;
+  fallback_reason?: string;
+  warning?: string;
+}
+
 export interface DetectedFounder {
   name: string;
   role?: string;
@@ -136,6 +203,14 @@ export interface AnalyzeResponse {
   session_id: string;
   report_id?: string | null;
   incomplete_analysis?: boolean;
+  /**
+   * How much of the deck reached a structured field, and which extraction path
+   * produced this report. Both are optional because reports stored before
+   * these existed must still render -- the UI hides the panels when absent
+   * rather than showing a zero, which would read as "we captured nothing".
+   */
+  extraction_coverage?: ExtractionCoverage;
+  extraction_provenance?: ExtractionProvenance;
   /** Which mechanism produced final_score: the trained model or the fallback formula. */
   score_source?: string | null;
   /**
@@ -197,7 +272,51 @@ export interface AnalyzeResponse {
       confidence?: number;
       evidence_summary?: string;
       sources?: string[];
+      /**
+       * Where the NAME came from, which is a different question from where the
+       * background evidence came from. "deck" means the deck disclosed it;
+       * "external_research" means the deck named nobody and agents/
+       * founder_research.py searched public sources for it. These must stay
+       * visually distinct in the UI -- a name this tool found is weaker
+       * evidence than a name the founder put in writing, and blending them
+       * would hand the reader a fact the deck never asserted.
+       */
+      origin?: "deck" | "external_research";
+      origin_label?: string;
+      discovery_sources?: string[];
     }>;
+    /**
+     * Output of agents/founder_research.py. Present whenever the deck named no
+     * founders, whether or not the search then found any -- a confirmed "we
+     * searched and found nothing" is a real diligence result and the tab shows
+     * it rather than the old dead end ("No founder names were submitted").
+     */
+    founder_discovery?: {
+      attempted?: boolean;
+      found?: boolean;
+      reason?: string;
+      sources_consulted?: string[];
+      rejected_ungrounded?: string[];
+      /**
+       * Three distinct states that must never render alike:
+       *   searched=false, search_failed=true  -> the search could not run
+       *   searched=false, search_failed unset -> research was disabled
+       *   searched=true,  found=false         -> we looked and found nothing
+       * Only the last is evidence about the company.
+       */
+      searched?: boolean;
+      search_failed?: boolean;
+      queries_failed?: number;
+      possible_same_person?: Array<{ names: string[]; reason: string }>;
+    };
+    extraction_provenance?: ExtractionProvenance;
+    /**
+     * Output of extraction_coverage.py: how much of the deck reached a
+     * structured field. Distinct from `data_quality`, which measures whether
+     * the analysis INPUTS arrived. See that module's docstring for why the two
+     * must never be shown as one number.
+     */
+    extraction_coverage?: ExtractionCoverage;
     /**
      * Output of comparables.py: cosine similarity over 1,560 real Y Combinator
      * companies. Distinct from `similar_companies`, which is a trigram match

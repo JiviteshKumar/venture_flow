@@ -10,6 +10,8 @@ import { authHeaders } from "../services/apiClient";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import VentureScorePanel from "../components/analysis/VentureScorePanel";
+import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
+import { Panel, SLabel, ScoreBadge } from "../components/ui/Panel";
 
 const tabs = ["Summary", "Market Validation", "Founder Analysis", "Competitor Insights"];
 
@@ -18,68 +20,22 @@ type ChatMessage = {
   text: string;
 };
 
-// Static chart data (market/radar/competitor stay illustrative — not company-specific)
-const marketData = [
-  { year: "2022", TAM: 180, SAM: 25, SOM: 5 },
-  { year: "2023", TAM: 210, SAM: 30, SOM: 7 },
-  { year: "2024", TAM: 250, SAM: 38, SOM: 9 },
-  { year: "2025", TAM: 290, SAM: 48, SOM: 13 },
-  { year: "2026", TAM: 330, SAM: 60, SOM: 18 },
-  { year: "2027", TAM: 380, SAM: 72, SOM: 28 },
-];
-
-const radarData = [
-  { subject: "Technical",   value: 85 },
-  { subject: "Domain",      value: 80 },
-  { subject: "GTM/Sales",   value: 55 },
-  { subject: "Fundraising", value: 60 },
-  { subject: "Operations",  value: 65 },
-  { subject: "Network",     value: 70 },
-];
-
-const threatData: { name: string; value: number; color: string }[] = [];
-
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: "rgba(255,255,255,0.98)", border: "1px solid rgba(15,23,42,0.09)",
-      borderRadius: "12px", padding: "12px 16px",
-      fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px",
-      boxShadow: "0 12px 40px rgba(15,23,42,0.12)", minWidth: "130px",
-    }}>
-      <div style={{ color: "#94A3B8", marginBottom: "8px", fontSize: "9.5px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
-      {payload.map((p: any, i: number) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px" }}>
-          <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: p.stroke || p.fill }} />
-          <span style={{ color: "#64748B", flex: 1 }}>{p.name}</span>
-          <span style={{ color: "#0B1120", fontWeight: "600" }}>${p.value}B</span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const Panel = ({ children, style = {}, accentColor, className = "" }: any) => (
-  <div className={`vf-panel ${className}`} style={{ borderLeftColor: accentColor || "transparent", ...style }}>
-    {children}
-  </div>
-);
-
-const SLabel = ({ children, color }: any) => (
-  <div className="vf-slabel" style={{ color: color || undefined }}>{children}</div>
-);
-
-const ScoreBadge = ({ value, color, bg, border }: any) => (
-  <div style={{
-    display: "inline-flex", alignItems: "center", padding: "6px 14px",
-    borderRadius: "8px", background: bg, border: `1px solid ${border}`,
-    fontFamily: "'IBM Plex Mono', monospace", fontSize: "15px",
-    fontWeight: "600", color, letterSpacing: "-0.01em",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-  }}>{value}</div>
-);
+// No static chart data lives in this file.
+//
+// It used to hold three arrays of invented numbers: a TAM/SAM/SOM growth
+// curve, a six-axis founder skill radar, and a competitor threat split.
+// The first two were never read by any component -- dead code that still
+// stated figures no backend ever produced -- and the third was an empty
+// array feeding a live donut, so the chart rendered a blank ring with a
+// count in the middle and no legend.
+//
+// The founder radar now reads `sections.team.capabilities`, and the
+// competitor table reads `sections.market_comparables` (real YC
+// similarity data). Market sizing and competitor threat level have no
+// backend source, so those charts are gone rather than invented: a
+// missing section is honest, a fabricated one is not.
+// Panel, SLabel and ScoreBadge moved to components/ui/Panel.tsx so the
+// other screens can use the same surfaces instead of copying them.
 
 // ─── CHAT PANEL ──────────────────────────────────────────────────────────────
 
@@ -127,7 +83,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
         color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
       }}>
         Document Chat
-        {!sessionId && <span style={{ color: "#94A3B8", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
+        {!sessionId && <span style={{ color: "#5D6B7F", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -139,7 +95,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
               borderRadius: m.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
               padding: "9px 13px", fontSize: 12.5,
               color: m.role === "user" ? "#fff" : "#374151",
-              lineHeight: 1.55, fontFamily: "'Figtree', sans-serif",
+              lineHeight: 1.55, fontFamily: "var(--font-sans)",
             }}>
               {m.text}
             </div>
@@ -185,7 +141,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
           style={{
             flex: 1, background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)",
             borderRadius: 8, padding: "8px 12px", fontSize: 12.5,
-            fontFamily: "'Figtree', sans-serif", color: "#0B1120", outline: "none",
+            fontFamily: "var(--font-sans)", color: "#0B1120", outline: "none",
           }}
         />
         <button type="submit" disabled={!sessionId || loading || !input.trim()} style={{
@@ -250,14 +206,14 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
         fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600,
         color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
       }}>
-        Notes {!reportId && <span style={{ color: "#94A3B8", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
+        Notes {!reportId && <span style={{ color: "#5D6B7F", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
       </div>
       <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
-        {comments.length === 0 && <div style={{ fontSize: 12, color: "#94A3B8", fontFamily: "'Figtree', sans-serif" }}>No notes yet.</div>}
+        {comments.length === 0 && <div style={{ fontSize: 12, color: "#5D6B7F", fontFamily: "var(--font-sans)" }}>No notes yet.</div>}
         {comments.map((c) => (
-          <div key={c.id} style={{ fontSize: 12.5, fontFamily: "'Figtree', sans-serif", color: "#374151" }}>
+          <div key={c.id} style={{ fontSize: 12.5, fontFamily: "var(--font-sans)", color: "#374151" }}>
             <span style={{ fontWeight: 600, color: "#0B1120" }}>{c.author_name}</span>
-            <span style={{ color: "#94A3B8", fontSize: 10.5, marginLeft: 6 }}>{new Date(c.created_at).toLocaleString()}</span>
+            <span style={{ color: "#5D6B7F", fontSize: 10.5, marginLeft: 6 }}>{formatDateTime(c.created_at)}</span>
             <div style={{ marginTop: 2 }}>{c.body}</div>
           </div>
         ))}
@@ -266,14 +222,14 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
         <input
           value={authorName} onChange={(e) => setAuthorName(e.target.value)}
           placeholder="Your name (optional)" disabled={!reportId}
-          style={{ background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontFamily: "'Figtree', sans-serif", outline: "none" }}
+          style={{ background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontFamily: "var(--font-sans)", outline: "none" }}
         />
         <div style={{ display: "flex", gap: 8 }}>
           <input
             value={body} onChange={(e) => setBody(e.target.value)}
             placeholder={reportId ? "Add a note for the deal team…" : "Run analysis first"}
             disabled={!reportId || posting}
-            style={{ flex: 1, background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, fontFamily: "'Figtree', sans-serif", outline: "none" }}
+            style={{ flex: 1, background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, fontFamily: "var(--font-sans)", outline: "none" }}
           />
           <button type="submit" disabled={!reportId || posting || !body.trim()} style={{
             background: "#1D6FE8", border: "none", borderRadius: 8, padding: "8px 14px",
@@ -297,7 +253,7 @@ function EmptyAnalysis() {
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", minHeight: "60vh", textAlign: "center",
-      padding: "40px 24px", fontFamily: "'Figtree', sans-serif",
+      padding: "40px 24px", fontFamily: "var(--font-sans)",
     }}>
       {isAnalyzing ? (
         <>
@@ -307,14 +263,14 @@ function EmptyAnalysis() {
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             Agents are running…
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#94A3B8", marginBottom: 16 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
             {currentStage}
           </div>
           <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
             <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#94A3B8", marginTop: 8 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
             {progressPct}% complete
           </div>
         </>
@@ -330,13 +286,13 @@ function EmptyAnalysis() {
           <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             No analysis yet
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#94A3B8", marginBottom: 24, maxWidth: 300 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 300 }}>
             Upload and analyse a pitch deck to see the full report here.
           </div>
           <button onClick={() => navigate("/upload")} style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "#1D6FE8", color: "#fff", border: "none",
-            borderRadius: 10, padding: "11px 22px", fontFamily: "'Figtree', sans-serif",
+            borderRadius: 10, padding: "11px 22px", fontFamily: "var(--font-sans)",
             fontSize: 14, fontWeight: 600, cursor: "pointer",
           }}>
             <Upload size={15} /> Upload a Deck
@@ -373,7 +329,7 @@ const Analysis = () => {
   // If no report, show empty/loading
   if (!report) {
     return (
-      <div className="an-root" style={{ fontFamily: "'Figtree', sans-serif", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
+      <div className="an-root" style={{ fontFamily: "var(--font-sans)", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
         <EmptyAnalysis />
       </div>
     );
@@ -386,8 +342,8 @@ const Analysis = () => {
   const riskLabel = riskValue >= 70 ? "High" : riskValue >= 40 ? "Moderate" : "Low";
   const riskColor = riskValue >= 70 ? "#D93025" : riskValue >= 40 ? "#C47A0A" : "#0EA66A";
 
-  const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  const deckId = `#${report.company.slice(0, 3).toUpperCase()}-${new Date().getFullYear()}-001`;
+  const today = formatDate(new Date());
+  const deckId = displayDeckId(report.company);
 
   // Real claims from backend
   const claimsDetails = report.sections?.claims?.details ?? [];
@@ -422,6 +378,19 @@ const Analysis = () => {
    * slide.
    */
   const founderChecks = (report.sections?.founder_verification ?? []).filter(f => f?.available);
+  // Present whenever the deck disclosed no team, whether or not the search then
+  // succeeded. Drives the Founder Analysis empty state, which used to be a dead
+  // end rather than a result.
+  const founderDiscovery = report.sections?.founder_discovery;
+  // Coverage lives at the top level and (for older stored reports) may be
+  // absent entirely -- reports written before this existed must still render.
+  const coverage = report.extraction_coverage ?? report.sections?.extraction_coverage;
+  const coverageTone =
+    coverage?.verdict === "HIGH" ? "#0EA66A"
+      : coverage?.verdict === "PARTIAL" ? "#C47A0A"
+        : "#D93025";
+  const extractionProvenance =
+    report.extraction_provenance ?? report.sections?.extraction_provenance;
 
   // Claims table from real claim details
   const claimsTableData = claimsDetails.slice(0, 5).map(c => ({
@@ -536,7 +505,6 @@ const Analysis = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Figtree:wght@300;400;500;600;700&display=swap');
 
         :root {
           --bg: #F0F2F5;
@@ -546,7 +514,7 @@ const Analysis = () => {
           --border-strong: rgba(15,23,42,0.13);
           --text-primary: #0B1120;
           --text-secondary: #4A5568;
-          --text-muted: #94A3B8;
+          --text-muted: #5D6B7F;
           --blue: #1D6FE8;
           --green: #0EA66A;
           --amber: #C47A0A;
@@ -556,7 +524,7 @@ const Analysis = () => {
           --radius: 14px;
         }
 
-        .an-root { font-family: 'Figtree', sans-serif; color: var(--text-primary); min-height: 100vh; background: var(--bg); }
+        .an-root { font-family: var(--font-sans); color: var(--text-primary); min-height: 100vh; background: var(--bg); }
 
         /* ── VentureFlow Score panel ─────────────────────────────────── */
         .vs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; }
@@ -630,7 +598,7 @@ const Analysis = () => {
 
         .an-header-actions { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
 
-        .an-export-btn { display: inline-flex; align-items: center; gap: 6px; font-family: 'Figtree', sans-serif; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease; }
+        .an-export-btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease; }
 
         .an-export-btn:hover { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
 
@@ -638,7 +606,7 @@ const Analysis = () => {
 
         .an-tabs { display: flex; gap: 2px; }
 
-        .an-tab { font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 500; padding: 13px 20px; border: none; border-bottom: 2.5px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap; letter-spacing: -0.01em; }
+        .an-tab { font-family: var(--font-sans); font-size: 13px; font-weight: 500; padding: 13px 20px; border: none; border-bottom: 2.5px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap; letter-spacing: -0.01em; }
 
         .an-tab:hover { color: var(--text-secondary); }
         .an-tab-active { color: var(--blue); border-bottom-color: var(--blue); }
@@ -670,7 +638,7 @@ const Analysis = () => {
 
         .dd-accordion { margin-top: 16px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 
-        .dd-accordion-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-2); border: none; cursor: pointer; font-family: 'Figtree', sans-serif; font-size: 13px; font-weight: 600; color: var(--text-primary); transition: background 0.14s ease; letter-spacing: -0.01em; }
+        .dd-accordion-trigger { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-2); border: none; cursor: pointer; font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--text-primary); transition: background 0.14s ease; letter-spacing: -0.01em; }
 
         .dd-accordion-trigger:hover { background: #EEEFF2; }
 
@@ -794,6 +762,75 @@ const Analysis = () => {
             {/* ── SUMMARY ── */}
             {activeTab === "Summary" && (
               <div className="tab-content-enter">
+                {/* Extraction coverage sits ABOVE the score, deliberately.
+                    It qualifies everything below it: if most of the deck never
+                    reached a structured field, then the claims table, the
+                    evidence penalty and the score derived from them are all
+                    measurements of a partial reading. A reader who sees the
+                    score first and the caveat later has already formed a view.
+                    See extraction_coverage.py for why "we found nothing" and
+                    "there was nothing to find" had to stop looking identical. */}
+                {coverage?.available && (
+                  <div style={{
+                    border: `1px solid ${coverageTone}33`, background: `${coverageTone}0D`,
+                    borderRadius: 10, padding: "12px 14px", marginBottom: 12,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <SLabel>Extraction Coverage</SLabel>
+                      <span style={{
+                        fontFamily: "'IBM Plex Mono', monospace", fontSize: 15, fontWeight: 700,
+                        color: coverageTone,
+                      }}>{coverage.coverage_pct}%</span>
+                      <span style={{
+                        fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                        letterSpacing: "0.08em", color: coverageTone,
+                        border: `1px solid ${coverageTone}33`, background: `${coverageTone}12`,
+                        borderRadius: 5, padding: "2px 7px",
+                      }}>{coverage.verdict}</span>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F" }}>
+                        {coverage.represented_slides} of {coverage.content_slides} content slides reached a structured field
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 12.5, color: "#4A5568", lineHeight: 1.65, margin: "8px 0 0" }}>
+                      {coverage.interpretation}
+                    </p>
+                    {(coverage.unrepresented_slides ?? []).length > 0 && (
+                      <div style={{ marginTop: 10, borderTop: "1px solid var(--border)", paddingTop: 8 }}>
+                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                          Slides not represented below
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {coverage.unrepresented_slides!.slice(0, 12).map((s: { slide: number; heading: string }, i: number) => (
+                            <span key={i} title={s.heading} style={{
+                              fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#64748B",
+                              border: "1px solid var(--border)", borderRadius: 5, padding: "2px 6px",
+                              background: "var(--surface-2)",
+                            }}>{s.slide}. {s.heading.slice(0, 24)}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Which extraction path produced this report. A silent
+                    fallback to regex is the defect this whole pass exists to
+                    make impossible; the reader of the claims table is the
+                    person who needs to know it fired. */}
+                {extractionProvenance?.is_fallback && (
+                  <div style={{
+                    border: "1px solid rgba(217,48,37,0.28)", background: "rgba(217,48,37,0.06)",
+                    borderRadius: 10, padding: "12px 14px", marginBottom: 12,
+                  }}>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#D93025", letterSpacing: "0.12em", fontWeight: 600, textTransform: "uppercase", marginBottom: 6 }}>
+                      ⚠ Degraded extraction — {extractionProvenance.method}
+                    </div>
+                    <p style={{ fontSize: 12.5, color: "#4A5568", lineHeight: 1.65, margin: 0 }}>
+                      {extractionProvenance.warning}
+                    </p>
+                  </div>
+                )}
+
                 {/* The trained model's score leads the summary. It is the one
                     number on this page that came from a fitted, calibrated
                     model rather than from an LLM or a hand-tuned formula, so
@@ -830,7 +867,7 @@ const Analysis = () => {
                         <span className="an-case-text">{item.text}</span>
                       </div>
                     )) : (
-                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#94A3B8" }}>No positive signals identified.</span></div>
+                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>No positive signals identified.</span></div>
                     )}
                   </Panel>
 
@@ -842,7 +879,7 @@ const Analysis = () => {
                         <span className="an-case-text">{item.text}</span>
                       </div>
                     )) : (
-                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#94A3B8" }}>No red flags identified.</span></div>
+                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>No red flags identified.</span></div>
                     )}
                   </Panel>
                 </div>
@@ -917,7 +954,7 @@ const Analysis = () => {
                       <CheckCircle size={14} color="#0EA66A" style={{ marginTop: 2, flexShrink: 0 }} />
                       <span className="an-case-text">{signal.finding}</span>
                     </div>
-                  )) : <div className="an-case-text" style={{ color: "#94A3B8" }}>Insufficient market evidence in the submitted deck.</div>}
+                  )) : <div className="an-case-text" style={{ color: "#5D6B7F" }}>Insufficient market evidence in the submitted deck.</div>}
                 </Panel>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: "12px" }}>
@@ -954,7 +991,7 @@ const Analysis = () => {
                         </tbody>
                       </table>
                     ) : (
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#94A3B8", padding: "16px 0" }}>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", padding: "16px 0" }}>
                         No claim verification data available.
                       </div>
                     )}
@@ -987,7 +1024,7 @@ const Analysis = () => {
                         <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
                         <Radar dataKey="value" stroke="#1D6FE8" fill="#1D6FE8" fillOpacity={0.09} strokeWidth={2.5} dot={{ fill: "#1D6FE8", r: 4, strokeWidth: 0 } as any} />
                       </RadarChart>
-                    </ResponsiveContainer> : <p style={{ color: "#94A3B8", fontSize: 13, lineHeight: 1.7 }}>
+                    </ResponsiveContainer> : <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7 }}>
                       {/* Do not assert *why* the scores are missing. The team analyst
                           returns the same empty `capabilities` list whether the deck
                           genuinely had no team slide or the agent call failed, and
@@ -996,7 +1033,9 @@ const Analysis = () => {
                       The team analyst produced no capability scores for this deck.
                       {founderChecks.length > 0
                         ? " Founder names were found and checked against public web evidence — see below."
-                        : " No founder names were submitted; add them on the upload form to run a public-background check."}
+                        : founderDiscovery?.attempted
+                          ? " The deck names no founders; a public search was run for them — see below."
+                          : " No founder names were submitted and no public search was run."}
                       {report.incomplete_analysis
                         ? " This analysis is flagged incomplete, so the agent may not have run at all."
                         : ""}
@@ -1004,7 +1043,7 @@ const Analysis = () => {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#94A3B8" }}>{r.subject}</span>
+                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F" }}>{r.subject}</span>
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
                         </div>
                       ))}
@@ -1017,7 +1056,7 @@ const Analysis = () => {
                       {team?.gaps?.[0] || "Insufficient team evidence. Verify founder credentials independently."}
                     </p>
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "14px", marginBottom: 14 }}>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#94A3B8", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
                       <div style={{ fontSize: "13.5px", color: "#0B1120", fontWeight: "700", letterSpacing: "-0.01em" }}>
                         {team?.questions?.[0] || (report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding")}
                       </div>
@@ -1037,14 +1076,34 @@ const Analysis = () => {
                           : check.assessment === "CONTRADICTS" ? "#D93025" : "#C47A0A";
                         return (
                           <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "12px 14px", background: "var(--surface-2)" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
                               <span className="an-founder-name">{check.name}</span>
+                              {/* Where the NAME came from. A name the deck put in
+                                  writing and a name this tool went and found are
+                                  different grades of evidence, and showing them
+                                  identically would credit the deck with an
+                                  assertion it never made. */}
+                              {check.origin && (
+                                <span title={check.origin === "deck"
+                                  ? "This name was printed in the uploaded deck."
+                                  : "The deck named no founders. This name was found by searching public sources and appears verbatim in the cited pages."}
+                                  style={{
+                                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                                    letterSpacing: "0.06em",
+                                    color: check.origin === "deck" ? "#1D6FE8" : "#7A5AF8",
+                                    border: `1px solid ${check.origin === "deck" ? "#1D6FE8" : "#7A5AF8"}33`,
+                                    background: `${check.origin === "deck" ? "#1D6FE8" : "#7A5AF8"}12`,
+                                    borderRadius: 5, padding: "2px 7px", textTransform: "uppercase",
+                                  }}>
+                                  {check.origin === "deck" ? "From deck" : "Found by search"}
+                                </span>
+                              )}
                               <span style={{
                                 fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
                                 letterSpacing: "0.08em", color: tone, border: `1px solid ${tone}33`,
                                 background: `${tone}12`, borderRadius: 5, padding: "2px 7px",
                               }}>{check.assessment}</span>
-                              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#94A3B8" }}>
+                              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F" }}>
                                 confidence {Math.round((check.confidence ?? 0) * 100)}%
                               </span>
                             </div>
@@ -1065,11 +1124,75 @@ const Analysis = () => {
                       })}
                     </div>
                   ) : (
-                    <p style={{ color: "#94A3B8", fontSize: 13, lineHeight: 1.7, margin: "10px 0 0" }}>
-                      No founder names were submitted with this analysis, so no background check ran.
-                      Re-run from the upload page with founder names filled in — they are read from the
-                      deck's team slide automatically when it has one.
-                    </p>
+                    /* The deck named nobody. That is no longer the end of the
+                       road: agents/founder_research.py searches public sources
+                       and this reports what it found, including the honest
+                       "searched and found nothing" case. The old copy here
+                       ("No founder names were submitted") described a missing
+                       INPUT, which read as the user's fault for a condition
+                       most real decks are in. */
+                    <div style={{ margin: "10px 0 0" }}>
+                      {founderDiscovery?.attempted ? (
+                        <>
+                          {/* Three different states, three different colours.
+                              "The search could not run" and "we searched and
+                              found nothing" are opposite findings -- only the
+                              second says anything about the company -- and
+                              rendering them in the same grey paragraph is the
+                              same conflation this product removed from the
+                              extraction path. */}
+                          <div style={{
+                            display: "inline-block", marginBottom: 8,
+                            fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                            letterSpacing: "0.08em", textTransform: "uppercase",
+                            borderRadius: 5, padding: "3px 8px",
+                            color: founderDiscovery.search_failed ? "#D93025"
+                              : founderDiscovery.searched === false ? "#64748B" : "#C47A0A",
+                            border: `1px solid ${founderDiscovery.search_failed ? "#D93025"
+                              : founderDiscovery.searched === false ? "#64748B" : "#C47A0A"}33`,
+                            background: `${founderDiscovery.search_failed ? "#D93025"
+                              : founderDiscovery.searched === false ? "#64748B" : "#C47A0A"}12`,
+                          }}>
+                            {founderDiscovery.search_failed
+                              ? "⚠ Search failed — nothing established"
+                              : founderDiscovery.searched === false
+                                ? "Search not attempted"
+                                : "Searched — no founders found"}
+                          </div>
+                          <p style={{ color: "#4A5568", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+                            {founderDiscovery.searched === false
+                              ? ""
+                              : "This deck does not name its founders, so VentureFlow searched public sources for them. "}
+                            {founderDiscovery.found
+                              ? "Names were found but no background check completed for them."
+                              : founderDiscovery.reason || "No founder name could be established."}
+                          </p>
+                          {(founderDiscovery.rejected_ungrounded ?? []).length > 0 && (
+                            <p style={{ color: "#5D6B7F", fontSize: 12, lineHeight: 1.7, margin: "8px 0 0" }}>
+                              {founderDiscovery.rejected_ungrounded!.length} candidate name(s) were
+                              proposed but did not appear in any retrieved source, and were rejected
+                              rather than reported as findings.
+                            </p>
+                          )}
+                          {(founderDiscovery.sources_consulted ?? []).length > 0 && (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                              {founderDiscovery.sources_consulted!.slice(0, 6).map((url, j) => (
+                                <a key={j} href={url} target="_blank" rel="noreferrer" style={{
+                                  fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5,
+                                  color: "#1D6FE8", textDecoration: "none",
+                                  border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
+                                }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+                          No founder names were submitted and no public search was run for this
+                          analysis.
+                        </p>
+                      )}
+                    </div>
                   )}
                 </Panel>
               </div>
@@ -1107,10 +1230,12 @@ const Analysis = () => {
                         <p style={{ color: "#EAB308", fontSize: 12, fontWeight: 600, margin: 0 }}>
                           Y Combinator companies only
                         </p>
-                        <p style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
+                        <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
                           Matched against{" "}
-                          {marketComparables?.population?.n?.toLocaleString?.() ?? "1,560"}{" "}
-                          YC alumni with a recorded outcome — not against the market.
+                          {typeof marketComparables?.population?.n === "number"
+                            ? `${marketComparables.population.n.toLocaleString()} YC alumni`
+                            : "the YC alumni corpus"}{" "}
+                          with a recorded outcome — not against the market.
                           No non-YC startups are represented. These are the nearest
                           available matches, not necessarily close ones: treat them as
                           leads to investigate, not as validated comparables.
@@ -1124,7 +1249,7 @@ const Analysis = () => {
                           percentage means shared wording, not that two
                           businesses are alike.
                         */}
-                        <p style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
+                        <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
                           The similarity percentage measures shared wording, not
                           business relevance — an unrelated company can score
                           higher than a relevant one. Read the names, not the number.
@@ -1147,7 +1272,7 @@ const Analysis = () => {
                         <p style={{ color: "#CBD5E1", fontSize: 13, fontWeight: 600, margin: 0 }}>
                           No close comparables found
                         </p>
-                        <p style={{ color: "#94A3B8", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>
+                        <p style={{ color: "#5D6B7F", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>
                           The nearest company in the Y Combinator corpus scored{" "}
                           {typeof marketComparables.best_similarity === "number"
                             ? `${Math.round(marketComparables.best_similarity * 100)}%`
@@ -1177,13 +1302,13 @@ const Analysis = () => {
                               <td className="an-comp-td" style={{ fontWeight: 600 }}>{competitor.name}</td>
                               <td className="an-comp-td">{competitor.domain || "—"}</td>
                               <td className="an-comp-td">{competitor.sector || "—"}</td>
-                              <td className="an-comp-td" style={{ color: competitor.outcome === "Shut down" ? "#D93025" : competitor.outcome ? "#0EA66A" : "#94A3B8" }}>{competitor.outcome || "—"}</td>
+                              <td className="an-comp-td" style={{ color: competitor.outcome === "Shut down" ? "#D93025" : competitor.outcome ? "#0EA66A" : "#5D6B7F" }}>{competitor.outcome || "—"}</td>
                               <td className="an-comp-td">{typeof competitor.similarity === "number" ? `${Math.round(competitor.similarity * 100)}%` : "—"}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
-                      <p style={{ color: "#94A3B8", fontSize: 11, lineHeight: 1.6, marginTop: 12 }}>
+                      <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, marginTop: 12 }}>
                         Source: {comparablesSource}
                         {marketComparables?.caveat && ycComparables.length ? ` — ${marketComparables.caveat}` : ""}
                       </p>
@@ -1200,29 +1325,11 @@ const Analysis = () => {
                   </Panel>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {competitors.length > 0 && <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                      <SLabel>Threat Distribution</SLabel>
-                      <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px", position: "relative" }}>
-                        <PieChart width={160} height={160}>
-                          <Pie data={threatData} dataKey="value" innerRadius={50} outerRadius={74} strokeWidth={3} stroke="#F0F2F5" paddingAngle={2}>
-                            {threatData.map((entry, i) => <Cell key={i} fill={entry.color} fillOpacity={0.85} />)}
-                          </Pie>
-                        </PieChart>
-                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
-                          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 18, color: "#0B1120", lineHeight: 1 }}>{competitors.length}</div>
-                          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8, color: "#94A3B8" }}>competitors</div>
-                        </div>
-                      </div>
-                      {threatData.map((d, i) => (
-                        <div key={i} className="an-threat-row">
-                          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                            <div style={{ width: "8px", height: "8px", borderRadius: "3px", background: d.color }} />
-                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: "#64748B" }}>{d.name} Threat</span>
-                          </div>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "11px", color: d.color, fontWeight: "600" }}>{d.value}%</span>
-                        </div>
-                      ))}
-                    </Panel>}
+                    {/* A "Threat Distribution" donut sat here. Its data source was a
+                        hardcoded empty array, so it drew an empty ring; there is no
+                        threat-level signal anywhere in AnalyzeResponse to wire it to.
+                        Removed rather than back-filled with plausible-looking
+                        percentages. */}
 
                     <Panel accentColor="#C47A0A">
                       <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>

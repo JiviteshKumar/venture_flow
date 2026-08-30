@@ -1,11 +1,35 @@
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Upload, LayoutDashboard, BarChart3, TrendingUp, Settings, Bell, Zap, Clock, ChevronRight, Star, Activity } from "lucide-react";
+import { Upload, LayoutDashboard, BarChart3, TrendingUp, Settings, Bell, Zap, Clock, ChevronRight, Star, Activity, Menu, X } from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { motion } from "framer-motion";
+
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const { report, status, currentStage, progressPct, companyName, reset } = useApp();
+
+  // A label this browser remembers, not an identity. See the user row below.
+  const [displayName, setDisplayName] = useLocalStorage<string>("vf.displayName", "");
+  const handleSetName = () => {
+    const next = window.prompt(
+      "Display name shown in the sidebar.\n\nThis is a local label only — VentureFlow has no accounts and this identifies nobody.",
+      displayName,
+    );
+    if (next !== null) setDisplayName(next.trim().slice(0, 40));
+  };
+
+  // Off-canvas drawer state for narrow viewports. Desktop ignores this.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isAnalyzing = status === "uploading" || status === "analyzing";
   const isDone = status === "done" && report !== null;
@@ -32,29 +56,17 @@ const Sidebar = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Figtree:wght@300;400;500;600;700&display=swap');
 
-        :root {
-          --sb-bg: #FFFFFF;
-          --sb-border: rgba(15,23,42,0.08);
-          --sb-border-strong: rgba(15,23,42,0.13);
-          --sb-surface: #F7F8FA;
-          --sb-text: #0B1120;
-          --sb-muted: #94A3B8;
-          --sb-secondary: #4A5568;
-          --sb-blue: #1D6FE8;
-          --sb-green: #0EA66A;
-          --sb-amber: #C47A0A;
-          --sb-red: #D93025;
-          --sb-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
-        }
+        /* Colour tokens live in src/styles/tailwind.css. This component used
+           to redeclare all twelve of them here, which meant two definitions
+           of the same design system racing on load order. */
 
         .sb-root {
           width: 252px; min-width: 252px;
           background: var(--sb-bg);
           border-right: 1px solid var(--sb-border);
           display: flex; flex-direction: column;
-          font-family: 'Figtree', sans-serif;
+          font-family: var(--font-sans);
           height: 100vh; overflow: hidden;
           position: relative;
         }
@@ -149,6 +161,7 @@ const Sidebar = () => {
           background: var(--sb-blue); border-radius: 0 3px 3px 0;
         }
 
+        .sb-link-label { display: inline; min-width: 0; }
         .sb-link-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.7; }
         .sb-link-active .sb-link-icon { opacity: 1; }
 
@@ -185,6 +198,8 @@ const Sidebar = () => {
         .sb-see-all:hover { opacity: 0.7; }
 
         .sb-active-card {
+          appearance: none; font: inherit; color: inherit;
+          width: 100%; text-align: left; display: block;
           background: var(--sb-surface); border: 1px solid var(--sb-border);
           border-radius: 11px; padding: 14px; margin-bottom: 12px;
           position: relative; overflow: hidden; cursor: pointer;
@@ -258,9 +273,144 @@ const Sidebar = () => {
         .sb-user-name { font-size: 12.5px; font-weight: 600; color: var(--sb-text); letter-spacing: -0.1px; }
         .sb-user-role { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--sb-muted); }
         .sb-user-caret { margin-left: auto; color: var(--sb-muted); }
+
+        /* ── Identity row ──────────────────────────────────────────────── */
+        .sb-user-copy { min-width: 0; flex: 1; }
+        .sb-user-setname {
+          background: none; border: none; padding: 0; cursor: pointer;
+          font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+          color: var(--sb-blue); text-align: left;
+        }
+        .sb-user-setname:hover { text-decoration: underline; }
+        .sb-user-role { display: flex; align-items: center; gap: 6px; }
+        .sb-demo-badge {
+          font-family: var(--font-mono); font-size: 8.5px; font-weight: 600;
+          letter-spacing: 0.08em; text-transform: uppercase;
+          color: var(--sb-amber); background: rgba(196,122,10,0.10);
+          border: 1px solid rgba(196,122,10,0.22);
+          border-radius: 4px; padding: 1px 5px;
+        }
+        .sb-user-role-note {
+          font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);
+        }
+        .sb-user-caret-btn {
+          background: none; border: none; padding: 4px; cursor: pointer;
+          display: flex; align-items: center; color: var(--text-muted);
+        }
+
+        /* ── Responsive ────────────────────────────────────────────────────
+           The sidebar was pinned to 252px at every width, so on a phone it
+           consumed two thirds of the viewport and the content beside it was
+           unusable. Two steps: an icon rail on tablets, and a real off-canvas
+           drawer on phones. The drawer is rendered in the same DOM order and
+           simply translated off-screen, so focus order and screen-reader
+           order are unchanged.
+           ──────────────────────────────────────────────────────────────── */
+        .sb-drawer-toggle { display: none; }
+
+        @media (max-width: 1024px) {
+          .sb-root { width: 68px; min-width: 68px; }
+          .sb-root .sb-link-label,
+          .sb-root .sb-logo-name,
+          .sb-root .sb-logo-tagline,
+          .sb-root .sb-version-chip,
+          .sb-root .sb-nav-label,
+          .sb-root .sb-section-title,
+          .sb-root .sb-section-header,
+          .sb-root .sb-stats-row,
+          .sb-root .sb-active-card,
+          .sb-root .sb-analyzing-card,
+          .sb-root .sb-agents,
+          .sb-root .sb-starred-empty,
+          .sb-root .sb-user-copy,
+          .sb-root .sb-user-caret-btn { display: none; }
+          .sb-root .sb-link { justify-content: center; padding: 9px 0; }
+          .sb-root .sb-logo-area { padding: 18px 0; justify-content: center; }
+          .sb-root .sb-actions-row { flex-direction: column; gap: 6px; }
+          .sb-root .sb-user-row { justify-content: center; }
+          .sb-root .sb-scroll-area { padding: 0 8px 12px; }
+        }
+
+        @media (max-width: 640px) {
+          .sb-drawer-toggle {
+            display: flex; align-items: center; justify-content: center;
+            position: fixed; top: 12px; left: 12px; z-index: 60;
+            width: 40px; height: 40px; border-radius: 10px;
+            background: var(--surface); color: var(--sb-text);
+            border: 1px solid var(--sb-border); box-shadow: var(--sb-shadow);
+            cursor: pointer;
+          }
+          .sb-root {
+            position: fixed; top: 0; left: 0; z-index: 55;
+            width: 252px; min-width: 252px;
+            transform: translateX(-100%);
+            transition: transform 180ms ease;
+            box-shadow: var(--shadow-lifted, 0 12px 40px rgba(15,23,42,0.18));
+          }
+          .sb-root[data-open="true"] { transform: translateX(0); }
+          /* Inside the drawer the sidebar is full width again, so everything
+             the icon rail hid comes back. */
+          .sb-root .sb-link-label,
+          .sb-root .sb-logo-name,
+          .sb-root .sb-logo-tagline,
+          .sb-root .sb-version-chip,
+          .sb-root .sb-nav-label,
+          .sb-root .sb-section-title,
+          .sb-root .sb-section-header,
+          .sb-root .sb-stats-row,
+          .sb-root .sb-active-card,
+          .sb-root .sb-analyzing-card,
+          .sb-root .sb-agents,
+          .sb-root .sb-starred-empty,
+          .sb-root .sb-user-copy,
+          .sb-root .sb-user-caret-btn { display: revert; }
+          .sb-root .sb-stats-row { display: grid; }
+          .sb-root .sb-agents { display: flex; }
+          .sb-root .sb-link { justify-content: flex-start; padding: 9px 10px; }
+          .sb-root .sb-logo-area { padding: 22px 18px 18px; justify-content: space-between; }
+          .sb-root .sb-actions-row { flex-direction: row; }
+          .sb-root .sb-user-row { justify-content: flex-start; }
+          .sb-scrim {
+            position: fixed; inset: 0; z-index: 50;
+            background: rgba(11,17,32,0.45);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .sb-root { transition: none; }
+        }
       `}</style>
 
-      <aside className="sb-root">
+      <button
+        type="button"
+        className="sb-drawer-toggle"
+        aria-label={drawerOpen ? "Close navigation menu" : "Open navigation menu"}
+        aria-expanded={drawerOpen}
+        aria-controls="vf-sidebar"
+        onClick={() => setDrawerOpen((o) => !o)}
+      >
+        {drawerOpen ? <X size={18} strokeWidth={1.9} /> : <Menu size={18} strokeWidth={1.9} />}
+      </button>
+
+      {drawerOpen && (
+        <div
+          className="sb-scrim"
+          role="button"
+          tabIndex={0}
+          aria-label="Close navigation menu"
+          onClick={() => setDrawerOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" || e.key === "Enter" || e.key === " ") setDrawerOpen(false);
+          }}
+        />
+      )}
+
+      <aside
+        id="vf-sidebar"
+        className="sb-root"
+        data-open={drawerOpen}
+        aria-label="Primary navigation"
+      >
         {/* LOGO */}
         <div className="sb-logo-area">
           <div className="sb-logo-inner">
@@ -307,7 +457,7 @@ const Sidebar = () => {
                   <span className="sb-link-icon">
                     <Icon size={15} strokeWidth={1.75} />
                   </span>
-                  {item.name}
+                  <span className="sb-link-label">{item.name}</span>
                 </NavLink>
               );
             })}
@@ -327,7 +477,7 @@ const Sidebar = () => {
             </div>
             <div className="sb-stat-card">
               <div className="sb-stat-label">Avg Score</div>
-              <div className="sb-stat-value" style={{ color: isDone ? scoreColor : "#94A3B8" }}>
+              <div className="sb-stat-value" style={{ color: isDone ? scoreColor : "#5D6B7F" }}>
                 {deckScore ?? "—"}
               </div>
               <div className="sb-stat-sub">out of 100</div>
@@ -346,7 +496,7 @@ const Sidebar = () => {
               <div style={{ fontSize: 13, fontWeight: 600, color: "#0B1120", marginBottom: 3 }}>
                 {companyName || "Processing deck"}
               </div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#94A3B8", marginBottom: 10 }}>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", marginBottom: 10 }}>
                 {currentStage}
               </div>
               <div style={{ height: 3, background: "rgba(15,23,42,0.07)", borderRadius: 3, overflow: "hidden" }}>
@@ -356,7 +506,7 @@ const Sidebar = () => {
                   transition={{ duration: 0.5 }}
                 />
               </div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8.5, color: "#94A3B8", marginTop: 5, textAlign: "right" }}>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8.5, color: "#5D6B7F", marginTop: 5, textAlign: "right" }}>
                 {progressPct}%
               </div>
             </div>
@@ -364,7 +514,7 @@ const Sidebar = () => {
 
           {/* ACTIVE DECK CARD */}
           {isDone && deckName && (
-            <div className="sb-active-card" onClick={() => navigate("/analysis")}>
+            <button type="button" className="sb-active-card" onClick={() => navigate("/analysis")} aria-label={`Open analysis for ${deckName}`}>
               <div className="sb-active-label">
                 <div className="sb-active-label-dot" />
                 Active Deck
@@ -385,19 +535,19 @@ const Sidebar = () => {
                 <div className="sb-active-progress-fill" style={{ width: `${deckScore}%`, background: `linear-gradient(90deg, ${scoreColor}, ${scoreColor}99)` }} />
               </div>
               <div className="sb-active-progress-label">{deckScore}% investment score</div>
-            </div>
+            </button>
           )}
 
           {/* PLACEHOLDER when idle */}
           {!isAnalyzing && !isDone && (
-            <div className="sb-active-card" onClick={() => navigate("/upload")} style={{ cursor: "pointer", borderStyle: "dashed", background: "transparent" }}>
+            <button type="button" className="sb-active-card" onClick={() => navigate("/upload")} aria-label="Upload a deck to get started" style={{ cursor: "pointer", borderStyle: "dashed", background: "transparent", width: "100%", textAlign: "inherit" }}>
               <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#94A3B8", lineHeight: 1.6 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.6 }}>
                   No active deck<br />
                   <span style={{ color: "#1D6FE8" }}>Upload one to get started →</span>
                 </div>
               </div>
-            </div>
+            </button>
           )}
 
           {/* RECENT DECKS */}
@@ -410,12 +560,14 @@ const Sidebar = () => {
                   Recent Decks
                 </div>
               </div>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 10,
+              <button style={{
+                display: "flex", alignItems: "center", gap: 10, width: "100%",
                 padding: "9px 10px", borderRadius: 9, cursor: "pointer",
                 background: "rgba(29,111,232,0.04)", border: "1px solid rgba(29,111,232,0.15)",
-                marginBottom: 2,
-              }} onClick={() => navigate("/analysis")}>
+                marginBottom: 2, textAlign: "left",
+              }} onClick={() => navigate("/analysis")}
+                type="button"
+                aria-label={`Open the most recent analysis${deckName ? `: ${deckName}` : ""}`}>
                 <div style={{
                   width: 32, height: 32, borderRadius: 8, background: "#F7F8FA",
                   border: "1px solid rgba(15,23,42,0.08)", display: "flex",
@@ -426,14 +578,14 @@ const Sidebar = () => {
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "#0B1120", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {deckName}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#94A3B8" }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F" }}>
                     Today
                   </div>
                 </div>
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600, color: scoreColor }}>
                   {deckScore}
                 </span>
-              </div>
+              </button>
             </>
           )}
 
@@ -445,8 +597,8 @@ const Sidebar = () => {
               Starred
             </div>
           </div>
-          <div style={{ padding: "8px 10px", borderRadius: 9, background: "rgba(15,23,42,0.02)", border: "1px dashed rgba(15,23,42,0.1)", textAlign: "center" }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#94A3B8", lineHeight: 1.5 }}>
+          <div className="sb-starred-empty" style={{ padding: "8px 10px", borderRadius: 9, background: "rgba(15,23,42,0.02)", border: "1px dashed rgba(15,23,42,0.1)", textAlign: "center" }}>
+            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.5 }}>
               Star a deck from the<br />Dashboard to pin it here
             </div>
           </div>
@@ -455,24 +607,56 @@ const Sidebar = () => {
         {/* BOTTOM */}
         <div className="sb-bottom-area">
           <div className="sb-actions-row">
-            <button className="sb-action-btn" title="Notifications">
+            <button type="button" className="sb-action-btn" title="Notifications" aria-label="Notifications">
               <Bell size={13} strokeWidth={1.75} />
-              <div className="sb-notif-badge" />
+              <div className="sb-notif-badge" role="status" aria-label="Unread notifications" />
             </button>
-            <button className="sb-action-btn" title="Portfolio trends">
+            <button type="button" className="sb-action-btn" title="Portfolio trends" aria-label="Portfolio trends">
               <TrendingUp size={13} strokeWidth={1.75} />
             </button>
-            <button className="sb-action-btn" title="Settings" onClick={reset}>
+            <button type="button" className="sb-action-btn" title="Settings" aria-label="Settings — reset the current analysis" onClick={reset}>
               <Settings size={13} strokeWidth={1.75} />
             </button>
           </div>
+          {/* There is no authentication in this app.
+              This row used to read "James Dolan / Partner, VC" — a fictional
+              person presented as the signed-in user, on a tool whose entire
+              value proposition is not making things up. It now shows a Demo
+              Mode badge and, optionally, a display name the user typed on this
+              device. That name is a convenience label held in localStorage; it
+              identifies nobody and gates nothing. Real auth is deferred. */}
           <div className="sb-user-row">
-            <div className="sb-user-avatar">JD</div>
-            <div>
-              <div className="sb-user-name">James Dolan</div>
-              <div className="sb-user-role">Partner, VC</div>
+            <div className="sb-user-avatar" aria-hidden="true">
+              {displayName ? initialsOf(displayName) : "?"}
             </div>
-            <ChevronRight size={13} className="sb-user-caret" strokeWidth={1.5} />
+            <div className="sb-user-copy">
+              {displayName ? (
+                <div className="sb-user-name">{displayName}</div>
+              ) : (
+                <button
+                  type="button"
+                  className="sb-user-setname"
+                  onClick={handleSetName}
+                >
+                  Set a display name
+                </button>
+              )}
+              <div className="sb-user-role">
+                <span className="sb-demo-badge">Demo mode</span>
+                <span className="sb-user-role-note">not signed in</span>
+              </div>
+            </div>
+            {displayName && (
+              <button
+                type="button"
+                className="sb-user-caret-btn"
+                onClick={handleSetName}
+                aria-label="Change display name"
+                title="Change display name"
+              >
+                <ChevronRight size={13} className="sb-user-caret" strokeWidth={1.5} />
+              </button>
+            )}
           </div>
         </div>
       </aside>

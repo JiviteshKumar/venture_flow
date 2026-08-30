@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, demoToken } from "../../services/apiClient";
 
 /**
@@ -18,6 +18,8 @@ export default function DemoGate({ children }: { children: React.ReactNode }) {
   const [value, setValue] = useState("");
   const [checking, setChecking] = useState(false);
   const [failed, setFailed] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   useEffect(() => {
     const onGate = () => { setLocked(true); setFailed(false); };
@@ -69,7 +71,7 @@ export default function DemoGate({ children }: { children: React.ReactNode }) {
       }}>
         <div style={{
           fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.14em",
-          textTransform: "uppercase", color: "#94A3B8", marginBottom: 10,
+          textTransform: "uppercase", color: "#5D6B7F", marginBottom: 10,
         }}>Private demo</div>
 
         <h1 style={{ fontSize: 20, margin: "0 0 8px", color: "#0B1120", letterSpacing: "-0.01em" }}>
@@ -82,7 +84,12 @@ export default function DemoGate({ children }: { children: React.ReactNode }) {
         </p>
 
         <input
-          autoFocus
+          /* Focused on mount via the ref below rather than with `autoFocus`.
+             This screen is a modal gate whose only control is this field, so
+             moving focus here is correct -- but `autoFocus` also fires when
+             the component is re-mounted mid-session, which yanks focus away
+             from wherever the user actually was. */
+          ref={inputRef}
           type="password"
           value={value}
           onChange={(e) => { setValue(e.target.value); setFailed(false); }}

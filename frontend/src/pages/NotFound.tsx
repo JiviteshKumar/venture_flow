@@ -10,7 +10,7 @@ const NotFound = () => {
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", minHeight: "60vh", textAlign: "center",
-      padding: "40px 24px", fontFamily: "'Figtree', sans-serif",
+      padding: "40px 24px", fontFamily: "var(--font-sans)",
     }}>
       <div style={{
         width: 64, height: 64, borderRadius: 18,
@@ -22,13 +22,13 @@ const NotFound = () => {
       <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
         Page not found
       </div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#94A3B8", marginBottom: 24, maxWidth: 320 }}>
+      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
         There's nothing at this address. Head back to the dashboard to keep working.
       </div>
       <button onClick={() => navigate("/")} style={{
         display: "inline-flex", alignItems: "center", gap: 8,
         background: "#1D6FE8", color: "#fff", border: "none",
-        borderRadius: 10, padding: "11px 22px", fontFamily: "'Figtree', sans-serif",
+        borderRadius: 10, padding: "11px 22px", fontFamily: "var(--font-sans)",
         fontSize: 14, fontWeight: 600, cursor: "pointer",
       }}>
         Back to dashboard

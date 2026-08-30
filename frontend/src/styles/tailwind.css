@@ -23,14 +23,53 @@
       belong to the components that actually want them.
    ───────────────────────────────────────────────────────────────────────── */
 
+/* The single source of truth for colour in this app.
+   These mirror tailwind.config.js exactly. Four palettes existed before:
+   this block, Sidebar.tsx's `--sb-*` set, Layout.tsx's inline hex, and the
+   dark theme in tailwind.config.js that nothing rendered. The `--sb-*` names
+   are kept as aliases so Sidebar's stylesheet keeps working while pointing at
+   these values rather than its own copies. */
 :root {
-  --bg: #F7F8FA;
+  --bg: #F2F2F7;
   --surface: #FFFFFF;
-  --surface-2: #F2F4F7;
-  --border: #E4E7EC;
+  --surface-2: #F7F8FA;
+  --border: rgba(15,23,42,0.08);
+  --border-strong: rgba(15,23,42,0.13);
   --text-primary: #0B1120;
-  --text-secondary: #667085;
+  --text-secondary: #4A5568;
+  /* Measured against all three surfaces above (white, canvas, surface-2).
+     --text-faint is 2.3-2.6:1 and is DECORATIVE ONLY -- rules, dividers,
+     disabled glyphs. It must never carry text a user has to read.
+     --text-muted is 4.86:1 at worst and is the correct choice for small
+     labels and metadata. */
+  --text-faint: #94A3B8;
+  --text-muted: #5D6B7F;
   --accent: #1D6FE8;
+  --positive: #0EA66A;
+  --caution: #C47A0A;
+  --negative: #D93025;
+  --shadow-panel: 0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
+
+  /* Two families, matching tailwind.config.js. Figtree was a third and is
+     gone; body copy uses the system UI stack, which costs no download. */
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+
+  /* Aliases consumed by Sidebar.tsx's stylesheet. */
+  --sb-bg: var(--surface);
+  --sb-border: var(--border);
+  --sb-border-strong: var(--border-strong);
+  --sb-surface: var(--surface-2);
+  --sb-text: var(--text-primary);
+  --sb-muted: var(--text-muted);
+  --sb-secondary: var(--text-secondary);
+  --sb-blue: var(--accent);
+  --sb-green: var(--positive);
+  --sb-amber: var(--caution);
+  --sb-red: var(--negative);
+  --sb-shadow: var(--shadow-panel);
 }
 
 html {
@@ -41,7 +80,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text-primary);
-  font-family: Figtree, Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -108,6 +148,13 @@ body {
 
   body {
     overflow-x: hidden;
+  }
+
+  /* The drawer toggle is position:fixed at top-left, so without this it sits
+     on top of the first line of every page header. */
+  main > div > div:first-child,
+  .an-root, .db-root, .up-root {
+    padding-top: 52px;
   }
 }
 

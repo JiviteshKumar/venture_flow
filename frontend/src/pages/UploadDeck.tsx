@@ -8,6 +8,7 @@ import {
   Activity, Eye, Layers, Target
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { formatBytes } from "../utils/format";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
@@ -125,6 +126,7 @@ const miniPreviewCards = [
 
 const DeckIllustration = () => (
   <svg width="100%" viewBox="0 0 320 190" fill="none" xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
     style={{ display: "block", maxWidth: 320, margin: "0 auto" }}>
     <ellipse cx="160" cy="140" rx="120" ry="30" fill="rgba(29,111,232,0.06)" />
     <rect x="56" y="34" width="208" height="140" rx="10" fill="rgba(15,23,42,0.04)" />
@@ -255,8 +257,7 @@ const UploadDeck = () => {
   }, [uploadResult, foundersTouched]);
 
   const formatSize = (bytes: number) => {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return formatBytes(bytes);
   };
 
   const storeFile = (f: File) => {
@@ -319,7 +320,6 @@ const UploadDeck = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Figtree:wght@300;400;500;600;700&display=swap');
 
         :root {
           --bg: #F0F2F5;
@@ -329,7 +329,7 @@ const UploadDeck = () => {
           --border-strong: rgba(15,23,42,0.14);
           --text-primary: #0B1120;
           --text-secondary: #4A5568;
-          --text-muted: #94A3B8;
+          --text-muted: #5D6B7F;
           --blue: #1D6FE8;
           --green: #0EA66A;
           --amber: #C47A0A;
@@ -344,7 +344,7 @@ const UploadDeck = () => {
         * { box-sizing: border-box; }
 
         .up-root {
-          font-family: 'Figtree', sans-serif;
+          font-family: var(--font-sans);
           color: var(--text-primary);
           min-height: 100vh;
           background: var(--bg);
@@ -604,7 +604,7 @@ const UploadDeck = () => {
           border-radius: 9px;
           border: 1px solid var(--border);
           background: var(--surface-2);
-          font-family: 'Figtree', sans-serif;
+          font-family: var(--font-sans);
           font-size: 13.5px;
           color: var(--text-primary);
           outline: none;
@@ -639,7 +639,7 @@ const UploadDeck = () => {
 
         .up-analyze-btn {
           width: 100%; margin-top: 16px; padding: 14px;
-          border-radius: 10px; font-family: 'Figtree', sans-serif;
+          border-radius: 10px; font-family: var(--font-sans);
           font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;
           cursor: pointer; transition: all 0.2s ease;
           display: flex; align-items: center; justify-content: center;
@@ -856,8 +856,9 @@ const UploadDeck = () => {
               <div className="up-card-sub">Drop your file below or click to browse</div>
 
               {/* Company name input */}
-              <label className="up-company-label">Company name</label>
+              <label className="up-company-label" htmlFor="vf-company-name">Company name</label>
               <input
+                id="vf-company-name"
                 className="up-company-input"
                 type="text"
                 placeholder="e.g. NovaMed AI, CarbonCycle…"
@@ -872,6 +873,16 @@ const UploadDeck = () => {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => !isAnalyzing && inputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (!isAnalyzing) inputRef.current?.click();
+                  }
+                }}
+                role="button"
+                tabIndex={isAnalyzing ? -1 : 0}
+                aria-label="Choose a pitch deck file, or drop one here"
+                aria-disabled={isAnalyzing}
               >
                 <input ref={inputRef} type="file" style={{ display: "none" }}
                   accept={ACCEPTED_EXTENSIONS.join(",")} onChange={handleFileChange} />
@@ -882,7 +893,7 @@ const UploadDeck = () => {
                       initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
                       <div className="up-icon-wrap">
-                        <Upload size={21} color={isDragging ? "#1D6FE8" : "#94A3B8"} strokeWidth={1.6} />
+                        <Upload size={21} color={isDragging ? "#1D6FE8" : "#5D6B7F"} strokeWidth={1.6} />
                       </div>
                       <div className="up-dz-main-text">{isDragging ? "Release to upload" : "Drop your deck here"}</div>
                       <div className="up-dz-hint">or click to browse<br />PDF · PPTX · DOCX · TXT · MD · up to 10 MB</div>
@@ -897,7 +908,7 @@ const UploadDeck = () => {
                       <div className="up-dz-main-text" style={{ color: "#0EA66A" }}>File ready</div>
                       <div style={{ display: "flex", justifyContent: "center" }}>
                         <div className="up-file-info">
-                          <FileText size={12} color="#94A3B8" />
+                          <FileText size={12} color="#5D6B7F" />
                           <span className="up-file-name">{fileName}</span>
                           {fileSize && <span className="up-file-size">{fileSize}</span>}
                         </div>
@@ -935,7 +946,7 @@ const UploadDeck = () => {
                     onChange={e => { setFoundersTouched(true); setFoundersInput(e.target.value); }}
                     disabled={isAnalyzing}
                   />
-                  <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11, color: "#5D6B7F", marginTop: 6, lineHeight: 1.5 }}>
                     {detectedFounders.length > 0
                       ? "Read from the deck's team slide. Correct or add names before analysing — each one is checked against public web evidence."
                       : "No team slide was found in this deck. Add founder names to enable the background check, or leave blank to skip it."}
@@ -1052,10 +1063,20 @@ const UploadDeck = () => {
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                     style={{ marginTop: 18 }}>
+                    {/* This block previously read "Analysis Complete" with a
+                        "Preview" badge, above three cards showing scores of
+                        74, 38 and 86 in the same visual language the real
+                        report uses. Nothing had been analysed -- the numbers
+                        are invented sample copy -- and "Preview" is ambiguous
+                        enough to be read as "preview of your results". A user
+                        could reasonably believe they were looking at findings
+                        about the deck they were about to upload. */}
                     <div className="up-preview-heading">
-                      <CheckCircle size={14} color="#0EA66A" />
-                      Analysis Complete
-                      <span className="up-preview-heading-badge">Preview</span>
+                      <Eye size={14} color="#5D6B7F" />
+                      Example of what you get
+                      <span className="up-preview-heading-badge">
+                        Sample figures — not your deck
+                      </span>
                     </div>
                     <div className="up-preview-grid">
                       {miniPreviewCards.map((card, i) => (
@@ -1068,7 +1089,7 @@ const UploadDeck = () => {
                           background: "var(--blue)", color: "#fff", border: "none",
                           borderRadius: 9, padding: "10px 22px", fontSize: 13,
                           fontWeight: 600, cursor: "pointer", display: "inline-flex",
-                          alignItems: "center", gap: 7, fontFamily: "Figtree, sans-serif",
+                          alignItems: "center", gap: 7, fontFamily: "var(--font-sans)",
                           letterSpacing: "-0.01em", boxShadow: "0 2px 8px rgba(29,111,232,0.28)"
                         }}
                         whileHover={{ scale: 1.02 }}
