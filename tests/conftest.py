@@ -90,6 +90,32 @@ def guard_demo_gate_state():
 
 
 @pytest.fixture(autouse=True)
+def disable_founder_research():
+    """Never reach the open web for a founder name in a test.
+
+    Same shape as the pacing fixture below, and found the same way. Founder
+    research runs inline in `run_due_diligence` whenever a deck names no team,
+    which is most decks and nearly every test fixture. It fires up to six
+    DuckDuckGo searches and six page fetches, none of which any existing test
+    opted into -- so adding it silently attached a live network dependency to
+    every test that exercised the full pipeline. The suite went from finishing
+    to hanging in `test_score_survives_provider_outage`, which mocks the LLM
+    and the risk scorer but had no reason to know a web search now existed.
+
+    Disabled rather than mocked because the module's own switch returns an
+    explicit "not attempted", so a test can still tell a disabled search from a
+    search that found nothing. Tests that DO exercise founder research patch
+    `search_web` directly and are unaffected by this.
+    """
+    import agents.founder_research as founder_research
+
+    original = founder_research.RESEARCH_ENABLED
+    founder_research.RESEARCH_ENABLED = False
+    yield
+    founder_research.RESEARCH_ENABLED = original
+
+
+@pytest.fixture(autouse=True)
 def disable_groq_pacing():
     """Never sleep for a rate limiter in a test.
 

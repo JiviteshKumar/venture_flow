@@ -58,6 +58,8 @@ from document_extractor import (
     is_supported,
 )
 from rate_limiter import is_allowed as rate_limit_is_allowed
+import extraction_coverage
+import pdf_extractor
 from structured_extractor import extract_structured
 from ventureflow_agent import run_due_diligence
 
@@ -418,6 +420,19 @@ class DiligenceRequest(BaseModel):
     team_size: int | None = Field(default=None, ge=0, le=100_000)
     github_url: str | None = Field(default=None, max_length=300)
     founders: list[str] = Field(default_factory=list, max_length=5)
+    # Per-slide text, so extraction coverage can be measured at the granularity
+    # the failure actually occurs at: whole slides contributing nothing.
+    # `filing_text` is the pages joined with newlines, which destroys the
+    # boundaries -- and without them coverage collapses to a single "slide"
+    # that is either 0% or 100% and says nothing useful. Optional: an older
+    # client that omits it still gets line-level coverage, just not the
+    # slide-level headline.
+    deck_slides: list[str] = Field(default_factory=list, max_length=300)
+    # Which extraction path produced `claims`/`founders`. Carried so the report
+    # can tell its reader when it was built by the degraded regex fallback --
+    # see run_due_diligence's extraction_provenance block.
+    extraction_method: str = Field(default="", max_length=40)
+    extraction_fallback_reason: str = Field(default="", max_length=500)
     # Funding stage. Measured as the single largest lever the score model has:
     # sweeping it across Seed/Early/Growth moves the score 42 points, against 24
     # for industry and 25 for the entire text. It was hardcoded to None in
@@ -555,6 +570,12 @@ class PDFExtractResponse(BaseModel):
     # correct or add to before the analysis is submitted -- extraction is a
     # starting point, not an authority on who founded the company.
     detected_founders: list[DetectedFounder] = Field(default_factory=list)
+    # Per-slide text for the analysis request to echo back (see
+    # DiligenceRequest.deck_slides), plus the coverage measurement itself so
+    # the upload step can already say how much of the deck was understood.
+    deck_slides: list[str] = Field(default_factory=list)
+    extraction_coverage: dict = Field(default_factory=dict)
+    extraction_fallback_reason: str = ""
     # Deck metadata the scoring model consumes.
     #
     # These were extracted and then silently discarded here: Pydantic drops any
@@ -748,6 +769,9 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
             founders=request.founders,
             stage=request.stage,
             deck_date=request.deck_date,
+            deck_slides=request.deck_slides,
+            extraction_method=request.extraction_method,
+            extraction_fallback_reason=request.extraction_fallback_reason,
             on_stage=on_stage,
         )
     )
@@ -897,6 +921,21 @@ async def _extract_uploaded_document(
                 ),
             )
         info = await run_in_threadpool(extract_structured, text, company_name)
+
+        # Measure how much of the deck actually reached a structured field,
+        # here at the upload step, so "insufficient data" downstream can never
+        # be confused with "we dropped it". PDFs give real slide boundaries;
+        # other formats fall back to line-level coverage.
+        slides: list[str] = []
+        if (document.get("format") or "").lower() == "pdf":
+            try:
+                slides = await run_in_threadpool(
+                    pdf_extractor.extract_pages_from_pdf, file_bytes
+                )
+            except Exception:
+                logger.warning("Per-page extraction failed", exc_info=True)
+        coverage = extraction_coverage.compute(text, info, slides or None)
+
         session_id = str(uuid.uuid4())
         store_document(session_id, text, company_name)
         return PDFExtractResponse(
@@ -921,6 +960,9 @@ async def _extract_uploaded_document(
             github_url=info.get("github_url"),
             domain=info.get("domain"),
             metadata_evidence=info.get("metadata_evidence") or {},
+            deck_slides=slides,
+            extraction_coverage=coverage,
+            extraction_fallback_reason=info.get("_fallback_reason", "") or "",
         )
     except HTTPException:
         raise

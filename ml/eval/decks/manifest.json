@@ -8,7 +8,9 @@
     "extracted_chars": 5390,
     "pages": null,
     "fetched_at": "2026-08-26T19:51:22Z",
-    "deck_year": "2008"
+    "deck_year": "2008",
+    "provenance_confirmed": true,
+    "trusted_regression_corpus": true
   },
   {
     "company": "Buffer",
@@ -19,7 +21,9 @@
     "extracted_chars": 2012,
     "pages": null,
     "fetched_at": "2026-08-26T19:51:27Z",
-    "deck_year": "2011"
+    "deck_year": "2011",
+    "provenance_confirmed": true,
+    "trusted_regression_corpus": true
   },
   {
     "company": "Intercom",
@@ -30,7 +34,9 @@
     "extracted_chars": 2355,
     "pages": null,
     "fetched_at": "2026-08-26T19:51:29Z",
-    "deck_year": "2011"
+    "deck_year": "2011",
+    "provenance_confirmed": true,
+    "trusted_regression_corpus": true
   },
   {
     "company": "Coinbase",
@@ -41,7 +47,9 @@
     "extracted_chars": 635,
     "pages": null,
     "fetched_at": "2026-08-26T19:51:59Z",
-    "deck_year": "2012"
+    "deck_year": "2012",
+    "provenance_confirmed": true,
+    "trusted_regression_corpus": true
   },
   {
     "company": "Mint",
@@ -52,7 +60,10 @@
     "extracted_chars": 9873,
     "pages": null,
     "fetched_at": "2026-08-26T19:52:00Z",
-    "deck_year": "2007"
+    "deck_year": "2007",
+    "provenance_confirmed": false,
+    "trusted_regression_corpus": false,
+    "provenance_note": "PROVENANCE UNCONFIRMED -- likely a business-school case study, NOT the company's own raise deck. Do not treat as ground truth about Mint. Evidence: slide 1 is four personal names plus a date (Joanne Chen | Michael D'Orazio | Victor Ho | Alan Rutledge, April 20 2007) rather than a company title; the deck contains Exit Strategy, Exit Calculation, Competitive Response and Financial Assumptions slides, which are analyst sections rather than founder sections; and the body refers to the company in the third person (\"Mint's Comp. Advantages\", \"Mint's Defensibility\"). A founder pitching does not compute their own exit. Mint was founded by Aaron Patzer, who is not named anywhere in the file. Retained for heading-robustness testing only (it is a real PDF with real unconventional headings); excluded from any measurement that treats the deck as evidence about the company. Searched for a replacement 29 Aug 2026: no verified Mint founder deck found (search returned no results; genppt slugs 404)."
   },
   {
     "company": "Front",
@@ -63,7 +74,9 @@
     "extracted_chars": 4095,
     "pages": null,
     "fetched_at": "2026-08-26T19:56:48Z",
-    "deck_year": "2016"
+    "deck_year": "2016",
+    "provenance_confirmed": true,
+    "trusted_regression_corpus": true
   },
   {
     "company": "Airbnb",
@@ -74,6 +87,8 @@
     "extracted_chars": 2472,
     "pages": null,
     "fetched_at": "2026-08-26T20:01:04Z",
-    "deck_year": "2009"
+    "deck_year": "2009",
+    "provenance_confirmed": true,
+    "trusted_regression_corpus": true
   }
 ]

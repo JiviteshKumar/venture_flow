@@ -90,8 +90,25 @@ def _fallback_ai_analysis(
         else ""
     )
 
+    # State extraction coverage in the memo itself, not only in a side panel.
+    # The complaint this answers is that a reader saw a confident completeness
+    # score in the prose and an incomplete claims table beneath it, with
+    # nothing in the text connecting the two.
+    coverage_pct = quality.get("extraction_coverage_pct")
+    coverage_note = ""
+    if coverage_pct is not None:
+        coverage_note = (
+            f" Extraction coverage for this deck was {coverage_pct}%"
+            f" ({quality.get('extraction_verdict', 'UNKNOWN')})."
+        )
+        if quality.get("extraction_verdict") in {"LOW", "EMPTY"}:
+            coverage_note += (
+                " Most of the deck's slides did not reach a structured field, so"
+                " gaps below may be parsing failures rather than gaps in the deck."
+            )
+
     return f"""1. EXECUTIVE SUMMARY
-{company_name} has been reviewed with {quality.get('quality', 'UNKNOWN')} data quality ({quality.get('score', 0)}/100). This memo should be treated as preliminary until unsupported claims and missing financials are verified.
+{company_name} has been reviewed with {quality.get('quality', 'UNKNOWN')} input completeness ({quality.get('score', 0)}/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed).{coverage_note} This memo should be treated as preliminary until unsupported claims and missing financials are verified.
 
 2. CLAIM VERIFICATION ANALYSIS
 - Claims checked: {len(claim_results)}
@@ -120,7 +137,7 @@ def _fallback_ai_analysis(
 NEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.
 
 9. CONFIDENCE LEVEL
-{min(75, max(20, quality.get('score', 50)))}%. Confidence is constrained by data quality and the number of independently verified claims.{error_note}"""
+{min(75, max(20, quality.get('score', 50)))}%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.{error_note}"""
 
 # The escapes below are word boundaries. This line previously held two
 # LITERAL BACKSPACE BYTES (0x08) where those belong -- almost certainly an
@@ -162,16 +179,38 @@ def _infer_deck_vintage(text: str) -> str:
 
 
 
+# What `assess_data_quality` actually measures, in the words the report now
+# uses. It was labelled "Data Quality", which a reader reasonably took to mean
+# "we captured this deck correctly" -- and in the audit that prompted this
+# pass, a report showed `HIGH data quality (100/100)` directly above a claims
+# table holding two of a nine-slide deck's twenty content lines. The score was
+# not wrong; it was answering a different question than the one its name
+# implied. It asks whether the ANALYSIS INPUTS arrived, never whether the deck
+# was read properly. `extraction_coverage` answers that second question, and
+# the two are reported side by side so neither can stand in for the other.
+INPUT_COMPLETENESS_LABEL = "Input Completeness"
+INPUT_COMPLETENESS_MEASURES = (
+    "Whether the analysis inputs were present: description length, how many "
+    "claims were supplied, and whether revenue was given. This is NOT a "
+    "measure of how much of the deck was successfully parsed -- see "
+    "Extraction Coverage for that."
+)
+
+
 def assess_data_quality(
     claims_to_verify: list,
     company_description: str,
     filing_text: str,
     revenue: float,
+    coverage: dict | None = None,
 ) -> dict:
-    """
-    Before running expensive analysis, assess if we have
-    enough data to produce a reliable report.
-    Returns quality score and warnings.
+    """Assess whether the analysis INPUTS are complete enough to proceed.
+
+    Deliberately NOT a measure of extraction fidelity -- see
+    `INPUT_COMPLETENESS_MEASURES` above and `extraction_coverage.py`. The
+    returned `score` is unchanged by this pass because it feeds
+    `_evidence_components`; only the naming, the warnings and the attached
+    coverage context are new.
     """
     warnings_list = []
     score = 100
@@ -197,12 +236,33 @@ def assess_data_quality(
 
     quality = "HIGH" if score >= 80 else "MEDIUM" if score >= 50 else "LOW"
 
-    return {
+    result = {
         "quality":   quality,
         "score":     score,
         "warnings":  warnings_list,
         "can_proceed": score >= 30,
+        # Naming, so no reader can take this for a parsing-completeness score.
+        "label":     INPUT_COMPLETENESS_LABEL,
+        "measures":  INPUT_COMPLETENESS_MEASURES,
     }
+
+    # Attach extraction coverage as adjacent context, never as an input to
+    # `score`. A low-coverage warning is surfaced HERE as well as in its own
+    # section, because this is the block a reader looks at when deciding
+    # whether to trust an "insufficient data" verdict, and it is precisely the
+    # place the old label misled them.
+    if coverage and coverage.get("available"):
+        result["extraction_coverage_pct"] = coverage.get("coverage_pct")
+        result["extraction_verdict"] = coverage.get("verdict")
+        if coverage.get("verdict") in {"LOW", "EMPTY"}:
+            result["warnings"] = warnings_list + [
+                f"Extraction coverage is {coverage.get('coverage_pct')}% "
+                f"({coverage.get('represented_slides', 0)} of "
+                f"{coverage.get('content_slides', 0)} content slides reached a "
+                f"structured field). Findings below may be incomplete because "
+                f"the deck was not fully parsed, not because the deck is thin."
+            ]
+    return result
 
 
 def _safe_print(text: str) -> None:
@@ -459,6 +519,9 @@ def run_due_diligence(
     founders:             list = None,
     deck_date:            str  = "",
     stage:                str  = "",
+    deck_slides:          list = None,
+    extraction_method:    str  = "",
+    extraction_fallback_reason: str = "",
     on_stage=None,
 ) -> dict:
 
@@ -486,12 +549,88 @@ def run_due_diligence(
             except Exception:
                 logger.debug("Stage callback failed for %r", label, exc_info=True)
 
-    # ── Pre-flight data quality check ──────────────────────────
+    # ── Extraction coverage ────────────────────────────────────
+    #
+    # How much of the deck reached a structured field, measured before any
+    # analysis runs. This is the number that separates "the deck said little"
+    # from "we dropped most of what it said", which the report previously
+    # could not distinguish at all -- both produced "insufficient data".
+    # See extraction_coverage.py.
+    from extraction_coverage import compute as _compute_coverage
+
+    coverage = _compute_coverage(
+        filing_text or company_description or "",
+        {
+            "description":   company_description,
+            "claims":        claims_to_verify or [],
+            "founders":      founders or [],
+            "revenue":       revenue,
+            "burn_rate":     burn_rate,
+            "runway_months": runway_months,
+            "sector":        sector,
+            "team_size":     team_size,
+        },
+        deck_slides,
+    )
+    report["extraction_coverage"] = coverage
+    report["sections"]["extraction_coverage"] = coverage
+
+    # ── Which extraction path produced this report ──────────────
+    #
+    # The defect that started this whole body of work was a NameError in
+    # structured_extractor that made the schema path raise on EVERY call. A
+    # bare `except Exception` caught it, extraction silently fell back to
+    # regex, and every analysis for an unknown number of weeks was produced by
+    # the materially worse path with nothing anywhere saying so. It took a
+    # manual audit against the original PDF to notice.
+    #
+    # The fix is not just to log it. A report has to be able to tell its own
+    # reader which path produced it, because the reader is the person deciding
+    # whether to trust the claims table -- and "this came from the regex
+    # fallback" is exactly the caveat they need and could not previously get.
+    provenance = {
+        "method": extraction_method or "unknown",
+        "is_fallback": extraction_method in {"regex_fallback", "empty"},
+        "fallback_reason": extraction_fallback_reason or "",
+    }
+    if provenance["is_fallback"]:
+        provenance["warning"] = (
+            "This report's facts were extracted by the REGEX FALLBACK, not the "
+            "schema-validated LLM extractor. The fallback captures materially "
+            "less of a deck and misses phrasing the schema path handles. Treat "
+            "claim counts and coverage below as a floor, not a measurement of "
+            "the deck. Reason: " + (extraction_fallback_reason or "not recorded")
+        )
+        # Loud on purpose. A silent fallback is the original bug.
+        logger.error(
+            "EXTRACTION DEGRADED for %s: regex fallback was used instead of the "
+            "schema extractor. Reason: %s",
+            company_name, extraction_fallback_reason or "not recorded",
+        )
+        print(f"  !! EXTRACTION DEGRADED: {provenance['warning']}")
+    elif extraction_method:
+        print(f"Extraction method: {extraction_method}")
+    report["extraction_provenance"] = provenance
+    report["sections"]["extraction_provenance"] = provenance
+    if coverage.get("available"):
+        print(
+            f"Extraction coverage: {coverage['coverage_pct']}% "
+            f"({coverage.get('represented_slides', 0)}/"
+            f"{coverage.get('content_slides', 0)} content slides) "
+            f"[{coverage['verdict']}]"
+        )
+        if coverage["verdict"] in {"LOW", "EMPTY"}:
+            print(f"  {coverage['interpretation']}")
+
+    # ── Pre-flight input completeness check ────────────────────
     quality = assess_data_quality(
-        claims_to_verify, company_description, filing_text, revenue
+        claims_to_verify, company_description, filing_text, revenue, coverage
     )
     report["data_quality"] = quality
-    print(f"Data quality: {quality['quality']} ({quality['score']}/100)")
+    print(
+        f"{quality['label']}: {quality['quality']} ({quality['score']}/100)"
+        f"  -- {quality['measures'][:60]}..."
+    )
     if quality["warnings"]:
         for w in quality["warnings"]:
             print(f"  Warning: {w}")
@@ -501,11 +640,26 @@ def run_due_diligence(
         report["incomplete_analysis"] = True
         report["recommendation"] = "INSUFFICIENT DATA — Please provide more company information"
         report["risk_level"]     = "UNKNOWN"
-        report["sections"]["ai_analysis"] = (
+        insufficient = (
             "Unable to complete due diligence. Insufficient data provided. "
             "Please upload the pitch deck or provide company description, "
             "claims to verify, and financial metrics."
         )
+        # Never let this message stand alone when coverage says the content
+        # was there and we lost it. That combination -- content present,
+        # nothing extracted, report says "insufficient data" -- is the exact
+        # failure this pass exists to make impossible to miss.
+        if coverage.get("available") and coverage.get("verdict") in {"LOW", "EMPTY"}:
+            insufficient += (
+                f"\n\nIMPORTANT: extraction coverage for this deck was "
+                f"{coverage['coverage_pct']}% "
+                f"({coverage.get('represented_slides', 0)} of "
+                f"{coverage.get('content_slides', 0)} content slides reached a "
+                f"structured field). The deck may well contain the missing "
+                f"information; this tool did not capture it. Do not read the "
+                f"verdict above as a judgement about the company."
+            )
+        report["sections"]["ai_analysis"] = insufficient
         return report
 
     # ── 1. Claim Verification ──────────────────────────────────
@@ -626,7 +780,9 @@ def run_due_diligence(
     # inputs alone. Re-assess once, so a deck whose financials were recovered
     # from its own text is not still marked down for not having them.
     if backfilled:
-        quality = assess_data_quality(claims_to_verify, company_description, filing_text, revenue)
+        quality = assess_data_quality(
+            claims_to_verify, company_description, filing_text, revenue, coverage
+        )
         report["data_quality"] = quality
 
     # ── Founder/team verification — additive, evidence-grounded ──
@@ -644,17 +800,91 @@ def run_due_diligence(
     # structured_extractor's read of the deck's team slide. Empty stays a
     # legitimate answer -- most decks have no team slide -- and the report says
     # so rather than showing an unexplained empty chart.
+    founder_discovery: dict = {"attempted": False}
     if founders:
         _stage("Checking founder backgrounds against public evidence")
         try:
             from agents.founder_verifier import verify_founders as _verify_founders
             founder_verification = _verify_founders(founders, company=company_name, deck_context=company_description)
+            for entry in founder_verification:
+                # Where the NAME came from, which is a different question from
+                # where the background evidence came from. A partner reading
+                # this needs to know whether the deck disclosed its team or
+                # whether this tool went and found one.
+                entry["origin"] = "deck"
+                entry["origin_label"] = "Named in the deck"
         except Exception:
             logger.exception("Founder verification unavailable")
             founder_verification = []
     else:
+        # ── Section B: the deck named nobody, so go and find out ──
+        #
+        # This used to be a dead end: "No founder names were submitted", full
+        # stop, no background check possible. Most decks do not name their
+        # team, so the tool's single most investor-relevant check was
+        # unavailable on the majority of real inputs -- while the founders of
+        # those companies are, almost always, public record.
+        #
+        # agents/founder_research.py does the search and enforces the
+        # anti-fabrication guard (every returned name must appear verbatim in
+        # retrieved source text). A confirmed "we searched and found nothing"
+        # is a legitimate result and is reported as one; a plausible guess is
+        # not, and cannot survive that module's grounding check.
+        _stage("Searching public sources for undisclosed founders")
+        try:
+            from agents.founder_research import discover_founders
+            founder_discovery = discover_founders(
+                company_name,
+                stage=stage or "",
+                deck_date=deck_date or "",
+                context=(company_description or filing_text or "")[:400],
+            )
+            founder_discovery["attempted"] = True
+        except Exception:
+            logger.exception("Founder discovery unavailable")
+            founder_discovery = {
+                "attempted": True,
+                "found": False,
+                "reason": "Founder research was temporarily unavailable.",
+            }
+
         founder_verification = []
+        if founder_discovery.get("found"):
+            discovered = founder_discovery.get("founders", [])
+            try:
+                from agents.founder_verifier import verify_founders as _verify_founders
+                founder_verification = _verify_founders(
+                    [f["name"] for f in discovered],
+                    company=company_name,
+                    deck_context=company_description,
+                )
+            except Exception:
+                logger.exception("Founder verification unavailable")
+                founder_verification = []
+
+            # Carry the discovery provenance onto each verified founder, so the
+            # UI never blends "the deck told us this" with "we found this
+            # ourselves". The two carry different weight in diligence and must
+            # stay visibly distinct.
+            sources_by_name = {
+                f["name"]: f.get("discovery_sources", []) for f in discovered
+            }
+            for entry in founder_verification:
+                entry["origin"] = "external_research"
+                entry["origin_label"] = "Not in the deck - found by public search"
+                entry["discovery_sources"] = sources_by_name.get(entry.get("name"), [])
+
     report["sections"]["founder_verification"] = founder_verification
+    report["sections"]["founder_discovery"] = founder_discovery
+
+    if founder_discovery.get("attempted"):
+        if founder_discovery.get("found"):
+            print(
+                f"  Founders not in the deck; public search identified: "
+                f"{', '.join(f['name'] for f in founder_discovery['founders'])}"
+            )
+        else:
+            print(f"  Founder search: {founder_discovery.get('reason', 'not found')}")
 
     _stage("Running market, team, bull and bear agents")
     specialist_results = run_investment_agents(
@@ -1049,9 +1279,36 @@ def run_due_diligence(
         )
 
     quality_str = (
-        f"DATA QUALITY: {quality['quality']} ({quality['score']}/100)\n"
+        f"INPUT COMPLETENESS: {quality['quality']} ({quality['score']}/100)\n"
+        f"  This measures whether the analysis INPUTS arrived (description "
+        f"length, claim count, revenue present). It is NOT a measure of how "
+        f"much of the deck was successfully parsed. Never describe it as "
+        f"'data quality' and never present it as evidence that the deck was "
+        f"read completely.\n"
         f"  Warnings: {'; '.join(quality['warnings']) or 'None'}\n"
     )
+    coverage_block = ""
+    if quality.get("extraction_coverage_pct") is not None:
+        coverage_block = (
+            f"EXTRACTION COVERAGE: {quality['extraction_coverage_pct']}% "
+            f"({quality.get('extraction_verdict')})\n"
+            f"  The share of the deck's content slides that reached a "
+            f"structured field. If this is LOW, say so plainly in the memo and "
+            f"attribute missing findings to incomplete parsing rather than to "
+            f"the company.\n"
+        )
+    fallback_block = ""
+    _prov = report.get("extraction_provenance") or {}
+    if _prov.get("is_fallback"):
+        fallback_block = (
+            f"EXTRACTION METHOD: {_prov.get('method')} (DEGRADED FALLBACK)\n"
+            f"  The facts below were extracted by a regex fallback, not the "
+            f"schema extractor, because: {_prov.get('fallback_reason') or 'not recorded'}. "
+            f"State plainly in the memo that extraction was degraded and that "
+            f"missing findings may be extraction failures rather than gaps in "
+            f"the deck.\n"
+        )
+    quality_str = quality_str + coverage_block + fallback_block
 
     user_message = f"""You are conducting due diligence on {company_name}.
 
@@ -1125,7 +1382,7 @@ Explain why in 2 sentences.
 
 9. CONFIDENCE LEVEL
 State 0-100%. Justify based on how much verified data you have.
-If data quality is LOW, confidence must be below 60%.
+If input completeness is LOW, or extraction coverage is LOW, confidence must be below 60%.
 ---"""
 
     try:
@@ -1297,7 +1554,10 @@ If data quality is LOW, confidence must be below 60%.
     print(f"SCORE:          {final_score:.0f}/100")
     print(f"RECOMMENDATION: {recommendation}")
     print(f"RISK LEVEL:     {risk_level}")
-    print(f"DATA QUALITY:   {quality['quality']}")
+    print(f"INPUT COMPLETENESS: {quality['quality']} ({quality['score']}/100)")
+    _cov = report.get("extraction_coverage") or {}
+    if _cov.get("available"):
+        print(f"EXTRACTION COVERAGE: {_cov['coverage_pct']}% [{_cov['verdict']}]")
     print(f"{'='*60}")
     print("\nAI ANALYSIS:")
     _safe_print(ai_analysis)

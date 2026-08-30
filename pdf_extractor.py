@@ -296,6 +296,26 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         print(f"PDF extraction error: {e}")
     return "\n".join(text_parts)
 
+def extract_pages_from_pdf(file_bytes: bytes) -> list:
+    """Same extraction as `extract_text_from_pdf`, kept per page.
+
+    Exists for `extraction_coverage`, which reports how much of the deck
+    reached a structured field. Slide boundaries are what make that number
+    mean something: the failure this measures is whole slides being dropped
+    in silence, and a metric computed over one joined blob cannot say which
+    slide went missing. Everything here delegates to the same
+    `extract_page_text` the joined version uses, so the two can never drift.
+    """
+    pages = []
+    try:
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            for page in pdf.pages:
+                pages.append((extract_page_text(page) or "").strip())
+    except Exception as e:
+        print(f"PDF page extraction error: {e}")
+    return pages
+
+
 def clean_sentence(s: str) -> str:
     """Clean up extracted PDF sentences."""
     # Remove newlines within sentence
@@ -305,6 +325,24 @@ def clean_sentence(s: str) -> str:
     # Remove leading bullets, dashes, dots
     s = re.sub(r'^[\s\-\•\*\·]+', '', s)
     return s.strip()
+
+def _looks_like_a_heading(s: str) -> bool:
+    """A slide heading rather than a claim, decided by shape, not wording.
+
+    This replaces the closed verb list that used to serve the same purpose and
+    did it by rejecting most real deck content. Headings are short and have few
+    words; the test never consults a vocabulary of expected slide names, which
+    is the property that makes it survive a deck calling its solution slide
+    "1-Click Car Service" or "Key Differentiators".
+    """
+    words = s.split()
+    if len(words) <= 4 and len(s) < 42:
+        return True
+    # "Business Model" / "Progress To Date": title-cased and short.
+    if len(words) <= 5 and s == s.title():
+        return True
+    return False
+
 
 def is_good_claim(sentence: str) -> bool:
     """
@@ -344,12 +382,36 @@ def is_good_claim(sentence: str) -> bool:
         r'\b(deployed|operating|processing|serving)\b',             # operational claims
     ]
     has_fact = any(re.search(p, s, re.IGNORECASE) for p in fact_patterns)
-    if not has_fact:
+
+    # A deck bullet that names no dollar figure is still a claim: "Not hailed
+    # from street, so no medallion licenses are required" is checkable and
+    # material. Substance is measured as length plus word count rather than by
+    # matching a keyword list, for the same reason the verb list had to go --
+    # any fixed vocabulary silently drops whatever it did not anticipate.
+    is_substantive = len(s.split()) >= 6 and len(s) >= 35
+    if not (has_fact or is_substantive):
         return False
 
-    # Must have a verb (real sentence, not just a label)
-    verbs = r'\b(is|are|was|were|has|have|had|will|does|do|can|provides|offers|delivers|achieves|uses|reduces|increases|generates|processes|serves|operates|raised|cleared|approved)\b'
-    if not re.search(verbs, s, re.IGNORECASE):
+    # NO closed verb list here, deliberately.
+    #
+    # There used to be one: a claim had to contain a finite verb drawn from a
+    # 24-word list. It is the single filter that did the most damage, because
+    # pitch decks are written in noun phrases. Measured on the real 2008 UberCab
+    # deck, it is what dropped every one of these:
+    #
+    #   "U.S. taxi & limousine industry sized at roughly $4.2B annually"
+    #   "Revenue model: percentage cut of every fare (roughly 80/20 split)"
+    #   "Membership-only clientele - vetted, professional users"
+    #
+    # -- all of which carry a fact indicator and all of which a partner would
+    # call a claim. What survived was two restatements of the same $200K raise,
+    # because "Raised $200K" happens to contain "raised". The report then said
+    # "insufficient data" about a deck that was full of it.
+    #
+    # A label is now excluded by shape rather than by vocabulary: headings are
+    # short and have few words, which `_looks_like_a_heading` tests directly
+    # without needing to know what any particular deck calls its slides.
+    if _looks_like_a_heading(s):
         return False
 
     # Skip obvious navigation/formatting artifacts
@@ -375,11 +437,21 @@ def extract_claims_from_text(text: str) -> list:
     # Handle cases where PDF extraction runs sentences together
     sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text)
 
-    # Also split on newlines that look like sentence boundaries
+    # Split on line breaks and on bullet glyphs.
+    #
+    # This used to split only on `\n(?=[A-Z])` -- a newline followed by a
+    # capital letter. Deck bullets begin with "•" or "–", not with a capital,
+    # so an entire slide arrived as one run-on string: heading, every bullet
+    # and the slide number concatenated. Those blobs are useless as claims
+    # (nobody can verify "UberCab Fleet • Premium – S550 for SF Beta clients •
+    # 30mpg with S400 BlueHybrid...") and they also defeat deduplication,
+    # because two slides sharing a heading fingerprint collapse into one.
+    #
+    # Splitting on the glyphs themselves yields one candidate per bullet, which
+    # is the unit a deck actually asserts in.
     expanded = []
     for sent in sentences:
-        # Split on newlines if the result looks like multiple sentences
-        parts = re.split(r'\n(?=[A-Z])', sent)
+        parts = re.split(r'\n+|\s*[•▪◦‣]\s*|\s+[–—]\s+', sent)
         expanded.extend(parts)
 
     cleaned = [clean_sentence(s) for s in expanded]
@@ -406,7 +478,12 @@ def extract_claims_from_text(text: str) -> list:
 
     unique_claims.sort(key=specificity_score, reverse=True)
 
-    return unique_claims[:5]
+    # 12, not 5. The cap used to be set by what claim verification could afford
+    # to check; it therefore also silently truncated the report's record of the
+    # deck to a third of a nine-slide deck's content. Verification still checks
+    # only the top few (see run_due_diligence), but what the deck SAID is no
+    # longer discarded to suit what the verifier can afford to read.
+    return unique_claims[:12]
 
 # Role words that mark the line *after* a person's name on a team slide. Kept
 # deliberately narrow: "Head of Hardware" and "Co-founder & CTO" are roles,
@@ -424,6 +501,12 @@ _NAME_PATTERN = re.compile(
 )
 _TEAM_HEADING = re.compile(r"^\s*(?:the\s+)?(?:team|founders?|leadership|who\s+we\s+are)\s*$",
                            re.IGNORECASE)
+# "Melanie Perkins, Founder" / "Ada Lovelace - Co-Founder & CTO". The role half
+# is still validated against _ROLE_PATTERN by the caller, so "San Francisco,
+# California" and "Trips to/from restaurants, bars" do not become founders.
+_INLINE_NAME_ROLE = re.compile(
+    r"^([A-Z][\w'’-]+(?:\s+[A-Z][\w'’.-]+){1,2})\s*[,–—-]\s*(.{2,60})$"
+)
 
 
 def extract_founders(text: str, max_founders: int = 5) -> list:
@@ -449,6 +532,26 @@ def extract_founders(text: str, max_founders: int = 5) -> list:
         founders: list[dict] = []
         seen: set[str] = set()
         for index, line in enumerate(lines):
+            # "Melanie Perkins, Founder" -- name and role on ONE line.
+            #
+            # The two-line form below (name, then role beneath) is what a team
+            # slide looks like, and it was the only form recognised. A title
+            # slide does it differently: it sets the founder's name and title
+            # together on a single line under the logo, and that is precisely
+            # the deck that has no team slide for the two-line rule to find.
+            # So the one case where this function was the only thing standing
+            # between the report and "no founder names were submitted" was the
+            # case it could not read.
+            inline = _INLINE_NAME_ROLE.match(line)
+            if inline:
+                name, role = inline.group(1).strip(), inline.group(2).strip()
+                if name.lower() not in seen and _ROLE_PATTERN.match(role):
+                    seen.add(name.lower())
+                    founders.append({"name": name, "role": role, "background": ""})
+                    if len(founders) >= max_founders:
+                        break
+                continue
+
             if not _NAME_PATTERN.match(line):
                 continue
             role_line = next(

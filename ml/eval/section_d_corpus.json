@@ -1,0 +1,603 @@
+[
+  {
+    "company": "Buffer",
+    "file": "Buffer.pdf",
+    "bytes": 6574715,
+    "pages": 13,
+    "extracted_chars": 2012,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [
+        "Business Model • Freemium model with consistent 2% conversion from Free to Paid plans • 5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user • At 1M users, our projected revenue is $3.6M",
+        "Landscape • Of 200M daily Tweets, 55% contain links • 4 billion items shared on Facebook per day • Zuckerberg’s Law shows exponential growth of sharing • Traffic through social is soon to surpass traffic from search",
+        "Can Increase Clicks by 200%”"
+      ],
+      "claim_count": 3,
+      "founders": [
+        {
+          "name": "Joel Gascoigne",
+          "role": "Co-Founder, took the idea to revenue in 7 weeks, Masters in CS",
+          "background": ""
+        },
+        {
+          "name": "Leo Widrich",
+          "role": "Co-Founder, marketeer, took Buffer from 200 to 55,000 users",
+          "background": ""
+        },
+        {
+          "name": "Hiten Shah",
+          "role": "CEO / Co-Founder of KISSmetrics.",
+          "background": "Previously started CrazyEgg & ACS founders@bufferapp.com"
+        }
+      ],
+      "coverage_pct": 66.7,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "8/12"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "800 Paying Users",
+        "$150,000 annual revenue run rate",
+        "97% margins",
+        "55,000 users, growing 40% per month",
+        "1.5 million updates Buffered",
+        "55,000 users ($150K revenue) October 2011",
+        "100,000 users ($288K revenue) January 2012",
+        "1 million users ($3.6M revenue) January 2013",
+        "Freemium model with consistent 2% conversion from Free to Paid plans",
+        "5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user",
+        "At 1M users, our projected revenue is $3.6M",
+        "Of 200M daily Tweets, 55% contain links",
+        "4 billion items shared on Facebook per day",
+        "Buffer Finds Tweet Scheduling Can Increase Clicks by 200%"
+      ],
+      "claim_count": 14,
+      "founders": [
+        {
+          "name": "Joel Gascoigne",
+          "role": "Co-Founder",
+          "background": "took the idea to revenue in 7 weeks, Masters in CS"
+        },
+        {
+          "name": "Leo Widrich",
+          "role": "Co-Founder",
+          "background": "marketeer, took Buffer from 200 to 55,000 users"
+        }
+      ],
+      "revenue": 150000.0,
+      "burn_rate": null,
+      "runway_months": null,
+      "description": "Buffer is a social media scheduling platform that lets users queue updates and drive traffic, operating on a freemium model.",
+      "coverage_pct": 75.0,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "9/12",
+      "unrepresented_slides": [
+        {
+          "slide": 10,
+          "heading": "A sharing standard"
+        },
+        {
+          "slide": 11,
+          "heading": "Competitive"
+        },
+        {
+          "slide": 13,
+          "heading": "founders@bufferapp.com"
+        }
+      ]
+    },
+    "diff": {
+      "claims_gained": 11,
+      "coverage_delta_pct": 8.3,
+      "new_claims": [
+        "800 Paying Users",
+        "$150,000 annual revenue run rate",
+        "97% margins",
+        "55,000 users, growing 40% per month",
+        "1.5 million updates Buffered",
+        "55,000 users ($150K revenue) October 2011",
+        "100,000 users ($288K revenue) January 2012",
+        "1 million users ($3.6M revenue) January 2013",
+        "Freemium model with consistent 2% conversion from Free to Paid plans",
+        "5% churn equates to a LTV of $240 and allows us to pay up to $5 to acquire a free user",
+        "At 1M users, our projected revenue is $3.6M",
+        "Of 200M daily Tweets, 55% contain links",
+        "4 billion items shared on Facebook per day",
+        "Buffer Finds Tweet Scheduling Can Increase Clicks by 200%"
+      ]
+    },
+    "founder_handling": {
+      "origin": "deck",
+      "names": [
+        "Joel Gascoigne",
+        "Leo Widrich"
+      ],
+      "note": "Named in the deck text; no external search required."
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
+    "sha256": "ac2d84ea4a340b6c96f5a02f066febd2c0a11c4cbc66e07d8ab00423f7805295",
+    "deck_year": "2011",
+    "seconds": 6.4
+  },
+  {
+    "company": "Coinbase",
+    "file": "Coinbase.pdf",
+    "bytes": 1454182,
+    "pages": 12,
+    "extracted_chars": 635,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [],
+      "claim_count": 0,
+      "founders": [],
+      "coverage_pct": 0.0,
+      "coverage_verdict": "LOW",
+      "slides_represented": "0/12"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "$2 million USD per day in transaction volume",
+        "Coinbase Signups 20% Daily",
+        "$65,000 USD in the first 5 weeks",
+        "No Transaction Fees",
+        "Instant International",
+        "Your hosted bitcoin wallet",
+        "Current Tools Too Difficult To Use",
+        "Coinbase: A New Payment Network Based on the digital currency bitcoin",
+        "Early Adopters include international payments, virtual goods, developing world, games, peer-to-peer, remittance, micro-transactions, e-commerce",
+        "Coinbase : Bitcoin iTunes : MP3"
+      ],
+      "claim_count": 10,
+      "founders": [],
+      "revenue": null,
+      "burn_rate": null,
+      "runway_months": null,
+      "description": "A hosted Bitcoin wallet that enables instant international payments with no transaction fees.",
+      "coverage_pct": 100.0,
+      "coverage_verdict": "HIGH",
+      "slides_represented": "12/12",
+      "unrepresented_slides": []
+    },
+    "diff": {
+      "claims_gained": 10,
+      "coverage_delta_pct": 100.0,
+      "new_claims": [
+        "$2 million USD per day in transaction volume",
+        "Coinbase Signups 20% Daily",
+        "$65,000 USD in the first 5 weeks",
+        "No Transaction Fees",
+        "Instant International",
+        "Your hosted bitcoin wallet",
+        "Current Tools Too Difficult To Use",
+        "Coinbase: A New Payment Network Based on the digital currency bitcoin",
+        "Early Adopters include international payments, virtual goods, developing world, games, peer-to-peer, remittance, micro-transactions, e-commerce",
+        "Coinbase : Bitcoin iTunes : MP3"
+      ]
+    },
+    "founder_handling": {
+      "origin": "external_research",
+      "search_fired": true,
+      "found": true,
+      "names": [
+        "Brian Armstrong",
+        "Fred Ehrsam"
+      ],
+      "sources": {
+        "Brian Armstrong": [
+          "https://en.wikipedia.org/wiki/Coinbase",
+          "https://en.wikipedia.org/wiki/Brian_Armstrong_(businessman)",
+          "https://www.ycombinator.com/companies/coinbase",
+          "https://usethebitcoin.com/crypto-personalities/all-you-need-to-know-about-brian-armstrong-the-ceo-of-coinbase/"
+        ],
+        "Fred Ehrsam": [
+          "https://en.wikipedia.org/wiki/Coinbase",
+          "https://en.wikipedia.org/wiki/Brian_Armstrong_(businessman)",
+          "https://en.wikipedia.org/wiki/Fred_Ehrsam",
+          "https://usethebitcoin.com/crypto-personalities/all-you-need-to-know-about-brian-armstrong-the-ceo-of-coinbase/"
+        ]
+      },
+      "reason": "",
+      "rejected_ungrounded": []
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf",
+    "sha256": "727940dd43cd846c922d2c06c3c2ce476079cac939f63081edfb364a89e59caa",
+    "deck_year": "2012",
+    "seconds": 54.6
+  },
+  {
+    "company": "Mint",
+    "file": "Mint.pdf",
+    "bytes": 244082,
+    "pages": 16,
+    "extracted_chars": 9873,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [
+        "Satisfied users have little incentive to switch"
+      ],
+      "claim_count": 1,
+      "founders": [],
+      "coverage_pct": 6.2,
+      "coverage_verdict": "LOW",
+      "slides_represented": "1/16"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "Mint offers the most compelling and easy way to manage your personal finances.",
+        "Mint's total addressable market opportunity is $388 Million with 16% CAGR.",
+        "Mint has 3 non‑pending technology patents.",
+        "Mint's projected total revenue for 2010 is $5,377.1.",
+        "Mint's projected EBIT for 2010 is $2,562.9.",
+        "Mint's user base is projected to reach 510.2 thousand by end of 2010.",
+        "Mint's RPU is $8 per year with 14% CAGR for referrals (CPA).",
+        "Mint's RPU is $4.50 per year with 22% CAGR for advertising (CPC).",
+        "Mint's target demographic is 22‑35 age range, 64% of that group use online banking.",
+        "Competitor Wesabe has no revenue model and poor traction.",
+        "Mint has integration partnerships with TurboTax.",
+        "Mint makes money when users make money rather than relying on added services.",
+        "Mint's IRR is 25%."
+      ],
+      "claim_count": 13,
+      "founders": [
+        {
+          "name": "Joanne Chen",
+          "role": "",
+          "background": ""
+        },
+        {
+          "name": "Michael D’Orazio",
+          "role": "",
+          "background": ""
+        },
+        {
+          "name": "Victor Ho",
+          "role": "",
+          "background": ""
+        },
+        {
+          "name": "Alan Rutledge",
+          "role": "",
+          "background": ""
+        }
+      ],
+      "revenue": 5377.1,
+      "burn_rate": null,
+      "runway_months": null,
+      "description": "Mint is a free personal finance platform that aggregates users' financial accounts, provides budgeting and goal‑setting tools, and monetizes through referrals and targeted advertising.",
+      "coverage_pct": 56.2,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "9/16",
+      "unrepresented_slides": [
+        {
+          "slide": 1,
+          "heading": "Joanne Chen | Michael D’Orazio | Victor Ho | Alan Rutledge"
+        },
+        {
+          "slide": 2,
+          "heading": "Mint: Save Time & Money"
+        },
+        {
+          "slide": 3,
+          "heading": "Team & Advisors"
+        },
+        {
+          "slide": 7,
+          "heading": "Value to Partners"
+        },
+        {
+          "slide": 11,
+          "heading": "Exit Strategy"
+        },
+        {
+          "slide": 12,
+          "heading": "Q & A"
+        },
+        {
+          "slide": 16,
+          "heading": "Exit Calculation"
+        }
+      ]
+    },
+    "diff": {
+      "claims_gained": 12,
+      "coverage_delta_pct": 50.0,
+      "new_claims": [
+        "Mint offers the most compelling and easy way to manage your personal finances.",
+        "Mint's total addressable market opportunity is $388 Million with 16% CAGR.",
+        "Mint has 3 non‑pending technology patents.",
+        "Mint's projected total revenue for 2010 is $5,377.1.",
+        "Mint's projected EBIT for 2010 is $2,562.9.",
+        "Mint's user base is projected to reach 510.2 thousand by end of 2010.",
+        "Mint's RPU is $8 per year with 14% CAGR for referrals (CPA).",
+        "Mint's RPU is $4.50 per year with 22% CAGR for advertising (CPC).",
+        "Mint's target demographic is 22‑35 age range, 64% of that group use online banking.",
+        "Competitor Wesabe has no revenue model and poor traction.",
+        "Mint has integration partnerships with TurboTax.",
+        "Mint makes money when users make money rather than relying on added services.",
+        "Mint's IRR is 25%."
+      ]
+    },
+    "founder_handling": {
+      "origin": "deck",
+      "names": [
+        "Joanne Chen",
+        "Michael D’Orazio",
+        "Victor Ho",
+        "Alan Rutledge"
+      ],
+      "note": "Named in the deck text; no external search required."
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/mint/mint-pitch-deck-2007.pdf",
+    "sha256": "04714564f64547a207b8d115db3602bacfecd6a9dadb69ebd12637bd262b23b4",
+    "deck_year": "2007",
+    "seconds": 62.7
+  },
+  {
+    "company": "Front",
+    "file": "Front.pdf",
+    "bytes": 5476327,
+    "pages": 24,
+    "extracted_chars": 4095,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [
+        "Seed to Series A $3.1m raised $xx spent $xx ARR added",
+        "We are here $xx ARR $xx ARR $xx ARR $xx ARR",
+        "Series A to date $10m raised $xx spent $xx ARR added",
+        "Team growth is built upon solid foundations"
+      ],
+      "claim_count": 4,
+      "founders": [],
+      "coverage_pct": 21.7,
+      "coverage_verdict": "LOW",
+      "slides_represented": "5/23"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "So we built the first shared email client",
+        "2300 companies use Front today",
+        "A very consistent growth of revenue",
+        "Churn keeps trending down…",
+        "…while usage grows exponentially",
+        "ASP up every quarter",
+        "ACV doubled in 15 months",
+        "120% net retention rate at 6 months",
+        "150% net retention rate at 1 year",
+        "3.9x more messages sent per user after 1 year",
+        "4.9x more comments written per user after 1 year",
+        "LTV / CAC 2.5 2.6 4.4",
+        "We have a track record of capital efficiency",
+        "Cash on hand $7m left"
+      ],
+      "claim_count": 14,
+      "founders": [],
+      "revenue": null,
+      "burn_rate": null,
+      "runway_months": null,
+      "description": "Front provides a shared email client that lets teams collaborate on email with features such as automated rules, assignment, comments, reminders, canned answers, and analytics.",
+      "coverage_pct": 60.9,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "14/23",
+      "unrepresented_slides": [
+        {
+          "slide": 10,
+          "heading": "Building a predictable sales organization (1/2)"
+        },
+        {
+          "slide": 14,
+          "heading": "Team growth is built upon solid foundations"
+        },
+        {
+          "slide": 16,
+          "heading": "As a business, we are in a great position"
+        },
+        {
+          "slide": 17,
+          "heading": "Where do we go from there?"
+        },
+        {
+          "slide": 19,
+          "heading": "Our two areas of focus for 2018"
+        },
+        {
+          "slide": 20,
+          "heading": "Our two areas of focus for 2018"
+        },
+        {
+          "slide": 21,
+          "heading": "Long-term vision"
+        },
+        {
+          "slide": 22,
+          "heading": "Long-term vision"
+        },
+        {
+          "slide": 24,
+          "heading": "Thanks"
+        }
+      ]
+    },
+    "diff": {
+      "claims_gained": 10,
+      "coverage_delta_pct": 39.2,
+      "new_claims": [
+        "So we built the first shared email client",
+        "2300 companies use Front today",
+        "A very consistent growth of revenue",
+        "Churn keeps trending down…",
+        "…while usage grows exponentially",
+        "ASP up every quarter",
+        "ACV doubled in 15 months",
+        "120% net retention rate at 6 months",
+        "150% net retention rate at 1 year",
+        "3.9x more messages sent per user after 1 year",
+        "4.9x more comments written per user after 1 year",
+        "LTV / CAC 2.5 2.6 4.4",
+        "We have a track record of capital efficiency",
+        "Cash on hand $7m left"
+      ]
+    },
+    "founder_handling": {
+      "origin": "external_research",
+      "search_fired": true,
+      "found": true,
+      "names": [
+        "Mathilde Collin",
+        "Laurent Perrin",
+        "Elizabeth Welles"
+      ],
+      "sources": {
+        "Mathilde Collin": [
+          "https://www.getmacha.com/blog/what-is-front-app",
+          "https://tracxn.com/d/companies/front/__HeRLSq3hy0lDetLGKIccBXJhIQ7it32AkMIf0OUW2t8",
+          "https://www.ycombinator.com/companies/front",
+          "https://www.linkedin.com/in/mathilde-collin-bb59492a/en"
+        ],
+        "Laurent Perrin": [
+          "https://www.getmacha.com/blog/what-is-front-app",
+          "https://tracxn.com/d/companies/front/__HeRLSq3hy0lDetLGKIccBXJhIQ7it32AkMIf0OUW2t8",
+          "https://www.ycombinator.com/companies/front",
+          "https://www.linkedin.com/in/mathilde-collin-bb59492a/en"
+        ],
+        "Elizabeth Welles": [
+          "https://www.getmacha.com/blog/what-is-front-app",
+          "https://tracxn.com/d/companies/front/__HeRLSq3hy0lDetLGKIccBXJhIQ7it32AkMIf0OUW2t8"
+        ]
+      },
+      "reason": "",
+      "rejected_ungrounded": []
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/front-series-a/front-series-a-pitch-deck-2016.pdf",
+    "sha256": "212fd7240f93372e0ea69959c0872c45ca186021fef35aca83fef0fdb1a76a6b",
+    "deck_year": "2016",
+    "seconds": 62.3
+  },
+  {
+    "company": "Airbnb",
+    "file": "Airbnb.pdf",
+    "bytes": 4509019,
+    "pages": 11,
+    "extracted_chars": 2472,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [
+        "Price is an important concern for customers booking travel online.",
+        "A web platform where users can rent out their space to host travelers to:"
+      ],
+      "claim_count": 2,
+      "founders": [],
+      "coverage_pct": 18.2,
+      "coverage_verdict": "LOW",
+      "slides_represented": "2/11"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "Price is an important concern for customers booking travel online.",
+        "Hotels leave you disconnected from the city and its culture.",
+        "No easy way exists to book a home with a local or become a host.",
+        "We take a 10% commission on each transaction.",
+        "630,000 listings on temporary housing site couchsurfing.com.",
+        "17,000 temporary housing listings on SF & NYC Craigslist from 07/09 – 07/16.",
+        "1.9 Billion+ trips booked worldwide (total available market).",
+        "532M trips (serviceable available market).",
+        "10.6M trips with AB&B (market share).",
+        "Average fee $70/night for 3 nights per trip.",
+        "Revenue from 2008-2011 is $200M.",
+        "AirBnB partnered with events such as Oktoberfest (6M attendees), Cebit (700,000), Summerfest (1M), Eurocup (3M+), Mardi Gras (800,000).",
+        "AirBnB integrated a dual posting feature with Craigslist."
+      ],
+      "claim_count": 13,
+      "founders": [],
+      "revenue": 200000000.0,
+      "burn_rate": null,
+      "runway_months": null,
+      "description": "AirBed&Breakfast is a web platform that lets travelers book rooms with local hosts, offering a cheaper, culturally immersive alternative to hotels.",
+      "coverage_pct": 72.7,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "8/11",
+      "unrepresented_slides": [
+        {
+          "slide": 9,
+          "heading": "Competition 9"
+        },
+        {
+          "slide": 10,
+          "heading": "Competitive Advantages"
+        },
+        {
+          "slide": 11,
+          "heading": "Download a PPT version of this"
+        }
+      ]
+    },
+    "diff": {
+      "claims_gained": 11,
+      "coverage_delta_pct": 54.5,
+      "new_claims": [
+        "Hotels leave you disconnected from the city and its culture.",
+        "No easy way exists to book a home with a local or become a host.",
+        "We take a 10% commission on each transaction.",
+        "630,000 listings on temporary housing site couchsurfing.com.",
+        "17,000 temporary housing listings on SF & NYC Craigslist from 07/09 – 07/16.",
+        "1.9 Billion+ trips booked worldwide (total available market).",
+        "532M trips (serviceable available market).",
+        "10.6M trips with AB&B (market share).",
+        "Average fee $70/night for 3 nights per trip.",
+        "Revenue from 2008-2011 is $200M.",
+        "AirBnB partnered with events such as Oktoberfest (6M attendees), Cebit (700,000), Summerfest (1M), Eurocup (3M+), Mardi Gras (800,000).",
+        "AirBnB integrated a dual posting feature with Craigslist."
+      ]
+    },
+    "founder_handling": {
+      "origin": "external_research",
+      "search_fired": true,
+      "found": true,
+      "names": [
+        "Brian Chesky",
+        "Joe Gebbia",
+        "Nathan Blecharczyk"
+      ],
+      "sources": {
+        "Brian Chesky": [
+          "https://en.wikipedia.org/wiki/Airbnb",
+          "https://en.wikipedia.org/wiki/Brian_Chesky",
+          "https://news.airbnb.com/about-us/",
+          "https://news.airbnb.com/en-in/about-us/"
+        ],
+        "Joe Gebbia": [
+          "https://en.wikipedia.org/wiki/Airbnb",
+          "https://news.airbnb.com/about-us/",
+          "https://news.airbnb.com/en-in/about-us/",
+          "https://www.hostaway.com/blog/airbnb-founders/"
+        ],
+        "Nathan Blecharczyk": [
+          "https://en.wikipedia.org/wiki/Airbnb",
+          "https://news.airbnb.com/about-us/",
+          "https://news.airbnb.com/en-in/about-us/",
+          "https://www.hostaway.com/blog/airbnb-founders/"
+        ]
+      },
+      "reason": "",
+      "rejected_ungrounded": []
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/airbnb/airbnb-pitch-deck-2009.pdf",
+    "sha256": "83f42ebab1b394e0f5e890761857c557fc5b19274667b46f086ab1f4236973a6",
+    "deck_year": "2009",
+    "seconds": 120.6
+  }
+]

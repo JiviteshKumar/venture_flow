@@ -1,0 +1,263 @@
+[
+  {
+    "company": "Uber",
+    "file": "Uber.pdf",
+    "bytes": 1417324,
+    "pages": 25,
+    "extracted_chars": 5390,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [
+        "User Benefits • Cabs don’t guarantee pickup, can take 45 mins • Cab aren’t as safe or clean as limos • Car services require 1-3 hours notice • Car services transfers average over $60 + tax • UberCab would be faster & cheaper than a limo, but nicer & safer than a taxicab 11",
+        "The Medallion System • Taxi-monopolies reduce quality of service – Medallions are expensive, and drivers underpaid – Medallions cost ~$500k, drivers make 31k – No incentive/accountability for drivers/clients • Digital Hail can now make street hail unnecessary 3",
+        "Marketing Ideas • YellowCab is the only recognizable brand – Become the ubiquitous “premium” cab service • Invite Only, referred from an existing member • Possible slogan: The One-click cab • The NetJets of Limos • Cabs2.0 23"
+      ],
+      "claim_count": 3,
+      "founders": [],
+      "coverage_pct": 20.0,
+      "coverage_verdict": "LOW",
+      "slides_represented": "5/25"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "Medallions cost ~$500k, drivers make 31k",
+        "UberCab concept targets professionals in American cities",
+        "Members only service with professional and trustworthy clientele",
+        "Guaranteed pick‑up unlike a yellow cab",
+        "Luxury automobiles – Mercedes Sedans",
+        "Hybrid vehicles (2x efficiency of a cab)",
+        "Overall market $4.2B annually and growing",
+        "Top 4 players combined only 22% of revenues",
+        "Target cities SF/NYC to begin, expand to LA, Chicago, Houston, PA, Dallas covering 50% of US market",
+        "Best‑case scenario: becomes market leader, $1B+ in yearly revenue",
+        "Realistic scenario: gets 5% of top 5 US cities, generates $20-30M+ per year profit",
+        "Worst‑case scenario: remains a 10 car, 100 client service in SF",
+        "Location‑based service industry growing to $3.5B by 2010",
+        "Progress to date: Ubercab.com reserved, trademark filed, 5 advisors & 15 clients recruited, provisional patent filed"
+      ],
+      "claim_count": 14,
+      "founders": [],
+      "revenue": null,
+      "burn_rate": null,
+      "runway_months": null,
+      "description": "UberCab is a member‑only on‑demand luxury car service that uses a one‑click mobile app to match professional clients with drivers and premium vehicles in major US cities.",
+      "coverage_pct": 52.0,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "13/25",
+      "unrepresented_slides": [
+        {
+          "slide": 2,
+          "heading": "Cabs in 2008"
+        },
+        {
+          "slide": 8,
+          "heading": "UberCab apps"
+        },
+        {
+          "slide": 10,
+          "heading": "Use-Cases"
+        },
+        {
+          "slide": 11,
+          "heading": "User Benefits"
+        },
+        {
+          "slide": 13,
+          "heading": "UberCab Fleet"
+        },
+        {
+          "slide": 14,
+          "heading": "Initial Service Area"
+        },
+        {
+          "slide": 15,
+          "heading": "Technology"
+        },
+        {
+          "slide": 16,
+          "heading": "Demand Forecasting"
+        },
+        {
+          "slide": 18,
+          "heading": "Composition of Market"
+        },
+        {
+          "slide": 21,
+          "heading": "SmartPhones, Aug2008"
+        },
+        {
+          "slide": 22,
+          "heading": "Future Optimizations"
+        },
+        {
+          "slide": 23,
+          "heading": "Marketing Ideas"
+        }
+      ]
+    },
+    "diff": {
+      "claims_gained": 11,
+      "coverage_delta_pct": 32.0,
+      "new_claims": [
+        "Medallions cost ~$500k, drivers make 31k",
+        "UberCab concept targets professionals in American cities",
+        "Members only service with professional and trustworthy clientele",
+        "Guaranteed pick‑up unlike a yellow cab",
+        "Luxury automobiles – Mercedes Sedans",
+        "Hybrid vehicles (2x efficiency of a cab)",
+        "Overall market $4.2B annually and growing",
+        "Top 4 players combined only 22% of revenues",
+        "Target cities SF/NYC to begin, expand to LA, Chicago, Houston, PA, Dallas covering 50% of US market",
+        "Best‑case scenario: becomes market leader, $1B+ in yearly revenue",
+        "Realistic scenario: gets 5% of top 5 US cities, generates $20-30M+ per year profit",
+        "Worst‑case scenario: remains a 10 car, 100 client service in SF",
+        "Location‑based service industry growing to $3.5B by 2010",
+        "Progress to date: Ubercab.com reserved, trademark filed, 5 advisors & 15 clients recruited, provisional patent filed"
+      ]
+    },
+    "founder_handling": {
+      "origin": "external_research",
+      "search_fired": true,
+      "found": true,
+      "names": [
+        "Garrett Camp",
+        "Travis Kalanick"
+      ],
+      "sources": {
+        "Garrett Camp": [
+          "https://www.fundreef.com/pitch-deck-uber-how-they-convinced-investors/",
+          "https://en.wikipedia.org/wiki/Uber",
+          "https://www.investopedia.com/articles/personal-finance/111015/story-uber.asp"
+        ],
+        "Travis Kalanick": [
+          "https://www.fundreef.com/pitch-deck-uber-how-they-convinced-investors/",
+          "https://en.wikipedia.org/wiki/Travis_Kalanick",
+          "https://www.investopedia.com/articles/personal-finance/111015/story-uber.asp",
+          "https://www.britannica.com/money/Travis-Kalanick"
+        ]
+      },
+      "reason": "",
+      "rejected_ungrounded": []
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/uber/uber-pitch-deck-2008.pdf",
+    "sha256": "dd45d5c79cab6a8ada45b0a99e2c4cc21c75447f1b96b7753ffa95a33141d803",
+    "deck_year": "2008",
+    "seconds": 62.1
+  },
+  {
+    "company": "Intercom",
+    "file": "Intercom.pdf",
+    "bytes": 141235,
+    "pages": 8,
+    "extracted_chars": 2355,
+    "status": "ANALYSED",
+    "before": {
+      "method": "regex_fallback (the LLM path raised NameError on every call)",
+      "claims": [
+        "Building meaningful relationships with customers is hard / impossible for SaaS providers (meaningful relationships → loyal customers → profitable customers and organic growth) *"
+      ],
+      "claim_count": 1,
+      "founders": [],
+      "coverage_pct": 12.5,
+      "coverage_verdict": "LOW",
+      "slides_represented": "1/8"
+    },
+    "after": {
+      "method": "llm_schema",
+      "fallback_reason": "",
+      "claims": [
+        "Building meaningful relationships with customers is hard / impossible for SaaS providers",
+        "The current tools available are complex, ineffective, not built for SaaS… there’s no one tool to do customer relationship management and messaging for SaaS providers",
+        "Intercom is simple install like Google Analytics",
+        "Intercom provides customer base browsing (e.g. signed‑up today, on premium plan)",
+        "Intercom provides individual customer research (e.g. see Twitter followers, company)",
+        "Intercom provides advanced in‑app messaging (user sees message on next login or at specific event and can reply to messages)",
+        "Intercom provides customer relationship management (Intercom calculates relationship metric over time and allows app owner find people who need attention)",
+        "SaaS providers represent a $21 billion market, $93 billion in 2016 according to Forrester",
+        "Later the product will target mobile and desktop app providers",
+        "Product in development and testing since Jan, ready for public beta",
+        "Private beta testers love the product, many are psyched to try it",
+        "$600k convertible note",
+        "18 months of runway to work on product‑market fit, customer development, early marketing efforts, profitability",
+        "Plan to raise further round in 12‑18 months to turn up heat on marketing"
+      ],
+      "claim_count": 14,
+      "founders": [
+        {
+          "name": "Eoghan McCabe",
+          "role": "CEO",
+          "background": "product, visual design"
+        },
+        {
+          "name": "Des Traynor",
+          "role": "COO",
+          "background": "customer development, user experience design"
+        },
+        {
+          "name": "Ciaran Lee",
+          "role": "CTO",
+          "background": "software engineering"
+        },
+        {
+          "name": "David Barrett",
+          "role": "front-end engineering",
+          "background": ""
+        }
+      ],
+      "revenue": null,
+      "burn_rate": null,
+      "runway_months": 18.0,
+      "description": "Intercom is a simple‑install tool for SaaS providers that combines customer relationship management and in‑app messaging to help SaaS companies build meaningful relationships with their customers.",
+      "coverage_pct": 75.0,
+      "coverage_verdict": "PARTIAL",
+      "slides_represented": "6/8",
+      "unrepresented_slides": [
+        {
+          "slide": 1,
+          "heading": "Icom"
+        },
+        {
+          "slide": 6,
+          "heading": "Lscape / compers"
+        }
+      ]
+    },
+    "diff": {
+      "claims_gained": 13,
+      "coverage_delta_pct": 62.5,
+      "new_claims": [
+        "Building meaningful relationships with customers is hard / impossible for SaaS providers",
+        "The current tools available are complex, ineffective, not built for SaaS… there’s no one tool to do customer relationship management and messaging for SaaS providers",
+        "Intercom is simple install like Google Analytics",
+        "Intercom provides customer base browsing (e.g. signed‑up today, on premium plan)",
+        "Intercom provides individual customer research (e.g. see Twitter followers, company)",
+        "Intercom provides advanced in‑app messaging (user sees message on next login or at specific event and can reply to messages)",
+        "Intercom provides customer relationship management (Intercom calculates relationship metric over time and allows app owner find people who need attention)",
+        "SaaS providers represent a $21 billion market, $93 billion in 2016 according to Forrester",
+        "Later the product will target mobile and desktop app providers",
+        "Product in development and testing since Jan, ready for public beta",
+        "Private beta testers love the product, many are psyched to try it",
+        "$600k convertible note",
+        "18 months of runway to work on product‑market fit, customer development, early marketing efforts, profitability",
+        "Plan to raise further round in 12‑18 months to turn up heat on marketing"
+      ]
+    },
+    "founder_handling": {
+      "origin": "deck",
+      "names": [
+        "Eoghan McCabe",
+        "Des Traynor",
+        "Ciaran Lee",
+        "David Barrett"
+      ],
+      "note": "Named in the deck text; no external search required."
+    },
+    "source_url": "https://media.genppt.com/pitch-decks/intercom/intercom-pitch-deck-2011.pdf",
+    "sha256": "dd6c18b8c3d570f0e8dea679dd5b639b74bbc18f3b42c0e650ab49a81559e0d3",
+    "deck_year": "2011",
+    "seconds": 62.5
+  }
+]

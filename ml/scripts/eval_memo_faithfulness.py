@@ -148,15 +148,22 @@ def check_report(report: dict[str, Any]) -> dict[str, Any]:
     # -- headline score. Tolerance 0.5 because the memo rounds a float to an int.
     #
     # There is deliberately no bare "N/100" fallback. The fallback memo opens
-    # with "reviewed with HIGH data quality (85/100)", and a loose pattern read
-    # that data-quality figure as the venture score on 25 of 38 reports --
-    # every one recorded as a contradiction the memo had never made. The label
-    # has to be explicit, and "data quality" is excluded by name.
+    # with "reviewed with HIGH input completeness (85/100)", and a loose pattern
+    # read that figure as the venture score on 25 of 38 reports -- every one
+    # recorded as a contradiction the memo had never made. The label has to be
+    # explicit, and the completeness figure is excluded by name.
+    #
+    # Both spellings are listed because the label was renamed from "data
+    # quality" to "input completeness" (it never measured data quality, and
+    # reading it as parsing completeness is what this whole pass was about).
+    # Memos written before that rename are still on disk and still evaluated.
     raw, snip = _search(
         r"(?:resulting score|overall score|final score|investment score"
         r"|venture(?:flow)?[- ]?score)\**\W{0,16}\**\s*(\d{1,3}(?:\.\d+)?)\s*/\s*100",
         memo)
-    if raw is not None and "data quality" in snip.lower():
+    if raw is not None and any(
+        phrase in snip.lower() for phrase in ("data quality", "input completeness")
+    ):
         raw, snip = None, ""
     expected = _f(report.get("final_score"))
     if expected is not None:

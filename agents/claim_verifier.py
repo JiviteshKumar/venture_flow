@@ -21,7 +21,20 @@ from groq_client import MODEL, get_client, pace_for
 
 logger = logging.getLogger(__name__)
 
-def search_web(query: str, max_results: int = 8) -> list:
+def search_web(query: str, max_results: int = 8, raise_on_error: bool = False) -> list:
+    """Web search. Returns [] on failure unless `raise_on_error` is set.
+
+    The default swallows errors because claim verification treats a failed
+    search the same as an unhelpful one -- it just has less evidence either way.
+
+    `raise_on_error=True` exists because that equivalence is false elsewhere.
+    Founder research has to tell "we searched and found nothing" from "the
+    search never ran", and swallowing the exception here made those two
+    indistinguishable to the caller: every query could fail with the network
+    down and the report would still say "searched public sources, no founder
+    names could be established", which reads as a fact about the company
+    instead of a fact about our connectivity.
+    """
     results = []
     try:
         with DDGS() as ddgs:
@@ -32,6 +45,8 @@ def search_web(query: str, max_results: int = 8) -> list:
                     "snippet": r.get("body", ""),
                 })
     except Exception as e:
+        if raise_on_error:
+            raise
         print(f"  Search error: {e}")
     return results
 

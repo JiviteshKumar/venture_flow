@@ -67,7 +67,17 @@ Respond with ONLY valid JSON, no other text:
                 {"role": "user", "content": prompt},
             ],
             temperature=0.1,
-            max_tokens=400,
+            # 1200, not 400. PRECAUTIONARY, not a fix for an observed failure
+            # here: openai/gpt-oss-120b emits reasoning tokens ahead of its
+            # content and charges them against this ceiling, and at 400 the
+            # sibling call in agents/founder_research._propose_names
+            # demonstrably ran out mid-thought -- Groq rejected the whole
+            # request with `json_validate_failed: "max completion tokens
+            # reached before generating a valid document"`. This function
+            # builds a prompt around a ~3,000-character evidence block, so it
+            # reasons at least as long. Failures observed here in testing were
+            # 429s (daily token quota), which this does not address.
+            max_tokens=1200,
         )
         raw = response.choices[0].message.content.strip()
         if "```" in raw:

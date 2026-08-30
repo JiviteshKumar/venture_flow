@@ -70,6 +70,15 @@ TARGETS = [
     ("Revolut", "Revolut pitch deck pdf seed"),
     ("Monzo", "Monzo pitch deck pdf seed round"),
     ("Wise", "TransferWise pitch deck pdf seed"),
+    # Second, independent evaluation set. Added so the extraction fix could be
+    # checked against decks it was not developed against -- a fix validated
+    # only on the decks that exposed the bug tells you nothing about whether it
+    # generalises or was fitted to them.
+    ("Oscar Health", "Oscar Health 2014 pitch deck pdf Series"),
+    ("Nutanix", "Nutanix pitch deck pdf 2011 series b"),
+    ("Canva", "Canva Fusion Books pitch deck pdf Melanie Perkins"),
+    ("Brex", "Brex Series C pitch deck pdf 2018"),
+    ("Alan", "Alan health insurance France Series A pitch deck pdf"),
 ]
 
 # Direct URLs, tried before search, for decks confirmed to be served as real
@@ -86,6 +95,8 @@ DIRECT_URLS = {
     "Coinbase": ["https://media.genppt.com/pitch-decks/coinbase/coinbase-pitch-deck-2012.pdf"],
     "Mint": ["https://media.genppt.com/pitch-decks/mint/mint-pitch-deck-2007.pdf"],
     "Intercom": ["https://media.genppt.com/pitch-decks/intercom/intercom-pitch-deck-2011.pdf"],
+    # Confirmed by HEAD request on 29 Aug 2026: 200, application/pdf, 10.8MB.
+    "Brex": ["https://media.genppt.com/pitch-decks/brex/brex-pitch-deck-2018.pdf"],
 }
 
 # Decks that exist at a reachable URL but extract to ZERO characters, because
@@ -251,6 +262,15 @@ def main() -> int:
     parser.add_argument("--max-per-company", type=int, default=3,
                         help="candidate URLs to try before giving up on a company")
     parser.add_argument("--limit", type=int, default=0, help="stop after N decks")
+    parser.add_argument(
+        "--only",
+        default="",
+        help=(
+            "comma-separated company names to fetch, e.g. 'Brex,Alan'. Without "
+            "this every target is attempted, which re-downloads a corpus that "
+            "is already on disk and burns the search rate limit for nothing."
+        ),
+    )
     args = parser.parse_args()
 
     out_dir = ROOT / args.out
@@ -259,7 +279,11 @@ def main() -> int:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else []
     have = {entry["company"] for entry in manifest}
 
+    only = {c.strip().lower() for c in args.only.split(",") if c.strip()}
+
     for company, query in TARGETS:
+        if only and company.lower() not in only:
+            continue
         if args.limit and len(manifest) >= args.limit:
             break
         if company in have:
@@ -319,6 +343,25 @@ def main() -> int:
                 "deck_year": (re.search(r"(19[89]\d|20[0-3]\d)", url).group(1)
                               if re.search(r"(19[89]\d|20[0-3]\d)", url) else ""),
                 "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                # Automated acceptance is a NAME-MATCH heuristic, and a name
+                # match is not an identity match -- that is the failure this
+                # script's own docstring describes, and it recurred: the file
+                # kept as "Mint" passes every check here (says "Mint", says it
+                # early, says it often, is not a template) and is a business
+                # school's investment case study about Mint rather than Mint's
+                # own raise deck. Nothing automatable distinguishes those two.
+                #
+                # So a fresh fetch is marked unconfirmed until a human reads it,
+                # rather than inheriting the credibility of a check that cannot
+                # establish what it would need to.
+                "provenance_confirmed": False,
+                "trusted_regression_corpus": False,
+                "provenance_note": (
+                    "Automated name-match acceptance only; not yet reviewed by a "
+                    "human. Read the deck and confirm it is the company's own "
+                    "fundraising deck -- not an analyst report, case study or "
+                    "template -- before setting provenance_confirmed to true."
+                ),
             }
             manifest.append(entry)
             manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")

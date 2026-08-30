@@ -59,3 +59,38 @@ characters**: every page is a slide image with no text layer. They are excluded
 from the corpus and recorded in `scripts/scrape_pitch_decks.KNOWN_IMAGE_ONLY`,
 because their absence is a product finding rather than a scraping failure —
 see `document_extractor.text_layer` and `agents/slide_vision.py`.
+
+## Provenance status (added 29 Aug 2026)
+
+`manifest.json` now carries three extra fields per deck:
+
+| Field | Meaning |
+|---|---|
+| `provenance_confirmed` | A human has read the file and confirmed it is the company's own fundraising deck. |
+| `trusted_regression_corpus` | Safe to use as evidence *about the company*. |
+| `provenance_note` | Why, when either of the above is false. |
+
+**Mint is flagged `provenance_confirmed: false` and excluded from the trusted
+corpus.** The file is almost certainly a business-school investment case study
+rather than Mint's own raise deck:
+
+- Slide 1 is four personal names and a date, not a company title.
+- It contains *Exit Strategy*, *Exit Calculation*, *Competitive Response* and
+  *Financial Assumptions* slides — analyst sections, not founder sections. A
+  founder pitching does not compute their own exit.
+- The body refers to the company in the third person ("Mint's Comp.
+  Advantages", "Mint's Defensibility").
+- Aaron Patzer, who founded Mint, is not named anywhere in it.
+
+It is retained only for heading-robustness testing, where it is perfectly valid
+input: it is a real PDF with real unconventional headings, and the parser has no
+opinion about who wrote it. It must not be cited as evidence about Mint.
+
+A replacement was searched for on 29 Aug 2026 and not found (search returned no
+results; the obvious genppt slugs 404).
+
+This is the same failure the scraper's own docstring describes — a name match
+mistaken for an identity match — and it survived the automated acceptance test
+because nothing automatable distinguishes "a deck about X" from "X's deck".
+New fetches are therefore now written as `provenance_confirmed: false` until a
+human reads them.
