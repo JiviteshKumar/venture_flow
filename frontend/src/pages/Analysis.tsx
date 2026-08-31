@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import VentureScorePanel from "../components/analysis/VentureScorePanel";
 import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
 import { Panel, SLabel, ScoreBadge } from "../components/ui/Panel";
+import { MemoText, memoPreview } from "../components/ui/MemoText";
 
 const tabs = ["Summary", "Market Validation", "Founder Analysis", "Competitor Insights"];
 
@@ -322,6 +323,8 @@ const Analysis = () => {
   // underneath a mounted Analysis page.
   const [activeTab, setActiveTab] = useState("Summary");
   const [ddOpen, setDdOpen] = useState(false);
+  const [memoExpanded, setMemoExpanded] = useState(false);
+
   const [pdfExporting, setPdfExporting] = useState(false);
   const { report, sessionId } = useApp();
   const navigate = useNavigate();
@@ -391,6 +394,11 @@ const Analysis = () => {
         : "#D93025";
   const extractionProvenance =
     report.extraction_provenance ?? report.sections?.extraction_provenance;
+
+  // The memo lives under `sections` on a freshly-run report and at the top
+  // level on one reloaded from the database, so both are checked.
+  const memoFull = report.sections?.ai_analysis || report.ai_analysis || "";
+  const memoSummary = memoPreview(memoFull);
 
   // Claims table from real claim details
   const claimsTableData = claimsDetails.slice(0, 5).map(c => ({
@@ -887,11 +895,39 @@ const Analysis = () => {
                 <Panel className="vf-panel-neutral" accentColor="#1D6FE8">
                   <SLabel>AI Investment Verdict</SLabel>
                   <div className="an-verdict-headline">{report.recommendation}</div>
-                  <p style={{ fontSize: "13.5px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
-                    {report.sections?.ai_analysis
-                      ? report.sections.ai_analysis.slice(0, 400) + "…"
-                      : report.ai_analysis?.slice(0, 400) + "…"}
-                  </p>
+                  {/* The memo used to be shown as `.slice(0, 400) + "…"`, cut
+                      mid-word, with the full text rendered nowhere else on the
+                      page — so the product's main written output was readable
+                      only for its first 400 characters. It is also Markdown,
+                      which a plain <p> printed as literal `**` and `###`.
+                      MemoText renders it and trims the collapsed preview at a
+                      word boundary. */}
+                  <div style={{ fontSize: "13.5px", color: "var(--text-secondary)", margin: "0 0 14px" }}>
+                    {memoExpanded ? (
+                      <MemoText text={memoFull} />
+                    ) : (
+                      <p style={{ margin: 0, lineHeight: 1.7 }}>
+                        {memoSummary.preview}
+                        {memoSummary.truncated && "…"}
+                      </p>
+                    )}
+
+                    {(memoSummary.truncated || memoExpanded) && (
+                      <button
+                        type="button"
+                        onClick={() => setMemoExpanded((o) => !o)}
+                        aria-expanded={memoExpanded}
+                        style={{
+                          marginTop: 10, background: "none", border: "none", padding: 0,
+                          cursor: "pointer", font: "inherit", fontSize: 12, fontWeight: 600,
+                          color: "var(--accent)", display: "inline-flex", alignItems: "center", gap: 4,
+                        }}
+                      >
+                        {memoExpanded ? "Show less" : "Read the full memo"}
+                        {memoExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      </button>
+                    )}
+                  </div>
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
                     {[
                       { label: report.recommendation, color: scoreColor, bg: `${scoreColor}14`, border: `${scoreColor}30` },
