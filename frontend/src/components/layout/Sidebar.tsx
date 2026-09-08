@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Upload, LayoutDashboard, BarChart3, TrendingUp, Settings, Bell, Zap, Clock, ChevronRight, Star, Activity, Menu, X } from "lucide-react";
+import {
+  Upload, LayoutDashboard, BarChart3, TrendingUp, Settings, Bell, Zap, Clock,
+  ChevronRight, Star, Activity, Menu, X, LogOut,
+} from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { motion } from "framer-motion";
 
@@ -20,6 +24,7 @@ const Sidebar = () => {
 
   // A label this browser remembers, not an identity. See the user row below.
   const [displayName, setDisplayName] = useLocalStorage<string>("vf.displayName", "");
+  const { user, accountsEnabled, signOut } = useAuth();
   const handleSetName = () => {
     const next = window.prompt(
       "Display name shown in the sidebar.\n\nThis is a local label only — VentureFlow has no accounts and this identifies nobody.",
@@ -100,10 +105,10 @@ const Sidebar = () => {
         }
 
         .sb-logo-name { font-size: 15px; font-weight: 700; color: var(--sb-text); letter-spacing: -0.3px; line-height: 1.1; }
-        .sb-logo-tagline { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--sb-muted); letter-spacing: 0.06em; margin-top: 1px; }
+        .sb-logo-tagline { font-family: var(--font-mono); font-size: 9px; color: var(--sb-muted); letter-spacing: 0.06em; margin-top: 1px; }
 
         .sb-version-chip {
-          font-family: 'IBM Plex Mono', monospace; font-size: 8.5px;
+          font-family: var(--font-mono); font-size: 8.5px;
           color: var(--sb-blue); background: rgba(29,111,232,0.07);
           border: 1px solid rgba(29,111,232,0.18);
           padding: 2px 7px; border-radius: 20px; letter-spacing: 0.04em;
@@ -117,7 +122,7 @@ const Sidebar = () => {
         .sb-agent-pill {
           flex: 1; display: flex; align-items: center; justify-content: center;
           gap: 4px; padding: 5px 0; border-radius: 7px;
-          font-family: 'IBM Plex Mono', monospace; font-size: 8.5px;
+          font-family: var(--font-mono); font-size: 8.5px;
           font-weight: 600; letter-spacing: 0.04em;
           cursor: default; transition: transform 0.15s ease;
         }
@@ -137,7 +142,7 @@ const Sidebar = () => {
         .sb-nav-area { padding: 14px 12px 10px; flex-shrink: 0; }
 
         .sb-nav-label {
-          font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+          font-family: var(--font-mono); font-size: 9px;
           color: var(--sb-muted); letter-spacing: 0.14em;
           text-transform: uppercase; padding: 0 8px; margin-bottom: 5px;
         }
@@ -186,15 +191,15 @@ const Sidebar = () => {
 
         .sb-stat-card:hover { border-color: var(--sb-border-strong); transform: translateY(-1px); }
 
-        .sb-stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: var(--sb-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
-        .sb-stat-value { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--sb-text); line-height: 1; letter-spacing: -0.01em; }
-        .sb-stat-sub { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: var(--sb-muted); margin-top: 2px; }
+        .sb-stat-label { font-family: var(--font-mono); font-size: 8.5px; color: var(--sb-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+        .sb-stat-value { font-family: var(--font-display); font-size: 18px; color: var(--sb-text); line-height: 1; letter-spacing: -0.01em; }
+        .sb-stat-sub { font-family: var(--font-mono); font-size: 8.5px; color: var(--sb-muted); margin-top: 2px; }
 
         .sb-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 
-        .sb-section-title { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--sb-muted); letter-spacing: 0.14em; text-transform: uppercase; }
+        .sb-section-title { font-family: var(--font-mono); font-size: 9px; color: var(--sb-muted); letter-spacing: 0.14em; text-transform: uppercase; }
 
-        .sb-see-all { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--sb-blue); cursor: pointer; transition: opacity 0.14s ease; background: none; border: none; padding: 0; }
+        .sb-see-all { font-family: var(--font-mono); font-size: 9px; color: var(--sb-blue); cursor: pointer; transition: opacity 0.14s ease; background: none; border: none; padding: 0; }
         .sb-see-all:hover { opacity: 0.7; }
 
         .sb-active-card {
@@ -215,7 +220,7 @@ const Sidebar = () => {
         }
 
         .sb-active-label {
-          font-family: 'IBM Plex Mono', monospace; font-size: 8.5px;
+          font-family: var(--font-mono); font-size: 8.5px;
           letter-spacing: 0.12em; text-transform: uppercase;
           color: var(--sb-muted); margin-bottom: 9px;
           display: flex; align-items: center; gap: 5px;
@@ -224,17 +229,17 @@ const Sidebar = () => {
         .sb-active-label-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sb-green); animation: sb-pulse 2s ease-in-out infinite; }
 
         .sb-active-deck-name { font-size: 13.5px; font-weight: 700; color: var(--sb-text); letter-spacing: -0.2px; margin-bottom: 2px; }
-        .sb-active-deck-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--sb-muted); margin-bottom: 11px; }
+        .sb-active-deck-meta { font-family: var(--font-mono); font-size: 9.5px; color: var(--sb-muted); margin-bottom: 11px; }
 
         .sb-active-score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 
-        .sb-score-chip { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+        .sb-score-chip { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
 
-        .sb-risk-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; padding: 3px 9px; border-radius: 20px; }
+        .sb-risk-chip { font-family: var(--font-mono); font-size: 9.5px; padding: 3px 9px; border-radius: 20px; }
 
         .sb-active-progress { height: 3px; background: var(--sb-border); border-radius: 3px; overflow: hidden; }
         .sb-active-progress-fill { height: 100%; border-radius: 3px; }
-        .sb-active-progress-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: var(--sb-muted); margin-top: 5px; text-align: right; }
+        .sb-active-progress-label { font-family: var(--font-mono); font-size: 8.5px; color: var(--sb-muted); margin-top: 5px; text-align: right; }
 
         /* ANALYZING STATE */
         .sb-analyzing-card {
@@ -268,10 +273,10 @@ const Sidebar = () => {
 
         .sb-user-row:hover { background: var(--sb-surface); border-color: var(--sb-border); }
 
-        .sb-user-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, rgba(29,111,232,0.15), rgba(14,166,106,0.15)); border: 1px solid var(--sb-border); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--sb-blue); flex-shrink: 0; }
+        .sb-user-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, rgba(29,111,232,0.15), rgba(14,166,106,0.15)); border: 1px solid var(--sb-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--sb-blue); flex-shrink: 0; }
 
         .sb-user-name { font-size: 12.5px; font-weight: 600; color: var(--sb-text); letter-spacing: -0.1px; }
-        .sb-user-role { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--sb-muted); }
+        .sb-user-role { font-family: var(--font-mono); font-size: 9px; color: var(--sb-muted); }
         .sb-user-caret { margin-left: auto; color: var(--sb-muted); }
 
         /* ── Identity row ──────────────────────────────────────────────── */
@@ -435,7 +440,7 @@ const Sidebar = () => {
             <div className="sb-agent-dot sb-agent-dot-bear" />
             BEAR
           </div>
-          <div className="sb-agent-pill" style={{ flex: 1, background: "rgba(29,111,232,0.07)", color: "#1D6FE8", border: "1px solid rgba(29,111,232,0.18)", fontSize: "8.5px", fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "5px 0", borderRadius: 7 }}>
+          <div className="sb-agent-pill" style={{ flex: 1, background: "rgba(29,111,232,0.07)", color: "#1D6FE8", border: "1px solid rgba(29,111,232,0.18)", fontSize: "8.5px", fontFamily: "var(--font-mono)", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "5px 0", borderRadius: 7 }}>
             <div className="sb-agent-dot sb-agent-dot-live" />
             LIVE
           </div>
@@ -487,7 +492,7 @@ const Sidebar = () => {
           {/* ANALYZING STATE */}
           {isAnalyzing && (
             <div className="sb-analyzing-card">
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8.5, color: "#1D6FE8", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: "#1D6FE8", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
                   <Activity size={9} color="#1D6FE8" />
                 </motion.div>
@@ -496,7 +501,7 @@ const Sidebar = () => {
               <div style={{ fontSize: 13, fontWeight: 600, color: "#0B1120", marginBottom: 3 }}>
                 {companyName || "Processing deck"}
               </div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", marginBottom: 10 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", marginBottom: 10 }}>
                 {currentStage}
               </div>
               <div style={{ height: 3, background: "rgba(15,23,42,0.07)", borderRadius: 3, overflow: "hidden" }}>
@@ -506,7 +511,7 @@ const Sidebar = () => {
                   transition={{ duration: 0.5 }}
                 />
               </div>
-              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 8.5, color: "#5D6B7F", marginTop: 5, textAlign: "right" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: "#5D6B7F", marginTop: 5, textAlign: "right" }}>
                 {progressPct}%
               </div>
             </div>
@@ -542,7 +547,7 @@ const Sidebar = () => {
           {!isAnalyzing && !isDone && (
             <button type="button" className="sb-active-card" onClick={() => navigate("/upload")} aria-label="Upload a deck to get started" style={{ cursor: "pointer", borderStyle: "dashed", background: "transparent", width: "100%", textAlign: "inherit" }}>
               <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.6 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.6 }}>
                   No active deck<br />
                   <span style={{ color: "#1D6FE8" }}>Upload one to get started →</span>
                 </div>
@@ -572,17 +577,17 @@ const Sidebar = () => {
                   width: 32, height: 32, borderRadius: 8, background: "#F7F8FA",
                   border: "1px solid rgba(15,23,42,0.08)", display: "flex",
                   alignItems: "center", justifyContent: "center",
-                  fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, color: "#4A5568",
+                  fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, color: "#4A5568",
                 }}>{initials}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "#0B1120", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {deckName}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F" }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F" }}>
                     Today
                   </div>
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600, color: scoreColor }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: scoreColor }}>
                   {deckScore}
                 </span>
               </button>
@@ -598,7 +603,7 @@ const Sidebar = () => {
             </div>
           </div>
           <div className="sb-starred-empty" style={{ padding: "8px 10px", borderRadius: 9, background: "rgba(15,23,42,0.02)", border: "1px dashed rgba(15,23,42,0.1)", textAlign: "center" }}>
-            <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.5 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.5 }}>
               Star a deck from the<br />Dashboard to pin it here
             </div>
           </div>
@@ -618,43 +623,54 @@ const Sidebar = () => {
               <Settings size={13} strokeWidth={1.75} />
             </button>
           </div>
-          {/* There is no authentication in this app.
-              This row used to read "James Dolan / Partner, VC" — a fictional
+          {/* Real identity, at last.
+              This row used to read "James Dolan / Partner, VC" -- a fictional
               person presented as the signed-in user, on a tool whose entire
-              value proposition is not making things up. It now shows a Demo
-              Mode badge and, optionally, a display name the user typed on this
-              device. That name is a convenience label held in localStorage; it
-              identifies nobody and gates nothing. Real auth is deferred. */}
+              value proposition is not making things up. It was then replaced by
+              a Demo Mode badge and a localStorage display name that identified
+              nobody and gated nothing, with a note that real auth was deferred.
+              It is no longer deferred: this is the account, and signing out
+              ends the session server-side. */}
           <div className="sb-user-row">
             <div className="sb-user-avatar" aria-hidden="true">
-              {displayName ? initialsOf(displayName) : "?"}
+              {user ? initialsOf(user.display_name || user.email) : (displayName ? initialsOf(displayName) : "?")}
             </div>
             <div className="sb-user-copy">
-              {displayName ? (
-                <div className="sb-user-name">{displayName}</div>
+              {user ? (
+                <>
+                  <div className="sb-user-name" title={user.email}>
+                    {user.display_name || user.email.split("@")[0]}
+                  </div>
+                  <div className="sb-user-role">
+                    <span className="sb-user-role-note" title={user.email}>{user.email}</span>
+                  </div>
+                </>
               ) : (
-                <button
-                  type="button"
-                  className="sb-user-setname"
-                  onClick={handleSetName}
-                >
-                  Set a display name
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="sb-user-setname"
+                    onClick={() => navigate("/signin")}
+                  >
+                    Sign in
+                  </button>
+                  <div className="sb-user-role">
+                    <span className="sb-user-role-note">
+                      {accountsEnabled ? "not signed in" : "accounts unavailable"}
+                    </span>
+                  </div>
+                </>
               )}
-              <div className="sb-user-role">
-                <span className="sb-demo-badge">Demo mode</span>
-                <span className="sb-user-role-note">not signed in</span>
-              </div>
             </div>
-            {displayName && (
+            {user && (
               <button
                 type="button"
                 className="sb-user-caret-btn"
-                onClick={handleSetName}
-                aria-label="Change display name"
-                title="Change display name"
+                onClick={async () => { await signOut(); navigate("/signin"); }}
+                aria-label={`Sign out of ${user.email}`}
+                title="Sign out"
               >
-                <ChevronRight size={13} className="sb-user-caret" strokeWidth={1.5} />
+                <LogOut size={13} strokeWidth={1.6} />
               </button>
             )}
           </div>

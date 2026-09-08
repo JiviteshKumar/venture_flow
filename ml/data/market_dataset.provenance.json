@@ -1,0 +1,61 @@
+{
+  "n_rows": 470,
+  "n_positive": 269,
+  "n_negative": 201,
+  "positive_rate": 0.5723,
+  "n_raw_companies": 1619,
+  "n_right_censored_excluded": 859,
+  "n_dropped_out_of_tech_scope": 110,
+  "n_dropped_text_too_short": 180,
+  "years": [
+    1990,
+    2020
+  ],
+  "classes": [
+    {
+      "qid": "Q1058914",
+      "label": "software company"
+    },
+    {
+      "qid": "Q18388277",
+      "label": "technology company"
+    },
+    {
+      "qid": "Q210167",
+      "label": "video game developer"
+    },
+    {
+      "qid": "Q2401749",
+      "label": "internet company"
+    },
+    {
+      "qid": "Q1391145",
+      "label": "telecommunications company"
+    }
+  ],
+  "sources": {
+    "structure_and_labels": {
+      "name": "Wikidata",
+      "endpoint": "https://query.wikidata.org/sparql",
+      "licence": "CC0 1.0",
+      "url": "https://www.wikidata.org/"
+    },
+    "description_text": {
+      "name": "English Wikipedia (article intro)",
+      "endpoint": "https://en.wikipedia.org/w/api.php",
+      "licence": "CC BY-SA 4.1",
+      "url": "https://en.wikipedia.org/"
+    }
+  },
+  "label_rules": {
+    "1": "listed on a stock exchange (P414), or acquired -- an ownership statement (P127/P749) whose P580 start date is at least 2 years after founding",
+    "0": "dissolved (P576), never listed, and with no ownership statement at all",
+    "excluded": "still trading; no recorded outcome (right-censored); or an ownership statement with no start date, which cannot be told apart from a company that was always a subsidiary"
+  },
+  "known_biases": [
+    "Wikidata covers companies notable enough for an encyclopedia entry. Startups that failed quietly and early are systematically absent, so the failure class here is biased towards companies that were prominent enough for their collapse to be recorded.",
+    "Video game developers are over-represented among failures because Wikidata's coverage of 1990s and 2000s game studios is unusually complete relative to its coverage of other software companies.",
+    "An acquisition is treated as a success, following the YC dataset's own convention. A distressed acquihire is recorded here the same way as a billion-dollar exit."
+  ],
+  "generated_at": "2026-09-07T14:30:39Z"
+}

@@ -69,12 +69,68 @@ export const demoToken = {
   },
 };
 
+/**
+ * The signed-in session token.
+ *
+ * `localStorage`, not `sessionStorage` -- unlike the demo passphrase, this is a
+ * real account and being signed out every time a tab closes is hostile. The
+ * server-side session carries the actual expiry (30 days by default); this is
+ * only where the browser keeps the token in the meantime.
+ *
+ * Wrapped in try/catch throughout because storage throws outright in a private
+ * window with site data blocked, and a storage failure must not take down the
+ * app -- it degrades to "signed out", which is recoverable.
+ */
+const SESSION_KEY = "vf_session_token";
+
+export const sessionToken = {
+  get(): string {
+    try { return localStorage.getItem(SESSION_KEY) || ""; } catch { return ""; }
+  },
+  set(value: string): void {
+    try { localStorage.setItem(SESSION_KEY, value); } catch { /* non-fatal */ }
+  },
+  clear(): void {
+    try { localStorage.removeItem(SESSION_KEY); } catch { /* non-fatal */ }
+  },
+};
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  display_name: string;
+  created_at: string | null;
+  email_verified: boolean;
+  email_verification_note: string;
+}
+
+export interface AuthSession {
+  token: string;
+  user: AuthUser;
+  expires_at: string;
+}
+
+export interface WhoAmI {
+  user: AuthUser | null;
+  accounts_enabled: boolean;
+  any_accounts_exist: boolean;
+  email_verification_note: string;
+  password_min_length: number;
+}
+
 /** True once the backend has answered 401, i.e. the deployment is gated. */
 export let gateRequired = false;
 
 apiClient.interceptors.request.use((config) => {
-  const token = demoToken.get();
-  if (token) config.headers["X-Demo-Token"] = token;
+  // Two independent credentials, deliberately on two headers.
+  //
+  // The demo passphrase says "this deployment let me in"; the session token
+  // says "I am this person". A gated deployment needs both, and putting them
+  // both on Authorization would mean one silently overwriting the other.
+  const demo = demoToken.get();
+  if (demo) config.headers["X-Demo-Token"] = demo;
+  const session = sessionToken.get();
+  if (session) config.headers["Authorization"] = `Bearer ${session}`;
   return config;
 });
 
@@ -92,10 +148,51 @@ apiClient.interceptors.response.use(
   },
 );
 
+/**
+ * Pull a displayable message, and a scope refusal, out of a failed request.
+ *
+ * FastAPI's `detail` is a string for most errors and an OBJECT for the
+ * out-of-scope refusal, which carries the evidence the UI needs to explain
+ * itself. Both callers previously did `err.response.data.detail || err.message`
+ * and put the result straight into JSX -- which renders fine for a string and
+ * throws "Objects are not valid as a React child" for the object, replacing a
+ * clear explanation with a blank screen.
+ *
+ * So the shape is narrowed here, once, rather than at each call site.
+ */
+export function parseApiError(err: unknown, fallback: string): {
+  message: string;
+  scopeCheck: ScopeCheck | null;
+} {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })
+    ?.response?.data?.detail;
+
+  if (detail && typeof detail === "object") {
+    const body = detail as { error?: string; message?: string; scope_check?: ScopeCheck };
+    if (body.error === "out_of_scope" && body.scope_check) {
+      return {
+        message: body.message || "This company is outside VentureFlow's scope.",
+        scopeCheck: body.scope_check,
+      };
+    }
+    return { message: body.message || fallback, scopeCheck: null };
+  }
+
+  if (typeof detail === "string" && detail) {
+    return { message: detail, scopeCheck: null };
+  }
+  const message = (err as { message?: string })?.message;
+  return { message: message || fallback, scopeCheck: null };
+}
+
 /** Headers for the raw fetch() calls that bypass apiClient (chat, history). */
 export function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  const token = demoToken.get();
-  return token ? { ...extra, "X-Demo-Token": token } : extra;
+  const headers = { ...extra };
+  const demo = demoToken.get();
+  if (demo) headers["X-Demo-Token"] = demo;
+  const session = sessionToken.get();
+  if (session) headers["Authorization"] = `Bearer ${session}`;
+  return headers;
 }
 
 // ─── TYPES ─────────────────────────────────────────────────────────────────
@@ -144,6 +241,52 @@ export interface DetectedFounder {
   background?: string;
 }
 
+/**
+ * Whether the deck is a technology startup (tech_scope.py).
+ *
+ * VentureFlow's every number is calibrated on technology companies -- the score
+ * model's features are Y Combinator's own taxonomy -- so a score for a business
+ * outside that scope has no calibrated meaning. Both /upload-pdf and /analyze
+ * refuse with a 422 carrying this object when `in_scope` is false.
+ *
+ * The backend is deliberately reluctant to refuse: it blocks only on positive
+ * evidence that a company is something else, and allows anything it cannot
+ * classify. So a false `in_scope` is a considered judgement, and the UI shows
+ * the evidence behind it rather than a bare error.
+ */
+export interface ScopeCheck {
+  in_scope: boolean;
+  confidence: number;
+  sector: string;
+  reason: string;
+  method: string;
+  software_signals: string[];
+  non_tech_signals: string[];
+  scope_statement: string;
+}
+
+/**
+ * Where the analysed text came from (ocr_extractor.py).
+ *
+ * An image-only deck used to be rejected outright. It is now read by an offline
+ * OCR engine, which means some decks are analysed from text recognised out of
+ * pixels rather than read from the file. OCR misreads digits more often than it
+ * misreads words, and a diligence tool that presents a recognised revenue figure
+ * identically to a read one is hiding the one thing a reader would want to know
+ * about that number -- hence `text_source` as a first-class field.
+ */
+export interface OcrSummary {
+  pages_read?: number;
+  pages_total?: number;
+  chars?: number;
+  truncated?: boolean;
+  truncation_note?: string;
+  seconds?: number;
+  engine?: string;
+  provenance?: string;
+  reason?: string;
+}
+
 export interface UploadResponse {
   session_id: string;
   extracted_text: string;
@@ -173,6 +316,14 @@ export interface UploadResponse {
   /** Which reader ran: "PDF" | "PowerPoint" | "Word" | "plain text" | "Markdown". */
   document_format?: string;
   extraction_method?: string;
+  /**
+   * "text_layer" -- text the document contained.
+   * "ocr"        -- recognised from page images, because there was no text layer.
+   * "hybrid"     -- a thin text layer supplemented by OCR of the slides.
+   */
+  text_source?: "text_layer" | "ocr" | "hybrid";
+  ocr?: OcrSummary;
+  scope_check?: ScopeCheck;
 }
 
 export interface ClaimDetail {
@@ -333,33 +484,50 @@ export interface AnalyzeResponse {
         industry?: string;
         stage?: string;
         batch?: string;
+        founded_year?: number | null;
         outcome?: string;
+        /** Why that outcome is recorded -- "listed on a stock exchange (P414)",
+         *  "acquired in 2012, 7 years after founding". Empty for YC rows. */
+        outcome_basis?: string;
         similarity?: number;
+        /** Which corpus the row came from. */
+        population?: "yc" | "market";
+        population_label?: string;
+        /** Wikidata permalink, on market rows only. YC rows have no per-company
+         *  permalink in the dataset and inventing one would be worse than
+         *  omitting it. */
+        source_url?: string;
       }>;
-      source?: string;
       caveat?: string;
       /** True when nothing cleared the similarity floor, so zero rows are shown. */
       no_close_matches?: boolean;
       best_similarity?: number;
       threshold?: number;
-      n_below_threshold?: number;
+      population_total?: number;
+      /** The same rows grouped by corpus, for a UI that wants to show them
+       *  side by side rather than in one ranked table. */
+      by_population?: Record<string, Array<{ name: string; similarity?: number }>>;
       /**
-       * The search population, stated as structured data rather than left in
+       * The search populations, stated as structured data rather than left in
        * prose, so the UI can show the scope above the table instead of burying
-       * it in a footnote. Comparables come from Y Combinator alumni only;
-       * a company with no YC analogue still gets five rows, because the search
-       * returns its nearest available matches however distant they are.
+       * it in a footnote.
+       *
+       * There are now two. The corpus used to be Y Combinator alone, and this
+       * block said so; it now also covers technology companies from public
+       * reference data that never went through an accelerator. Results are
+       * stratified rather than pooled -- see comparables.py for the measurement
+       * that forced that (a pooled ranking returned 24 of 25 rows from YC, for
+       * reasons of writing style rather than business similarity).
        */
-      population?: {
-        name?: string;
+      population?: Record<string, {
+        label?: string;
         n?: number;
-        universe?: string;
-        labelled_available?: number;
-        coverage_of_labelled?: number;
-        excluded?: string;
-        not_included?: string;
-        why_not_broader?: string;
-      };
+        source?: string;
+        url?: string;
+        note?: string;
+        matches_above_floor?: number;
+        best_similarity?: number;
+      }>;
     };
     bull_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; conditions_to_invest: string[] };
     bear_case?: { confidence: number; thesis: string; signals: Array<{ finding: string; evidence: string }>; diligence_required: string[] };
@@ -589,6 +757,16 @@ export interface ReportSummary {
   final_score: number;
   recommendation: string;
   created_at: string;
+  /**
+   * True when this report has no owner.
+   *
+   * Reports written before accounts existed carry `owner_user_id IS NULL`, and
+   * are readable by every signed-in user. They are not retro-assigned to
+   * whoever registered first -- inventing an owner for a report that never had
+   * one is a worse answer than admitting it has none -- so the UI labels them
+   * instead of quietly presenting them as the reader's own work.
+   */
+  shared?: boolean;
 }
 
 export interface AnalysisJob {
@@ -608,6 +786,39 @@ export interface AnalysisJob {
 // ─── API CALLS ──────────────────────────────────────────────────────────────
 
 export const api = {
+  /** Create an account and sign in. There is no email verification step --
+   *  this deployment has no email provider, and the API says so in
+   *  `email_verification_note` rather than implying otherwise. */
+  register: async (email: string, password: string, displayName = ""): Promise<AuthSession> => {
+    const res = await apiClient.post<AuthSession>("/auth/register", {
+      email, password, display_name: displayName,
+    });
+    sessionToken.set(res.data.token);
+    return res.data;
+  },
+
+  login: async (email: string, password: string): Promise<AuthSession> => {
+    const res = await apiClient.post<AuthSession>("/auth/login", { email, password });
+    sessionToken.set(res.data.token);
+    return res.data;
+  },
+
+  /** Ends the session server-side, then forgets the token locally.
+   *  The local clear runs even if the request fails: a token the server still
+   *  knows about is worse kept than dropped. */
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post("/auth/logout");
+    } finally {
+      sessionToken.clear();
+    }
+  },
+
+  whoAmI: async (): Promise<WhoAmI> => {
+    const res = await apiClient.get<WhoAmI>("/auth/me");
+    return res.data;
+  },
+
   /** Upload a pitch deck in any supported format (PDF / PPTX / DOCX / TXT / MD)
    *  — returns extracted text, detected claims and detected founders.
    *  Still posts to /upload-pdf: the route kept its name for compatibility

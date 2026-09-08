@@ -34,8 +34,11 @@ def _run_job_with_failure(monkeypatch, exc: BaseException) -> _Recorder:
     recorder = _Recorder()
     monkeypatch.setattr(api, "update_analysis_job", recorder)
 
-    # Signature must mirror _perform_analysis, which takes the stage callback.
-    async def boom(_request, on_stage=None):
+    # Signature must mirror _perform_analysis, which takes the stage callback
+    # and the owner of the report the analysis will produce. A stub that omits
+    # a parameter fails with a TypeError before the exception under test is
+    # ever raised, so the test then asserts against the wrong failure.
+    async def boom(_request, on_stage=None, owner_user_id=None):
         raise exc
 
     monkeypatch.setattr(api, "_perform_analysis", boom)

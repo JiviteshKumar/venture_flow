@@ -8,6 +8,7 @@ import {
   Activity, Eye, Layers, Target
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import OutOfScopeDialog from "../components/common/OutOfScopeDialog";
 import { formatBytes } from "../utils/format";
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -79,7 +80,8 @@ const howItWorksSteps = [
     // "SEC EDGAR filings" was removed from this line because it was false.
     // A grep of the entire backend finds no code that queries sec.gov, no CIK
     // lookup, and no EDGAR client -- the only source claim verification
-    // actually queries is DuckDuckGo web search (agents/claim_verifier.py).
+    // actually queries is web search (agents/web_search.py, which tries
+    // DuckDuckGo then Wikipedia, plus Brave and Tavily when a key is set).
     // The claim survived an earlier cleanup that removed a neighbouring
     // Crunchbase/PitchBook fabrication from this same string, which is a good
     // reminder that removing one false claim from a sentence does not
@@ -165,12 +167,12 @@ const DeckIllustration = () => (
       animate={{ y: [22, 150, 22] }} transition={{ repeat: Infinity, duration: 3.2, ease: "easeInOut" }} />
     <g transform="translate(218, 52)">
       <rect x="0" y="0" width="42" height="18" rx="5" fill="rgba(14,166,106,0.12)" stroke="rgba(14,166,106,0.3)" strokeWidth="1" />
-      <text x="8" y="12.5" fontFamily="'IBM Plex Mono', monospace" fontSize="7.5" fontWeight="600" fill="#0EA66A">BULL</text>
+      <text x="8" y="12.5" fontFamily="var(--font-mono)" fontSize="7.5" fontWeight="600" fill="#0EA66A">BULL</text>
       <circle cx="36" cy="9" r="3" fill="#0EA66A" opacity="0.8" />
     </g>
     <g transform="translate(218, 76)">
       <rect x="0" y="0" width="42" height="18" rx="5" fill="rgba(217,48,37,0.08)" stroke="rgba(217,48,37,0.25)" strokeWidth="1" />
-      <text x="7" y="12.5" fontFamily="'IBM Plex Mono', monospace" fontSize="7.5" fontWeight="600" fill="#D93025">BEAR</text>
+      <text x="7" y="12.5" fontFamily="var(--font-mono)" fontSize="7.5" fontWeight="600" fill="#D93025">BEAR</text>
       <circle cx="36" cy="9" r="3" fill="#D93025" opacity="0.7" />
     </g>
     <motion.g animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}>
@@ -214,7 +216,10 @@ const MiniPreviewCard = ({ card, delay }: { card: typeof miniPreviewCards[0]; de
 
 const UploadDeck = () => {
   const navigate = useNavigate();
-  const { status, currentStage, progressPct, prepareUpload, runAnalysis, uploadResult, report, error, reset } = useApp();
+  const {
+    status, currentStage, progressPct, prepareUpload, runAnalysis,
+    uploadResult, report, error, outOfScope, dismissOutOfScope, reset,
+  } = useApp();
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
@@ -379,7 +384,7 @@ const UploadDeck = () => {
         }
 
         .up-eyebrow {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px;
           color: var(--text-muted);
           letter-spacing: 0.14em;
@@ -403,7 +408,7 @@ const UploadDeck = () => {
         }
 
         .up-title {
-          font-family: 'DM Serif Display', serif;
+          font-family: var(--font-display);
           font-size: 28px;
           font-weight: 400;
           letter-spacing: -0.01em;
@@ -413,7 +418,7 @@ const UploadDeck = () => {
         }
 
         .up-subtitle {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 10.5px;
           color: var(--text-muted);
         }
@@ -426,7 +431,7 @@ const UploadDeck = () => {
         }
 
         .up-hbadge {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 500;
           padding: 5px 11px;
@@ -462,7 +467,7 @@ const UploadDeck = () => {
         }
 
         .up-card-sub {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 10.5px;
           color: var(--text-muted);
           margin-bottom: 20px;
@@ -484,7 +489,7 @@ const UploadDeck = () => {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9px;
           font-weight: 600;
           letter-spacing: 0.14em;
@@ -498,7 +503,7 @@ const UploadDeck = () => {
         }
 
         .up-illus-heading {
-          font-family: 'DM Serif Display', serif;
+          font-family: var(--font-display);
           font-size: 22px;
           font-weight: 400;
           color: var(--text-primary);
@@ -522,7 +527,7 @@ const UploadDeck = () => {
           display: inline-flex;
           align-items: center;
           gap: 5px;
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 500;
           padding: 5px 12px;
@@ -567,7 +572,7 @@ const UploadDeck = () => {
 
         .up-dz-main-text { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.02em; }
 
-        .up-dz-hint { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-muted); line-height: 1.6; }
+        .up-dz-hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); line-height: 1.6; }
 
         .up-file-info {
           display: inline-flex;
@@ -578,7 +583,7 @@ const UploadDeck = () => {
           border: 1px solid var(--border);
           border-radius: 8px;
           padding: 8px 14px;
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 11px;
           color: var(--text-secondary);
           max-width: 280px;
@@ -590,7 +595,7 @@ const UploadDeck = () => {
 
         .up-remove-btn {
           display: inline-flex; align-items: center; gap: 5px;
-          font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+          font-family: var(--font-mono); font-size: 10px;
           color: var(--text-muted); background: none; border: none;
           cursor: pointer; margin-top: 10px; transition: color 0.14s ease; padding: 0;
         }
@@ -615,7 +620,7 @@ const UploadDeck = () => {
           box-shadow: 0 0 0 3px rgba(29,111,232,0.1);
         }
         .up-company-label {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px;
           color: var(--text-muted);
           letter-spacing: 0.1em;
@@ -631,7 +636,7 @@ const UploadDeck = () => {
           border-radius: 9px;
           background: rgba(217,48,37,0.06);
           border: 1px solid rgba(217,48,37,0.2);
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 11px;
           color: var(--red);
           line-height: 1.5;
@@ -668,8 +673,8 @@ const UploadDeck = () => {
           display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
 
-        .up-proc-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-secondary); flex: 1; }
-        .up-proc-pct { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--blue); font-weight: 600; }
+        .up-proc-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); flex: 1; }
+        .up-proc-pct { font-family: var(--font-mono); font-size: 11px; color: var(--blue); font-weight: 600; }
 
         .up-proc-track { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
 
@@ -684,7 +689,7 @@ const UploadDeck = () => {
 
         .up-proc-step {
           display: flex; align-items: center; gap: 8px;
-          font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; transition: all 0.3s ease;
+          font-family: var(--font-mono); font-size: 9.5px; transition: all 0.3s ease;
         }
 
         .up-proc-step-done { color: var(--green); }
@@ -695,7 +700,7 @@ const UploadDeck = () => {
 
         .up-eta {
           display: flex; align-items: center; gap: 5px;
-          font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+          font-family: var(--font-mono); font-size: 10px;
           color: var(--text-muted); margin-top: 12px; justify-content: center;
         }
 
@@ -708,7 +713,7 @@ const UploadDeck = () => {
         }
 
         .up-preview-heading-badge {
-          font-family: 'IBM Plex Mono', monospace; font-size: 8.5px;
+          font-family: var(--font-mono); font-size: 8.5px;
           font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
           background: rgba(14,166,106,0.1); color: var(--green);
           border: 1px solid rgba(14,166,106,0.22); padding: 2px 8px; border-radius: 10px;
@@ -720,12 +725,12 @@ const UploadDeck = () => {
         .mpv-header { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
         .mpv-icon-wrap { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .mpv-label { font-size: 11px; font-weight: 600; color: var(--text-primary); flex: 1; letter-spacing: -0.01em; }
-        .mpv-tag { font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 6px; }
-        .mpv-snippet { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 10px; }
+        .mpv-tag { font-family: var(--font-mono); font-size: 8px; font-weight: 600; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 6px; }
+        .mpv-snippet { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 10px; }
         .mpv-score-row { display: flex; align-items: center; gap: 8px; }
         .mpv-score-track { flex: 1; height: 3px; background: rgba(15,23,42,0.07); border-radius: 4px; overflow: hidden; }
         .mpv-score-fill { height: 100%; border-radius: 4px; }
-        .mpv-score-val { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; min-width: 22px; text-align: right; }
+        .mpv-score-val { font-family: var(--font-mono); font-size: 10px; font-weight: 600; min-width: 22px; text-align: right; }
 
         .up-how-section {
           background: var(--surface); border-radius: var(--radius);
@@ -733,8 +738,8 @@ const UploadDeck = () => {
         }
 
         .up-how-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
-        .up-how-title { font-family: 'DM Serif Display', serif; font-size: 20px; font-weight: 400; color: var(--text-primary); letter-spacing: -0.02em; margin: 0; }
-        .up-how-sub { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+        .up-how-title { font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--text-primary); letter-spacing: -0.02em; margin: 0; }
+        .up-how-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 3px; }
         .up-how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 
         .up-how-step {
@@ -747,30 +752,30 @@ const UploadDeck = () => {
           width: 14px; height: 1px; background: var(--border-strong); z-index: 1;
         }
 
-        .up-how-num { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 10px; }
+        .up-how-num { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 10px; }
         .up-how-icon-box { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
         .up-how-step-title { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; margin-bottom: 6px; }
-        .up-how-step-desc { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-muted); line-height: 1.6; }
+        .up-how-step-desc { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); line-height: 1.6; }
 
-        .up-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; margin-bottom: 14px; }
+        .up-section-label { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; margin-bottom: 14px; }
 
         .up-feature-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 9px; transition: background 0.15s ease; cursor: default; margin-bottom: 2px; }
         .up-feature-row:hover { background: var(--surface-2); }
         .up-feature-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s ease; }
         .up-feature-row:hover .up-feature-icon { transform: scale(1.08); }
         .up-feature-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; margin-bottom: 2px; }
-        .up-feature-desc { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-muted); line-height: 1.5; }
+        .up-feature-desc { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); line-height: 1.5; }
 
         .up-format-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 7px; transition: background 0.14s ease; }
         .up-format-row:hover { background: var(--surface-2); }
-        .up-format-name { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-secondary); }
+        .up-format-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
         .up-format-check { width: 20px; height: 20px; background: rgba(14,166,106,0.1); border: 1px solid rgba(14,166,106,0.22); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
         .up-divider { height: 1px; background: var(--border); margin: 10px 0; }
         .up-maxsize-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; }
-        .up-maxsize-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); }
-        .up-maxsize-val { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+        .up-maxsize-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+        .up-maxsize-val { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); font-weight: 500; }
 
-        .up-hint { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .up-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
 
         .up-scan-dots { display: flex; align-items: center; gap: 5px; justify-content: center; margin-top: 10px; }
         .up-scan-dot { width: 5px; height: 5px; border-radius: 50%; transition: background 0.3s ease, transform 0.3s ease; }
@@ -926,6 +931,64 @@ const UploadDeck = () => {
                 </AnimatePresence>
               </div>
 
+              {/* HOW THE DECK WAS READ.
+                  An image-only deck used to be refused outright ("VentureFlow
+                  has no OCR"). It is now read by an offline OCR engine, which
+                  means the analysis below can be built on text recognised out
+                  of pixels rather than read from the file.
+                  That distinction has to reach the reader. OCR misreads digits
+                  more often than it misreads words, and a revenue figure
+                  recognised from a chart is not the same evidence as one read
+                  from a text layer -- presenting them identically would hide
+                  the single thing a reader would want to know about it. */}
+              {isParsed && uploadResult?.text_source && uploadResult.text_source !== "text_layer" && (
+                <div style={{
+                  marginTop: 14,
+                  background: "rgba(29,111,232,0.06)",
+                  border: "1px solid rgba(29,111,232,0.22)",
+                  borderRadius: 8,
+                  padding: "10px 12px",
+                }}>
+                  <div style={{
+                    fontFamily: "var(--font-mono)", fontSize: 9.5,
+                    letterSpacing: "0.09em", textTransform: "uppercase",
+                    fontWeight: 600, color: "var(--accent)", marginBottom: 5,
+                  }}>
+                    {uploadResult.text_source === "ocr"
+                      ? "Read by OCR — no text layer"
+                      : "Partly read by OCR"}
+                  </div>
+                  <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#5D6B7F", margin: 0 }}>
+                    {uploadResult.text_source === "ocr"
+                      ? "Every page of this deck is a picture with no embedded text, so the words below were recognised from the page images."
+                      : "This deck's text layer was very thin, so the slides were also read as images to recover what it left out."}
+                    {typeof uploadResult.ocr?.pages_read === "number" && (
+                      <> {uploadResult.ocr.pages_read} of {uploadResult.ocr.pages_total} page(s) were read
+                      {typeof uploadResult.ocr.chars === "number" ? `, giving ${uploadResult.ocr.chars.toLocaleString()} characters` : ""}.</>
+                    )}
+                    {" "}Treat any figure below as read from a picture: OCR misreads
+                    digits and punctuation more often than it misreads words.
+                  </p>
+                  {uploadResult.ocr?.truncated && uploadResult.ocr.truncation_note && (
+                    <p style={{
+                      fontSize: 11.5, lineHeight: 1.6, margin: "6px 0 0",
+                      color: "var(--caution)", fontWeight: 500,
+                    }}>
+                      {uploadResult.ocr.truncation_note}
+                    </p>
+                  )}
+                  {uploadResult.ocr?.engine && (
+                    <p style={{
+                      fontFamily: "var(--font-mono)", fontSize: 9.5,
+                      color: "#94A3B8", margin: "6px 0 0",
+                    }}>
+                      {uploadResult.ocr.engine}
+                      {typeof uploadResult.ocr.seconds === "number" ? ` · ${uploadResult.ocr.seconds}s` : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* FOUNDERS — the input path the Founder Analysis tab never had.
                   Pre-filled from the deck, editable, and explicit about being
                   empty rather than silently producing an all-zero radar. */}
@@ -955,7 +1018,7 @@ const UploadDeck = () => {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                       {detectedFounders.map((f, i) => (
                         <span key={i} title={f.background || ""} style={{
-                          fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+                          fontFamily: "var(--font-mono)", fontSize: 10,
                           padding: "3px 8px", borderRadius: 6,
                           background: "var(--surface-2)", border: "1px solid var(--border)",
                           color: "var(--text-secondary)",
@@ -970,7 +1033,7 @@ const UploadDeck = () => {
 
               {/* Error display */}
               <AnimatePresence>
-                {(error || fileError) && (
+                {(fileError || (error && !outOfScope)) && (
                   <motion.div className="up-error-box"
                     initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}>
@@ -1119,7 +1182,7 @@ const UploadDeck = () => {
                   <h2 className="up-how-title">How it works</h2>
                   <p className="up-how-sub">From upload to VC-grade memo in 2–4 minutes</p>
                 </div>
-                <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "var(--text-muted)", letterSpacing: "0.1em" }}>4 STEPS</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--text-muted)", letterSpacing: "0.1em" }}>4 STEPS</span>
               </div>
 
               <div className="up-how-steps">
@@ -1182,7 +1245,7 @@ const UploadDeck = () => {
                 <div key={f.fmt} className="up-format-row">
                   <div>
                     <span className="up-format-name">.{f.fmt.toLowerCase()}</span>
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9.5px", color: "#C0CADA", marginLeft: "8px" }}>{f.desc}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9.5px", color: "#C0CADA", marginLeft: "8px" }}>{f.desc}</span>
                   </div>
                   <div className="up-format-check">
                     <CheckCircle size={11} color="#0EA66A" strokeWidth={2.5} />
@@ -1207,11 +1270,19 @@ const UploadDeck = () => {
                 // change this too.
                 // "SEC EDGAR filings" was removed: no code in this repository
                 // queries sec.gov. Every entry below corresponds to a call the
-                // backend genuinely makes -- Neon via db.py, DuckDuckGo via
-                // agents/claim_verifier.py, the score model via
+                // backend genuinely makes -- Neon via db.py, the search chain
+                // via agents/web_search.py, the score model via
                 // ml/venturescore.py, and Groq via groq_client.py.
+                //
+                // Web search was listed as "DuckDuckGo" alone, which was true
+                // and is no longer: a single throttled provider used to take
+                // the whole product's evidence gathering down with it, so there
+                // is now a failover chain. Two of its providers need no API key
+                // and are always active; Brave and Tavily join it only when a
+                // key is configured, which is why they are not named here.
                 { name: "Neon report database", icon: Database, color: "#1D6FE8" },
-                { name: "DuckDuckGo web search", icon: Globe, color: "#0EA66A" },
+                { name: "Web search: DuckDuckGo → Wikipedia", icon: Globe, color: "#0EA66A" },
+                { name: "Wikidata company outcomes", icon: Layers, color: "#0EA66A" },
                 { name: "VentureFlow Score model", icon: Target, color: "#7C3AED" },
                 { name: "Groq gpt-oss-120b", icon: Activity, color: "#C47A0A" },
               ].map((src, i) => {
@@ -1233,6 +1304,19 @@ const UploadDeck = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Rendered last so it sits above the page without needing a portal. It
+          is not a retryable fault, so it is a dialog rather than the red error
+          box above -- see OutOfScopeDialog for why. */}
+      <AnimatePresence>
+        {outOfScope && (
+          <OutOfScopeDialog
+            scopeCheck={outOfScope}
+            companyName={companyInput.trim() || undefined}
+            onDismiss={dismissOutOfScope}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 };

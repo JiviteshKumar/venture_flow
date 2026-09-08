@@ -116,6 +116,53 @@ def disable_founder_research():
 
 
 @pytest.fixture(autouse=True)
+def no_live_scope_adjudication():
+    """Keep the tech-scope gate running, but off the network.
+
+    Unlike the fixtures above this does NOT disable the feature, because the
+    gate now sits in front of /analyze and /upload-pdf and a disabled gate would
+    leave the suite unable to notice if it started refusing valid decks.
+
+    What is stubbed is only the LLM call, which is replaced by "unreachable" --
+    a state the module is required to handle anyway, by falling back to its
+    keyword signals and allowing anything it cannot classify. Tests that want to
+    exercise adjudication patch `tech_scope._adjudicate` themselves.
+    """
+    import tech_scope
+
+    original = tech_scope._adjudicate
+    tech_scope._adjudicate = lambda text, company_name: None
+    yield
+    tech_scope._adjudicate = original
+
+
+@pytest.fixture(autouse=True)
+def disable_ocr():
+    """Never run OCR unless a test asked for it.
+
+    Third instance of the same shape as `disable_founder_research` above, and
+    worth stating plainly because the pattern keeps recurring: a feature that is
+    correct to run automatically in production becomes a hidden cost attached to
+    every test the moment it is wired into a shared code path.
+
+    OCR fires on any uploaded PDF whose text layer is thin (see
+    `ocr_extractor.should_supplement`), which describes most small test
+    fixtures, and it costs ~2 seconds per page of ONNX inference. Left enabled
+    it would add minutes to a suite in which no test wants OCR at all.
+
+    Disabled at the module switch rather than by mocking, so the tests in
+    test_ocr_extractor.py that DO want it can re-enable it explicitly and get
+    the real engine rather than a stub whose accuracy proves nothing.
+    """
+    import ocr_extractor
+
+    original = ocr_extractor.ENABLED
+    ocr_extractor.ENABLED = False
+    yield
+    ocr_extractor.ENABLED = original
+
+
+@pytest.fixture(autouse=True)
 def disable_groq_pacing():
     """Never sleep for a rate limiter in a test.
 

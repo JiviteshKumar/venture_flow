@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Lift, Stagger, StaggerItem } from "../components/ui/Motion";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, AreaChart, Area,
@@ -53,17 +54,17 @@ const EmptyDashboard = () => {
             style={{ marginBottom: 24 }}>
             <Zap size={36} color="#1D6FE8" />
           </motion.div>
-          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             Analysis in progress…
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
             {currentStage}
           </div>
           <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
             <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
             {progressPct}% complete · stay on this tab
           </div>
         </>
@@ -76,10 +77,10 @@ const EmptyDashboard = () => {
           }}>
             <BarChart2 size={28} color="#1D6FE8" strokeWidth={1.5} />
           </div>
-          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             No analysis yet
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
             Upload a pitch deck to see your AI investment dashboard with live risk scores, claim verification, and comparable deals.
           </div>
           <button onClick={() => navigate("/upload")} style={{
@@ -108,12 +109,68 @@ const PastAnalyses = () => {
   }, []);
 
   if (loading || !reports.length) return null;
-  return <div style={{ width: "min(620px, 100%)", marginTop: 28, textAlign: "left" }}>
-    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#64748B", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Past analyses</div>
-    {reports.map((saved) => <button key={saved.report_id} type="button" onClick={async () => { await loadSavedReport(saved.report_id); navigate("/analysis"); }} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(15,23,42,0.08)", background: "#fff", borderRadius: 8, marginBottom: 6, padding: "10px 12px", cursor: "pointer" }}>
-      <strong>{saved.company}</strong><span style={{ float: "right", color: "#64748B" }}>{Math.round(saved.final_score)}/100 · {saved.recommendation}</span>
-    </button>)}
-  </div>;
+  return (
+    <div style={{ width: "min(620px, 100%)", marginTop: 28, textAlign: "left" }}>
+      <div style={{
+        fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)",
+        letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8,
+      }}>
+        Past analyses
+      </div>
+      <Stagger gap={0.04}>
+        {reports.map((saved) => (
+          <StaggerItem key={saved.report_id}>
+            <Lift>
+              <button
+                type="button"
+                className="db-past-row"
+                onClick={async () => {
+                  await loadSavedReport(saved.report_id);
+                  navigate("/analysis");
+                }}
+              >
+                <span className="db-past-name">
+                  {saved.company}
+                  {/* Reports that predate accounts belong to nobody and are
+                      visible to everyone. Saying so is the difference between
+                      a shared record and one the reader assumes is private. */}
+                  {saved.shared && <span className="db-past-shared">shared</span>}
+                </span>
+                <span className="db-past-meta">
+                  {Math.round(saved.final_score)}/100 · {saved.recommendation}
+                </span>
+              </button>
+            </Lift>
+          </StaggerItem>
+        ))}
+      </Stagger>
+      <style>{`
+        .db-past-row {
+          width: 100%; display: flex; align-items: center; justify-content: space-between;
+          gap: 12px; text-align: left; font-family: var(--font-sans);
+          border: 1px solid var(--border); background: var(--surface);
+          border-radius: 9px; margin-bottom: 6px; padding: 11px 13px; cursor: pointer;
+          transition: border-color var(--dur-fast) var(--ease-out),
+                      box-shadow var(--dur-base) var(--ease-out);
+        }
+        .db-past-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-raised); }
+        .db-past-name {
+          font-weight: 600; font-size: 13.5px; color: var(--text-primary);
+          display: flex; align-items: center; gap: 8px; min-width: 0;
+        }
+        .db-past-shared {
+          font-family: var(--font-mono); font-size: 8.5px; font-weight: 600;
+          letter-spacing: 0.09em; text-transform: uppercase;
+          color: var(--text-muted); background: var(--surface-2);
+          border: 1px solid var(--border); border-radius: 20px; padding: 2px 7px;
+        }
+        .db-past-meta {
+          font-family: var(--font-mono); font-size: 11.5px;
+          color: var(--text-muted); white-space: nowrap;
+        }
+      `}</style>
+    </div>
+  );
 };
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -142,8 +199,8 @@ const Dashboard = () => {
     <div className="db-root" style={{ fontFamily: "var(--font-sans)", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
       <div className="db-header" style={{ padding: "22px 32px 20px", background: "#fff", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "flex", alignItems: "flex-end", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
         <div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Dashboard</div>
-          <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 28, fontWeight: 400, margin: 0, color: "#0B1120" }}>AI Investment Dashboard</h1>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Dashboard</div>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 400, margin: 0, color: "#0B1120" }}>AI Investment Dashboard</h1>
         </div>
       </div>
       <EmptyDashboard />
@@ -289,7 +346,7 @@ const Dashboard = () => {
           display: inline-flex;
           align-items: center;
           gap: 7px;
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px;
           color: var(--green);
           background: rgba(14,166,106,0.09);
@@ -314,7 +371,7 @@ const Dashboard = () => {
         }
 
         .db-title {
-          font-family: 'DM Serif Display', serif;
+          font-family: var(--font-display);
           font-size: 28px;
           font-weight: 400;
           letter-spacing: -0.01em;
@@ -324,7 +381,7 @@ const Dashboard = () => {
         }
 
         .db-subtitle {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 10.5px;
           color: var(--text-muted);
         }
@@ -340,7 +397,7 @@ const Dashboard = () => {
         }
 
         .deck-id-label {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9px;
           color: var(--text-muted);
           letter-spacing: 0.12em;
@@ -349,7 +406,7 @@ const Dashboard = () => {
         }
 
         .deck-id-val {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 13px;
           font-weight: 600;
           color: var(--blue);
@@ -357,7 +414,7 @@ const Dashboard = () => {
 
         .db-export-btn {
           display: inline-flex; align-items: center; gap: 7px;
-          font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+          font-family: var(--font-mono); font-size: 11px;
           font-weight: 500; color: var(--text-secondary);
           background: var(--surface); border: 1px solid var(--border);
           padding: 8px 16px; border-radius: 8px; cursor: pointer;
@@ -408,21 +465,21 @@ const Dashboard = () => {
         }
 
         .metric-trend {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9px; font-weight: 600;
           padding: 3px 8px; border-radius: 20px;
           letter-spacing: 0.06em;
         }
 
         .metric-label {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px; color: var(--text-muted);
           letter-spacing: 0.1em; text-transform: uppercase;
           margin-bottom: 4px;
         }
 
         .metric-value {
-          font-family: 'DM Serif Display', serif;
+          font-family: var(--font-display);
           font-size: 22px; font-weight: 400;
           letter-spacing: -0.01em; line-height: 1;
           margin-bottom: 8px;
@@ -433,7 +490,7 @@ const Dashboard = () => {
         }
 
         .metric-sub {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px; color: var(--text-muted); max-width: 100px;
         }
 
@@ -467,14 +524,14 @@ const Dashboard = () => {
         }
 
         .panel-sub {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px; color: var(--text-muted);
         }
 
         .time-filters { display: flex; gap: 4px; }
 
         .time-btn {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 10px; padding: 4px 10px; border-radius: 6px;
           border: 1px solid transparent; cursor: pointer; transition: all 0.14s ease;
           background: transparent; color: var(--text-muted);
@@ -497,18 +554,18 @@ const Dashboard = () => {
         .stat-item { text-align: center; }
 
         .stat-label {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9px; color: var(--text-muted);
           text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px;
         }
 
         .stat-value {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 13px; font-weight: 600; color: var(--text-primary);
         }
 
         .slabel {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9.5px; color: var(--text-muted);
           text-transform: uppercase; letter-spacing: 0.12em;
           margin-bottom: 12px;
@@ -523,13 +580,13 @@ const Dashboard = () => {
         }
 
         .conviction-label {
-          font-family: 'IBM Plex Mono', monospace;
+          font-family: var(--font-mono);
           font-size: 9px; font-weight: 600;
           letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;
         }
 
         .conviction-score {
-          font-family: 'DM Serif Display', serif;
+          font-family: var(--font-display);
           font-size: 28px; margin-bottom: 8px; line-height: 1;
         }
 
@@ -550,10 +607,10 @@ const Dashboard = () => {
         .comp-color-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
         .comp-info { flex: 1; }
         .comp-name { font-size: 12.5px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.01em; }
-        .comp-meta { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-muted); margin-top: 1px; }
-        .comp-raise { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text-primary); }
+        .comp-meta { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-top: 1px; }
+        .comp-raise { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-primary); }
         .comp-score-chip {
-          font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+          font-family: var(--font-mono); font-size: 11px;
           font-weight: 700; padding: 4px 10px; border-radius: 7px;
           min-width: 36px; text-align: center;
         }
@@ -561,13 +618,13 @@ const Dashboard = () => {
         .gauge-section { padding: 18px 22px 14px; }
         .gauge-value-wrap { text-align: center; margin-top: -28px; }
         .gauge-big {
-          font-family: 'DM Serif Display', serif;
+          font-family: var(--font-display);
           font-size: 38px; font-weight: 400;
           color: var(--text-primary); line-height: 1; margin-bottom: 2px;
         }
-        .gauge-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); }
+        .gauge-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
         .gauge-scale { display: flex; justify-content: space-between; margin-top: 6px; }
-        .gauge-scale-label { font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: var(--text-muted); }
+        .gauge-scale-label { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-muted); }
 
         .runway-widget {
           padding: 0 22px 18px;
@@ -576,11 +633,11 @@ const Dashboard = () => {
         }
 
         .runway-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .runway-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
-        .runway-months { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .runway-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+        .runway-months { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-primary); }
         .runway-track { height: 6px; background: rgba(15,23,42,0.07); border-radius: 6px; overflow: hidden; margin-bottom: 7px; }
         .runway-fill { height: 100%; width: 58%; background: linear-gradient(90deg, #0EA66A, #1D6FE8); border-radius: 6px; }
-        .runway-sub { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-muted); }
+        .runway-sub { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); }
 
         .signals-section { padding: 18px 20px; }
         .signal-row {
@@ -590,9 +647,9 @@ const Dashboard = () => {
         .signal-row:last-child { border-bottom: none; }
         .signal-left { display: flex; align-items: center; gap: 8px; }
         .signal-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .signal-name { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-secondary); }
+        .signal-name { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-secondary); }
         .signal-val-wrap { display: flex; align-items: center; gap: 5px; }
-        .signal-value { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: var(--text-primary); }
+        .signal-value { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-primary); }
       `}</style>
 
       <div className="db-root">
@@ -681,8 +738,8 @@ const Dashboard = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="rgba(15,23,42,0.05)" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "var(--font-mono)", fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "var(--font-mono)", fontSize: 10 }} />
                     <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(15,23,42,0.08)", strokeWidth: 1 }} />
                     <Area type="monotone" dataKey="value" stroke="#1D6FE8" strokeWidth={2.5} fill="url(#arrGrad)" dot={false} isAnimationActive animationDuration={1400} animationEasing="ease-out" />
                   </AreaChart>
@@ -694,10 +751,10 @@ const Dashboard = () => {
                   border: "1px dashed rgba(15,23,42,0.12)", borderRadius: 12,
                   background: "rgba(15,23,42,0.015)",
                 }}>
-                  <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 40, color: scoreColor }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 40, color: scoreColor }}>
                     {Math.round(score)}
                   </div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, color: "#5D6B7F", textAlign: "center", maxWidth: 260 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "#5D6B7F", textAlign: "center", maxWidth: 260 }}>
                     Today&rsquo;s score. Re-run analysis on this company later to build a real trend line here.
                   </div>
                 </div>
@@ -745,9 +802,9 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div style={{ padding: "12px", background: "rgba(29,111,232,0.04)", borderRadius: 9, border: "1px solid rgba(29,111,232,0.12)" }}>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Verdict</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Verdict</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#0B1120", letterSpacing: "-0.02em" }}>{report.recommendation}</div>
-                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#4A5568", marginTop: 3 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#4A5568", marginTop: 3 }}>
                     {report.key_concerns[0] || "Verify all claims before closing"}
                   </div>
                 </div>
@@ -840,7 +897,7 @@ const Dashboard = () => {
                   </div>
                 </motion.div>
               )) : (
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F", textAlign: "center", padding: "16px 0" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F", textAlign: "center", padding: "16px 0" }}>
                   No signals detected
                 </div>
               )}

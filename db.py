@@ -339,7 +339,16 @@ def persist_report(
     domain: str | None,
     report: dict[str, Any],
     embedding: list[float] | None = None,
+    owner_user_id: str | None = None,
 ) -> str:
+    """Store a completed report.
+
+    `owner_user_id` is None for an unauthenticated deployment, which is the
+    same meaning migration 010 gives a NULL `dd_reports.owner_user_id`: the row
+    predates authentication, or was produced without it. Such rows are readable
+    by any signed-in user and are labelled as shared, rather than being
+    retro-assigned to whoever happens to register first.
+    """
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -376,11 +385,11 @@ def persist_report(
         try:
             cur.execute(
                 """
-                INSERT INTO dd_reports (company_id, summary, verdict, raw_output, embedding)
-                VALUES (%s, %s, %s, %s::jsonb, %s)
+                INSERT INTO dd_reports (company_id, summary, verdict, raw_output, embedding, owner_user_id)
+                VALUES (%s, %s, %s, %s::jsonb, %s, %s)
                 RETURNING id
                 """,
-                (company_id, summary, verdict, raw, embedding),
+                (company_id, summary, verdict, raw, embedding, owner_user_id),
             )
             # Read the id BEFORE releasing the savepoint: RELEASE is itself a
             # statement and replaces the cursor's result set, so fetching after
@@ -395,11 +404,11 @@ def persist_report(
             cur.execute("ROLLBACK TO SAVEPOINT before_report_insert")
             cur.execute(
                 """
-                INSERT INTO dd_reports (company_id, summary, verdict, raw_output)
-                VALUES (%s, %s, %s, %s::jsonb)
+                INSERT INTO dd_reports (company_id, summary, verdict, raw_output, owner_user_id)
+                VALUES (%s, %s, %s, %s::jsonb, %s)
                 RETURNING id
                 """,
-                (company_id, summary, verdict, raw),
+                (company_id, summary, verdict, raw, owner_user_id),
             )
             report_id = str(cur.fetchone()["id"])
         conn.commit()
@@ -441,34 +450,58 @@ def find_similar_reports_by_vector(embedding: list[float], top_k: int = 5) -> li
         return list(cur.fetchall())
 
 
-def list_reports(limit: int = 20) -> list[dict[str, Any]]:
-    """Return compact saved-report metadata for the history view."""
+def list_reports(limit: int = 20, owner_user_id: str | None = None) -> list[dict[str, Any]]:
+    """Compact saved-report metadata for the history view.
+
+    When `owner_user_id` is given, this returns that user's reports plus the
+    unowned ones. Unowned means `owner_user_id IS NULL`: a report produced
+    before authentication existed, or by a deployment running without it. Those
+    are shared by construction and there is no honest way to assign them, so
+    they are returned to every signed-in user and flagged `shared` so the UI can
+    say why they are visible.
+
+    When `owner_user_id` is None the caller is unauthenticated and gets the
+    unowned rows only -- never another user's work.
+    """
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
             SELECT dr.id::text AS report_id, c.name AS company,
                    COALESCE((dr.raw_output ->> 'final_score')::float, 0) AS final_score,
                    COALESCE(dr.verdict, 'NEEDS MORE DILIGENCE') AS recommendation,
-                   dr.created_at
+                   dr.created_at,
+                   (dr.owner_user_id IS NULL) AS shared
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
+            WHERE dr.owner_user_id IS NULL
+               OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid)
             ORDER BY dr.created_at DESC
             LIMIT %s
             """,
-            (limit,),
+            (owner_user_id, owner_user_id, limit),
         )
         return list(cur.fetchall())
 
 
-def get_report(report_id: str) -> dict[str, Any] | None:
-    """Load the persisted raw report by its externally supplied identifier."""
+def get_report(report_id: str, owner_user_id: str | None = None) -> dict[str, Any] | None:
+    """Load a persisted report, scoped to who is asking.
+
+    Returns None when the report exists but belongs to someone else, so the
+    caller raises the same 404 it would for a report that does not exist. A 403
+    would confirm the id is real, which is exactly the enumeration this scoping
+    exists to stop -- report ids were sequential integers and every one of them
+    was readable by any caller.
+    """
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT dr.id::text AS report_id, c.name AS company, dr.raw_output
+            SELECT dr.id::text AS report_id, c.name AS company, dr.raw_output,
+                   (dr.owner_user_id IS NULL) AS shared
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
             WHERE dr.id::text = %s
+              AND (dr.owner_user_id IS NULL
+                   OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid))
             """,
-            (report_id,),
+            (report_id, owner_user_id, owner_user_id),
         )
         return cur.fetchone()
 
@@ -730,6 +763,117 @@ def get_score_history(company_name: str, limit: int = 20) -> list[dict[str, Any]
             (company_name, limit),
         )
         return list(cur.fetchall())
+
+
+
+# ── Accounts ────────────────────────────────────────────────────────────────
+#
+# See auth.py for the hashing and token scheme. Nothing in this section ever
+# accepts or returns a plaintext password: the API hashes before it gets here.
+
+
+def create_user(*, email: str, password_hash: str, display_name: str = "") -> dict[str, Any]:
+    """Insert an account. Raises `UserAlreadyExists` on a duplicate email.
+
+    The uniqueness check is the database constraint rather than a prior SELECT,
+    because two simultaneous registrations both pass a SELECT and only the
+    constraint is actually atomic.
+    """
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("SAVEPOINT before_user_insert")
+        try:
+            cur.execute(
+                """
+                INSERT INTO users (email, password_hash, display_name)
+                VALUES (%s, %s, %s)
+                RETURNING id, email, display_name, created_at
+                """,
+                (email, password_hash, display_name),
+            )
+            row = cur.fetchone()
+            cur.execute("RELEASE SAVEPOINT before_user_insert")
+            return row
+        except psycopg.errors.UniqueViolation as exc:
+            cur.execute("ROLLBACK TO SAVEPOINT before_user_insert")
+            raise UserAlreadyExists(email) from exc
+
+
+class UserAlreadyExists(Exception):
+    """An account with this email already exists."""
+
+
+def get_user_by_email(email: str) -> dict[str, Any] | None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, email, password_hash, display_name, created_at "
+            "FROM users WHERE email = %s",
+            (email,),
+        )
+        return cur.fetchone()
+
+
+def get_user_by_id(user_id: str) -> dict[str, Any] | None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT id, email, display_name, created_at FROM users WHERE id = %s::uuid",
+            (user_id,),
+        )
+        return cur.fetchone()
+
+
+def create_session(*, token_hash: str, user_id: str, expires_at, user_agent: str = "") -> None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO user_sessions (token_hash, user_id, expires_at, user_agent)
+            VALUES (%s, %s::uuid, %s, %s)
+            """,
+            (token_hash, user_id, expires_at, (user_agent or "")[:300]),
+        )
+        cur.execute("UPDATE users SET last_login_at = now() WHERE id = %s::uuid", (user_id,))
+
+
+def get_session_user(token_hash: str) -> dict[str, Any] | None:
+    """The account behind a session token, or None if it is unknown or expired.
+
+    Expiry is enforced in the query rather than in Python so that a clock skew
+    between the app and the database cannot extend a session.
+    """
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT u.id, u.email, u.display_name, u.created_at
+            FROM user_sessions s JOIN users u ON u.id = s.user_id
+            WHERE s.token_hash = %s AND s.expires_at > now()
+            """,
+            (token_hash,),
+        )
+        row = cur.fetchone()
+        if row:
+            cur.execute(
+                "UPDATE user_sessions SET last_seen_at = now() WHERE token_hash = %s",
+                (token_hash,),
+            )
+        return row
+
+
+def delete_session(token_hash: str) -> None:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM user_sessions WHERE token_hash = %s", (token_hash,))
+
+
+def delete_expired_sessions() -> int:
+    """Housekeeping. Expired rows are already unusable; this stops them
+    accumulating forever."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM user_sessions WHERE expires_at <= now()")
+        return cur.rowcount or 0
+
+
+def count_users() -> int:
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT count(*) AS n FROM users")
+        return int(cur.fetchone()["n"])
 
 
 def stats() -> dict[str, int]:

@@ -8,25 +8,37 @@
     <!--
       Fonts are loaded here, not with a CSS `@import`.
 
-      The same `@import url(...)` line was duplicated inside <style> blocks in
-      four components (Sidebar, Analysis, Dashboard, UploadDeck). A CSS
-      @import cannot begin downloading until the stylesheet containing it has
-      itself been downloaded and parsed, so it serialises the font request
-      behind the CSS -- and because these blocks were rendered by React, the
-      request did not even start until after hydration. Moving them here lets
-      the browser start both connections during the initial HTML parse.
+      The same `@import url(...)` line was once duplicated inside <style>
+      blocks in four components. A CSS @import cannot begin downloading until
+      the stylesheet containing it has itself been downloaded and parsed, so it
+      serialises the font request behind the CSS -- and because those blocks
+      were rendered by React, the request did not start until after hydration.
+      Loading them here lets the browser open both connections during the
+      initial HTML parse.
 
-      Two families only: DM Serif Display for headline numerals and titles,
-      IBM Plex Mono for every data value and label. Figtree was a third face
-      used for body copy and is dropped in favour of the system UI stack,
-      which removes a render-blocking download for text that is not
-      brand-critical.
+      THE STACK, AND WHY EACH FACE IS HERE
+
+      Inter          Body and UI. Chosen over the system stack because this
+                     product is mostly numbers in tables, and Inter ships
+                     tabular figures (`tnum`) so columns of digits line up
+                     instead of shifting with each value. The system stack
+                     cannot be relied on for that.
+      Instrument     Display. Replaces DM Serif Display, which is heavier and
+      Serif          rounder than this product's tone; Instrument Serif is
+                     narrower and more editorial, which suits a written
+                     investment memo.
+      JetBrains Mono Data values, labels, identifiers. Replaces IBM Plex Mono:
+                     it is fractionally denser at the same optical size, and
+                     its zero is slashed, which matters in a table of figures.
+
+      Only the weights actually used are requested. Asking for a full family
+      here is how a font block becomes 400KB.
     -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap"
     />
   </head>
   <body>

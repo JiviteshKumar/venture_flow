@@ -6,7 +6,13 @@ import {
   useRef,
   ReactNode,
 } from "react";
-import { api, AnalyzeResponse, UploadResponse } from "../services/apiClient";
+import {
+  api,
+  AnalyzeResponse,
+  parseApiError,
+  ScopeCheck,
+  UploadResponse,
+} from "../services/apiClient";
 
 // ─── STATE SHAPE ─────────────────────────────────────────────────────────────
 
@@ -29,6 +35,13 @@ interface AppState {
   report: AnalyzeResponse | null;
   sessionId: string | null;
   error: string | null;
+  /**
+   * Set when the backend refused because the company is not a technology
+   * startup. Held separately from `error` because it is not a failure to
+   * recover from -- there is no retry that would help -- and it needs its own
+   * explanation rather than a red line of text.
+   */
+  outOfScope: ScopeCheck | null;
 
   // Company name the user typed
   companyName: string;
@@ -51,6 +64,7 @@ interface AppContextValue extends AppState {
   prepareUpload: (file: File, companyName: string) => Promise<void>;
   runAnalysis: (file: File, companyName: string, founders?: string[]) => Promise<void>;
   loadSavedReport: (reportId: string) => Promise<void>;
+  dismissOutOfScope: () => void;
   reset: () => void;
 }
 
@@ -64,6 +78,7 @@ const INITIAL: AppState = {
   report: null,
   sessionId: null,
   error: null,
+  outOfScope: null,
   companyName: "",
 };
 
@@ -98,6 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       currentStage: "Reading the deck…",
       progressPct: 5,
       error: null,
+      outOfScope: null,
       companyName,
       report: null,
     }));
@@ -115,13 +131,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (err: unknown) {
       uploadRef.current = null;
       uploadedFileRef.current = null;
-      const msg =
-        (err as { response?: { data?: { detail?: string } }; message?: string })
-          ?.response?.data?.detail ||
-        (err as { message?: string })?.message ||
-        "Could not read that file — check that api.py is running";
-      setState((s) => ({ ...s, status: "error", currentStage: "", progressPct: 0, error: msg }));
+      const { message, scopeCheck } = parseApiError(
+        err,
+        "Could not read that file — check that api.py is running",
+      );
+      setState((s) => ({
+        ...s, status: "error", currentStage: "", progressPct: 0,
+        error: message, outOfScope: scopeCheck,
+      }));
     }
+  }, []);
+
+  const dismissOutOfScope = useCallback(() => {
+    setState((s) => ({ ...s, outOfScope: null }));
   }, []);
 
   const loadSavedReport = useCallback(async (reportId: string) => {
@@ -145,6 +167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentStage: "Reading the deck…",
         progressPct: 5,
         error: null,
+        outOfScope: null,
         companyName,
       }));
 
@@ -266,18 +289,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }));
       } catch (err: unknown) {
         timers.forEach(clearTimeout);
-        const msg =
-          (err as { response?: { data?: { detail?: string } }; message?: string })
-            ?.response?.data?.detail ||
-          (err as { message?: string })?.message ||
-          "Analysis failed — check that api.py is running";
+        const { message, scopeCheck } = parseApiError(
+          err,
+          "Analysis failed — check that api.py is running",
+        );
 
         setState((s) => ({
           ...s,
           status: "error",
           currentStage: "",
           progressPct: 0,
-          error: msg,
+          error: message,
+          outOfScope: scopeCheck,
         }));
       }
     },
@@ -286,7 +309,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ ...state, setCompanyName, prepareUpload, runAnalysis, loadSavedReport, reset }}
+      value={{ ...state, setCompanyName, prepareUpload, runAnalysis, loadSavedReport, dismissOutOfScope, reset }}
     >
       {children}
     </AppContext.Provider>

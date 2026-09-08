@@ -1,0 +1,47 @@
+{
+  "n_rows": 5133,
+  "tier_counts": {
+    "shut_down": 792,
+    "operating": 3594,
+    "exit": 672,
+    "outsized": 75
+  },
+  "tier_rates": {
+    "shut_down": 0.1543,
+    "operating": 0.7002,
+    "exit": 0.1309,
+    "outsized": 0.0146
+  },
+  "exit_rate_including_outsized": 0.1455,
+  "dropped": {
+    "not_tech": 899,
+    "text_too_short": 157,
+    "unrecognised_status": 0
+  },
+  "tier_meanings": {
+    "shut_down": {
+      "label": "Shut down",
+      "meaning": "No longer operating."
+    },
+    "operating": {
+      "label": "Still operating",
+      "meaning": "Independent and still trading, with no exit recorded. The most common outcome by a wide margin."
+    },
+    "exit": {
+      "label": "Exit",
+      "meaning": "Acquired or went public. The size of the exit is not recorded and is not knowable from free sources -- this covers everything from an acquihire to a large sale."
+    },
+    "outsized": {
+      "label": "Outsized outcome",
+      "meaning": "Flagged by Y Combinator as one of its top companies. YC's editorial judgement, not a financial figure, and the closest free proxy for 'returned a fund'."
+    }
+  },
+  "source": {
+    "name": "yc-oss/api (Y Combinator's public company directory)",
+    "url": "https://github.com/yc-oss/api",
+    "licence": "public directory data"
+  },
+  "display_only": "This corpus is for comparable-company display. It is never used to fit a model: the outsized tier is not predictable from pre-outcome features (within-batch AUC 0.5892 [0.5079, 0.6867] against survivors and ordinary exits), and what separability there is among exits is largely profile-maintenance bias -- description length alone scores 0.6354.",
+  "why_the_headline_base_rate_differs": "The VentureFlow Score model reports a base rate of 48.9%. That is the share of exits among companies that had ALREADY either exited or shut down, because the training set excludes companies still operating. Across this full population the exit rate is 14.6% and the outsized rate is 1.5%. Both numbers are correct about different questions, and only the second answers 'how often does a company like this exit'.",
+  "generated_at": "2026-09-08T04:44:55Z"
+}

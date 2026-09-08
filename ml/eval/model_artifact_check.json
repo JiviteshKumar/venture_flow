@@ -24,7 +24,7 @@
     {
       "artifact": "Comparables corpus (comparables.py)",
       "status": "OK",
-      "detail": "comparables=5 population=1560"
+      "detail": "comparables=6 yc=5133 market=470"
     },
     {
       "artifact": "Claim model (retired baseline, must still load)",

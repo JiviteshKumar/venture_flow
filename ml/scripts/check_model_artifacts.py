@@ -103,14 +103,29 @@ print("embedding dims=%d" % len(v))
     ),
     (
         "Comparables corpus (comparables.py)",
-        ["ml/data/outcome_dataset.jsonl", "ml/models/text_embedder.pkl"],
+        [
+            "ml/data/yc_comparables.jsonl",
+            "ml/data/market_dataset.jsonl",
+            "ml/models/text_embedder.pkl",
+        ],
+        # `population` is keyed by corpus now, not a single flat block: the
+        # search covers Y Combinator alumni AND market-wide technology
+        # companies from public reference data. Asserting the old
+        # `population["n"] == 1560` would pass only while the second corpus
+        # was missing, which is the opposite of what this check is for.
         """
 from comparables import find_comparables
 out = find_comparables("An AI developer tools platform for enterprise teams.")
 assert out.get("available"), out.get("reason")
 assert out["comparables"], "no comparables returned"
-assert out["population"]["n"] == 1560, out["population"]
-print("comparables=%d population=%d" % (len(out["comparables"]), out["population"]["n"]))
+population = out["population"]
+assert set(population) >= {"yc", "market"}, population
+assert population["yc"]["n"] > 5000, population["yc"]
+assert population["market"]["n"] > 100, population["market"]
+for row in out["comparables"]:
+    assert row["population"] in ("yc", "market"), row
+print("comparables=%d yc=%d market=%d" % (
+    len(out["comparables"]), population["yc"]["n"], population["market"]["n"]))
 """,
     ),
     (

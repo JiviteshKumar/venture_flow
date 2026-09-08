@@ -344,20 +344,57 @@ between "we don't know" and "we measured nothing" impossible to lose.**
 
 ## 8. Known limits — stated plainly
 
-1. **8 of 13 well-known pitch decks extract to zero characters.** They are
-   image-only PDFs; there is no OCR. Confirmed: Dropbox, LinkedIn, YouTube,
-   Facebook, WeWork, BuzzFeed, Brex, Alan.
+1. **Image-only decks are now readable — from pictures, and it says so.**
+   Decks whose every page is a slide image used to be refused outright. An
+   offline OCR engine (RapidOCR / PP-OCRv4, shipped as ONNX weights inside its
+   wheel — no API key, no per-page cost, no system binary) now reads them.
+   Measured against decks that DO have a text layer, word recall runs
+   0.94–1.00 at roughly 2 seconds a page; on Uber's deck OCR returns 7,938
+   characters against the text layer's 5,390, because it also reads the words
+   baked into charts.
+   The residual limit is honesty, not capability: OCR misreads digits more
+   often than words, so every such analysis is labelled `text_source: "ocr"`
+   and the UI says the figures were read from a picture. A read that runs out
+   of its time budget reports how many pages it managed.
 2. **The scores are weak predictors.** AUC ~0.64–0.68 is meaningfully better
    than the 0.5 it replaced, and nowhere near good enough to decide an
    investment. It is a triage signal.
+   Newly measured: a text-only model trained on YC scores 0.6273 AUC
+   [0.5750, 0.6699] on 462 companies that never went through an accelerator,
+   against 0.5852 in-population. So it does transfer outside YC — modestly,
+   and now with a number rather than an assumption.
+   See `ml/scripts/eval_cross_population.py`.
 3. **The label is survival, not returns.** A company that survived as a small
    business scores the same as a unicorn.
-4. **YC-only population.** Comparables are drawn from YC alumni, not the market.
+4. **Comparables now cover two populations, not one.** 1,560 Y Combinator
+   alumni plus 470 technology companies from Wikidata and Wikipedia that were
+   never in an accelerator, every row carrying a Q-identifier a reader can
+   open and check. Results are stratified rather than pooled, because pooling
+   was measured and returned 24 of 25 rows from YC for reasons of writing
+   style rather than business similarity.
+   **That second corpus is deliberately not used for training.** Its own AUC
+   looks excellent (0.84) and the number is an artifact: Wikidata catalogues
+   1990s games studios and their closures unusually thoroughly, so "video
+   game" appears in 81.5% of its failures against 40.1% of its successes, and
+   article length alone separates the classes at 0.62 AUC because surviving
+   companies accumulate longer articles. A model trained on it would tell a
+   founder that games companies fail. `tests/test_market_dataset_not_trained_on.py`
+   keeps it out of the training scripts.
 5. **Groq free tier: 200,000 tokens/day** — roughly 4–8 full deck analyses
    before extraction degrades to the fallback (which now says so).
 6. **No authentication.** The deployed demo passphrase is a gate, not auth:
    no user model, no per-account isolation.
-7. **DuckDuckGo is the only search backend** and rate-limits aggressively.
+7. **Web search now fails over across providers.** DuckDuckGo first, then
+   Wikipedia — both keyless, so the chain works on a fresh clone — with Brave
+   and Tavily joining only when a key is set. A provider that fails is put in
+   a cooldown rather than retried on every subsequent query. One throttled
+   provider no longer takes the whole product's evidence gathering down with
+   it.
+8. **Tech startups only, enforced.** A deck that is not a technology company
+   is refused at both `/upload-pdf` and `/analyze`, with the evidence shown.
+   The gate is deliberately reluctant — it blocks only on positive evidence
+   that a company is something else and allows anything it cannot classify,
+   because wrongly refusing a real tech startup is the worse error.
 
 ---
 

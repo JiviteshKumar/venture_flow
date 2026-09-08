@@ -50,7 +50,7 @@ def wired(monkeypatch):
 
     seen = []
 
-    async def deterministic(request, on_stage=None):
+    async def deterministic(request, on_stage=None, owner_user_id=None):
         # Deterministic and dependent on the request, so a plumbing bug that
         # dropped or mangled a field would change the output.
         seen.append(request.model_dump())

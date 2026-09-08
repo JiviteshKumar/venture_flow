@@ -27,11 +27,20 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # verification intermittently -- see console_safety.py for the full write-up.
 # This has to happen before any module that prints is imported.
 import console_safety  # noqa: F401  (imported for side effect)
+import auth
 from chatbot import chat_with_document, store_document
 from config_check import check_configuration
 from config_check import enforce as enforce_configuration
 from db import (
+    UserAlreadyExists,
     add_comment,
+    count_users,
+    create_session,
+    create_user,
+    delete_expired_sessions,
+    delete_session,
+    get_session_user,
+    get_user_by_email,
     count_active_jobs,
     count_decisions,
     create_analysis_job,
@@ -59,7 +68,9 @@ from document_extractor import (
 )
 from rate_limiter import is_allowed as rate_limit_is_allowed
 import extraction_coverage
+import ocr_extractor
 import pdf_extractor
+import tech_scope
 from structured_extractor import extract_structured
 from ventureflow_agent import run_due_diligence
 
@@ -149,7 +160,8 @@ DEMO_ACCESS_TOKEN = os.getenv("DEMO_ACCESS_TOKEN", "").strip() or None
 # check and a human both establish the service is alive, and neither exposes
 # any report data. The OpenAPI routes are listed so the docs page can load its
 # own schema.
-PUBLIC_PATHS = {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+PUBLIC_PATHS = {"/", "/health", "/docs", "/openapi.json", "/redoc",
+                "/auth/register", "/auth/login", "/auth/logout", "/auth/me"}
 
 
 def _client_key(request: Request) -> str:
@@ -210,6 +222,84 @@ def _cors_headers_for(request: Request) -> dict[str, str]:
     return {}
 
 
+AUTH_COOKIE = "vf_session"
+
+# Key under which an analysis job carries its owner.
+#
+# Deliberately NOT a field on DiligenceRequest: a client that could name the
+# owner of a report could claim someone else's. It rides in the job envelope
+# instead and is popped before the request model is built.
+OWNER_KEY = "_owner_user_id"
+
+
+def _bearer_token(request: Request) -> str | None:
+    """The session token a caller presented.
+
+    Two accepted forms, for the same reason `_presented_token` accepts two: the
+    browser sends `Authorization: Bearer`, and `X-VF-Session` exists so a script
+    can authenticate without colliding with the demo passphrase, which also uses
+    the Authorization header.
+    """
+    explicit = request.headers.get("x-vf-session")
+    if explicit:
+        return explicit.strip()
+    authorization = request.headers.get("authorization", "")
+    if authorization.lower().startswith("bearer "):
+        return authorization[7:].strip()
+    return None
+
+
+async def current_user(request: Request) -> dict[str, Any] | None:
+    """The signed-in account, or None. Never raises.
+
+    Returns None rather than 401 because most endpoints stay reachable without
+    an account -- this deployment has always been usable unauthenticated, and
+    turning that off wholesale would break every existing script. What signing
+    in changes is OWNERSHIP: an authenticated analysis is scoped to its owner,
+    and an anonymous one is visible to everyone, exactly as before.
+    """
+    token = _bearer_token(request)
+    if not token:
+        return None
+    try:
+        return await run_in_threadpool(get_session_user, auth.hash_token(token))
+    except Exception:
+        # A database that is down must not turn every request into a 500 on the
+        # authentication path; it degrades to "not signed in".
+        logger.warning("Session lookup failed", exc_info=True)
+        return None
+
+
+async def require_user(request: Request) -> dict[str, Any]:
+    """As `current_user`, but 401 when there is nobody signed in."""
+    user = await current_user(request)
+    if user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Sign in to continue.",
+        )
+    return user
+
+
+class RegisterRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=1024)
+    display_name: str = Field(default="", max_length=80)
+
+
+class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=1024)
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: dict
+    expires_at: str
+
+
 def _presented_token(request: Request) -> str | None:
     """The passphrase the caller presented, from either accepted form.
 
@@ -240,7 +330,19 @@ async def require_demo_token(request: Request, call_next):
     # failure rather than a 401, hiding the real reason from the user.
     if request.method == "OPTIONS":
         return await call_next(request)
+    # An account is a stronger credential than the shared passphrase, so a
+    # signed-in caller passes this gate without knowing it. Without this, adding
+    # accounts to a passphrase-protected deployment would lock every new user
+    # out of the sign-in endpoint they need in order to become a user.
+    if request.url.path.startswith("/auth/"):
+        return await call_next(request)
     presented = _presented_token(request)
+    if presented is not None:
+        try:
+            if await run_in_threadpool(get_session_user, auth.hash_token(presented)):
+                return await call_next(request)
+        except Exception:
+            logger.warning("Session check failed inside the demo gate", exc_info=True)
     if presented is None or not secrets.compare_digest(presented, DEMO_ACCESS_TOKEN):
         return JSONResponse(
             status_code=401,
@@ -276,11 +378,22 @@ app.add_middleware(
     allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=False,
     allow_methods=["GET", "POST"],
-    # X-Demo-Token must be listed or the browser's preflight for it is refused
-    # with a 400 before the request is ever made -- which surfaces as a CORS
-    # error rather than as the 401 that would tell the user to enter the
-    # passphrase. Caught by tests/test_demo_gate.py::test_preflight_is_not_gated.
-    allow_headers=["Content-Type", "X-Demo-Token"],
+    # Every custom header the frontend sends must be listed here, or the
+    # browser's preflight for it is refused with a 400 before the real request
+    # is ever made -- which surfaces as an opaque CORS error rather than as the
+    # status that would have explained the problem.
+    #
+    # This has now bitten twice. First with X-Demo-Token, where the symptom was
+    # a CORS failure instead of the 401 telling the user to enter the
+    # passphrase. Then with Authorization, when accounts landed: adding a
+    # bearer token to every request makes every request preflighted, and with
+    # Authorization unlisted the dashboard's own /reports call failed with
+    # "Response to preflight request doesn't pass access control check" on a
+    # user who had just successfully signed in.
+    #
+    # Caught by tests/test_demo_gate.py::test_preflight_is_not_gated and
+    # tests/test_auth.py.
+    allow_headers=["Content-Type", "X-Demo-Token", "Authorization", "X-VF-Session"],
 )
 
 
@@ -596,6 +709,22 @@ class PDFExtractResponse(BaseModel):
     # "PDF" / "PowerPoint" / "Word" / "plain text" / "Markdown". Surfaced so
     # the UI can say which reader ran rather than implying everything is a PDF.
     document_format: str = "PDF"
+    # Where the analysed text actually came from. "text_layer" is text the
+    # document contained; "ocr" was recognised from page images because there
+    # was no text layer to read; "hybrid" is a thin text layer supplemented by
+    # OCR of the slides.
+    #
+    # This is a first-class field rather than a footnote because OCR misreads
+    # digits, and a diligence tool that presents a recognised revenue figure
+    # identically to a read one is hiding the single thing a reader would want
+    # to know about that number.
+    text_source: str = "text_layer"
+    ocr: dict = Field(default_factory=dict)
+    # Whether this deck is in VentureFlow's tech-startup scope, decided here so
+    # the user finds out at upload rather than after filling in the analysis
+    # form. The binding decision is made again at /analyze -- see the comment
+    # there for why this one cannot be the only check.
+    scope_check: dict = Field(default_factory=dict)
 
 
 def _as_list(value: Any) -> list[str]:
@@ -678,6 +807,125 @@ def _normalize_report(report: Any, company_name: str) -> dict[str, Any]:
     return report
 
 
+
+# ── Accounts ────────────────────────────────────────────────────────────────
+
+
+@app.post("/auth/register", response_model=AuthResponse, status_code=201)
+async def register(request: RegisterRequest, http_request: Request):
+    """Create an account and sign it in.
+
+    Registration signs the user in directly rather than sending them to a login
+    form: there is no email to verify (see auth.EMAIL_IS_UNVERIFIED_NOTE), so a
+    second step would ask for the password they just chose and prove nothing.
+    """
+    try:
+        email = auth.validate_email(request.email)
+        password = auth.validate_password(request.password)
+    except auth.AuthError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    password_hash = await run_in_threadpool(auth.hash_password, password)
+    try:
+        user = await run_in_threadpool(
+            create_user, email=email, password_hash=password_hash,
+            display_name=request.display_name.strip(),
+        )
+    except UserAlreadyExists:
+        # Deliberately explicit. Hiding this to avoid disclosing that an account
+        # exists does not work on a registration form -- the attacker learns the
+        # same fact from being unable to register -- and it strands a real user
+        # who has simply forgotten they signed up.
+        raise HTTPException(
+            status_code=409,
+            detail="An account with that email already exists. Sign in instead.",
+        ) from None
+    except Exception as exc:
+        logger.exception("Registration failed")
+        raise HTTPException(
+            status_code=503, detail="Accounts are unavailable right now."
+        ) from exc
+
+    return await _issue_session(user, http_request)
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(request: LoginRequest, http_request: Request):
+    try:
+        email = auth.normalise_email(request.email)
+        row = await run_in_threadpool(get_user_by_email, email)
+    except Exception as exc:
+        logger.exception("Login lookup failed")
+        raise HTTPException(
+            status_code=503, detail="Accounts are unavailable right now."
+        ) from exc
+
+    if row is None:
+        # Verify against a dummy hash so an unknown email costs the same time as
+        # a wrong password. A fast rejection here tells an attacker which
+        # addresses are registered.
+        await run_in_threadpool(auth.waste_time_like_a_real_verification)
+        raise HTTPException(status_code=401, detail="Wrong email or password.")
+
+    ok = await run_in_threadpool(
+        auth.verify_password, request.password, row["password_hash"]
+    )
+    if not ok:
+        raise HTTPException(status_code=401, detail="Wrong email or password.")
+
+    return await _issue_session(row, http_request)
+
+
+async def _issue_session(user_row: dict, http_request: Request) -> AuthResponse:
+    token, token_hash, expires = auth.new_session_token()
+    await run_in_threadpool(
+        create_session, token_hash=token_hash, user_id=str(user_row["id"]),
+        expires_at=expires, user_agent=http_request.headers.get("user-agent", ""),
+    )
+    return AuthResponse(
+        token=token,
+        user=auth.public_user(user_row),
+        expires_at=expires.isoformat(),
+    )
+
+
+@app.post("/auth/logout", status_code=204)
+async def logout(request: Request):
+    """Delete the presented session. Idempotent: logging out twice is fine, and
+    logging out with no session is not an error."""
+    token = _bearer_token(request)
+    if token:
+        try:
+            await run_in_threadpool(delete_session, auth.hash_token(token))
+        except Exception:
+            logger.warning("Could not delete session on logout", exc_info=True)
+    return Response(status_code=204)
+
+
+@app.get("/auth/me")
+async def whoami(request: Request):
+    """Who is signed in, and whether accounts exist at all.
+
+    `accounts_enabled` lets the frontend tell "you are signed out" from "this
+    deployment has no database and cannot have accounts", which need different
+    words on screen.
+    """
+    user = await current_user(request)
+    try:
+        total = await run_in_threadpool(count_users)
+        enabled = True
+    except Exception:
+        logger.warning("Could not count users", exc_info=True)
+        total, enabled = 0, False
+    return {
+        "user": auth.public_user(user),
+        "accounts_enabled": enabled,
+        "any_accounts_exist": total > 0,
+        "email_verification_note": auth.EMAIL_IS_UNVERIFIED_NOTE,
+        "password_min_length": auth.MIN_PASSWORD_LENGTH,
+    }
+
+
 @app.get("/")
 def root():
     return {
@@ -721,7 +969,8 @@ def health():
     }
 
 
-async def _perform_analysis(request: DiligenceRequest, on_stage=None):
+async def _perform_analysis(request: DiligenceRequest, on_stage=None,
+                            owner_user_id: str | None = None):
     session_id = str(uuid.uuid4())
     similar_companies: list[dict[str, Any]] = []
     try:
@@ -810,6 +1059,7 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
             domain=request.domain,
             report=report,
             embedding=report_embedding,
+            owner_user_id=owner_user_id,
         )
     except Exception as exc:
         logger.exception("Failed to persist completed report")
@@ -862,6 +1112,32 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None):
     )
 
 
+def _merge_slide_text(layer_text: str, ocr_text: str) -> str:
+    """One slide's text layer plus whatever OCR found that it did not already say.
+
+    Naive concatenation would double-count: coverage is measured per line, and
+    a line present in both halves would be counted twice, inflating the
+    denominator and the `content_chars` figure the thin-deck caveat quotes.
+    Comparing on letters and digits only absorbs the differences that do not
+    matter -- OCR renders "$2 million/day" where the text layer has
+    "$2 million / day" -- while keeping genuinely new lines.
+    """
+    if not ocr_text.strip():
+        return layer_text
+    if not layer_text.strip():
+        return ocr_text
+
+    def key(line: str) -> str:
+        return re.sub(r"[^a-z0-9]", "", line.lower())
+
+    seen = {key(line) for line in layer_text.splitlines() if key(line)}
+    fresh = [
+        line for line in ocr_text.splitlines()
+        if key(line) and key(line) not in seen
+    ]
+    return layer_text if not fresh else layer_text + "\n" + "\n".join(fresh)
+
+
 async def _extract_uploaded_document(
     file: UploadFile, company_name: str
 ) -> PDFExtractResponse:
@@ -887,27 +1163,80 @@ async def _extract_uploaded_document(
         )
         text = document["text"]
 
-        # Say WHY, because the two reasons need different actions from the user.
-        #
         # A scanned or image-exported deck is a valid, human-legible PDF whose
         # pages carry no text layer at all -- six well-known decks in this
         # project's own corpus are like this (Dropbox, LinkedIn, YouTube,
         # Facebook, WeWork, BuzzFeed), each extracting exactly 0 characters
-        # across 20-40 pages. "Could not extract readable text" reads like a
-        # corrupt file and invites the user to retry the same upload. Naming the
-        # cause tells them to export a text PDF instead.
+        # across 20-40 pages.
+        #
+        # This used to be the end of the road: a 422 saying "VentureFlow has no
+        # OCR". It now runs one, offline and free (see ocr_extractor.py), and
+        # only refuses when OCR has also been tried and failed.
+        #
+        # OCR also runs on decks that DID extract text but very little of it per
+        # page, because "has a text layer" and "has been read" are different
+        # facts. Coinbase's real 2012 deck is 12 pages and 635 characters; its
+        # content is in the images.
         layer = document.get("text_layer")
         stripped = (text or "").strip()
-        if layer == "none" or not stripped:
+        text_source = "text_layer"
+        ocr_result: dict[str, Any] = {}
+        is_pdf = (document.get("format") or "").lower() == "pdf"
+
+        needs_ocr = is_pdf and ocr_extractor.should_supplement(
+            layer or "none", len(stripped), int(document.get("page_count") or 0)
+        )
+        if needs_ocr and ocr_extractor.is_available():
+            ocr_result = await run_in_threadpool(ocr_extractor.ocr_pdf, file_bytes)
+            if ocr_result.get("available"):
+                ocr_text = ocr_result.get("text") or ""
+                if not stripped:
+                    text, text_source = ocr_text, "ocr"
+                else:
+                    # Both kept, each labelled. The text layer goes first
+                    # because it is the more reliable of the two, and the
+                    # boundary is explicit so nothing downstream has to guess
+                    # which half a given sentence came from.
+                    text = (
+                        f"{text}\n\n"
+                        f"--- The following was recognised from the page images "
+                        f"(OCR), not read from the document's text layer ---\n\n"
+                        f"{ocr_text}"
+                    )
+                    text_source = "hybrid"
+                stripped = text.strip()
+                logger.info(
+                    "OCR supplied %d chars for %r (source=%s)",
+                    ocr_result.get("chars", 0), company_name, text_source,
+                )
+            else:
+                logger.warning(
+                    "OCR did not produce text for %r: %s",
+                    company_name, ocr_result.get("reason"),
+                )
+
+        if not stripped:
+            # Say WHY, and say what was tried. "Could not extract readable text"
+            # reads like a corrupt file and invites the user to retry the same
+            # upload; naming the cause tells them what to do instead.
+            tried = (
+                f"OCR was also run and could not recognise any text "
+                f"({ocr_result.get('reason', 'no reason given')}). "
+                if ocr_result
+                else (
+                    f"OCR is not available on this server "
+                    f"({ocr_extractor.unavailable_reason()}). "
+                    if needs_ocr else ""
+                )
+            )
             raise HTTPException(
                 status_code=422,
                 detail=(
-                    f"This deck appears to be image-only: {document['page_count']} "
-                    f"page(s) were read and text extraction found no usable content. "
-                    f"That normally means the slides are pictures with no embedded "
-                    f"text layer. VentureFlow has no OCR, so nothing can be analysed "
-                    f"from this file. Please re-export it as a text-based PDF, or "
-                    f"paste the deck's text directly."
+                    f"Nothing could be read from this file. "
+                    f"{document['page_count']} page(s) were opened and text "
+                    f"extraction found no usable content. {tried}"
+                    f"Please re-export the deck as a text-based PDF, or paste "
+                    f"its text directly."
                 ),
             )
         if len(stripped) < 50:
@@ -920,6 +1249,20 @@ async def _extract_uploaded_document(
                     f"re-export it as a text-based PDF."
                 ),
             )
+        scope_check = await run_in_threadpool(tech_scope.classify, text, company_name)
+        if not scope_check["in_scope"]:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "out_of_scope",
+                    "message": (
+                        f"This deck does not appear to describe a technology "
+                        f"startup, so VentureFlow cannot analyse it."
+                    ),
+                    "scope_check": scope_check,
+                },
+            )
+
         info = await run_in_threadpool(extract_structured, text, company_name)
 
         # Measure how much of the deck actually reached a structured field,
@@ -927,13 +1270,29 @@ async def _extract_uploaded_document(
         # be confused with "we dropped it". PDFs give real slide boundaries;
         # other formats fall back to line-level coverage.
         slides: list[str] = []
-        if (document.get("format") or "").lower() == "pdf":
+        if is_pdf:
             try:
                 slides = await run_in_threadpool(
                     pdf_extractor.extract_pages_from_pdf, file_bytes
                 )
             except Exception:
                 logger.warning("Per-page extraction failed", exc_info=True)
+        # On an image-only deck the text layer yields empty pages, so coverage
+        # would be measured against slides that are blank by construction --
+        # reporting 0% understood for a deck OCR read perfectly well. Where a
+        # page has no text layer, its OCR text is the slide.
+        if ocr_result.get("available"):
+            by_page = {
+                page["page"]: page.get("text", "")
+                for page in ocr_result.get("per_page") or []
+            }
+            if not any(s.strip() for s in slides):
+                slides = [by_page.get(n, "") for n in sorted(by_page)]
+            else:
+                slides = [
+                    _merge_slide_text(slide, by_page.get(index + 1, ""))
+                    for index, slide in enumerate(slides)
+                ]
         coverage = extraction_coverage.compute(text, info, slides or None)
 
         session_id = str(uuid.uuid4())
@@ -963,6 +1322,18 @@ async def _extract_uploaded_document(
             deck_slides=slides,
             extraction_coverage=coverage,
             extraction_fallback_reason=info.get("_fallback_reason", "") or "",
+            scope_check=scope_check,
+            text_source=text_source,
+            # Only the summary travels, not `per_page` -- the per-page text is
+            # already in `deck_slides` and would double the response size.
+            ocr={
+                key: ocr_result[key]
+                for key in (
+                    "pages_read", "pages_total", "chars", "truncated",
+                    "truncation_note", "seconds", "engine", "provenance", "reason",
+                )
+                if key in ocr_result
+            } if ocr_result else {},
         )
     except HTTPException:
         raise
@@ -1002,18 +1373,32 @@ async def chat(request: ChatRequest):
 
 
 @app.get("/reports")
-def saved_reports():
+async def saved_reports(request: Request):
+    """The caller's own reports, plus the ones nobody owns.
+
+    This used to return every stored report to every caller over sequential
+    integer ids -- for a product whose premise is confidential diligence on
+    other people's companies, the most severe defect in the system. It is now
+    scoped: a signed-in user sees their own work plus the pre-authentication
+    rows, and an anonymous caller sees only the pre-authentication rows.
+    """
+    user = await current_user(request)
     try:
-        return list_reports()
+        return await run_in_threadpool(
+            list_reports, 20, str(user["id"]) if user else None
+        )
     except Exception as exc:
         logger.exception("Could not list saved reports")
         raise HTTPException(status_code=503, detail="Saved reports are currently unavailable.") from exc
 
 
 @app.get("/reports/{report_id}", response_model=DiligenceResponse)
-def saved_report(report_id: str):
+async def saved_report(report_id: str, request: Request):
+    user = await current_user(request)
     try:
-        stored = get_report(report_id)
+        stored = await run_in_threadpool(
+            get_report, report_id, str(user["id"]) if user else None
+        )
     except Exception as exc:
         logger.exception("Could not load saved report")
         raise HTTPException(status_code=503, detail="Saved report is currently unavailable.") from exc
@@ -1265,8 +1650,14 @@ async def _run_analysis_job_inner(job_id: str, request_data: dict[str, Any]) -> 
         def record_stage(label: str) -> None:
             set_analysis_job_stage(job_id, label)
 
+        # Copy before popping: the caller's dict is also the row stored on the
+        # job, and mutating it would strip the owner from a job that is later
+        # reclaimed after a restart.
+        payload = dict(request_data)
+        owner_user_id = payload.pop(OWNER_KEY, None)
         report = await _perform_analysis(
-            DiligenceRequest(**request_data), on_stage=record_stage
+            DiligenceRequest(**payload), on_stage=record_stage,
+            owner_user_id=owner_user_id,
         )
         await run_in_threadpool(update_analysis_job, job_id, "complete", report.model_dump())
     except Exception as exc:
@@ -1302,7 +1693,39 @@ MAX_CONCURRENT_ANALYSES = int(os.getenv("MAX_CONCURRENT_ANALYSES", "3"))
 
 
 @app.post("/analyze", response_model=AnalysisJobResponse, status_code=202)
-async def analyze_company(request: DiligenceRequest, background_tasks: BackgroundTasks):
+async def analyze_company(request: DiligenceRequest, background_tasks: BackgroundTasks,
+                          http_request: Request):
+    # VentureFlow analyses technology startups only.
+    #
+    # Enforced here rather than only at upload, because upload is not the only
+    # way in: a caller can post a description straight to /analyze, and the
+    # frontend lets a user edit the extracted text before submitting. A gate the
+    # user can walk around by editing a field is not a gate.
+    #
+    # 422 with a structured `scope_check` body, so the UI can show the reason
+    # and the evidence rather than a bare error string. See tech_scope.classify
+    # for why this refuses only on positive evidence and abstains otherwise.
+    scope_text = "\n".join(filter(None, [
+        request.company_description, request.filing_text, " ".join(request.claims),
+    ]))
+    verdict = await run_in_threadpool(
+        tech_scope.classify, scope_text, request.company_name
+    )
+    if not verdict["in_scope"]:
+        logger.info("Refused out-of-scope analysis for %r: %s",
+                    request.company_name, verdict["reason"])
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": "out_of_scope",
+                "message": (
+                    f"{request.company_name} does not appear to be a technology "
+                    f"startup, so VentureFlow cannot analyse it."
+                ),
+                "scope_check": verdict,
+            },
+        )
+
     # Shed load rather than accept work this process cannot finish.
     try:
         active = await run_in_threadpool(count_active_jobs)
@@ -1320,12 +1743,19 @@ async def analyze_company(request: DiligenceRequest, background_tasks: Backgroun
             ),
         )
 
+    # Whoever is signed in owns the resulting report. Anonymous analyses get a
+    # NULL owner, which migration 010 defines as "visible to everyone" -- the
+    # behaviour this deployment has always had.
+    user = await current_user(http_request)
+    payload = request.model_dump()
+    payload[OWNER_KEY] = str(user["id"]) if user else None
+
     try:
-        job_id = await run_in_threadpool(create_analysis_job, request.model_dump())
+        job_id = await run_in_threadpool(create_analysis_job, payload)
     except Exception as exc:
         logger.exception("Could not create analysis job")
         raise HTTPException(status_code=503, detail="Analysis queue is currently unavailable.") from exc
-    background_tasks.add_task(_run_analysis_job, job_id, request.model_dump())
+    background_tasks.add_task(_run_analysis_job, job_id, payload)
     return AnalysisJobResponse(job_id=job_id, status="pending")
 
 

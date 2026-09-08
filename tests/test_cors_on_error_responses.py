@@ -167,3 +167,29 @@ def test_origin_regex_is_anchored_and_refuses_lookalikes(monkeypatch):
                 "http://venture-flow-x.vercel.app"):
         r = c.get("/", headers={"Origin": bad})
         assert r.headers.get("access-control-allow-origin") is None, bad
+
+
+
+def test_preflight_allows_the_authorization_header(client):
+    """Accounts put a bearer token on every request, which makes every request
+    preflighted. With Authorization absent from `allow_headers` the browser
+    refuses the preflight with a 400 and the real call never happens -- the
+    dashboard's own /reports fetch failed exactly this way for a user who had
+    just signed in successfully, reported only as an opaque CORS error.
+
+    Takes the `client` fixture rather than building its own: the tests above
+    reload `api` with a different ALLOWED_ORIGINS, and a test that assumed the
+    default origins passed alone and failed in the file.
+    """
+    response = client.options(
+        "/reports",
+        headers={
+            "Origin": ORIGIN,
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "authorization,content-type",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    allowed = response.headers.get("access-control-allow-headers", "").lower()
+    assert "authorization" in allowed

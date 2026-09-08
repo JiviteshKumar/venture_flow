@@ -9,7 +9,6 @@ load_dotenv()
 
 import json
 
-from ddgs import DDGS
 
 from agents import risk_disclosure
 from agents.deck_financials import analyse as analyse_financials
@@ -51,19 +50,23 @@ RISK_SIGNALS = {
 # Web search
 # ----------------------------
 def search_company_risks(company: str) -> list:
+    """Adverse-news search for one company.
+
+    Goes through the provider chain rather than calling DuckDuckGo directly. A
+    throttled provider used to return zero results here, and zero adverse-news
+    results is indistinguishable from a clean record -- the one place in this
+    product where a silent search failure reads as good news about the company.
+    """
+    from agents.web_search import search
+
     query = f"{company} risk lawsuit fraud SEC investigation 2024 2025"
-    results = []
-    try:
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=8):
-                results.append({
-                    "title":   r.get("title", ""),
-                    "snippet": r.get("body", ""),
-                    "url":     r.get("href", ""),
-                })
-    except Exception as e:
-        print(f"  Search error: {e}")
-    return results
+    outcome = search(query, max_results=8)
+    if outcome["errors"]:
+        print(f"  Search degraded: {'; '.join(outcome['errors'])}")
+    return [
+        {"title": r["title"], "snippet": r["snippet"], "url": r["url"]}
+        for r in outcome["results"]
+    ]
 
 # ----------------------------
 # Signal detection

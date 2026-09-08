@@ -5,6 +5,12 @@ groq
 lightgbm
 pdfplumber
 pgvector
+# Offline OCR for image-only decks (ocr_extractor.py). Ships the PP-OCRv4
+# ONNX weights inside the wheel, so there is no API key, no per-page cost and
+# no system binary to install -- which is why this and not Tesseract.
+# Pulls onnxruntime and opencv-python (~60MB installed).
+rapidocr-onnxruntime
+pypdfium2
 psycopg[binary]
 psycopg_pool
 python-docx

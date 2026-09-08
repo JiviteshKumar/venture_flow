@@ -1,0 +1,158 @@
+{
+  "protocol": {
+    "features": "description text only (TF-IDF 1-2gram -> SVD-64)",
+    "why_text_only": "The only substantive feature both populations share. YC's structured columns (industry, stage, batch, num_tags) do not exist for a Wikidata company, and filling them with a missing marker would give the model a perfect dataset indicator, which it could exploit because the two populations have different base rates.",
+    "model": "TF-IDF -> TruncatedSVD(64) -> RandomForest(300)",
+    "vectoriser_fitted": "inside each training fold only",
+    "bootstrap_resamples": 400,
+    "seed": 17
+  },
+  "datasets": {
+    "yc": {
+      "n": 1560,
+      "positive_rate": 0.4654,
+      "source": "yc-oss/api"
+    },
+    "market": {
+      "n": 470,
+      "positive_rate": 0.5723,
+      "source": "Wikidata + English Wikipedia"
+    }
+  },
+  "results": [
+    {
+      "comparison": "YC -> YC (5-fold CV)",
+      "roc_auc": 0.5852,
+      "ci95": [
+        0.5564,
+        0.6142
+      ],
+      "n_test": 1560,
+      "test_positive_rate": 0.4654,
+      "note": "Reference point: the Outcome Model's own text-only ablation scores 0.5721 AUC on this population."
+    },
+    {
+      "comparison": "Market -> Market (5-fold CV)",
+      "roc_auc": 0.8586,
+      "ci95": [
+        0.8215,
+        0.8926
+      ],
+      "n_test": 470,
+      "test_positive_rate": 0.5723,
+      "note": ""
+    },
+    {
+      "comparison": "YC -> Market (transfer)",
+      "roc_auc": 0.6189,
+      "ci95": [
+        0.5704,
+        0.6681
+      ],
+      "n_test": 470,
+      "test_positive_rate": 0.5723,
+      "note": "Trained only on Y Combinator, tested only on companies that were never in an accelerator. This is what the shipped model is doing every time it scores a real deck."
+    },
+    {
+      "comparison": "Market -> YC (transfer)",
+      "roc_auc": 0.571,
+      "ci95": [
+        0.5415,
+        0.5991
+      ],
+      "n_test": 1560,
+      "test_positive_rate": 0.4654,
+      "note": ""
+    },
+    {
+      "comparison": "Pooled -> Pooled (5-fold CV)",
+      "roc_auc": 0.6831,
+      "ci95": [
+        0.6585,
+        0.7061
+      ],
+      "n_test": 2030,
+      "test_positive_rate": 0.4901,
+      "note": "Not comparable to the rows above: a pooled test set mixes two base rates, and a model that only learned to tell the datasets apart would score well here."
+    },
+    {
+      "comparison": "YC + market -> Market (5-fold CV on market)",
+      "roc_auc": 0.8547,
+      "ci95": [
+        0.8182,
+        0.8857
+      ],
+      "n_test": 470,
+      "test_positive_rate": 0.5723,
+      "note": "The decisive comparison: this against 'YC -> Market' says whether adding the second corpus to training actually helps on the population the product is aimed at."
+    },
+    {
+      "comparison": "[de-leaked] Market -> Market (5-fold CV)",
+      "roc_auc": 0.8429,
+      "ci95": [
+        0.8052,
+        0.8769
+      ],
+      "n_test": 462,
+      "test_positive_rate": 0.5779,
+      "note": "Compare against the leaked 'Market -> Market' above. The difference is how much of that number was the encyclopedia telling the model the answer."
+    },
+    {
+      "comparison": "[de-leaked] YC -> YC (5-fold CV)",
+      "roc_auc": 0.5852,
+      "ci95": [
+        0.5573,
+        0.6111
+      ],
+      "n_test": 1558,
+      "test_positive_rate": 0.4653,
+      "note": "Control: YC text is pitch copy written before the outcome, so this should barely move. If it does, the de-leaking is destroying signal rather than removing leakage."
+    },
+    {
+      "comparison": "[de-leaked] YC -> Market (transfer)",
+      "roc_auc": 0.6273,
+      "ci95": [
+        0.575,
+        0.6699
+      ],
+      "n_test": 462,
+      "test_positive_rate": 0.5779,
+      "note": "The honest answer to 'does the YC-trained model work outside YC'."
+    },
+    {
+      "comparison": "[de-leaked] YC + market -> Market (5-fold CV on market)",
+      "roc_auc": 0.8158,
+      "ci95": [
+        0.7743,
+        0.8547
+      ],
+      "n_test": 462,
+      "test_positive_rate": 0.5779,
+      "note": "The honest answer to 'does adding this corpus to training help'."
+    }
+  ],
+  "confounds_in_the_market_corpus": {
+    "founding_year_only_auc": 0.618,
+    "article_length_only_auc": 0.6225,
+    "category_frequencies": {
+      "video game": {
+        "in_failures": 0.815,
+        "in_successes": 0.401
+      },
+      "telecommunications": {
+        "in_failures": 0.031,
+        "in_successes": 0.281
+      },
+      "mobile": {
+        "in_failures": 0.067,
+        "in_successes": 0.363
+      },
+      "software": {
+        "in_failures": 0.179,
+        "in_successes": 0.206
+      }
+    },
+    "interpretation": "The market corpus's own AUC is produced by Wikidata's coverage biases, not by anything predictive about startups: which categories it catalogues thoroughly, which era each category belongs to, and the fact that a surviving company accumulates a longer encyclopedia article. It is therefore unusable as training data. It remains valid for comparable-company display, where every row is a real company with a verified outcome and nothing is being predicted."
+  },
+  "conclusion": "The YC-trained text model DOES transfer outside YC, modestly: 0.6273 AUC [0.5750, 0.6699] on 462 companies that never went through an accelerator, against 0.5852 in-population. That was previously unmeasured and is the useful result here. The market corpus's own 0.84 is an artifact of Wikidata's coverage biases and must not be shipped or trained on; adding it to training does not improve the honest transfer number."
+}

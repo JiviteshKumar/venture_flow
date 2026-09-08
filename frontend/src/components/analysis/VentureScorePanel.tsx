@@ -1,4 +1,6 @@
 import { AlertTriangle, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { motion } from "framer-motion";
+import { CountUp, EASE_OUT } from "../ui/Motion";
 import type { AnalyzeResponse } from "../../services/apiClient";
 
 // `sections` is itself optional on AnalyzeResponse, so both levels need
@@ -89,7 +91,9 @@ export default function VentureScorePanel({
       {/* Point estimate and its interval, always together. */}
       <div className="vs-score-row">
         <div className="vs-score-main">
-          <span className="vs-score" style={{ color: band.fg }}>{score}</span>
+          <span className="vs-score" style={{ color: band.fg }}>
+            <CountUp value={score} duration={1.0} />
+          </span>
           <span className="vs-score-of">/100</span>
         </div>
         <div className="vs-score-meta">
@@ -104,9 +108,21 @@ export default function VentureScorePanel({
       <div className="vs-track" role="img"
         aria-label={`Score ${score} of 100, likely range ${low} to ${high}, comparable base rate ${baseRate}`}>
         <div className="vs-track-bar">
-          <div className="vs-track-range" style={{ left: `${low}%`, width: `${Math.max(high - low, 1)}%` }} />
+          <motion.div
+            className="vs-track-range"
+            style={{ left: `${low}%` }}
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: `${Math.max(high - low, 1)}%`, opacity: 1 }}
+            transition={{ duration: 0.55, delay: 0.15, ease: EASE_OUT }}
+          />
           <div className="vs-track-base" style={{ left: `${baseRate}%` }} data-tip={`Base rate ${baseRate}%`} />
-          <div className="vs-track-point" style={{ left: `${score}%`, background: band.fg }} />
+          <motion.div
+            className="vs-track-point"
+            style={{ background: band.fg }}
+            initial={{ left: "0%", opacity: 0 }}
+            animate={{ left: `${score}%`, opacity: 1 }}
+            transition={{ duration: 1.0, ease: EASE_OUT }}
+          />
         </div>
         <div className="vs-track-labels"><span>0</span><span>50</span><span>100</span></div>
       </div>

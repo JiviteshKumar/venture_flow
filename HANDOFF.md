@@ -237,7 +237,9 @@ page is a slide image with no text layer. Confirmed image-only: Dropbox (2007),
 LinkedIn (2004), YouTube (2005), Facebook (2004), WeWork, BuzzFeed, **Brex
 (2018, 18 pages)** and **Alan (Series A, 42 pages)**.
 
-These are valid, human-legible PDFs. VentureFlow has no OCR path, so nothing
+These are valid, human-legible PDFs. VentureFlow now HAS an OCR path
+(`ocr_extractor.py`, offline RapidOCR), so these decks are readable; the
+note below describes the state before it existed. Nothing
 can be analysed from them. The upload endpoint returns a 422 that names the
 cause rather than saying "could not extract readable text", because the two
 need different actions from the user. `agents/slide_vision.py` is the

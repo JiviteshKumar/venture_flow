@@ -85,8 +85,12 @@ def test_startup_attempts_idempotent_schema_migration(monkeypatch):
 
 
 def test_saved_report_endpoints(monkeypatch):
-    monkeypatch.setattr(api, "list_reports", lambda: [{"report_id": "r1", "company": "Saved Co", "final_score": 42, "recommendation": "PASS", "created_at": "2026-08-01T00:00:00Z"}])
-    monkeypatch.setattr(api, "get_report", lambda _: {"report_id": "r1", "company": "Saved Co", "raw_output": {"sections": {"claims": {}, "risk": {}}, "final_score": 42, "recommendation": "PASS"}})
+    # Both take an owner now: reports are scoped to the signed-in account, and
+    # an anonymous caller sees only the rows that have no owner. The stubs
+    # accept and ignore it -- the scoping itself is exercised against a real
+    # database in tests/test_auth.py::TestReportScoping.
+    monkeypatch.setattr(api, "list_reports", lambda limit=20, owner_user_id=None: [{"report_id": "r1", "company": "Saved Co", "final_score": 42, "recommendation": "PASS", "created_at": "2026-08-01T00:00:00Z", "shared": True}])
+    monkeypatch.setattr(api, "get_report", lambda _report_id, owner_user_id=None: {"report_id": "r1", "company": "Saved Co", "raw_output": {"sections": {"claims": {}, "risk": {}}, "final_score": 42, "recommendation": "PASS"}})
     client = TestClient(api.app)
     assert client.get("/reports").json()[0]["company"] == "Saved Co"
     detail = client.get("/reports/r1")

@@ -80,7 +80,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
     }}>
       <div style={{
         padding: "12px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)",
-        fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600,
+        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
         color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
       }}>
         Document Chat
@@ -125,7 +125,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
             <button key={s} onClick={() => send(s)} disabled={!sessionId} style={{
               background: "transparent", border: "1px solid rgba(15,23,42,0.1)",
               borderRadius: 20, padding: "4px 10px", fontSize: 10.5,
-              fontFamily: "'IBM Plex Mono', monospace", color: "#64748B",
+              fontFamily: "var(--font-mono)", color: "#64748B",
               cursor: sessionId ? "pointer" : "not-allowed", transition: "all 0.15s ease",
             }}>{s}</button>
           ))}
@@ -204,7 +204,7 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
     }}>
       <div style={{
         padding: "12px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)",
-        fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600,
+        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
         color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
       }}>
         Notes {!reportId && <span style={{ color: "#5D6B7F", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
@@ -261,17 +261,17 @@ function EmptyAnalysis() {
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} style={{ marginBottom: 24 }}>
             <Zap size={36} color="#1D6FE8" />
           </motion.div>
-          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             Agents are running…
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
             {currentStage}
           </div>
           <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
             <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
             {progressPct}% complete
           </div>
         </>
@@ -284,10 +284,10 @@ function EmptyAnalysis() {
           }}>
             <Upload size={28} color="#1D6FE8" strokeWidth={1.5} />
           </div>
-          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             No analysis yet
           </div>
-          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 300 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 300 }}>
             Upload and analyse a pitch deck to see the full report here.
           </div>
           <button onClick={() => navigate("/upload")} style={{
@@ -421,23 +421,32 @@ const Analysis = () => {
    * nothing, every time.
    *
    * The real comparables were being computed all along and never rendered:
-   * `sections.market_comparables` is comparables.py's cosine-similarity search
-   * over 1,560 real Y Combinator companies, which returns five matches for any
-   * non-empty description. So the YC comps are the primary source here and the
-   * portfolio overlap is kept as a clearly-labelled secondary signal, since
-   * "have I looked at something like this before" is a different and also
-   * useful question.
+   * `sections.market_comparables` is comparables.py's cosine-similarity search,
+   * which returns matches for any non-empty description. So those are the
+   * primary source here and the portfolio overlap is kept as a
+   * clearly-labelled secondary signal, since "have I looked at something like
+   * this before" is a different and also useful question.
+   *
+   * The corpus is no longer Y Combinator alone. It now also covers technology
+   * companies from public reference data that never went through an
+   * accelerator, and results are stratified so a non-YC company is shown
+   * whenever one clears the similarity floor. Every row therefore carries its
+   * population, and the table shows it: a YC alum and an encyclopedia-notable
+   * public company are different kinds of evidence and presenting them as one
+   * undifferentiated list of peers would misrepresent both.
    */
   const marketComparables = report.sections?.market_comparables;
-  const ycComparables = (marketComparables?.available && marketComparables.comparables) || [];
+  const corpusComparables = (marketComparables?.available && marketComparables.comparables) || [];
   const portfolioMatches = report.similar_companies ?? [];
-  const competitors = ycComparables.length
-    ? ycComparables.map(c => ({
+  const competitors = corpusComparables.length
+    ? corpusComparables.map(c => ({
         name: c.name,
-        domain: c.batch ?? null,
-        sector: c.industry ?? null,
+        domain: c.batch || (c.founded_year ? `founded ${c.founded_year}` : null),
+        sector: c.industry || null,
         similarity: c.similarity,
         outcome: c.outcome ?? null,
+        population: c.population_label || null,
+        sourceUrl: c.source_url || null,
       }))
     : portfolioMatches.map(c => ({
         name: c.name,
@@ -445,9 +454,31 @@ const Analysis = () => {
         sector: c.sector ?? null,
         similarity: c.similarity,
         outcome: null as string | null,
+        population: "Your own prior reports" as string | null,
+        sourceUrl: null as string | null,
       }));
-  const comparablesSource = ycComparables.length
-    ? (marketComparables?.source ?? "Y Combinator comparable companies")
+
+  /**
+   * Whether this report was produced after the comparables corpus was widened
+   * beyond Y Combinator.
+   *
+   * Reports are stored as they were computed, so a report from before the
+   * change carries YC-only rows AND a stored caveat that says so. Rendering
+   * today's "two populations" banner above that report's own "YC-ONLY
+   * POPULATION" caveat puts two contradictory statements two inches apart, and
+   * the older one is the true one for that report.
+   *
+   * So the banner follows the data. A row from the wider corpus carries its
+   * population; a row from the old one does not.
+   */
+  const isTwoPopulationReport = corpusComparables.some(c => Boolean(c.population));
+  const populations = marketComparables?.population ?? {};
+  const populationSummary = Object.values(populations)
+    .filter(p => typeof p?.n === "number" && p.n > 0)
+    .map(p => `${p.n!.toLocaleString()} ${p.label ?? ""}`.trim())
+    .join(" + ");
+  const comparablesSource = corpusComparables.length
+    ? (populationSummary || "Companies with a publicly recorded outcome")
     : portfolioMatches.length
       ? "Your own prior reports and portfolio (name/domain similarity)"
       : "";
@@ -538,9 +569,9 @@ const Analysis = () => {
         .vs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; }
         .vs-card-muted { background: var(--surface-2); }
         .vs-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-        .vs-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-secondary); margin: 0; font-weight: 600; }
+        .vs-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-secondary); margin: 0; font-weight: 600; }
         .vs-sub { font-size: 11.5px; color: var(--text-secondary); margin: 4px 0 0; }
-        .vs-conf { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; padding: 5px 11px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+        .vs-conf { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; padding: 5px 11px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
         .vs-score-row { display: flex; align-items: baseline; gap: 18px; margin: 16px 0 6px; flex-wrap: wrap; }
         .vs-score-main { display: flex; align-items: baseline; gap: 3px; }
         .vs-score { font-size: 46px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -554,7 +585,7 @@ const Analysis = () => {
         .vs-track-range { position: absolute; top: 0; bottom: 0; background: rgba(29,111,232,0.16); border-radius: 4px; }
         .vs-track-base { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text-secondary); opacity: 0.5; }
         .vs-track-point { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
-        .vs-track-labels { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-secondary); margin-top: 6px; }
+        .vs-track-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); margin-top: 6px; }
         .vs-breakdown { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
         .vs-bd-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
         .vs-bd-row:last-child { border-bottom: none; }
@@ -564,7 +595,7 @@ const Analysis = () => {
         .vs-bd-total span { color: var(--text-primary); font-weight: 600; }
         .vs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .vs-stat { background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; display: flex; flex-direction: column; gap: 4px; }
-        .vs-stat-k { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+        .vs-stat-k { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
         .vs-stat-v { font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
         .vs-warn { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; color: #8A2018; background: rgba(217,48,37,0.06); border: 1px solid rgba(217,48,37,0.18); border-radius: 9px; padding: 10px 12px; margin: 14px 0 0; }
         .vs-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary); }
@@ -576,7 +607,7 @@ const Analysis = () => {
         .vs-details summary:focus-visible { outline: 2px solid var(--accent, #1D6FE8); outline-offset: 3px; border-radius: 4px; }
         .vs-dl { margin: 11px 0 0; display: flex; flex-direction: column; gap: 8px; }
         .vs-dl > div { display: grid; grid-template-columns: 148px 1fr; gap: 12px; font-size: 12px; }
-        .vs-dl dt { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding-top: 2px; }
+        .vs-dl dt { font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding-top: 2px; }
         .vs-dl dd { margin: 0; line-height: 1.55; }
         .vs-caveat { font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--border); }
 
@@ -596,13 +627,13 @@ const Analysis = () => {
 
         .an-meta-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
-        .an-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+        .an-eyebrow { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
 
-        .an-id-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--blue); letter-spacing: 0.06em; padding: 3px 10px; background: rgba(29,111,232,0.08); border: 1px solid rgba(29,111,232,0.2); border-radius: 20px; font-weight: 500; }
+        .an-id-badge { font-family: var(--font-mono); font-size: 9.5px; color: var(--blue); letter-spacing: 0.06em; padding: 3px 10px; background: rgba(29,111,232,0.08); border: 1px solid rgba(29,111,232,0.2); border-radius: 20px; font-weight: 500; }
 
-        .an-title { font-family: 'DM Serif Display', serif; font-size: 30px; font-weight: 400; letter-spacing: -0.01em; color: var(--text-primary); margin: 0 0 5px; line-height: 1; }
+        .an-title { font-family: var(--font-display); font-size: 30px; font-weight: 400; letter-spacing: -0.01em; color: var(--text-primary); margin: 0 0 5px; line-height: 1; }
 
-        .an-subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-muted); margin-bottom: 20px; }
+        .an-subtitle { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); margin-bottom: 20px; }
 
         .an-header-actions { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
 
@@ -610,7 +641,7 @@ const Analysis = () => {
 
         .an-export-btn:hover { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
 
-        .an-confidence-chip { display: inline-flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--green); background: rgba(14,166,106,0.08); border: 1px solid rgba(14,166,106,0.22); padding: 6px 12px; border-radius: 20px; font-weight: 500; }
+        .an-confidence-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 9.5px; color: var(--green); background: rgba(14,166,106,0.08); border: 1px solid rgba(14,166,106,0.22); padding: 6px 12px; border-radius: 20px; font-weight: 500; }
 
         .an-tabs { display: flex; gap: 2px; }
 
@@ -621,12 +652,12 @@ const Analysis = () => {
 
         .an-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 
-        .vf-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); border-left-width: 3px; transition: box-shadow 0.2s ease, transform 0.2s ease; }
+        .vf-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); border-left-width: 3px; transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
 
-        .vf-panel:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        .vf-panel:hover { box-shadow: var(--shadow-raised); transform: translateY(-2px); border-color: var(--border-strong); }
         .vf-panel-neutral { border-left-color: var(--border) !important; }
 
-        .vf-slabel { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; margin-bottom: 14px; }
+        .vf-slabel { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; margin-bottom: 14px; }
 
         .an-case-item { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 8px; padding: 11px 13px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); transition: border-color 0.15s ease, background 0.15s ease; cursor: default; }
 
@@ -638,9 +669,9 @@ const Analysis = () => {
 
         .score-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
-        .an-verdict-headline { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 8px; line-height: 1.2; }
+        .an-verdict-headline { font-family: var(--font-display); font-size: 20px; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 8px; line-height: 1.2; }
 
-        .verdict-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 500; cursor: default; transition: transform 0.15s ease; }
+        .verdict-tag { font-family: var(--font-mono); font-size: 9.5px; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 500; cursor: default; transition: transform 0.15s ease; }
 
         .verdict-tag:hover { transform: translateY(-1px); }
 
@@ -656,7 +687,7 @@ const Analysis = () => {
 
         .dd-question:last-child { border-bottom: none; }
 
-        .dd-q-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--blue); font-weight: 600; flex-shrink: 0; min-width: 22px; }
+        .dd-q-num { font-family: var(--font-mono); font-size: 10px; color: var(--blue); font-weight: 600; flex-shrink: 0; min-width: 22px; }
 
         .dd-q-text { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; }
 
@@ -666,7 +697,7 @@ const Analysis = () => {
 
         .claims-table { width: 100%; border-collapse: collapse; }
 
-        .claims-th { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); }
+        .claims-th { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); }
 
         .claims-tr { border-bottom: 1px solid rgba(15,23,42,0.05); transition: background 0.12s ease; }
 
@@ -675,21 +706,21 @@ const Analysis = () => {
 
         .claims-td { font-size: 12.5px; padding: 9px 12px 9px 0; color: var(--text-secondary); }
 
-        .match-chip { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+        .match-chip { font-family: var(--font-mono); font-size: 9px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
 
-        .an-founder-avatar { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0; transition: transform 0.2s ease; }
+        .an-founder-avatar { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0; transition: transform 0.2s ease; }
 
         .vf-panel:hover .an-founder-avatar { transform: scale(1.06); }
 
         .an-founder-name { font-size: 13.5px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
-        .an-founder-role { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+        .an-founder-role { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 2px; }
         .an-founder-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 12px; }
 
-        .an-risk-pill { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 500; }
+        .an-risk-pill { font-family: var(--font-mono); font-size: 9.5px; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 500; }
 
         .an-comp-table { width: 100%; border-collapse: collapse; }
 
-        .an-comp-th { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; padding: 0 12px 12px 0; border-bottom: 1px solid var(--border); font-weight: 500; }
+        .an-comp-th { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; padding: 0 12px 12px 0; border-bottom: 1px solid var(--border); font-weight: 500; }
 
         .an-comp-tr { border-bottom: 1px solid rgba(15,23,42,0.05); transition: background 0.12s ease; cursor: default; }
 
@@ -706,7 +737,7 @@ const Analysis = () => {
         @keyframes tab-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
         [data-tip] { position: relative; cursor: default; }
-        [data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: rgba(11,17,32,0.92); color: #F0F2F5; padding: 5px 10px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; white-space: nowrap; pointer-events: none; z-index: 200; }
+        [data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: rgba(11,17,32,0.92); color: #F0F2F5; padding: 5px 10px; border-radius: 6px; font-family: var(--font-mono); font-size: 9.5px; white-space: nowrap; pointer-events: none; z-index: 200; }
         [data-tip]:hover::before { content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: rgba(11,17,32,0.92); z-index: 200; pointer-events: none; }
       `}</style>
 
@@ -786,16 +817,16 @@ const Analysis = () => {
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                       <SLabel>Extraction Coverage</SLabel>
                       <span style={{
-                        fontFamily: "'IBM Plex Mono', monospace", fontSize: 15, fontWeight: 700,
+                        fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700,
                         color: coverageTone,
                       }}>{coverage.coverage_pct}%</span>
                       <span style={{
-                        fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                        fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
                         letterSpacing: "0.08em", color: coverageTone,
                         border: `1px solid ${coverageTone}33`, background: `${coverageTone}12`,
                         borderRadius: 5, padding: "2px 7px",
                       }}>{coverage.verdict}</span>
-                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F" }}>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F" }}>
                         {coverage.represented_slides} of {coverage.content_slides} content slides reached a structured field
                       </span>
                     </div>
@@ -804,13 +835,13 @@ const Analysis = () => {
                     </p>
                     {(coverage.unrepresented_slides ?? []).length > 0 && (
                       <div style={{ marginTop: 10, borderTop: "1px solid var(--border)", paddingTop: 8 }}>
-                        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                           Slides not represented below
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {coverage.unrepresented_slides!.slice(0, 12).map((s: { slide: number; heading: string }, i: number) => (
                             <span key={i} title={s.heading} style={{
-                              fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, color: "#64748B",
+                              fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#64748B",
                               border: "1px solid var(--border)", borderRadius: 5, padding: "2px 6px",
                               background: "var(--surface-2)",
                             }}>{s.slide}. {s.heading.slice(0, 24)}</span>
@@ -830,7 +861,7 @@ const Analysis = () => {
                     border: "1px solid rgba(217,48,37,0.28)", background: "rgba(217,48,37,0.06)",
                     borderRadius: 10, padding: "12px 14px", marginBottom: 12,
                   }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#D93025", letterSpacing: "0.12em", fontWeight: 600, textTransform: "uppercase", marginBottom: 6 }}>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#D93025", letterSpacing: "0.12em", fontWeight: 600, textTransform: "uppercase", marginBottom: 6 }}>
                       ⚠ Degraded extraction — {extractionProvenance.method}
                     </div>
                     <p style={{ fontSize: 12.5, color: "#4A5568", lineHeight: 1.65, margin: 0 }}>
@@ -945,7 +976,7 @@ const Analysis = () => {
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 13 }}>📋</span>
                         Suggested Due Diligence Questions
-                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#1D6FE8", background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.2)", padding: "2px 7px", borderRadius: 20 }}>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#1D6FE8", background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.2)", padding: "2px 7px", borderRadius: 20 }}>
                           {ddQuestions.length} questions
                         </span>
                       </span>
@@ -1027,19 +1058,19 @@ const Analysis = () => {
                         </tbody>
                       </table>
                     ) : (
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", padding: "16px 0" }}>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", padding: "16px 0" }}>
                         No claim verification data available.
                       </div>
                     )}
                   </Panel>
 
                   <Panel accentColor="#C47A0A">
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚡ AI Signal</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚡ AI Signal</div>
                     <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
                       {market?.recommendation || "Validate market size, buyer demand, and competition with primary evidence."}
                     </p>
                     <div style={{ padding: "12px", background: "rgba(196,122,10,0.06)", borderRadius: "8px", border: "1px solid rgba(196,122,10,0.15)" }}>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
                       <div style={{ fontSize: "12.5px", color: "#0B1120", fontWeight: "600" }}>{market?.gaps?.[0] || "None identified."}</div>
                     </div>
                   </Panel>
@@ -1056,7 +1087,7 @@ const Analysis = () => {
                     {teamRadarData.length > 0 ? <ResponsiveContainer width="100%" height={280}>
                       <RadarChart data={teamRadarData}>
                         <PolarGrid stroke="rgba(15,23,42,0.07)" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: "#64748B", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10 }} />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: "#64748B", fontFamily: "var(--font-mono)", fontSize: 10 }} />
                         <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
                         <Radar dataKey="value" stroke="#1D6FE8" fill="#1D6FE8" fillOpacity={0.09} strokeWidth={2.5} dot={{ fill: "#1D6FE8", r: 4, strokeWidth: 0 } as any} />
                       </RadarChart>
@@ -1079,20 +1110,20 @@ const Analysis = () => {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "#5D6B7F" }}>{r.subject}</span>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F" }}>{r.subject}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
                         </div>
                       ))}
                     </div>
                   </Panel>
 
                   <Panel accentColor="#D93025">
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#D93025", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
+                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#D93025", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
                     <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 16px" }}>
                       {team?.gaps?.[0] || "Insufficient team evidence. Verify founder credentials independently."}
                     </p>
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "14px", marginBottom: 14 }}>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
                       <div style={{ fontSize: "13.5px", color: "#0B1120", fontWeight: "700", letterSpacing: "-0.01em" }}>
                         {team?.questions?.[0] || (report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding")}
                       </div>
@@ -1124,7 +1155,7 @@ const Analysis = () => {
                                   ? "This name was printed in the uploaded deck."
                                   : "The deck named no founders. This name was found by searching public sources and appears verbatim in the cited pages."}
                                   style={{
-                                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                                    fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
                                     letterSpacing: "0.06em",
                                     color: check.origin === "deck" ? "#1D6FE8" : "#7A5AF8",
                                     border: `1px solid ${check.origin === "deck" ? "#1D6FE8" : "#7A5AF8"}33`,
@@ -1135,11 +1166,11 @@ const Analysis = () => {
                                 </span>
                               )}
                               <span style={{
-                                fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
                                 letterSpacing: "0.08em", color: tone, border: `1px solid ${tone}33`,
                                 background: `${tone}12`, borderRadius: 5, padding: "2px 7px",
                               }}>{check.assessment}</span>
-                              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: "#5D6B7F" }}>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F" }}>
                                 confidence {Math.round((check.confidence ?? 0) * 100)}%
                               </span>
                             </div>
@@ -1148,7 +1179,7 @@ const Analysis = () => {
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                                 {(check.sources ?? []).slice(0, 4).map((url, j) => (
                                   <a key={j} href={url} target="_blank" rel="noreferrer" style={{
-                                    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5,
+                                    fontFamily: "var(--font-mono)", fontSize: 9.5,
                                     color: "#1D6FE8", textDecoration: "none",
                                     border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
                                   }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
@@ -1179,7 +1210,7 @@ const Analysis = () => {
                               extraction path. */}
                           <div style={{
                             display: "inline-block", marginBottom: 8,
-                            fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600,
+                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
                             letterSpacing: "0.08em", textTransform: "uppercase",
                             borderRadius: 5, padding: "3px 8px",
                             color: founderDiscovery.search_failed ? "#D93025"
@@ -1214,7 +1245,7 @@ const Analysis = () => {
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                               {founderDiscovery.sources_consulted!.slice(0, 6).map((url, j) => (
                                 <a key={j} href={url} target="_blank" rel="noreferrer" style={{
-                                  fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5,
+                                  fontFamily: "var(--font-mono)", fontSize: 9.5,
                                   color: "#1D6FE8", textDecoration: "none",
                                   border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
                                 }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
@@ -1257,39 +1288,74 @@ const Analysis = () => {
                       paid licence. Until that changes, a correctly-scoped
                       feature beats a silently-overclaimed one.
                     */}
-                    {ycComparables.length > 0 && (
+                    {corpusComparables.length > 0 && !isTwoPopulationReport && (
+                      <div style={{
+                        background: "rgba(148,163,184,0.10)",
+                        border: "1px solid rgba(148,163,184,0.35)",
+                        borderRadius: 6, padding: "8px 10px", margin: "8px 0 12px",
+                      }}>
+                        <p style={{ color: "#5D6B7F", fontSize: 12, fontWeight: 600, margin: 0 }}>
+                          Y Combinator companies only — this report predates the wider corpus
+                        </p>
+                        <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
+                          It was produced when comparables were drawn from Y Combinator
+                          alumni alone, so no non-YC company could have appeared in the
+                          table below. Re-running the analysis searches the wider corpus.
+                          The report's own caveat, shown under the table, describes the
+                          run that produced it.
+                        </p>
+                      </div>
+                    )}
+
+                    {corpusComparables.length > 0 && isTwoPopulationReport && (
                       <div style={{
                         background: "rgba(234,179,8,0.08)",
                         border: "1px solid rgba(234,179,8,0.35)",
                         borderRadius: 6, padding: "8px 10px", margin: "8px 0 12px",
                       }}>
                         <p style={{ color: "#EAB308", fontSize: 12, fontWeight: 600, margin: 0 }}>
-                          Y Combinator companies only
+                          Two populations, searched separately
                         </p>
+                        {/*
+                          This banner used to read "Y Combinator companies only
+                          -- no non-YC startups are represented". That was true
+                          when the corpus was one accelerator's portfolio and is
+                          false now, so it says what is actually searched.
+                        */}
                         <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
                           Matched against{" "}
-                          {typeof marketComparables?.population?.n === "number"
-                            ? `${marketComparables.population.n.toLocaleString()} YC alumni`
-                            : "the YC alumni corpus"}{" "}
-                          with a recorded outcome — not against the market.
-                          No non-YC startups are represented. These are the nearest
-                          available matches, not necessarily close ones: treat them as
-                          leads to investigate, not as validated comparables.
+                          {typeof marketComparables?.population_total === "number"
+                            ? `${marketComparables.population_total.toLocaleString()} companies`
+                            : "companies"}{" "}
+                          with a publicly recorded outcome
+                          {populationSummary ? ` — ${populationSummary}` : ""}. Places are
+                          reserved for each population rather than pooled, because the
+                          text embedder was fitted on YC's own writing and a pooled
+                          ranking returns almost only YC rows for reasons of writing
+                          style rather than business similarity. These are the nearest
+                          available matches, not necessarily close ones.
                         </p>
                         {/*
                           Measured, and stated because the number invites the
                           opposite reading: cosine similarity on this TF-IDF
-                          embedder is LEXICAL. "A commercial laundry servicing
-                          hotels" scores 0.83 against this corpus while "an AI
-                          developer tools platform" scores 0.76. A high
-                          percentage means shared wording, not that two
-                          businesses are alike.
+                          embedder is LEXICAL.
                         */}
                         <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
                           The similarity percentage measures shared wording, not
                           business relevance — an unrelated company can score
-                          higher than a relevant one. Read the names, not the number.
+                          higher than a relevant one. And the two populations are
+                          not on one scale: a 62% against a market-wide company is
+                          not weaker evidence than a 68% against a YC company.
+                          Read the names, not the number.
                         </p>
+                        {Object.entries(populations).some(([, v]) => v?.note) && (
+                          <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
+                            {Object.entries(populations)
+                              .filter(([, v]) => v?.note)
+                              .map(([key, v]) => `${v.label ?? key}: ${v.note}`)
+                              .join(" ")}
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -1309,7 +1375,7 @@ const Analysis = () => {
                           No close comparables found
                         </p>
                         <p style={{ color: "#5D6B7F", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>
-                          The nearest company in the Y Combinator corpus scored{" "}
+                          The nearest company in either corpus scored{" "}
                           {typeof marketComparables.best_similarity === "number"
                             ? `${Math.round(marketComparables.best_similarity * 100)}%`
                             : "below"}{" "}
@@ -1319,7 +1385,7 @@ const Analysis = () => {
                             : ""}{" "}
                           floor. Nothing is shown rather than presenting distant
                           matches as comparable. This is the expected result for a
-                          company with no YC analogue.
+                          company with no close analogue in either population.
                         </p>
                       </div>
                     )}
@@ -1327,7 +1393,9 @@ const Analysis = () => {
                       <table className="an-comp-table">
                         <thead>
                           <tr>
-                            {["Company", "Batch / Domain", "Sector", "Outcome", "Similarity"].map((h) => (
+                            {["Company",
+                              ...(isTwoPopulationReport ? ["Population"] : []),
+                              "Batch / Domain", "Sector", "Outcome", "Similarity"].map((h) => (
                               <th key={h} className="an-comp-th">{h}</th>
                             ))}
                           </tr>
@@ -1335,7 +1403,28 @@ const Analysis = () => {
                         <tbody>
                           {competitors.map((competitor, i) => (
                             <tr key={i} className="an-comp-tr">
-                              <td className="an-comp-td" style={{ fontWeight: 600 }}>{competitor.name}</td>
+                              <td className="an-comp-td" style={{ fontWeight: 600 }}>
+                                {/* Market rows link to the Wikidata item the
+                                    outcome was read from. That every row is
+                                    checkable is the corpus's whole claim to
+                                    trustworthiness, so the link belongs on the
+                                    name rather than in a footnote. */}
+                                {competitor.sourceUrl ? (
+                                  <a
+                                    href={competitor.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: "var(--accent)", textDecoration: "underline" }}
+                                  >
+                                    {competitor.name}
+                                  </a>
+                                ) : competitor.name}
+                              </td>
+                              {isTwoPopulationReport && (
+                                <td className="an-comp-td" style={{ color: "#5D6B7F", fontSize: 11 }}>
+                                  {competitor.population || "—"}
+                                </td>
+                              )}
                               <td className="an-comp-td">{competitor.domain || "—"}</td>
                               <td className="an-comp-td">{competitor.sector || "—"}</td>
                               <td className="an-comp-td" style={{ color: competitor.outcome === "Shut down" ? "#D93025" : competitor.outcome ? "#0EA66A" : "#5D6B7F" }}>{competitor.outcome || "—"}</td>
@@ -1346,9 +1435,9 @@ const Analysis = () => {
                       </table>
                       <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, marginTop: 12 }}>
                         Source: {comparablesSource}
-                        {marketComparables?.caveat && ycComparables.length ? ` — ${marketComparables.caveat}` : ""}
+                        {marketComparables?.caveat && corpusComparables.length ? ` — ${marketComparables.caveat}` : ""}
                       </p>
-                      {ycComparables.length > 0 && portfolioMatches.length > 0 && (
+                      {corpusComparables.length > 0 && portfolioMatches.length > 0 && (
                         <p style={{ color: "#64748B", fontSize: 12, marginTop: 8 }}>
                           Also matched in your own history: {portfolioMatches.map(m => m.name).join(", ")}.
                         </p>
@@ -1368,7 +1457,7 @@ const Analysis = () => {
                         percentages. */}
 
                     <Panel accentColor="#C47A0A">
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
                       <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 10px" }}>
                         {score >= 65 ? "Competitive position appears defensible. Validate specific differentiation claims." : "High competitive pressure detected. Requires clear differentiation strategy."}
                       </p>

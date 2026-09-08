@@ -71,8 +71,19 @@ def _fallback_ai_analysis(
     # rendered a few inches below it in the same PDF.
     comparables = (market_comparables or {}).get("comparables") or []
     if comparables:
+        # Each line names its population. The corpus is no longer one
+        # accelerator (see comparables.py), and a memo listing a YC alum and an
+        # encyclopedia-notable public company as though they were one set of
+        # peers would misrepresent both. `batch` and `industry` exist only on
+        # the YC rows, so they are shown only when present rather than printed
+        # as "n/a" against every market-wide company.
+        def _describe(c: dict) -> str:
+            bits = [b for b in (c.get("industry"), c.get("batch")) if b]
+            bits.append(c.get("population_label") or "population not stated")
+            return ", ".join(bits)
+
         comparable_lines = "\n".join(
-            f"- {c.get('name')} ({c.get('industry', 'n/a')}, {c.get('batch', 'n/a')}) "
+            f"- {c.get('name')} ({_describe(c)}) "
             f"-- {c.get('outcome', 'unknown outcome')}, "
             f"similarity {float(c.get('similarity') or 0):.2f}"
             for c in comparables[:5]

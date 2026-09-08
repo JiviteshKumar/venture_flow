@@ -28,16 +28,32 @@ frontend/.env.*
 
 # Downloaded/training datasets and local reports
 data/
-# ml/data/outcome_dataset.jsonl is a RUNTIME dependency, not a build artefact:
-# comparables.py reads it on every analysis to find comparable companies, so a
-# fresh clone without it silently reports comparables as unavailable. Git will
-# not re-include a file whose parent directory is excluded, hence unexcluding
-# ml/data/ first and then re-excluding its contents. The 10 MB raw yc-oss dump
-# and the derived training set stay out: both are only needed to retrain, and
+# Some files under ml/data are RUNTIME dependencies, not build artefacts:
+# comparables.py reads them on every analysis, so a fresh clone without them
+# silently reports comparables as unavailable. Git will not re-include a file
+# whose parent directory is excluded, hence unexcluding ml/data/ first and then
+# re-excluding its contents, then listing the exceptions.
+#
+# What stays OUT, and why: the 10 MB raw yc-oss dump and the derived training
+# sets are only needed to retrain or to rebuild the corpora below, and
 # ml/README.md documents the one-command refresh from the public source.
+#
+# Each `.provenance.json` is committed alongside its data because it records
+# where the rows came from, how they were labelled, and what is known to be
+# wrong with them. A dataset whose provenance is not in the repository is a
+# dataset nobody can check.
 !ml/data/
 ml/data/*
 !ml/data/outcome_dataset.jsonl
+# Read by comparables.py: 5,133 YC companies with graded outcomes, including
+# the ones still operating (70% of them), which the training set excludes.
+!ml/data/yc_comparables.jsonl
+!ml/data/yc_comparables.provenance.json
+# Read by comparables.py: 470 non-accelerator technology companies from
+# Wikidata + Wikipedia, so the comp set is not one accelerator's portfolio.
+!ml/data/market_dataset.jsonl
+!ml/data/market_dataset.provenance.json
+!ml/data/risk_training_corpus.provenance.json
 TAT-QA/
 due_diligence_report.json
 AGENT_LOG.md

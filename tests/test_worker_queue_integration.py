@@ -106,7 +106,7 @@ def stub_analysis(monkeypatch):
     """Replace the agent pipeline with something instant and deterministic."""
     calls = []
 
-    async def fake_perform(request, on_stage=None):
+    async def fake_perform(request, on_stage=None, owner_user_id=None):
         calls.append(request.company_name)
         if on_stage:
             on_stage("Verifying claims against live web search")
@@ -162,7 +162,7 @@ def test_a_provider_429_mid_job_fails_the_job_with_a_retryable_message(store, mo
     """The typed-fallback contract must behave the same asynchronously as it did
     synchronously: a rate limit is reported as transient and retryable, not as a
     verdict about the company."""
-    async def rate_limited(request, on_stage=None):
+    async def rate_limited(request, on_stage=None, owner_user_id=None):
         raise RuntimeError("groq 429 rate_limit_exceeded: quota exhausted")
 
     monkeypatch.setattr(api, "_perform_analysis", rate_limited)
@@ -179,7 +179,7 @@ def test_a_provider_429_mid_job_fails_the_job_with_a_retryable_message(store, mo
 def test_a_crash_mid_job_does_not_leave_the_job_running(store, monkeypatch):
     """The worst outcome is a job stuck at 'running' forever, which is what the
     frontend polls into a spinner that never resolves."""
-    async def explode(request, on_stage=None):
+    async def explode(request, on_stage=None, owner_user_id=None):
         raise ValueError("pipeline exploded")
 
     monkeypatch.setattr(api, "_perform_analysis", explode)
@@ -216,7 +216,7 @@ def test_a_backend_restart_mid_job_is_reported_not_left_hanging(store, monkeypat
 def test_persisting_the_analytics_row_cannot_fail_a_finished_analysis(store, monkeypatch):
     """record_analysed_company is a derived projection of a report already saved.
     A failure there must never turn a completed analysis into an error."""
-    async def fake_perform(request, on_stage=None):
+    async def fake_perform(request, on_stage=None, owner_user_id=None):
         return api.DiligenceResponse(**REPORT_FIELDS)
 
     def explode(**kwargs):
@@ -291,7 +291,7 @@ def test_concurrent_jobs_do_not_leak_stage_into_each_other(store, monkeypatch):
     interleave."""
     started = threading.Event()
 
-    async def slow_perform(request, on_stage=None):
+    async def slow_perform(request, on_stage=None, owner_user_id=None):
         if on_stage:
             on_stage(f"stage for {request.company_name}")
         started.set()

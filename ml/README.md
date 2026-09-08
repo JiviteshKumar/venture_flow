@@ -102,9 +102,20 @@ hand-tuned formula (kept as `_legacy_formula_score()`) rather than failing.
 
 **Honest limitations** (the full list is in `ml/research/README.md` §7):
 AUC 0.674 is a weak-to-moderate signal that should inform a judgement, never
-replace one. YC-only population, coarse survived-or-exited label, no external
-validation, and description length ranking second in SHAP may partly reflect
-directory-maintenance bias rather than company quality.
+replace one. Trained on a YC-only population against a coarse
+survived-or-exited label, and description length ranking second in SHAP may
+partly reflect directory-maintenance bias rather than company quality.
+
+**External validation now exists, and is modest.** A text-only model trained on
+the YC corpus scores 0.6273 AUC [0.5750, 0.6699] on 462 technology companies
+that never went through an accelerator, against 0.5852 in-population — so it
+transfers, but it is not better outside YC than inside it, and both numbers are
+weak. See `ml/scripts/eval_cross_population.py` and
+`ml/eval/cross_population_results.json`. The held-out population comes from
+Wikidata and Wikipedia (`ml/scripts/build_market_company_dataset.py`); it is
+used for evaluation and for comparable-company display only, never for
+training, for reasons measured and recorded in
+`tests/test_market_dataset_not_trained_on.py`.
 
 ## What's actually trained and running (22 Aug 2026)
 
@@ -181,9 +192,12 @@ as `outcome_model_report_before_leakage_fix.json`.
 a coarse binary proxy — "survived/exited" vs. "shut down" — not a return
 multiple, not validated against any real fund's actual outcomes. The
 population is YC-only, which is a specific, survivorship-biased slice of
-startups (already selected for by YC's own admissions process) — this
-model's calibration should not be assumed to transfer to non-YC deal flow
-without re-validation. AUC 0.70 is in the same range as published
+startups (already selected for by YC's own admissions process). That transfer
+question is no longer open: measured against 462 non-accelerator technology
+companies, a text-only YC-trained model scores 0.6273 AUC [0.5750, 0.6699],
+against 0.5852 in-population. It transfers, weakly, and the calibration —
+as opposed to the ranking — has still not been re-validated off YC.
+AUC 0.70 is in the same range as published
 academic work on structured startup data (e.g. arXiv:2309.15552), not
 better — the contribution here is the honest ablation and the free,
 reproducible data pipeline, not a claim of superior accuracy.

@@ -49,21 +49,23 @@ export default {
         negative: "#D93025",
       },
       fontFamily: {
-        // Two families, as required. DM Serif Display is the display face for
-        // headline numerals and titles; IBM Plex Mono carries every data
-        // value, label and code-adjacent string. Figtree was the third and is
-        // dropped -- the UI reads consistently with the system UI stack for
-        // body copy, and it removes a whole font download.
-        display: ["'DM Serif Display'", "Georgia", "serif"],
-        mono: ["'IBM Plex Mono'", "ui-monospace", "SFMono-Regular", "monospace"],
+        // See index.html for why each face was chosen. Inter carries body and
+        // UI text, Instrument Serif the display type, JetBrains Mono every
+        // data value and label.
+        display: ["'Instrument Serif'", "Georgia", "serif"],
+        mono: ["'JetBrains Mono'", "ui-monospace", "SFMono-Regular", "monospace"],
         sans: [
-          "-apple-system", "BlinkMacSystemFont", "'Segoe UI'",
+          "'Inter'", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'",
           "Roboto", "Helvetica", "Arial", "sans-serif",
         ],
       },
       boxShadow: {
         panel: "0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04)",
         lifted: "0 12px 40px rgba(15,23,42,0.12)",
+        // Used on hover for anything that can be opened or dragged, so
+        // "this responds to me" is legible before the click.
+        raised: "0 2px 6px rgba(15,23,42,0.07), 0 10px 28px rgba(15,23,42,0.09)",
+        glow: "0 0 0 1px rgba(29,111,232,0.28), 0 8px 30px rgba(29,111,232,0.16)",
       },
       borderRadius: {
         xl: "12px",

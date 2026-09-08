@@ -19,10 +19,10 @@ const NotFound = () => {
       }}>
         <Compass size={28} color="#1D6FE8" strokeWidth={1.5} />
       </div>
-      <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
         Page not found
       </div>
-      <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
         There's nothing at this address. Head back to the dashboard to keep working.
       </div>
       <button onClick={() => navigate("/")} style={{

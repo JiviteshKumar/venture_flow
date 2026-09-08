@@ -13,7 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 from bs4 import BeautifulSoup
-from ddgs import DDGS
 
 import observability
 from agents.evidence_filter import filter_sources
@@ -34,21 +33,40 @@ def search_web(query: str, max_results: int = 8, raise_on_error: bool = False) -
     down and the report would still say "searched public sources, no founder
     names could be established", which reads as a fact about the company
     instead of a fact about our connectivity.
+
+    This is now a thin wrapper over `agents.web_search`, which tries several
+    providers rather than only DuckDuckGo. The signature and both behaviours are
+    unchanged, because every caller in the codebase depends on them; what
+    changed is that a single throttled provider no longer takes the product's
+    entire evidence-gathering ability down with it. Callers that want to know
+    WHICH provider answered should use `search_web_with_provenance` below.
     """
-    results = []
-    try:
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=max_results):
-                results.append({
-                    "title":   r.get("title", ""),
-                    "url":     r.get("href", ""),
-                    "snippet": r.get("body", ""),
-                })
-    except Exception as e:
-        if raise_on_error:
-            raise
-        print(f"  Search error: {e}")
-    return results
+    from agents.web_search import AllProvidersFailed, search, search_or_raise
+
+    if raise_on_error:
+        try:
+            return search_or_raise(query, max_results)["results"]
+        except AllProvidersFailed as exc:
+            # Re-raised as-is. The caller's contract is "an exception means the
+            # search did not run", and AllProvidersFailed means exactly that.
+            raise RuntimeError(f"Every search provider failed: {exc}") from exc
+
+    outcome = search(query, max_results)
+    if outcome["errors"]:
+        logger.warning("Search degraded: %s", "; ".join(outcome["errors"]))
+    return outcome["results"]
+
+
+def search_web_with_provenance(query: str, max_results: int = 8) -> dict:
+    """`search_web`, plus which provider answered and what the others did.
+
+    Evidence from an encyclopaedia and evidence from a general web index are not
+    interchangeable, and a report that cites either should be able to say which
+    it had.
+    """
+    from agents.web_search import search
+
+    return search(query, max_results)
 
 def fetch_page_text(url: str, max_chars: int = 3000) -> str:
     try:
