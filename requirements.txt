@@ -1,26 +1,26 @@
-beautifulsoup4
-ddgs
-fastapi
-groq
-lightgbm
-pdfplumber
-pgvector
+beautifulsoup4==4.15.0
+ddgs==9.15.0
+fastapi==0.141.1
+groq==1.6.0
+lightgbm==4.7.0
+pdfplumber==0.11.10
+pgvector==0.5.0
 # Offline OCR for image-only decks (ocr_extractor.py). Ships the PP-OCRv4
 # ONNX weights inside the wheel, so there is no API key, no per-page cost and
 # no system binary to install -- which is why this and not Tesseract.
 # Pulls onnxruntime and opencv-python (~60MB installed).
-rapidocr-onnxruntime
-pypdfium2
-psycopg[binary]
-psycopg_pool
-python-docx
-python-dotenv
-python-multipart
-python-pptx
-reportlab
-requests
-scikit-learn
-uvicorn[standard]
+rapidocr-onnxruntime==1.2.3
+pypdfium2==5.13.0
+psycopg[binary]==3.3.4
+psycopg_pool==3.3.1
+python-docx==1.2.0
+python-dotenv==1.2.3
+python-multipart==0.0.32
+python-pptx==1.0.2
+reportlab==5.0.1
+requests==2.34.2
+scikit-learn==1.9.0
+uvicorn[standard]==0.52.4
 
 # Optional: only imported if REDIS_URL is set (rate_limiter.py falls back to
 # in-memory limiting without it). Uncomment if you're running >1 instance.

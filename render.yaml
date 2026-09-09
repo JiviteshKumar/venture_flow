@@ -1,0 +1,75 @@
+# Render Blueprint for the VentureFlow backend.
+#
+# Render can read this file directly (Dashboard -> Blueprints -> New Blueprint
+# Instance), or you can ignore it and create the service by hand using the same
+# values -- see DEPLOY_RENDER.md, which walks through both.
+#
+# Two settings here are load-bearing and worth understanding before you change
+# them:
+#
+#   plan: standard
+#     NOT free, and not for the usual reason. This service loads a 23 MB
+#     scikit-learn pickle (venturescore_model.pkl), a LightGBM booster, a text
+#     embedder, and -- when a deck turns out to be image-only -- onnxruntime
+#     plus opencv for OCR. Unpickled and resident, that does not fit in the
+#     512 MB the free and starter instances give you, and the way it fails is
+#     the worst kind: the process is OOM-killed part-way through somebody's
+#     analysis, so the job row is left running and the user watches a spinner.
+#     Start on standard (2 GB). You can measure and step down later.
+#
+#   healthCheckPath: /health
+#     /health is exempt from the rate limiter (see the middleware in api.py),
+#     so Render's probe cannot consume a real user's request budget.
+#
+# The disk is deliberately absent. Reports live in Postgres; nothing this
+# service writes to local disk needs to survive a restart, and since
+# VENTUREFLOW_REPORT_DIR is unset by default it writes none at all.
+
+services:
+  - type: web
+    name: ventureflow-api
+    runtime: python
+    plan: standard
+    region: oregon
+    branch: main
+    # requirements.txt is fully pinned. That is not tidiness: the shipped score
+    # is a pickle, and an unpinned scikit-learn upgrade on a rebuild would fail
+    # to unpickle it -- which does not crash the service, it silently falls back
+    # to the hand-written formula that scores AUC 0.5.
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /health
+    autoDeploy: true
+
+    envVars:
+      # Pinned so a Render base-image change cannot move Python underneath the
+      # pickles. Match your local interpreter.
+      - key: PYTHON_VERSION
+        value: "3.13.2"
+
+      # ── Set these yourself, in the dashboard. sync:false means Render will
+      #    prompt for them rather than storing them in this file. Never commit
+      #    a real value here.
+      - key: DATABASE_URL          # Neon connection string, pooled endpoint
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS       # your Vercel URL, comma-separated
+        sync: false
+
+      # ── Safe defaults ────────────────────────────────────────────────────
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "30"
+      # One worker, three concurrent analyses. Raising either does NOT buy
+      # throughput on the Groq free tier: 200,000 tokens/day is roughly four to
+      # eight analyses in total per day, and the per-minute pacer is
+      # process-local, so a second worker would quietly double the request rate
+      # against a limit it cannot see.
+      - key: MAX_CONCURRENT_ANALYSES
+        value: "3"
+      - key: GROQ_TOKENS_PER_MINUTE
+        value: "8000"
+      # Off unless you are debugging. Render's filesystem is ephemeral, so
+      # anything written here is lost on the next deploy.
+      - key: VENTUREFLOW_REPORT_DIR
+        value: ""
