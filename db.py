@@ -304,7 +304,25 @@ def companies_with_short_runway(
 def find_similar_companies(
     name: str, domain: str | None, sector: str | None
 ) -> list[dict[str, Any]]:
-    """Return investment/report matches using sector and PostgreSQL fuzzy matching."""
+    """Return investment/report matches using sector and PostgreSQL fuzzy matching.
+
+    Results are filtered before they are returned. The `companies` table is
+    written by every analysis this deployment has ever run, so it accumulates
+    two kinds of row that must never be shown to a user as a peer company:
+
+      * names taken from an uploaded filename, from before the name was
+        cleaned at the API boundary -- "02 uber", "05 dropbox",
+        "claritycare health pitch deck";
+      * fixture companies left behind by the test suite.
+
+    The first kind is the one that actually surfaced: a real Uber analysis
+    returned exactly one comparable, "02 uber", matched back to "Uber" by
+    trigram similarity on its own filename.
+
+    Filtering here rather than only at write time because the rows already
+    exist, and because a comparables list is read far more often than it is
+    written.
+    """
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -328,7 +346,67 @@ def find_similar_companies(
             """,
             {"name": name, "domain": domain, "sector": sector},
         )
-        return list(cur.fetchall())
+        rows = list(cur.fetchall())
+
+    return [row for row in rows if _is_a_real_company_name(row.get("name"))]
+
+
+# Fixture companies from tests/test_auth.py. Matched on the exact prefixes those
+# fixtures use, so a real company called "Legacy Systems Inc" is unaffected.
+_FIXTURE_PREFIXES = ("ScopeTest ", "ListScope ", "Legacy ")
+
+
+# No company is called "... Pitch Deck". These are upload filenames that lost
+# their extension somewhere: "claritycare health pitch deck", "novaedge sample
+# pitch deck", "ComplyForge AI Pitch Deck" are all real rows in this table.
+_PACKAGING_SUFFIXES = ("pitch deck", "pitchdeck", "pitch-deck", "presentation")
+
+# A leading number, a space, then a LOWERCASE word: "02 uber", "28 canva",
+# "11 tinder". These are batch-numbered upload filenames.
+#
+# The case of that first letter is what separates them from real names, and it
+# is the only signal that does. The cleaner cannot use this rule -- it must not
+# rewrite a name on evidence this thin -- but withholding one comparable is a
+# much cheaper mistake than renaming a company, so the read side can.
+#
+# "500 Startups", "1 FinFlow Fintech", "3M", "7-Eleven" and "23andMe" all pass:
+# the first three capitalise the word after the number, and the last two have
+# no space at all.
+_NUMBERED_FILENAME = re.compile(r"^\s*\d{1,3}\s+[a-z]")
+
+
+def _is_a_real_company_name(name: str | None) -> bool:
+    """False for a filename or a test fixture, True for anything else.
+
+    The filename test is `company_name.clean(value) != value` -- if the
+    cleaner would rewrite this string, it is not a clean company name. That
+    reuses the predicate with the careful test coverage behind it rather than
+    inventing a second one here, and it is why "7-Eleven" and "500 Startups"
+    survive: the cleaner is specifically built not to touch them.
+
+    Note this deliberately does NOT use `company_name.looks_like_a_filename`,
+    which answers a different and looser question for a UI warning and reports
+    True for "7-Eleven" -- harmless as a prompt to check a name, wrong as a
+    reason to withhold a company.
+
+    Deliberately permissive otherwise: a comparable wrongly withheld costs the
+    reader one row of context, while a comparable wrongly shown tells them this
+    product thinks "02 uber" is a company.
+    """
+    value = (name or "").strip()
+    if not value:
+        return False
+    if any(value.startswith(prefix) for prefix in _FIXTURE_PREFIXES):
+        return False
+    if value.lower().endswith(_PACKAGING_SUFFIXES):
+        return False
+    if _NUMBERED_FILENAME.match(value):
+        return False
+    try:
+        from company_name import clean
+    except ImportError:  # pragma: no cover - company_name ships alongside db
+        return True
+    return clean(value) == value
 
 
 def persist_report(

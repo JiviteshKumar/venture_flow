@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # This has to happen before any module that prints is imported.
 import console_safety  # noqa: F401  (imported for side effect)
 import auth
+from company_name import clean as clean_company_name
 from chatbot import chat_with_document, store_document
 from config_check import check_configuration
 from config_check import enforce as enforce_configuration
@@ -570,6 +571,29 @@ class DiligenceRequest(BaseModel):
     # verifier is told the vintage is unknown rather than being given a guess.
     deck_date: str = Field(default="", max_length=4)
 
+    @field_validator(
+        "company_description", "filing_text", "extraction_method",
+        "extraction_fallback_reason", "stage", "deck_date",
+        mode="before",
+    )
+    @classmethod
+    def treat_null_as_absent(cls, value):
+        """An explicit null means the same thing as omitting the key.
+
+        These fields are declared `str` with a default rather than
+        `str | None`, so Pydantic accepted an absent key and rejected a null
+        one. Found by posting a real deck to /analyze from a Python client:
+        `"stage": null` -- the natural serialisation of "the extractor could
+        not tell" -- came back 422 against a field documented as optional.
+        """
+        return "" if value is None else value
+
+    @field_validator("claims", "founders", "deck_slides", mode="before")
+    @classmethod
+    def treat_null_list_as_empty(cls, value):
+        """Same reasoning for the list fields, which have the same shape."""
+        return [] if value is None else value
+
     @field_validator("deck_date")
     @classmethod
     def check_deck_year(cls, value: str) -> str:
@@ -630,6 +654,26 @@ class DiligenceResponse(BaseModel):
     # company nobody has written about yet. Distinct from
     # incomplete_analysis, which means the pipeline itself did not run.
     claims_unverified: bool = False
+    # True when claim verification never ran (provider failure), as
+    # opposed to running and finding nothing. The UI must not render
+    # the second as the first.
+    claims_verification_degraded: bool = False
+    # Whether any component fell back because the language model was
+    # unreachable, and which ones.
+    #
+    # `ventureflow_agent` has computed both since the degradation work, and
+    # `db.py` persists them, but this response model never declared them --
+    # so Pydantic dropped them on the way out and the frontend had no way to
+    # tell a specialist that found nothing from one that never ran. That is
+    # why an outage rendered as "No positive signals identified."
+    provider_degraded: bool = False
+    degraded_components: list[dict[str, Any]] = Field(default_factory=list)
+    # Declared here on purpose. A field the pipeline sets but the response
+    # model does not declare is dropped silently by Pydantic, which is how
+    # `provider_degraded` reached the UI as False on reports whose every
+    # component had failed.
+    evidence_search_degraded: bool = False
+    evidence_search_note: str = ""
     report_id: str | None = None
     session_id: str
 
@@ -1107,6 +1151,11 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None,
         # correct on reloaded reports.
         score_source=report.get("score_source"),
         claims_unverified=bool(report.get("claims_unverified")),
+        claims_verification_degraded=bool(report.get("claims_verification_degraded")),
+        provider_degraded=bool(report.get("provider_degraded")),
+        degraded_components=report.get("degraded_components") or [],
+        evidence_search_degraded=bool(report.get("evidence_search_degraded")),
+        evidence_search_note=report.get("evidence_search_note") or "",
         report_id=report_id,
         session_id=session_id,
     )
@@ -1152,6 +1201,21 @@ async def _extract_uploaded_document(
             status_code=400,
             detail=f"Unsupported file type. Supported formats: {', '.join(sorted(SUPPORTED_FORMATS))}",
         )
+    # The company name is the subject of every web lookup this analysis will
+    # make, and it arrives pre-filled from the uploaded filename. "02 uber.pdf"
+    # reached founder research as the company "02 uber", which duly searched
+    # for the founders of a company that does not exist and came back with
+    # Delta Air Lines and Maximilien Robespierre among its sources.
+    #
+    # Cleaned here rather than only in the form, so a script or a direct API
+    # call gets the same protection. See company_name.clean for why it declines
+    # to touch anything that does not look like a filename.
+    company_name_as_uploaded = company_name
+    company_name = clean_company_name(company_name) or company_name
+    if company_name != company_name_as_uploaded:
+        logger.info("Company name cleaned for search: %r -> %r",
+                    company_name_as_uploaded, company_name)
+
     file_bytes = await file.read(10 * 1024 * 1024 + 1)
     if len(file_bytes) > 10 * 1024 * 1024:
         raise HTTPException(
@@ -1423,6 +1487,11 @@ async def saved_report(report_id: str, request: Request):
         similar_companies=report.get("similar_companies", []), incomplete_analysis=report["incomplete_analysis"],
         score_source=report.get("score_source"),
         claims_unverified=bool(report.get("claims_unverified")),
+        claims_verification_degraded=bool(report.get("claims_verification_degraded")),
+        provider_degraded=bool(report.get("provider_degraded")),
+        degraded_components=report.get("degraded_components") or [],
+        evidence_search_degraded=bool(report.get("evidence_search_degraded")),
+        evidence_search_note=report.get("evidence_search_note") or "",
         report_id=report_id, session_id=stored_session,
     )
 
@@ -1485,14 +1554,27 @@ EXPORT_FORMATS: dict[str, tuple[str, str]] = {
 }
 
 
-async def _render_report_export(report_id: str, fmt: str) -> Response:
+async def _render_report_export(
+    report_id: str, fmt: str, request: Request | None = None
+) -> Response:
     if fmt not in EXPORT_FORMATS:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported export format. Supported: {', '.join(sorted(EXPORT_FORMATS))}",
         )
     try:
-        stored = await run_in_threadpool(get_report, report_id)
+        # Scoped to the caller, exactly as GET /reports/{id} is.
+        #
+        # This used to call get_report(report_id) with no user at all, and the
+        # bug that produced was the opposite of the obvious one. get_report
+        # returns a row only when it is unowned OR owned by the id passed in,
+        # so passing nothing did not leak private reports -- it hid them from
+        # the person they belong to. A signed-in user could open their own
+        # report (200) and got 404 from every download button on it.
+        user = await current_user(request) if request is not None else None
+        stored = await run_in_threadpool(
+            get_report, report_id, str(user["id"]) if user else None
+        )
     except Exception as exc:
         logger.exception("Could not load report for export")
         raise HTTPException(status_code=503, detail="Saved report is currently unavailable.") from exc
@@ -1529,15 +1611,15 @@ async def _render_report_export(report_id: str, fmt: str) -> Response:
 
 
 @app.get("/reports/{report_id}/pdf")
-async def saved_report_pdf(report_id: str):
+async def saved_report_pdf(report_id: str, request: Request):
     """Kept at its original path -- the frontend links to it directly."""
-    return await _render_report_export(report_id, "pdf")
+    return await _render_report_export(report_id, "pdf", request)
 
 
 @app.get("/reports/{report_id}/export/{fmt}")
-async def saved_report_export(report_id: str, fmt: str):
+async def saved_report_export(report_id: str, fmt: str, request: Request):
     """PDF, Word or Markdown, all from the same report content."""
-    return await _render_report_export(report_id, fmt.lower())
+    return await _render_report_export(report_id, fmt.lower(), request)
 
 
 class CommentRequest(BaseModel):
@@ -1695,6 +1777,18 @@ MAX_CONCURRENT_ANALYSES = int(os.getenv("MAX_CONCURRENT_ANALYSES", "3"))
 @app.post("/analyze", response_model=AnalysisJobResponse, status_code=202)
 async def analyze_company(request: DiligenceRequest, background_tasks: BackgroundTasks,
                           http_request: Request):
+    # Clean the company name here too.
+    #
+    # /upload-pdf is not the only way in: the frontend lets the name be edited
+    # before submitting, and this endpoint is reachable directly. A name that
+    # is still a filename here poisons claim verification, founder research and
+    # the comparables search in exactly the way it did on Uber's deck.
+    cleaned = clean_company_name(request.company_name)
+    if cleaned and cleaned != request.company_name:
+        logger.info("Company name cleaned for search: %r -> %r",
+                    request.company_name, cleaned)
+        request = request.model_copy(update={"company_name": cleaned})
+
     # VentureFlow analyses technology startups only.
     #
     # Enforced here rather than only at upload, because upload is not the only
