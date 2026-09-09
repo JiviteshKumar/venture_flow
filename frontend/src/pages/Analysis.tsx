@@ -10,8 +10,10 @@ import { authHeaders } from "../services/apiClient";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import VentureScorePanel from "../components/analysis/VentureScorePanel";
+import VerdictHero from "../components/analysis/VerdictHero";
 import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
 import { Panel, SLabel, ScoreBadge } from "../components/ui/Panel";
+import { Reveal } from "../components/ui/Motion";
 import { MemoText, memoPreview } from "../components/ui/MemoText";
 
 const tabs = ["Summary", "Market Validation", "Founder Analysis", "Competitor Insights"];
@@ -353,6 +355,11 @@ const Analysis = () => {
   const market = report.sections?.market;
   const team = report.sections?.team;
   const bullCase = report.sections?.bull_case;
+  // Which specialists never ran. "No positive signals identified" is a finding;
+  // "the agent did not run" is not, and the two must not share a sentence.
+  const degradedComponents = report.degraded_components ?? [];
+  const specialistDegraded = (role: string) =>
+    degradedComponents.some((d) => (d.component || "").toLowerCase().includes(role));
   const bearCase = report.sections?.bear_case;
 
   // DD questions generated from key concerns
@@ -482,6 +489,11 @@ const Analysis = () => {
     : portfolioMatches.length
       ? "Your own prior reports and portfolio (name/domain similarity)"
       : "";
+
+  // Pulled out so the hero and the score panel below it read the same
+  // fields, and cannot disagree about this report's own numbers.
+  const vs = report.sections?.venture_score;
+  const vsRange = vs?.score_range;
 
   const exportReport = () => {
     const lines = [
@@ -643,14 +655,16 @@ const Analysis = () => {
 
         .an-confidence-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 9.5px; color: var(--green); background: rgba(14,166,106,0.08); border: 1px solid rgba(14,166,106,0.22); padding: 6px 12px; border-radius: 20px; font-weight: 500; }
 
+        .an-tabbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; }
         .an-tabs { display: flex; gap: 2px; }
 
-        .an-tab { font-family: var(--font-sans); font-size: 13px; font-weight: 500; padding: 13px 20px; border: none; border-bottom: 2.5px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; white-space: nowrap; letter-spacing: -0.01em; }
+        .an-tab { position: relative; font-family: var(--font-sans); font-size: 13.5px; font-weight: 500; padding: 15px 20px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out); white-space: nowrap; letter-spacing: -0.01em; }
+        .an-tab-underline { position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2.5px; border-radius: 3px 3px 0 0; background: var(--blue); }
 
         .an-tab:hover { color: var(--text-secondary); }
-        .an-tab-active { color: var(--blue); border-bottom-color: var(--blue); }
+        .an-tab-active { color: var(--blue); font-weight: 600; }
 
-        .an-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+        .an-body { padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; }
 
         .vf-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); border-left-width: 3px; transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
 
@@ -742,36 +756,56 @@ const Analysis = () => {
       `}</style>
 
       <div className="an-root">
-        {/* HEADER */}
-        <div className="an-header">
-          <div className="an-header-top">
-            <div>
-              <div className="an-meta-row">
-                <span className="an-eyebrow">Analysis Report</span>
-                <span className="an-id-badge">{deckId}</span>
-              </div>
-              <h1 className="an-title">{report.company}</h1>
-              <p className="an-subtitle">Analyzed {today} · {report.claims_verified} claims checked</p>
-            </div>
-            <div className="an-header-actions">
-              {/* This chip rendered the final score but labelled it "data
-                  confidence", which are different quantities -- a 30/100
-                  investment score was being presented as "30% data
-                  confidence". Label it as what it actually is. */}
-              <div className="an-confidence-chip">
-                {Math.round(score)}/100 overall score
-              </div>
-              <button className="an-export-btn" type="button" onClick={exportReportPdf} disabled={pdfExporting} aria-label="Export due diligence report as PDF">
-                <Download size={12} strokeWidth={2} />
-                {pdfExporting ? "Exporting…" : "Export PDF"}
-              </button>
-            </div>
-          </div>
+        {/* THE VERDICT, FIRST.
+            This was a pale header whose only statement of the result was a
+            12px chip in the corner reading "48/100 overall score" -- the same
+            size and weight as the Export button beside it. The answer a reader
+            opens the report for now leads the page, at full size, with its
+            interval and base rate attached so the number is never quoted
+            alone. See VerdictHero for the reasoning. */}
+        <VerdictHero
+          company={report.company}
+          deckId={deckId}
+          analyzedOn={today}
+          claimsChecked={report.claims_verified}
+          score={Math.round(score)}
+          recommendation={report.recommendation}
+          riskLevel={report.risk_level}
+          low={vsRange?.[0]}
+          high={vsRange?.[1]}
+          baseRate={
+            typeof vs?.base_rate === "number"
+              ? Math.round(vs.base_rate * (vs.base_rate <= 1 ? 100 : 1))
+              : undefined
+          }
+          modelAvailable={Boolean(vs?.available && typeof vs.venture_score === "number")}
+          onExport={exportReportPdf}
+          exporting={pdfExporting}
+        />
 
-          <div className="an-tabs">
+        {/* Tabs sit on their own light bar below the dark band, so the break
+            between "the verdict" and "the evidence" is architectural rather
+            than another border. */}
+        <div className="an-tabbar">
+          <div className="an-tabs" role="tablist">
             {tabs.map((t) => (
-              <button key={t} className={`an-tab${activeTab === t ? " an-tab-active" : ""}`} onClick={() => setActiveTab(t)}>
+              <button
+                key={t}
+                role="tab"
+                aria-selected={activeTab === t}
+                className={`an-tab${activeTab === t ? " an-tab-active" : ""}`}
+                onClick={() => setActiveTab(t)}
+              >
                 {t}
+                {/* One element that slides between tabs, rather than a border
+                    that blinks on and off. layoutId is what makes it travel. */}
+                {activeTab === t && (
+                  <motion.span
+                    layoutId="an-tab-underline"
+                    className="an-tab-underline"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -788,7 +822,33 @@ const Analysis = () => {
                 Analysis is incomplete: key verification or specialist-agent results were unavailable. The score is capped and should not be used as an investment recommendation.
               </div>
             )}
-            {!report.incomplete_analysis && report.claims_unverified && (
+            {/* Verification did not run. A different sentence entirely from
+                "we searched and found nothing", and the one the reader needs
+                when the cause is our provider rather than the company. */}
+            {report.claims_verification_degraded && (
+              <div role="alert" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F0D9A8", borderRadius: 10, background: "#FFFBF0", color: "#7A5514", fontSize: 13, lineHeight: 1.55 }}>
+                <strong>Claim verification did not run for this report.</strong> The
+                language model was unavailable while this deck was analysed, so the
+                claims below were never checked against public sources. This says
+                nothing about the company — nothing was established either way, and
+                the score has not been reduced for it. Re-run the analysis to verify
+                them.
+              </div>
+            )}
+            {/* Milder than the banner above, and deliberately worded so it
+                cannot be misread as a finding: the checks ran, but on a
+                narrower evidence base than usual. */}
+            {report.evidence_search_degraded && !report.claims_verification_degraded && (
+              <div role="status" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #CFE0F5", borderRadius: 10, background: "#F5F9FF", color: "#1F4E8C", fontSize: 13, lineHeight: 1.55 }}>
+                <strong>Claims were checked against a narrower set of sources.</strong> The
+                general web index was rate-limited during this analysis, so the
+                fallback providers supplied the evidence. The verdicts below are
+                real and count towards the score, but an unconfirmed claim here is
+                more likely to mean we could not reach the right page than that the
+                claim is wrong. Re-running later will search the open web again.
+              </div>
+            )}
+            {!report.incomplete_analysis && report.claims_unverified && !report.claims_verification_degraded && (
               <div role="status" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F0D9A8", borderRadius: 10, background: "#FFFBF0", color: "#7A5514", fontSize: 13, lineHeight: 1.55 }}>
                 <strong>No deck claim could be independently corroborated.</strong> Every claim was
                 searched, but public sources had nothing specific enough to confirm or contradict
@@ -875,17 +935,31 @@ const Analysis = () => {
                     model rather than from an LLM or a hand-tuned formula, so
                     it sits above the derived stat cards rather than among
                     them. */}
-                <VentureScorePanel
-                  data={report.sections?.venture_score}
-                  reportedScore={Math.round(score)}
-                  incompleteAnalysis={report.incomplete_analysis}
-                />
+                <Reveal>
+                  <VentureScorePanel
+                    data={report.sections?.venture_score}
+                    reportedScore={Math.round(score)}
+                    incompleteAnalysis={report.incomplete_analysis}
+                  />
+                </Reveal>
 
-                <div className="an-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+                <div className="an-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
                   {[
-                    { label: "Overall Score", value: `${Math.round(score)} / 100`, color: scoreColor, bg: `${scoreColor}14`, border: `${scoreColor}30`, tip: "Composite investment readiness" },
                     { label: "Market Evidence", value: `${Math.round((market?.confidence ?? 0) * 100)}%`, color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)", tip: "Evidence confidence from the market agent" },
-                    { label: "Claims Verified", value: `${report.claims_supported}/${report.claims_verified}`, color: "#1D6FE8", bg: "rgba(29,111,232,0.08)", border: "rgba(29,111,232,0.2)", tip: "Web-verified claims" },
+                    {
+                      label: "Claims Verified",
+                      // "0/5" reads as a finding. When verification never ran,
+                      // there is no ratio to report.
+                      value: report.claims_verification_degraded
+                        ? "Not run"
+                        : `${report.claims_supported}/${report.claims_verified}`,
+                      color: report.claims_verification_degraded ? "#5D6B7F" : "#1D6FE8",
+                      bg: report.claims_verification_degraded ? "rgba(93,107,127,0.08)" : "rgba(29,111,232,0.08)",
+                      border: report.claims_verification_degraded ? "rgba(93,107,127,0.2)" : "rgba(29,111,232,0.2)",
+                      tip: report.claims_verification_degraded
+                        ? "The language model was unavailable, so claims were not checked"
+                        : "Web-verified claims",
+                    },
                     { label: "Risk Level", value: riskLabel, color: riskColor, bg: `${riskColor}14`, border: `${riskColor}30`, tip: "Blended risk assessment" },
                   ].map((s, i) => (
                     <motion.div key={i} className="score-card" data-tip={s.tip}
@@ -906,7 +980,11 @@ const Analysis = () => {
                         <span className="an-case-text">{item.text}</span>
                       </div>
                     )) : (
-                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>No positive signals identified.</span></div>
+                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>
+                        {specialistDegraded("bull")
+                          ? "The bull-case agent did not run — the language model was unavailable. Nothing was established either way."
+                          : "No positive signals identified."}
+                      </span></div>
                     )}
                   </Panel>
 
@@ -918,7 +996,11 @@ const Analysis = () => {
                         <span className="an-case-text">{item.text}</span>
                       </div>
                     )) : (
-                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>No red flags identified.</span></div>
+                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>
+                        {specialistDegraded("bear")
+                          ? "The bear-case agent did not run — the language model was unavailable. Nothing was established either way."
+                          : "No red flags identified."}
+                      </span></div>
                     )}
                   </Panel>
                 </div>
@@ -1213,21 +1295,23 @@ const Analysis = () => {
                             fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
                             letterSpacing: "0.08em", textTransform: "uppercase",
                             borderRadius: 5, padding: "3px 8px",
-                            color: founderDiscovery.search_failed ? "#D93025"
+                            color: founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
                               : founderDiscovery.searched === false ? "#64748B" : "#C47A0A",
-                            border: `1px solid ${founderDiscovery.search_failed ? "#D93025"
+                            border: `1px solid ${founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
                               : founderDiscovery.searched === false ? "#64748B" : "#C47A0A"}33`,
-                            background: `${founderDiscovery.search_failed ? "#D93025"
+                            background: `${founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
                               : founderDiscovery.searched === false ? "#64748B" : "#C47A0A"}12`,
                           }}>
                             {founderDiscovery.search_failed
                               ? "⚠ Search failed — nothing established"
-                              : founderDiscovery.searched === false
-                                ? "Search not attempted"
-                                : "Searched — no founders found"}
+                              : founderDiscovery.degraded
+                                ? "⚠ Research did not run — nothing established"
+                                : founderDiscovery.searched === false
+                                  ? "Search not attempted"
+                                  : "Searched — no founders found"}
                           </div>
                           <p style={{ color: "#4A5568", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                            {founderDiscovery.searched === false
+                            {founderDiscovery.searched === false || founderDiscovery.degraded
                               ? ""
                               : "This deck does not name its founders, so VentureFlow searched public sources for them. "}
                             {founderDiscovery.found

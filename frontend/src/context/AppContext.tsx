@@ -230,6 +230,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
             founders.length > 0
               ? founders
               : (upload.detected_founders || []).map((f) => f.name).filter(Boolean),
+          // Slide boundaries and extraction provenance.
+          //
+          // Both have been returned by /upload-pdf and accepted by /analyze
+          // since they were built, and neither was ever passed between the
+          // two. The consequences were visible in every report: coverage said
+          // "1 of 1 content slides reached a structured field" for a 25-slide
+          // deck, because without boundaries the whole deck is one slide; and
+          // the extraction-provenance block recorded its method as "unknown",
+          // so a report built by the degraded regex fallback could not say so.
+          deck_slides: upload.deck_slides ?? [],
+          extraction_method: upload.extraction_method ?? "",
+          extraction_fallback_reason: upload.extraction_fallback_reason ?? "",
         });
 
         // Percentages are derived from which real stage the backend reports,

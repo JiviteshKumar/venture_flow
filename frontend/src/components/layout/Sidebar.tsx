@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Upload, LayoutDashboard, BarChart3, TrendingUp, Settings, Bell, Zap, Clock,
-  ChevronRight, Star, Activity, Menu, X, LogOut,
+  ChevronRight, Activity, Menu, X, LogOut,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
@@ -322,11 +322,8 @@ const Sidebar = () => {
           .sb-root .sb-nav-label,
           .sb-root .sb-section-title,
           .sb-root .sb-section-header,
-          .sb-root .sb-stats-row,
           .sb-root .sb-active-card,
           .sb-root .sb-analyzing-card,
-          .sb-root .sb-agents,
-          .sb-root .sb-starred-empty,
           .sb-root .sb-user-copy,
           .sb-root .sb-user-caret-btn { display: none; }
           .sb-root .sb-link { justify-content: center; padding: 9px 0; }
@@ -362,15 +359,10 @@ const Sidebar = () => {
           .sb-root .sb-nav-label,
           .sb-root .sb-section-title,
           .sb-root .sb-section-header,
-          .sb-root .sb-stats-row,
           .sb-root .sb-active-card,
           .sb-root .sb-analyzing-card,
-          .sb-root .sb-agents,
-          .sb-root .sb-starred-empty,
           .sb-root .sb-user-copy,
           .sb-root .sb-user-caret-btn { display: revert; }
-          .sb-root .sb-stats-row { display: grid; }
-          .sb-root .sb-agents { display: flex; }
           .sb-root .sb-link { justify-content: flex-start; padding: 9px 10px; }
           .sb-root .sb-logo-area { padding: 22px 18px 18px; justify-content: space-between; }
           .sb-root .sb-actions-row { flex-direction: row; }
@@ -430,21 +422,15 @@ const Sidebar = () => {
           <span className="sb-version-chip">v2.1</span>
         </div>
 
-        {/* AGENT STATUS */}
-        <div className="sb-agents">
-          <div className="sb-agent-pill sb-agent-bull">
-            <div className="sb-agent-dot sb-agent-dot-bull" />
-            BULL
-          </div>
-          <div className="sb-agent-pill sb-agent-bear">
-            <div className="sb-agent-dot sb-agent-dot-bear" />
-            BEAR
-          </div>
-          <div className="sb-agent-pill" style={{ flex: 1, background: "rgba(29,111,232,0.07)", color: "#1D6FE8", border: "1px solid rgba(29,111,232,0.18)", fontSize: "8.5px", fontFamily: "var(--font-mono)", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, padding: "5px 0", borderRadius: 7 }}>
-            <div className="sb-agent-dot sb-agent-dot-live" />
-            LIVE
-          </div>
-        </div>
+        {/* The BULL / BEAR / LIVE pills stood here.
+            Three permanently-lit, permanently-pulsing chips that showed the
+            same state whether an analysis was running, finished or had never
+            started. They conveyed no information and animated forever at the
+            top of every screen, which is the worst combination available: they
+            drew the eye repeatedly and never rewarded it. "LIVE" in particular
+            asserted something about the system that nothing checked.
+            The bull and bear agents' actual output has a home -- the Summary
+            tab, where their findings are, with evidence attached. */}
 
         {/* NAV */}
         <div className="sb-nav-area">
@@ -473,21 +459,15 @@ const Sidebar = () => {
         <div className="sb-scroll-area">
           <div className="sb-section-divider" />
 
-          {/* STATS */}
-          <div className="sb-stats-row">
-            <div className="sb-stat-card">
-              <div className="sb-stat-label">Decks Today</div>
-              <div className="sb-stat-value">{isDone ? "1" : "0"}</div>
-              <div className="sb-stat-sub">{isDone ? "+1 today" : "Upload first"}</div>
-            </div>
-            <div className="sb-stat-card">
-              <div className="sb-stat-label">Avg Score</div>
-              <div className="sb-stat-value" style={{ color: isDone ? scoreColor : "#5D6B7F" }}>
-                {deckScore ?? "—"}
-              </div>
-              <div className="sb-stat-sub">out of 100</div>
-            </div>
-          </div>
+          {/* "Decks Today" and "Avg Score" stood here, and neither was what
+              its label said. Decks Today rendered `isDone ? "1" : "0"` -- not a
+              count of anything, just whether a report happened to be loaded in
+              this browser tab. Avg Score showed the current deck's score under
+              the word "average", which is an average of one.
+              Both are removed rather than repaired: the active-deck card below
+              already carries the score of the deck actually in hand, and a
+              real per-user count needs a query nobody has written. A number
+              that is wrong is worse than an empty space. */}
 
           {/* ANALYZING STATE */}
           {isAnalyzing && (
@@ -594,19 +574,13 @@ const Sidebar = () => {
             </>
           )}
 
-          <div className="sb-section-divider" />
+          {/* A "Starred" section with a dashed empty box reading "Star a deck
+              from the Dashboard to pin it here" stood here. Nothing in this
+              application can star a deck -- a search of the whole frontend
+              finds no star action, no starred state and no storage for one. It
+              was an empty box advertising a feature that does not exist, on
+              every screen, forever. */}
 
-          <div className="sb-section-header">
-            <div className="sb-section-title">
-              <Star size={9} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-              Starred
-            </div>
-          </div>
-          <div className="sb-starred-empty" style={{ padding: "8px 10px", borderRadius: 9, background: "rgba(15,23,42,0.02)", border: "1px dashed rgba(15,23,42,0.1)", textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.5 }}>
-              Star a deck from the<br />Dashboard to pin it here
-            </div>
-          </div>
         </div>
 
         {/* BOTTOM */}

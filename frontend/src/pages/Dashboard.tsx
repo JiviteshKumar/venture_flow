@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Lift, Stagger, StaggerItem } from "../components/ui/Motion";
+import PageHero from "../components/ui/PageHero";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, AreaChart, Area,
@@ -8,7 +9,7 @@ import { motion } from "framer-motion";
 import {
   TrendingUp, TrendingDown, DollarSign, Activity, Shield,
   Download, Zap, AlertCircle, CheckCircle2,
-  BarChart2, Users, Upload,
+  Users, Upload,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
@@ -44,8 +45,8 @@ const EmptyDashboard = () => {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", minHeight: "60vh", textAlign: "center",
-      padding: "40px 24px", fontFamily: "var(--font-sans)",
+      justifyContent: "center", minHeight: "auto", textAlign: "center",
+      padding: "38px 24px 8px", fontFamily: "var(--font-sans)",
     }}>
       {isAnalyzing ? (
         <>
@@ -70,19 +71,11 @@ const EmptyDashboard = () => {
         </>
       ) : (
         <>
-          <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.18)",
-            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20,
-          }}>
-            <BarChart2 size={28} color="#1D6FE8" strokeWidth={1.5} />
-          </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
-            No analysis yet
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
-            Upload a pitch deck to see your AI investment dashboard with live risk scores, claim verification, and comparable deals.
-          </div>
+          {/* The heading and explanation that stood here -- "No analysis yet"
+              and a sentence about uploading a deck -- now live in the page hero
+              a few inches above, which said almost exactly the same words. Two
+              statements of the same nothing is worse than one. What is left is
+              the action, which the hero deliberately does not carry. */}
           <button onClick={() => navigate("/upload")} style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             background: "#1D6FE8", color: "#fff", border: "none",
@@ -197,12 +190,11 @@ const Dashboard = () => {
   // If no report yet, show empty / analyzing state
   if (!report) return (
     <div className="db-root" style={{ fontFamily: "var(--font-sans)", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
-      <div className="db-header" style={{ padding: "22px 32px 20px", background: "#fff", borderBottom: "1px solid rgba(15,23,42,0.08)", display: "flex", alignItems: "flex-end", justifyContent: "space-between", position: "relative", overflow: "hidden" }}>
-        <div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Dashboard</div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 400, margin: 0, color: "#0B1120" }}>AI Investment Dashboard</h1>
-        </div>
-      </div>
+      <PageHero
+        eyebrow="Dashboard"
+        title="Nothing analysed yet"
+        subtitle="Upload a pitch deck and VentureFlow will check every claim against live sources, score it against companies with recorded outcomes, and show you what it could not establish."
+      />
       <EmptyDashboard />
       <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 40px" }}><PastAnalyses /></div>
     </div>
@@ -327,15 +319,9 @@ const Dashboard = () => {
           overflow: hidden;
         }
 
-        .db-header::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--blue), var(--green), var(--blue));
-          background-size: 200% 100%;
-          animation: shimmer-line 4s linear infinite;
-        }
+        /* A 2px gradient rule that shimmered left-to-right forever sat on
+           the old header. It animated permanently at the top of the page,
+           reported nothing, and is gone with the header it decorated. */
 
         @keyframes shimmer-line {
           0% { background-position: 200% 0; }
@@ -413,6 +399,9 @@ const Dashboard = () => {
         }
 
         .db-export-btn {
+          background: rgba(232,238,249,0.10) !important;
+          border: 1px solid rgba(232,238,249,0.20) !important;
+          color: #E8EEF9 !important;
           display: inline-flex; align-items: center; gap: 7px;
           font-family: var(--font-mono); font-size: 11px;
           font-weight: 500; color: var(--text-secondary);
@@ -654,26 +643,22 @@ const Dashboard = () => {
 
       <div className="db-root">
         {/* HEADER */}
-        <div className="db-header">
-          <div>
-            <div className="db-badge">
-              <div className="live-dot" />
-              Intelligence Report · Live
-            </div>
-            <h1 className="db-title">AI Investment Dashboard</h1>
-            <p className="db-subtitle">{report.company} · Analyzed {today}</p>
-          </div>
-          <div className="db-header-right">
-            <div className="deck-id-box">
-              <div className="deck-id-label">Deck ID</div>
-              <div className="deck-id-val">{deckId}</div>
-            </div>
+        {/* The "Intelligence Report · Live" badge with its pulsing dot is
+            gone with the rest of the always-on status lights: it was lit
+            identically whether an analysis was running, finished, or had never
+            started. The company being looked at leads instead, which is the
+            thing a reader actually needs to see. */}
+        <PageHero
+          eyebrow={`Dashboard · ${deckId}`}
+          title={report.company}
+          subtitle={`Analyzed ${today}`}
+          actions={
             <button className="db-export-btn">
               <Download size={13} strokeWidth={2} />
               Export Memo
             </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* METRICS */}
         <div className="metric-grid">

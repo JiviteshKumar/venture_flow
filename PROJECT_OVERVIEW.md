@@ -34,7 +34,7 @@ making the system's own failures visible rather than into adding features.
 | LLM | Groq — `openai/gpt-oss-120b` |
 | Database | Neon (serverless Postgres) + pgvector |
 | ML | LightGBM, scikit-learn, TF-IDF + SVD |
-| Search | DuckDuckGo (`ddgs`) |
+| Search | DuckDuckGo (`ddgs`) -> Wikipedia -> Brave -> Tavily, with failover |
 | Parsing | pdfplumber, python-pptx, python-docx |
 | Frontend | Vite + React + TypeScript, Tailwind, recharts, framer-motion |
 | Hosting | Vercel (frontend), Neon (data) |
@@ -380,21 +380,150 @@ between "we don't know" and "we measured nothing" impossible to lose.**
    companies accumulate longer articles. A model trained on it would tell a
    founder that games companies fail. `tests/test_market_dataset_not_trained_on.py`
    keeps it out of the training scripts.
-5. **Groq free tier: 200,000 tokens/day** — roughly 4–8 full deck analyses
-   before extraction degrades to the fallback (which now says so).
-6. **No authentication.** The deployed demo passphrase is a gate, not auth:
-   no user model, no per-account isolation.
-7. **Web search now fails over across providers.** DuckDuckGo first, then
-   Wikipedia — both keyless, so the chain works on a fresh clone — with Brave
-   and Tavily joining only when a key is set. A provider that fails is put in
-   a cooldown rather than retried on every subsequent query. One throttled
-   provider no longer takes the whole product's evidence gathering down with
-   it.
-8. **Tech startups only, enforced.** A deck that is not a technology company
+5. **Groq free tier: 200,000 tokens/day — this is the binding constraint on
+   the whole product.** A full deck analysis costs roughly 25,000–50,000
+   tokens across about a dozen LLM calls, so the day's budget is four to eight
+   analyses. The ceiling appears in NO response header (only tokens-per-minute
+   and requests-per-day do); the only way to discover it is the 429 body.
+
+   What running out looks like, because it is not obvious: every LLM-backed
+   component falls back at once. Claims come back NOT_ENOUGH_INFO, the bull and
+   bear agents return "insufficient evidence", founder research retrieves
+   sources and never reads them, and the memo is a stub. The report still
+   renders and still shows a score, so nothing looks broken — it is just empty.
+   That is what produced a 35/100 for Uber's 2008 deck.
+
+   Three things now make this legible rather than silent. Components that
+   failed on a provider error are excluded from the score instead of being
+   counted as unresolved evidence (`ml/evidence_fusion.extract_features`), so
+   an outage no longer costs a company points. The first tokens-per-day 429
+   trips a circuit breaker (`groq_client`) so the remaining components fail in
+   milliseconds with an accurate reason instead of each spending six retries.
+   And the report says which components did not run, in the words "this is a
+   fact about this deployment, not about the company".
+6. **Authentication is email and password, and deliberately minimal.** Sign-up
+   and sign-in with an email address only — no phone number, no third-party
+   identity provider. Passwords are hashed with scrypt from the standard
+   library; sessions are opaque random tokens stored only as their SHA-256
+   digest and compared in constant time, so a database read does not yield a
+   usable session. Reports are owned by the account that created them. What is
+   still missing is everything around the edges: no email verification, no
+   password reset, no rate limit specific to failed sign-ins beyond the global
+   one.
+7. **Web search fails over across providers, and knows the difference between
+   an empty web and a broken one.** DuckDuckGo first, then Wikipedia — both
+   keyless, so the chain works on a fresh clone — with Brave and Tavily joining
+   only when a key is set.
+
+   Two defects here were found by reading the claim benchmark's errors rather
+   than by testing, and both were silent:
+
+   * `ddgs` raises an exception for a query with no hits, so an unfindable
+     query was recorded as a *provider failure* and put DuckDuckGo in a
+     120-second cooldown. One analysis issues roughly twenty-five searches and
+     deck claims are elliptical enough that at least one is always unfindable,
+     so the first such query sidelined the general-web provider for the rest of
+     the analysis and every later claim was judged on Wikipedia alone.
+   * An empty result from one provider ended the chain, on the reasoning that a
+     provider which answers has answered. But DuckDuckGo returns an empty page
+     when it soft-throttles, byte-identical to a genuine miss. Two benchmark
+     claims — the IBM/Red Hat acquisition and WeWork's withdrawn IPO — retrieved
+     zero sources and scored NOT_ENOUGH_INFO. Neither is obscure; Wikipedia
+     answers both.
+
+   Emptiness now has to be confirmed by two independent providers before it is
+   believed, which costs one extra keyless lookup on a genuine miss and
+   recovers the throttled case.
+8. **Claim retrieval now searches for the second company in a claim.** Every
+   query template anchored on the claim as a whole, which retrieves pages about
+   whichever entity the claim leads with — so for a claim comparing two
+   companies, half the evidence was never searched for. Four of the six
+   benchmark errors were this shape, and in each the judge's reasoning was
+   correct and useless: *"none of the provided sources give the date of Uber's
+   initial public offering"*. One extra query per additional named entity, hard
+   capped at two.
+
+   Measured at the retrieval layer, which needs no tokens: 5 of the 6 failing
+   claims now retrieve the specific fact the judge said was missing, and the two
+   zero-source claims retrieve 11 and 12 sources. **Whether the verdicts flip is
+   not yet measured** — that needs the judge, and the token budget was spent.
+   `scripts/verify_when_quota_returns.py` runs it.
+9. **Tech startups only, enforced.** A deck that is not a technology company
    is refused at both `/upload-pdf` and `/analyze`, with the evidence shown.
    The gate is deliberately reluctant — it blocks only on positive evidence
    that a company is something else and allows anything it cannot classify,
    because wrongly refusing a real tech startup is the worse error.
+
+---
+
+## 8b. End-to-end verification, and what it found
+
+`scripts/e2e_deck_audit.py` drives real decks through the real HTTP path --
+`/upload-pdf`, then `/analyze` with the payload `AppContext.tsx` builds, then
+`/analyze/status`, then a re-read from `/reports/{id}` -- and reports each thing
+the product promises as PRESENT, EMPTY or BROKEN. It exists because
+`ml/scripts/run_real_deck_corpus.py` calls the agent directly and therefore
+skips the endpoints, the response model, the job queue and persistence, which is
+where most of this project's shipped defects have actually lived.
+
+Three decks, run 9 September 2026. Uber ran with token budget available; Airbnb
+and Buffer exhausted it partway (three full analyses is roughly one day's
+200,000 tokens), and the interest of those two runs is that the degradation
+machinery reported the outage instead of hiding it.
+
+| | Uber | Airbnb | Buffer |
+|---|---|---|---|
+| extraction | llm_schema, 25 slides | llm_schema, 11 slides | regex_fallback (quota), 13 slides |
+| score | 41.0, model | 53.0, model | 53.0, model |
+| claims checked | 5 (1 supported) | 5 | 5, degraded |
+| bull / bear | 6 / 5 signals | outage, stated | outage, stated |
+| founders | researched, 11 sources, model unreachable | none named, research quota-blocked | 3 from the deck, verified |
+| comparables | stratified corpus | 5 across both populations | 5 across both populations |
+
+Five defects were found by running it, none of which any unit test had caught:
+
+1. **`/analyze` returned 422 for `"stage": null`.** `sector`, `domain` and
+   `github_url` are declared `str | None`; `stage`, `company_description`,
+   `filing_text` and the extraction fields are `str` with a default, so they
+   accepted an absent key and rejected an explicit null. The browser never hit
+   it because `?? undefined` makes `JSON.stringify` drop the key; every other
+   client hits it immediately. Null now means the same as absent.
+
+2. **A signed-in user could not download their own report.**
+   `GET /reports/{id}` scopes its lookup to the caller; `/reports/{id}/pdf` and
+   `/reports/{id}/export/{fmt}` called `get_report(report_id)` with no user.
+   Since `get_report` returns a row only when it is unowned or owned by the id
+   given, passing nothing never leaked anything -- it hid every private report
+   from its owner. Download PDF, Export Word and Export Markdown all returned
+   404 on your own analysis. `tests/test_report_export_is_scoped.py` pins both
+   directions, because the obvious fix for the 404 reintroduces an enumeration
+   hole over sequential integer report ids.
+
+3. **The comparables list offered filenames as companies.** A real Uber
+   analysis returned exactly one similar company: `02 uber`, a row created by an
+   earlier run before names were cleaned, matched back to "Uber" by trigram
+   similarity on its own filename.
+
+4. **The test suite was writing permanently into the production database.** Of
+   81 rows in `companies`, 47 were not companies: 33 test fixtures
+   (`ScopeTest <hex>`, `ListScope <hex>`, `Legacy <hex>`) and 14 upload
+   filenames. Because `find_similar_companies` draws from any company with a
+   report attached, every one was a live candidate to be shown to a real user.
+   The tests now delete what they create, the read side filters what is left,
+   and `scripts/clean_junk_companies.py` removed the backlog (81 -> 34
+   companies, 138 -> 85 reports).
+
+5. **`founder_discovery` reported a bare `{"attempted": false}`** when the deck
+   named its own team -- indistinguishable, read alone, from the feature being
+   broken or switched off. It now says why it was skipped and points at
+   `founder_verification`, where the founders actually are.
+
+The founder question specifically: research is enabled by default and does run.
+On Uber it searched, retrieved 11 sources, and could not read them because the
+model call failed under per-minute throttling -- reported as "This is a fact
+about this deployment, not about the company." On Buffer the deck named Joel
+Gascoigne, Leo Widrich and Hiten Shah, and all three were verified against
+public sources with `origin: "deck"`.
 
 ---
 

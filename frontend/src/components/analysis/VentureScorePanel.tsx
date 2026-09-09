@@ -1,6 +1,4 @@
 import { AlertTriangle, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { motion } from "framer-motion";
-import { CountUp, EASE_OUT } from "../ui/Motion";
 import type { AnalyzeResponse } from "../../services/apiClient";
 
 // `sections` is itself optional on AnalyzeResponse, so both levels need
@@ -63,9 +61,7 @@ export default function VentureScorePanel({
   }
 
   const score = data.venture_score;
-  const [low, high] = data.score_range ?? [score, score];
   const confidence = CONFIDENCE_STYLES[data.confidence ?? "low"];
-  const band = bandFor(score);
   const baseRate = Math.round((data.base_rate ?? 0) * 100);
   const coverage = Math.round((data.feature_coverage ?? 0) * 100);
   const modelOnly = data.model_only_score;
@@ -88,44 +84,17 @@ export default function VentureScorePanel({
         </span>
       </div>
 
-      {/* Point estimate and its interval, always together. */}
-      <div className="vs-score-row">
-        <div className="vs-score-main">
-          <span className="vs-score" style={{ color: band.fg }}>
-            <CountUp value={score} duration={1.0} />
-          </span>
-          <span className="vs-score-of">/100</span>
-        </div>
-        <div className="vs-score-meta">
-          <div className="vs-range" aria-label={`Likely range ${low} to ${high} out of 100`}>
-            Likely range <strong>{low}–{high}</strong>
-          </div>
-          <div className="vs-band" style={{ color: band.fg }}>{band.text}</div>
-        </div>
-      </div>
-
-      {/* The interval drawn to scale, so the width of "we don't know" is visible. */}
-      <div className="vs-track" role="img"
-        aria-label={`Score ${score} of 100, likely range ${low} to ${high}, comparable base rate ${baseRate}`}>
-        <div className="vs-track-bar">
-          <motion.div
-            className="vs-track-range"
-            style={{ left: `${low}%` }}
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: `${Math.max(high - low, 1)}%`, opacity: 1 }}
-            transition={{ duration: 0.55, delay: 0.15, ease: EASE_OUT }}
-          />
-          <div className="vs-track-base" style={{ left: `${baseRate}%` }} data-tip={`Base rate ${baseRate}%`} />
-          <motion.div
-            className="vs-track-point"
-            style={{ background: band.fg }}
-            initial={{ left: "0%", opacity: 0 }}
-            animate={{ left: `${score}%`, opacity: 1 }}
-            transition={{ duration: 1.0, ease: EASE_OUT }}
-          />
-        </div>
-        <div className="vs-track-labels"><span>0</span><span>50</span><span>100</span></div>
-      </div>
+      {/* The headline number, its interval and its band live in VerdictHero at
+          the top of the page now. Repeating them here put "48 / likely 40-57 /
+          near comparable base rate" on screen twice, a few inches apart, which
+          reads as two findings rather than one and flattens the hierarchy the
+          hero exists to create.
+          What is left is the part the hero deliberately does NOT carry: how the
+          number was arrived at. */}
+      <p className="vs-explains">
+        The score above, explained. It is a model prior for a company with these
+        characteristics, adjusted down by what this particular report found.
+      </p>
 
       {/* Where the number came from: prior vs. this report's own evidence. */}
       {typeof modelOnly === "number" && (
@@ -142,7 +111,7 @@ export default function VentureScorePanel({
           </div>
           <div className="vs-bd-row vs-bd-total">
             <span>VentureFlow Score</span>
-            <strong style={{ color: band.fg }}>{score}</strong>
+            <strong style={{ color: bandFor(score).fg }}>{score}</strong>
           </div>
         </div>
       )}
@@ -150,7 +119,7 @@ export default function VentureScorePanel({
       <div className="vs-stats">
         <div className="vs-stat">
           <span className="vs-stat-k">vs. base rate</span>
-          <span className="vs-stat-v" style={{ color: band.fg }}>
+          <span className="vs-stat-v" style={{ color: bandFor(score).fg }}>
             <LiftIcon size={12} aria-hidden="true" /> {lift > 0 ? "+" : ""}{lift} pts
           </span>
         </div>

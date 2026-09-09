@@ -317,6 +317,17 @@ export interface UploadResponse {
   document_format?: string;
   extraction_method?: string;
   /**
+   * Per-slide text and the extraction provenance.
+   *
+   * Both were returned by /upload-pdf from the day they were built and neither
+   * was declared here, so TypeScript quietly hid them from every consumer --
+   * which is why the analysis request never forwarded them and every report
+   * measured coverage over a single synthetic "slide".
+   */
+  deck_slides?: string[];
+  extraction_fallback_reason?: string;
+  extraction_coverage?: ExtractionCoverage;
+  /**
    * "text_layer" -- text the document contained.
    * "ocr"        -- recognised from page images, because there was no text layer.
    * "hybrid"     -- a thin text layer supplemented by OCR of the slides.
@@ -370,6 +381,35 @@ export interface AnalyzeResponse {
    * incomplete_analysis (which means the pipeline itself failed).
    */
   claims_unverified?: boolean;
+  /**
+   * True when claim verification never RAN -- a provider failure -- as
+   * opposed to running and settling nothing. Rendering the second as the
+   * first is how a report told a reader that public sources had nothing
+   * on Uber.
+   */
+  claims_verification_degraded?: boolean;
+  /**
+   * Whether any component fell back because the language model was
+   * unreachable, and which ones.
+   *
+   * Computed and stored by the backend since the degradation work, but never
+   * declared on the API response model, so it never reached here -- which is
+   * why bull and bear agents that never ran rendered as "No positive signals
+   * identified", a statement about the company.
+   */
+  provider_degraded?: boolean;
+  degraded_components?: Array<{ component: string; reason: string }>;
+  /**
+   * A distinct, milder state from `provider_degraded`. The language model DID
+   * run and the verdicts below are real; what failed was the general web index
+   * (DuckDuckGo rate-limited), so the claims were checked against the fallback
+   * providers alone. On real deck claims the share of on-topic sources runs
+   * about 94% with the general index and about 32% without it -- a weaker
+   * check, not a stronger finding, and the reader needs to know which one they
+   * are looking at.
+   */
+  evidence_search_degraded?: boolean;
+  evidence_search_note?: string;
   similar_companies?: Array<{ name: string; domain?: string | null; sector?: string | null; similarity?: number }>;
   founders?: string[];
   // full nested sections from backend
@@ -449,12 +489,20 @@ export interface AnalyzeResponse {
       sources_consulted?: string[];
       rejected_ungrounded?: string[];
       /**
-       * Three distinct states that must never render alike:
+       * Four distinct states that must never render alike:
        *   searched=false, search_failed=true  -> the search could not run
        *   searched=false, search_failed unset -> research was disabled
+       *   searched=true,  degraded=true       -> sources retrieved, but the
+       *                                          model that reads them did not
+       *                                          run (a provider outage)
        *   searched=true,  found=false         -> we looked and found nothing
-       * Only the last is evidence about the company.
+       * Only the LAST is evidence about the company.
+       *
+       * The third was missing, and its absence is why a report said "Searched
+       * 14 public source(s) for the founders of Uber. No founder name could be
+       * established from them" while holding Garrett Camp's Wikipedia page.
        */
+      degraded?: boolean;
       searched?: boolean;
       search_failed?: boolean;
       queries_failed?: number;
@@ -723,6 +771,11 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
     report_id: raw?.report_id ? String(raw.report_id) : null,
     incomplete_analysis: Boolean(raw?.incomplete_analysis),
     claims_unverified: Boolean(raw?.claims_unverified),
+    claims_verification_degraded: Boolean(raw?.claims_verification_degraded),
+    provider_degraded: Boolean(raw?.provider_degraded),
+    degraded_components: Array.isArray(raw?.degraded_components) ? raw.degraded_components : [],
+    evidence_search_degraded: Boolean(raw?.evidence_search_degraded),
+    evidence_search_note: String(raw?.evidence_search_note ?? ""),
     score_source: raw?.score_source ? String(raw.score_source) : null,
     similar_companies: Array.isArray(raw?.similar_companies) ? raw.similar_companies : [],
     founders: Array.isArray(raw?.founders) ? raw.founders.map(asText).filter(Boolean) : [],
@@ -849,6 +902,24 @@ export const api = {
     github_url?: string;
     domain?: string;
     deck_date?: string;
+    /**
+     * Per-slide text, so extraction coverage can be measured at the
+     * granularity the failure actually occurs at: whole slides contributing
+     * nothing. `filing_text` is the pages joined with newlines, which destroys
+     * the boundaries -- and without them coverage collapses to a single
+     * "slide" that is either 0% or 100%.
+     *
+     * The backend has accepted this field all along and the upload response
+     * has always returned it; the frontend simply never passed it on, so every
+     * report in production read "1 of 1 content slides reached a structured
+     * field" regardless of how many slides the deck had.
+     */
+    deck_slides?: string[];
+    /** Which extraction path produced the claims, so the report can say when
+     *  it was built by the degraded regex fallback. Also never sent before,
+     *  which is why stored reports show a provenance method of "unknown". */
+    extraction_method?: string;
+    extraction_fallback_reason?: string;
   }): Promise<AnalysisJob> => {
     const res = await apiClient.post<AnalysisJob>("/analyze", payload, { timeout: 30_000 });
     return res.data;

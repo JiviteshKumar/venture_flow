@@ -124,65 +124,12 @@ const miniPreviewCards = [
   },
 ];
 
-// ─── SVG ILLUSTRATION ─────────────────────────────────────────────────────────
+// The DeckIllustration SVG stood here: a mock browser window containing a
+// rising line chart with invented data points, an animated scanning bar, and
+// BULL/BEAR badges. It was decoration for a marketing panel that has been
+// removed, and it was a chart of numbers that came from nowhere in a product
+// whose argument is that it does not put invented numbers on screen.
 
-const DeckIllustration = () => (
-  <svg width="100%" viewBox="0 0 320 190" fill="none" xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-    style={{ display: "block", maxWidth: 320, margin: "0 auto" }}>
-    <ellipse cx="160" cy="140" rx="120" ry="30" fill="rgba(29,111,232,0.06)" />
-    <rect x="56" y="34" width="208" height="140" rx="10" fill="rgba(15,23,42,0.04)" />
-    <g transform="rotate(-4 160 104)">
-      <rect x="60" y="32" width="200" height="134" rx="9" fill="#F7F8FA" stroke="rgba(15,23,42,0.09)" strokeWidth="1" />
-      <rect x="74" y="50" width="80" height="8" rx="3" fill="rgba(196,122,10,0.18)" />
-      <rect x="74" y="66" width="120" height="5" rx="2.5" fill="rgba(15,23,42,0.07)" />
-      <rect x="74" y="76" width="96" height="5" rx="2.5" fill="rgba(15,23,42,0.05)" />
-    </g>
-    <g transform="rotate(-1.5 160 104)">
-      <rect x="62" y="28" width="196" height="130" rx="9" fill="#FFFFFF" stroke="rgba(15,23,42,0.1)" strokeWidth="1" />
-      <rect x="76" y="46" width="70" height="9" rx="3" fill="rgba(29,111,232,0.2)" />
-      <rect x="76" y="62" width="140" height="4" rx="2" fill="rgba(15,23,42,0.07)" />
-      <rect x="76" y="72" width="112" height="4" rx="2" fill="rgba(15,23,42,0.05)" />
-      <rect x="76" y="88" width="14" height="32" rx="2" fill="rgba(14,166,106,0.5)" />
-      <rect x="94" y="100" width="14" height="20" rx="2" fill="rgba(14,166,106,0.35)" />
-      <rect x="112" y="96" width="14" height="24" rx="2" fill="rgba(14,166,106,0.45)" />
-      <rect x="130" y="84" width="14" height="36" rx="2" fill="rgba(14,166,106,0.6)" />
-      <rect x="148" y="78" width="14" height="42" rx="2" fill="rgba(14,166,106,0.75)" />
-    </g>
-    <rect x="58" y="22" width="204" height="134" rx="10" fill="#FFFFFF" stroke="rgba(15,23,42,0.12)" strokeWidth="1.2" />
-    <rect x="58" y="22" width="204" height="28" rx="10" fill="rgba(29,111,232,0.05)" />
-    <rect x="58" y="38" width="204" height="12" fill="rgba(29,111,232,0.05)" />
-    <circle cx="74" cy="36" r="3.5" fill="rgba(217,48,37,0.4)" />
-    <circle cx="85" cy="36" r="3.5" fill="rgba(196,122,10,0.4)" />
-    <circle cx="96" cy="36" r="3.5" fill="rgba(14,166,106,0.4)" />
-    <rect x="72" y="58" width="88" height="9" rx="3" fill="rgba(15,23,42,0.15)" />
-    <rect x="72" y="72" width="56" height="5" rx="2" fill="rgba(15,23,42,0.07)" />
-    <polyline points="72,130 95,118 118,122 140,108 162,98 185,90 208,76 232,68"
-      stroke="#1D6FE8" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <polyline points="72,130 95,118 118,122 140,108 162,98 185,90 208,76 232,68 232,130"
-      fill="rgba(29,111,232,0.06)" />
-    <line x1="72" y1="130" x2="235" y2="130" stroke="rgba(15,23,42,0.08)" strokeWidth="1" />
-    <line x1="72" y1="80" x2="72" y2="130" stroke="rgba(15,23,42,0.08)" strokeWidth="1" />
-    <motion.rect x="58" y="22" width="204" height="3" rx="1.5" fill="rgba(29,111,232,0.35)"
-      animate={{ y: [22, 150, 22] }} transition={{ repeat: Infinity, duration: 3.2, ease: "easeInOut" }} />
-    <g transform="translate(218, 52)">
-      <rect x="0" y="0" width="42" height="18" rx="5" fill="rgba(14,166,106,0.12)" stroke="rgba(14,166,106,0.3)" strokeWidth="1" />
-      <text x="8" y="12.5" fontFamily="var(--font-mono)" fontSize="7.5" fontWeight="600" fill="#0EA66A">BULL</text>
-      <circle cx="36" cy="9" r="3" fill="#0EA66A" opacity="0.8" />
-    </g>
-    <g transform="translate(218, 76)">
-      <rect x="0" y="0" width="42" height="18" rx="5" fill="rgba(217,48,37,0.08)" stroke="rgba(217,48,37,0.25)" strokeWidth="1" />
-      <text x="7" y="12.5" fontFamily="var(--font-mono)" fontSize="7.5" fontWeight="600" fill="#D93025">BEAR</text>
-      <circle cx="36" cy="9" r="3" fill="#D93025" opacity="0.7" />
-    </g>
-    <motion.g animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.8, ease: "easeInOut" }}>
-      <g transform="translate(38, 78)">
-        <rect x="0" y="0" width="18" height="18" rx="5" fill="rgba(29,111,232,0.12)" stroke="rgba(29,111,232,0.3)" strokeWidth="1" />
-        <text x="4" y="13" fontSize="10">✓</text>
-      </g>
-    </motion.g>
-  </svg>
-);
 
 // ─── MINI PREVIEW CARD ────────────────────────────────────────────────────────
 
@@ -233,7 +180,6 @@ const UploadDeck = () => {
   const [foundersInput, setFoundersInput] = useState("");
   const [foundersTouched, setFoundersTouched] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [activeDot, setActiveDot] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Derive UI state from global context
@@ -248,10 +194,9 @@ const UploadDeck = () => {
     analysisSteps.length - 1
   );
 
-  useEffect(() => {
-    const t = setInterval(() => setActiveDot(d => (d + 1) % 3), 1200);
-    return () => clearInterval(t);
-  }, []);
+  // A setInterval advancing a carousel dot every 1.2 seconds used to live
+  // here. The carousel is gone; the timer was still running, re-rendering this
+  // page four times a minute forever to move an element that no longer exists.
 
   // Prefill from extraction, but never over the top of something the user
   // typed -- their correction is the whole reason this field is editable.
@@ -353,6 +298,52 @@ const UploadDeck = () => {
           color: var(--text-primary);
           min-height: 100vh;
           background: var(--bg);
+        }
+
+        .up-hero {
+          /* No negative margins. The .up-root wrapper has no padding of its
+             own, so pulling the hero outwards dragged it over the sidebar on
+             the left and above the viewport at the top. It sits flush, exactly
+             where the old header did. */
+          position: relative; overflow: hidden;
+          padding: 40px 32px 34px;
+          background: radial-gradient(120% 150% at 0% 0%, #16355F 0%, #0B1120 55%, #070B14 100%);
+          color: #E8EEF9;
+        }
+        .up-hero-aura {
+          position: absolute; inset: -40% -20%;
+          background:
+            radial-gradient(38% 38% at 24% 30%, rgba(29,111,232,0.30), transparent 70%),
+            radial-gradient(30% 30% at 74% 62%, rgba(14,166,106,0.18), transparent 70%);
+          filter: blur(60px); pointer-events: none;
+          animation: up-drift 26s ease-in-out infinite alternate;
+        }
+        @keyframes up-drift {
+          from { transform: translate3d(-2%, -1%, 0) scale(1); }
+          to   { transform: translate3d(3%, 2%, 0) scale(1.07); }
+        }
+        @media (prefers-reduced-motion: reduce) { .up-hero-aura { animation: none; } }
+        .up-hero-inner { position: relative; z-index: 1; max-width: 780px; }
+        .up-hero .up-eyebrow {
+          display: flex; align-items: center; gap: 8px;
+          font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.18em;
+          text-transform: uppercase; color: rgba(232,238,249,0.55); margin-bottom: 14px;
+        }
+        .up-hero .up-eyebrow-dot {
+          width: 5px; height: 5px; border-radius: 50%; background: #3DDC97;
+        }
+        .up-hero .up-title {
+          font-family: var(--font-display);
+          font-size: clamp(36px, 4.2vw, 56px); line-height: 1.04;
+          letter-spacing: -0.022em; color: #FFFFFF; margin: 0 0 12px;
+        }
+        .up-hero .up-subtitle {
+          font-family: var(--font-sans);
+          font-size: 14.5px; line-height: 1.7; margin: 0;
+          color: rgba(232,238,249,0.72); max-width: 54ch;
+        }
+        @media (max-width: 900px) {
+          .up-hero { padding: 28px 20px 24px; }
         }
 
         .up-header {
@@ -782,76 +773,49 @@ const UploadDeck = () => {
       `}</style>
 
       <div className="up-root">
-        {/* ── HEADER ── */}
-        <div className="up-header">
-          <div>
+        {/* ── HEADER ──
+            A dark band, matching the analysis report and the sign-in screen,
+            so the three screens read as one product rather than three.
+
+            The "Bull Agent Active / Bear Agent Active / Fact-Check Live"
+            badges that sat on the right are gone. They were lit permanently and
+            identically whether an analysis was running, finished, or had never
+            been started -- the same decorative always-on chips that were
+            removed from the sidebar, duplicated here. A status light that is
+            always green reports nothing. */}
+        <header className="up-hero">
+          <div className="up-hero-aura" aria-hidden="true" />
+          <div className="up-hero-inner">
             <div className="up-eyebrow">
               <div className="up-eyebrow-dot" />
-              VentureFlow AI · New Submission
+              VentureFlow · New submission
             </div>
-            <h1 className="up-title">Upload Deck</h1>
-            <p className="up-subtitle">AI-powered fact-checking & investment intelligence for VCs</p>
+            <h1 className="up-title">Upload a deck</h1>
+            <p className="up-subtitle">
+              Every claim checked against live sources, every figure traced to
+              the slide it came from. Typically 2–4 minutes.
+            </p>
           </div>
-          <div className="up-header-badges">
-            <span className="up-hbadge" style={{ background: "rgba(14,166,106,0.08)", color: "#0EA66A", border: "1px solid rgba(14,166,106,0.22)" }}>
-              ● Bull Agent Active
-            </span>
-            <span className="up-hbadge" style={{ background: "rgba(217,48,37,0.07)", color: "#D93025", border: "1px solid rgba(217,48,37,0.2)" }}>
-              ● Bear Agent Active
-            </span>
-            <span className="up-hbadge" style={{ background: "rgba(29,111,232,0.07)", color: "#1D6FE8", border: "1px solid rgba(29,111,232,0.2)" }}>
-              ● Fact-Check Live
-            </span>
-          </div>
-        </div>
+        </header>
 
         <div className="up-content">
           {/* ── LEFT COLUMN ── */}
           <div className="up-left-col">
 
-            {/* ILLUSTRATION STRIP */}
-            <motion.div className="up-illus-strip"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
-              <div style={{ position: "relative" }}>
-                <DeckIllustration />
-                <div className="up-scan-dots">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="up-scan-dot" style={{
-                      background: activeDot === i ? "#1D6FE8" : "rgba(15,23,42,0.12)",
-                      transform: activeDot === i ? "scale(1.4)" : "scale(1)",
-                    }} />
-                  ))}
-                </div>
-              </div>
+            {/* A marketing panel stood here: a stock "Instant VC-grade deal
+                intelligence" headline, a rotating dot carousel, three more
+                agent pills, and a decorative line-chart illustration -- above
+                the upload form, in the prime position on the page.
 
-              <div>
-                <div className="up-illus-tag">
-                  <Eye size={9} />
-                  Dual-Agent Intelligence
-                </div>
-                <h2 className="up-illus-heading">
-                  Instant VC-grade<br /><em>deal intelligence</em>
-                </h2>
-                {/* Two claims were corrected here against measured behaviour.
-                    "in under 60 seconds" was false: timed end-to-end runs
-                    against the live backend take 117s in the best observed
-                    case and 262s before the search layer was parallelised.
-                    "live databases" (plural) overstated it -- the only
-                    external source is web search, plus this workspace's own
-                    Neon store of prior reports. */}
-                <p className="up-illus-body">
-                  VentureFlow runs your pitch deck through independent Bull &amp; Bear agents,
-                  checks every claim against live web search, and surfaces founder signals,
-                  market gaps, and risk vectors — typically in 2–4 minutes.
-                </p>
-                <div className="up-agent-pills">
-                  <span className="up-agent-pill up-pill-bull"><span className="up-pill-dot" style={{ background: "#0EA66A" }} />Bull Agent</span>
-                  <span className="up-agent-pill up-pill-bear"><span className="up-pill-dot" style={{ background: "#D93025" }} />Bear Agent</span>
-                  <span className="up-agent-pill up-pill-fact"><span className="up-pill-dot" style={{ background: "#1D6FE8" }} />Live Fact-Check</span>
-                </div>
-              </div>
-            </motion.div>
+                Two reasons it is gone. It sold the product to somebody who has
+                already signed in and navigated to the upload screen, pushing
+                the one thing they came to do further down. And the illustration
+                was a chart with invented data in it, in a product whose whole
+                argument is that it does not put invented numbers on screen.
+                Decorative or not, a fake chart is the wrong furniture here.
+
+                What it actually said now lives in the hero above, in one
+                sentence, without the artwork. */}
 
             {/* UPLOAD CARD */}
             <motion.div className="up-card up-card-pad"
