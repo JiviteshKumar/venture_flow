@@ -22,7 +22,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, ValidationError
 
 import pdf_extractor as _regex_extractor
-from groq_client import MODEL, get_client, note_provider_failure, pace_for
+from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +132,10 @@ def extract_structured(text: str, company: str = "") -> dict[str, Any]:
             max_tokens=1600,
             response_format={"type": "json_object"},
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(response, len(prompt), 1600)
         raw = response.choices[0].message.content
         parsed = ExtractedFinancials.model_validate(json.loads(raw))
         return {

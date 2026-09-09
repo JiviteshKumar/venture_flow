@@ -12,7 +12,7 @@ import json
 
 from agents import risk_disclosure
 from agents.deck_financials import analyse as analyse_financials
-from groq_client import note_provider_failure, MODEL, get_client, pace_for
+from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage
 
 # ----------------------------
 # Risk keyword dictionary
@@ -188,6 +188,10 @@ Respond with ONLY valid JSON:
             temperature=0.1,
             max_tokens=1500,
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(response, len(prompt), 800)
 
         raw = (response.choices[0].message.content or "").strip()
         if not raw:

@@ -137,6 +137,27 @@ class TokenPacer:
             self._spent += max(0, int(estimated_tokens))
         return waited
 
+    def settle(self, reserved_tokens: int, actual_tokens: int) -> int:
+        """Give back the part of a reservation the call did not use.
+
+        Returns the number of tokens refunded, for logging and tests.
+
+        Only ever refunds DOWN to zero spend, and never refunds more than was
+        reserved, so a wrong `actual` cannot manufacture budget. If the window
+        rolled over between the reservation and the response there is nothing
+        meaningful to refund -- the spend being corrected belongs to a window
+        that has already closed -- so the refund is skipped.
+        """
+        refund = max(0, int(reserved_tokens) - max(0, int(actual_tokens)))
+        if not refund:
+            return 0
+        with self._lock:
+            if time.monotonic() - self._window_start >= 60.0:
+                return 0
+            refund = min(refund, self._spent)
+            self._spent -= refund
+        return refund
+
 
 TOKENS_PER_MINUTE = int(os.getenv("GROQ_TOKENS_PER_MINUTE", "8000"))
 PACING_ENABLED = os.getenv("GROQ_PACING", "on").strip().lower() not in {"off", "0", "false"}
@@ -225,6 +246,45 @@ def reset_quota_breaker() -> None:
     global _daily_quota_blocked_until, _daily_quota_reason
     _daily_quota_blocked_until = 0.0
     _daily_quota_reason = ""
+
+
+def estimate_tokens(prompt_chars: int, max_tokens: int) -> int:
+    """The reservation `pace_for` makes for a call of this shape.
+
+    Exposed so a caller can hand the same number back to `settle_usage` without
+    having to know the formula.
+    """
+    return prompt_chars // 4 + max_tokens
+
+
+def settle_usage(response: object, prompt_chars: int, max_tokens: int) -> int:
+    """Reconcile a completed call against what it actually cost.
+
+    Call this immediately after a successful `chat.completions.create`. The
+    pacer reserved `max_tokens` of completion budget; this returns whatever the
+    model did not use to the current minute's window, so the next call is not
+    made to wait for tokens nobody spent.
+
+    Never raises. This runs on the success path of a call that has already
+    worked, and a failure to do bookkeeping must not turn a good response into
+    an exception -- so a response object without usage, or with a shape this
+    does not recognise, simply refunds nothing and leaves the pacer exactly as
+    it is today.
+    """
+    if not PACING_ENABLED:
+        return 0
+    try:
+        usage = getattr(response, "usage", None)
+        actual = int(getattr(usage, "total_tokens", 0) or 0)
+        if actual <= 0:
+            return 0
+        refunded = _pacer.settle(estimate_tokens(prompt_chars, max_tokens), actual)
+        if refunded:
+            logger.debug("Returned %d unused tokens to the pacing window", refunded)
+        return refunded
+    except Exception:  # pragma: no cover - bookkeeping must never fail a call
+        logger.debug("Could not settle token usage", exc_info=True)
+        return 0
 
 
 def pace_for(prompt_chars: int, max_tokens: int = 1000) -> float:

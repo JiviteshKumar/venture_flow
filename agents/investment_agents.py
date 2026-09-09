@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import observability
-from groq_client import note_provider_failure, MODEL, get_client, pace_for
+from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +160,10 @@ EVIDENCE:
             temperature=0.1,
             max_tokens=2000,
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(result, len(prompt), 2000)
         choice = result.choices[0]
         raw = (choice.message.content or "").strip()
         if not raw:

@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 import observability
 from agents.evidence_filter import filter_sources
-from groq_client import MODEL, get_client, note_provider_failure, pace_for
+from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage
 
 logger = logging.getLogger(__name__)
 
@@ -453,6 +453,10 @@ Respond with ONLY valid JSON, no other text:
             temperature=0.1,
             max_tokens=500,
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(response, len(prompt), 500)
 
         raw = response.choices[0].message.content.strip()
 

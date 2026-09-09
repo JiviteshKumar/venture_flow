@@ -18,12 +18,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 import json
+from pathlib import Path
 import re
 
 from agents.claim_verifier import verify_claim
 from agents.investment_agents import run_investment_agents
 from agents.risk_detector import score_risk
-from groq_client import MODEL, get_client, pace_for
+from groq_client import MODEL, get_client, pace_for, settle_usage
 from rag_engine import build_context, format_context_for_llm
 
 logger = logging.getLogger(__name__)
@@ -514,6 +515,54 @@ def _legacy_formula_score(
     quality_bonus = (quality_score - 50) * 0.2
     raw = 100 - (risk_score * 0.5) - claim_penalty - financial_penalty + quality_bonus
     return max(0.0, min(100.0, raw))
+
+
+# Where a local copy of each report is written, when one is wanted at all.
+#
+# This used to be an unconditional `open("due_diligence_report.json", "w")` at
+# the end of every analysis, which is fine when you are running this module by
+# hand and wrong everywhere else:
+#
+#   * the filename was fixed while MAX_CONCURRENT_ANALYSES is 3, so concurrent
+#     analyses silently overwrote each other. That is not hypothetical -- it
+#     produced a wrong conclusion during testing, when the file read after one
+#     analysis had been written by a different one running alongside it;
+#   * the report is already persisted to Postgres and returned to the caller,
+#     so on a server the file is redundant;
+#   * on a container host the working directory is ephemeral, so the write buys
+#     nothing and can raise at the very end of a successful analysis.
+#
+# Off unless asked for. Set VENTUREFLOW_REPORT_DIR to a directory to get one
+# JSON file per run, named for the company and a timestamp.
+REPORT_DIR = os.getenv("VENTUREFLOW_REPORT_DIR", "").strip()
+
+
+def _write_debug_copy(report: dict, company_name: str) -> None:
+    """Write a per-run copy of the report, if a directory was configured.
+
+    Never raises: a failure to write a debugging convenience must not fail an
+    analysis that has already succeeded, which is exactly what an unconditional
+    write to a read-only working directory would have done.
+    """
+    if not REPORT_DIR:
+        return
+    try:
+        import datetime
+        import re as _re
+
+        directory = Path(REPORT_DIR)
+        directory.mkdir(parents=True, exist_ok=True)
+        slug = _re.sub(r"[^A-Za-z0-9_-]+", "-", (company_name or "report")).strip("-")
+        stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        destination = directory / f"{slug or 'report'}-{stamp}.json"
+        # encoding="utf-8" for the same reason as _safe_print: the memo
+        # routinely contains characters the Windows default codepage cannot
+        # represent, and the default open() mode would raise on write.
+        with open(destination, "w", encoding="utf-8") as handle:
+            json.dump(report, handle, indent=2, default=str)
+        print(f"\nReport copy saved to {destination}")
+    except Exception:
+        logger.warning("Could not write the local report copy", exc_info=True)
 
 
 def run_due_diligence(
@@ -1448,6 +1497,10 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
             temperature=0.15,   # very low — maximise factual accuracy
             max_tokens=2500,
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(response, len(user_message), 2500)
         ai_analysis = response.choices[0].message.content
     except Exception as e:
         logger.exception("Groq report synthesis failed")
@@ -1640,12 +1693,7 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
     print("\nAI ANALYSIS:")
     _safe_print(ai_analysis)
 
-    # encoding="utf-8" here for the same reason as _safe_print: the memo
-    # routinely contains characters the Windows default codepage cannot
-    # represent, and the default open() mode would raise on write.
-    with open("due_diligence_report.json", "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, default=str)
-    print("\nReport saved to due_diligence_report.json")
+    _write_debug_copy(report, company_name)
 
     return report
 

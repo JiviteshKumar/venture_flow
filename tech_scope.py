@@ -288,7 +288,7 @@ def _adjudicate(text: str, company_name: str) -> dict[str, Any] | None:
     try:
         import json
 
-        from groq_client import MODEL, get_client, note_provider_failure, pace_for
+        from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage
 
         prompt = _PROMPT.format(name=company_name or "(not given)", text=text[:6000])
         pace_for(len(prompt), 800)
@@ -306,6 +306,10 @@ def _adjudicate(text: str, company_name: str) -> dict[str, Any] | None:
             max_tokens=800,
             response_format={"type": "json_object"},
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(response, len(prompt), 800)
         parsed = json.loads(response.choices[0].message.content or "{}")
         if "is_tech" not in parsed:
             return None

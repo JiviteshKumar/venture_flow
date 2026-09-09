@@ -47,7 +47,7 @@ import os
 import re
 
 from agents.claim_verifier import fetch_page_text, search_web
-from groq_client import note_provider_failure, MODEL, get_client, pace_for
+from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage
 
 logger = logging.getLogger(__name__)
 
@@ -290,6 +290,10 @@ Respond with ONLY valid JSON:
             max_tokens=1200,
             response_format={"type": "json_object"},
         )
+        # Return the completion budget this call reserved but did not use.
+        # Bookkeeping only -- it cannot change what the model said, and it
+        # stops the next call waiting on tokens nobody spent.
+        settle_usage(response, len(prompt), 1200)
         raw = response.choices[0].message.content or "{}"
         parsed = json.loads(raw)
     except json.JSONDecodeError:
