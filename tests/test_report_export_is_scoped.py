@@ -82,21 +82,61 @@ def rows_to_clean():
 
 
 def _owned_report(client, rows_to_clean, prefix="ScopeTest"):
-    from db import persist_report
+    """Create an account and a report that account owns.
+
+    Every step is checked, because the failure mode this guards against is
+    silent. An unowned report is readable by ANYONE by design -- that is what
+    `dd_reports.owner_user_id IS NULL` means for reports written before accounts
+    existed. So if registration quietly fails, or `persist_report` stores a NULL
+    owner, the report becomes public and a scoping test fails while nothing
+    about the authorization logic is wrong.
+
+    Written after `test_a_stranger_cannot_download_someone_elses_report`
+    [export/md] failed once in a full suite run and could not be reproduced --
+    40 isolated runs of the identical scenario all returned 404. Rather than
+    guess, the setup now proves its own preconditions, so a recurrence says
+    which of the two very different things went wrong.
+    """
+    from db import connection, persist_report
 
     emails, companies = rows_to_clean
     email = f"export-{uuid.uuid4().hex[:10]}@example.test"
     emails.append(email)
-    account = client.post("/auth/register",
-                          json={"email": email, "password": PASSWORD}).json()
+
+    response = client.post("/auth/register",
+                           json={"email": email, "password": PASSWORD})
+    assert response.status_code == 201, (
+        f"could not create the owner account ({response.status_code}: "
+        f"{response.text[:200]}). Without an owner the report is unowned, and "
+        f"an unowned report is public by design -- so a scoping assertion "
+        f"downstream would fail for a reason that has nothing to do with "
+        f"authorization."
+    )
+    account = response.json()
+    owner_id = (account.get("user") or {}).get("id")
+    assert owner_id, f"registration returned no user id: {account}"
 
     name = f"{prefix} {uuid.uuid4().hex[:8]}"
     companies.append(name)
     report_id = persist_report(
         name=name, description="An owned analysis.", sector=None, domain=None,
         report={"final_score": 50, "recommendation": "PASS", "sections": {}},
-        owner_user_id=account["user"]["id"],
+        owner_user_id=owner_id,
     )
+
+    # What the database actually stored, not what we asked it to store.
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT owner_user_id::text AS owner FROM dd_reports WHERE id::text = %s",
+            (str(report_id),))
+        row = cur.fetchone()
+    assert row is not None, f"report {report_id} was not persisted"
+    assert row["owner"] == owner_id, (
+        f"the report was stored with owner {row['owner']!r}, not {owner_id!r}. "
+        f"A NULL owner here makes the report public by design, which would "
+        f"look exactly like an authorization failure in the tests below."
+    )
+
     return account, report_id
 
 

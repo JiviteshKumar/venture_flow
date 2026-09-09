@@ -1,17 +1,17 @@
 [
   {
-    "deck": "Airbnb",
-    "file": "Airbnb.pdf",
+    "deck": "Uber",
+    "file": "Uber.pdf",
     "upload_status": 200,
     "upload": {
-      "company_description_chars": 134,
-      "extracted_chars": 2472,
+      "company_description_chars": 1200,
+      "extracted_chars": 5000,
       "detected_claims": 12,
       "detected_founders": [],
-      "deck_slides": 11,
-      "extraction_method": "llm_schema",
+      "deck_slides": 25,
+      "extraction_method": "regex_fallback",
       "text_source": "text_layer",
-      "page_count": 11,
+      "page_count": 25,
       "stage": null,
       "sector": null,
       "revenue": null,
@@ -20,1035 +20,18 @@
     },
     "analyze_status": 202,
     "job_status": "complete",
-    "seconds": 279.3,
-    "company_as_analysed": "Airbnb",
+    "seconds": 71.4,
+    "company_as_analysed": "Uber",
     "checks": [
       {
         "check": "final_score",
         "state": "PRESENT",
-        "detail": "37.0 (source: venturescore_model)"
+        "detail": "52.0 (source: venturescore_model)"
       },
       {
         "check": "venturescore_model_ran",
         "state": "PRESENT",
-        "detail": "available=True reason='' score=37 coverage=0.625"
-      },
-      {
-        "check": "claims_checked",
-        "state": "PRESENT",
-        "detail": "checked=5 supported=0 refuted=1 uncertain=4"
-      },
-      {
-        "check": "claim_verification_not_degraded",
-        "state": "PRESENT",
-        "detail": "claims_verification_degraded=False"
-      },
-      {
-        "check": "bull_case",
-        "state": "BROKEN",
-        "detail": "0 signal(s), confidence=0, thesis='Insufficient evidence for a bull case'"
-      },
-      {
-        "check": "bear_case",
-        "state": "BROKEN",
-        "detail": "0 signal(s), confidence=0, thesis='Insufficient evidence for a complete bear case'"
-      },
-      {
-        "check": "founders_found",
-        "state": "EMPTY",
-        "detail": "0: []"
-      },
-      {
-        "check": "founder_search_ran",
-        "state": "PRESENT",
-        "detail": "searched=True attempted=True degraded=True sources=13 reason='Founder research could not be completed: the daily Groq token quota is exhausted. 13 public source(s) were ret'"
-      },
-      {
-        "check": "risk_signals",
-        "state": "PRESENT",
-        "detail": "total=2 concerns=0 red_flags=0"
-      },
-      {
-        "check": "investment_memo",
-        "state": "PRESENT",
-        "detail": "1742 chars"
-      },
-      {
-        "check": "extraction_provenance",
-        "state": "PRESENT",
-        "detail": "method='llm_schema' fallback=''"
-      },
-      {
-        "check": "extraction_coverage",
-        "state": "PRESENT",
-        "detail": "[{\"note\": \"\", \"slide\": 1, \"heading\": \"Welcome 1\", \"represented\": true, \"mapped_lines\": 1, \"content_lines\": 7}, {\"note\": "
-      },
-      {
-        "check": "comparables",
-        "state": "EMPTY",
-        "detail": "0: []"
-      },
-      {
-        "check": "no_provider_outage",
-        "state": "BROKEN",
-        "detail": "provider_degraded=True components=[{'reason': 'provider error (DailyQuotaExhausted)', 'component': 'market'}, {'reason': 'provider error (DailyQuotaExhausted)', 'component': 'bull_case'}, {'reason': 'provider error (DailyQuotaExhausted)', 'component': 'bear_case'}, {'reason': 'provider error (DailyQuotaExhausted)', 'component': 'team'}, {'reason': 'claim verification raised', 'component': 'claim_verification'}]"
-      },
-      {
-        "check": "evidence_search_degraded",
-        "state": "PRESENT",
-        "detail": "False "
-      }
-    ],
-    "report": {
-      "company": "Airbnb",
-      "final_score": 37.0,
-      "recommendation": "NEEDS MORE DILIGENCE",
-      "risk_level": "LOW",
-      "ai_analysis": "1. EXECUTIVE SUMMARY\nAirbnb has been reviewed with HIGH input completeness (85/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed). Extraction coverage for this deck was 54.5% (PARTIAL). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 1\n- Uncertain: 4\n\n3. RISK ASSESSMENT\n- Overall risk level: LOW\n- Risk score: 12.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Zenter (B2B, Winter 2007, Y Combinator alumni) -- Exit, similarity 0.59\n- Omoi (formerly Azuki) (Consumer, Winter 2022, Y Combinator alumni) -- Still operating, similarity 0.55\n- Entry (B2B, Winter 2017, Y Combinator alumni) -- Shut down, similarity 0.54\n- BowieNet (Market-wide (non-accelerator)) -- Shut down, similarity 0.53\n- OzEmail (Market-wide (non-accelerator)) -- Shut down, similarity 0.50\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- Clear market problem and demand\n- Simple commission-based business model\n- Early mover advantage in peer\u2011to\u2011peer lodging\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
-      "claims_verified": 5,
-      "claims_supported": 0,
-      "claims_refuted": 1,
-      "claims_uncertain": 4,
-      "risk_signals_found": 2,
-      "key_concerns": [],
-      "red_flags": [],
-      "positive_factors": [
-        "Clear market problem and demand",
-        "Simple commission-based business model",
-        "Early mover advantage in peer\u2011to\u2011peer lodging"
-      ],
-      "sections": {
-        "risk": {
-          "red_flags": [],
-          "risk_level": "LOW",
-          "ai_reasoning": "The pitch deck contains only generic market sizing, product description and business model information. It does not disclose any specific adverse events, regulatory challenges, customer concentration, IP issues, founder turnover, or financial runway concerns. Consequently no concrete red flags are identified, leading to a low overall risk assessment.",
-          "deck_signals": [],
-          "key_concerns": [],
-          "overall_score": 12.0,
-          "total_signals": 2,
-          "financial_state": {
-            "arr": null,
-            "mrr": null,
-            "revenue": null,
-            "evidence": {},
-            "cash_on_hand": null,
-            "monthly_burn": null,
-            "burn_multiple": null,
-            "runway_months": null,
-            "runway_source": null,
-            "annual_revenue": null,
-            "growth_multiple": null,
-            "largest_customer_share": null
-          },
-          "disclosure_model": {
-            "role": "severity ranking only; does not decide whether a risk fired",
-            "available": true,
-            "threshold": 0.6463357234785806,
-            "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly labelled by retrieval phrase, plus 16 structured deck features derived from the same text",
-            "why_not_voting": "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an interval too wide to promote on. At the chosen threshold this model would still fire on the benchmark's risk-free team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193), while the deterministic rules in agents/deck_financials get 3/3 with zero false positives. Two of the three deck positives score exactly 1.000 because the features encode those same rules, so most of the apparent gain is the model re-reading them rather than adding independent signal.",
-            "uses_deck_features": true,
-            "benchmark_auc_sec_filings": 1.0,
-            "benchmark_auc_deck_register": 0.778,
-            "benchmark_auc_deck_register_ci95": [
-              0.2,
-              1.0
-            ]
-          },
-          "positive_factors": [
-            "Clear market problem and demand",
-            "Simple commission-based business model",
-            "Early mover advantage in peer\u2011to\u2011peer lodging"
-          ],
-          "financial_metrics": {},
-          "overall_risk_level": "LOW",
-          "disclosure_severity": 0.3154235423542354
-        },
-        "team": {
-          "gaps": [
-            "Deck does not provide enough team evidence."
-          ],
-          "_degraded": true,
-          "questions": [
-            "Provide founder biographies and relevant operating experience."
-          ],
-          "strengths": [],
-          "_component": "founder and team diligence analyst",
-          "confidence": 0,
-          "capabilities": [],
-          "_degraded_reason": "provider error (DailyQuotaExhausted)",
-          "confidence_basis": "No specialist output was produced.",
-          "overall_assessment": "Insufficient team information"
-        },
-        "claims": {
-          "checked": 5,
-          "details": [
-            {
-              "claim": "There are 630,000 listings on temporary housing site couchsurfing.com.",
-              "sources": [],
-              "verdict": "NOT_ENOUGH_INFO",
-              "_degraded": true,
-              "reasoning": "Claim verification was temporarily unavailable.",
-              "confidence": 0.0,
-              "key_evidence": "",
-              "total_sources": 0,
-              "full_pages_read": 0,
-              "_degraded_reason": "claim verification raised"
-            },
-            {
-              "claim": "There were 17,000 temporary housing listings on SF & NYC Craigslist from 07/09 \u2013 07/16.",
-              "sources": [
-                "https://nypost.com/2025/09/07/us-news/nycs-airbnb-ban-failed-to-lower-rents-or-boost-vacancies-report-finds/",
-                "https://therealdeal.com/new-york/2026/09/03/restrictions-keep-nyc-short-term-rentals-down-85/",
-                "https://hackernoon.com/how-airbnb-hacked-craigslist-for-viral-growth-24l35eg",
-                "https://www.linkedin.com/pulse/how-airbnb-hacked-craigslist-viralgrowth-scott-d-clary-mba",
-                "https://www.craigslist.org/search/area/newyork?cat=sub"
-              ],
-              "verdict": "NOT_ENOUGH_INFO",
-              "reasoning": "",
-              "confidence": 0.5,
-              "key_evidence": "",
-              "total_sources": 15,
-              "dropped_sources": [
-                {
-                  "url": "https://en.wikipedia.org/wiki/Brown_&_Brown",
-                  "reason": "off-topic (embedding similarity 0.064 < 0.120)"
-                },
-                {
-                  "url": "https://en.wikipedia.org/wiki/Block,_Inc.",
-                  "reason": "off-topic (embedding similarity 0.091 < 0.120)"
-                },
-                {
-                  "url": "https://en.wikipedia.org/wiki/Comcast",
-                  "reason": "off-topic (embedding similarity 0.103 < 0.120)"
-                }
-              ],
-              "full_pages_read": 5,
-              "sources_dropped": 3,
-              "evidence_providers": {
-                "wikipedia": 5,
-                "duckduckgo": 20
-              }
-            },
-            {
-              "claim": "Total available market is 1.9 Billion+ trips booked worldwide.",
-              "sources": [
-                "https://axis-intelligence.com/airbnb-statistics/",
-                "https://www.statista.com/topics/2273/airbnb/",
-                "https://www.demandsage.com/airbnb-statistics/",
-                "https://dataopedia.com/airbnb-statistics/",
-                "https://backlinko.com/airbnb-stats"
-              ],
-              "verdict": "NOT_ENOUGH_INFO",
-              "reasoning": "The provided sources report Airbnb bookings and stays for 2023\u20112026 (e.g., 2.5\u202fbillion stays globally, 533\u202fmillion nights booked), but they do not give a figure for total worldwide trips booked, nor do they pertain to the 2008 timeframe of the claim. Therefore the claim cannot be confirmed or refuted with the available evidence.",
-              "confidence": 0.9,
-              "key_evidence": "Airbnb has facilitated over 2.5\u202fbillion stays globally (2026 data) \u2013 does not address the 1.9\u202fbillion trips figure or the 2008 period.",
-              "total_sources": 15,
-              "dropped_sources": [
-                {
-                  "url": "https://www.slideshare.net/slideshow/airbnb-original-powerpoint-pitch-presentation-86406437/86406437",
-                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-                }
-              ],
-              "full_pages_read": 5,
-              "sources_dropped": 1,
-              "evidence_providers": {
-                "wikipedia": 5,
-                "duckduckgo": 20
-              }
-            },
-            {
-              "claim": "Serviceable available market is 532M budget & online trips.",
-              "sources": [
-                "https://www.bing.com/aclick?ld=e8iXvGSC2-KNEqovr4ebfYRjVUCUwunUA686qBdKklisQ1e3mwkZE4jrBCV0Gm0bQWlHQQjICztJxamJRCrKyZd6PIMqWHwC4n2CxaVuIowHNL-3ZORr3NhrPntXyDsw7mTDiflo1C0Xvly3bOCbsNei6XXdU2_rb8j-QYedNeF-hNXOMku1P8lOYa8GfecWxaOo9vAQ&u=aHR0cHMlM2ElMmYlMmZhZC5kb3VibGVjbGljay5uZXQlMmZzZWFyY2hhZHMlMmZsaW5rJTJmY2xpY2slM2ZsaWQlM2Q0MzcwMDA4MTIzMTI4NDE0NCUyNmRzX3Nfa3dnaWQlM2Q1ODcwMDAwODgyMzA2NDExNCUyNmRzX2FfY2lkJTNkNjY0Mzk2NjI2MyUyNmRzX2FfY2FpZCUzZDIyMDE5MTg5NzU5JTI2ZHNfYV9hZ2lkJTNkMTc1OTA4NjkwMjMwJTI2ZHNfYV9saWQlM2Rrd2QtMzc2NzM4NTY3NjQ4JTI2JTI2ZHNfZV9hZGlkJTNkODA5NTE2NzMwNzMxMzQlMjZkc19lX3RhcmdldF9pZCUzZGt3ZC04MDk1MTg4NDE3NzYzNyUzYWxvYy05MCUyNiUyNmRzX2VfbmV0d29yayUzZG8lMjZkc191cmxfdiUzZDIlMjZkc19kZXN0X3VybCUzZGh0dHBzJTNhJTJmJTJmd3d3LmFpcmJuYi5jby5pbiUyZmhvc3QlMmZob21lcyUzZmFjY291bnRfaWQlM2QxNjkwMDAzMDAlMjZjYW1wYWlnbl9pZCUzZDQ3MTAyODU3MSUyNmFkX2lkJTNkODA5NTE2NzMwNzMxMzQlMjZhZF9ncm91cF9pZCUzZDEyOTUyMjU4NTkxNzY1MTIlMjZrZXl3b3JkX2lkJTNka3dkLTgwOTUxODg0MTc3NjM3JTNhbG9jLTkwJTI2ZGV2aWNlJTNkYyUyNmdjbGlkJTNkNDFhNzgxZmIwNzIyMTQ2N2Y5YjhlYjVhODgzNTQzODAlMjZnY2xzcmMlM2QzcC5kcyUyNiUyNmMlM2QucGkyLnBrNDcxMDI4NTcxXzEyOTUyMjU4NTkxNzY1MTIlMjZtc2Nsa2lkJTNkNDFhNzgxZmIwNzIyMTQ2N2Y5YjhlYjVhODgzNTQzODAlMjZ1dG1fc291cmNlJTNkYmluZyUyNnV0bV9tZWRpdW0lM2RjcGMlMjZ1dG1fY2FtcGFpZ24lM2RFTiUyNTJCSU5EJTI1M0FIT1NUJTI1M0FCUkQlMjZ1dG1fdGVybSUzZGhvdyUyNTIwdG8lMjUyMGFkdmVydGlzZSUyNTIwb24lMjUyMGFpcmJuYiUyNnV0bV9jb250ZW50JTNkTGlzdGluZyUyNTIwQ3JlYXRpb24&rlid=41a781fb07221467f9b8eb5a88354380",
-                "https://sites.ced.ncsu.edu/design-and-pitch/wp-content/uploads/sites/13/2020/05/Pitch-Example-Air-BnB-PDF.pdf",
-                "https://axis-intelligence.com/airbnb-statistics/",
-                "https://en.wikipedia.org/wiki/Coinbase",
-                "https://en.wikipedia.org/wiki/Brown_&_Brown"
-              ],
-              "verdict": "REFUTES",
-              "reasoning": "The pitch deck evidence states that the 532M figure refers to the Total Available Market, while the Serviceable Available Market is listed as 10.6M trips, contradicting the claim that the Serviceable Available Market is 532M.",
-              "confidence": 0.97,
-              "key_evidence": "Total Available Market 532M BUDGET & ONLINE TRIPS Serviceable Available Market 10.6M TRIPS W/AB&B Market Share",
-              "total_sources": 11,
-              "dropped_sources": [
-                {
-                  "url": "https://www.slideshare.net/slideshow/airbnb-first-pitch-deck/54536150",
-                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-                },
-                {
-                  "url": "https://www.slideshare.net/slideshow/pitch-deck-airbnb-2009/72719483",
-                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-                },
-                {
-                  "url": "https://en.wikipedia.org/wiki/Block,_Inc.",
-                  "reason": "off-topic (embedding similarity 0.094 < 0.120)"
-                },
-                {
-                  "url": "https://en.wikipedia.org/wiki/Interactive_Brokers",
-                  "reason": "off-topic (embedding similarity 0.100 < 0.120)"
-                }
-              ],
-              "full_pages_read": 5,
-              "sources_dropped": 4,
-              "evidence_providers": {
-                "wikipedia": 10,
-                "duckduckgo": 5
-              }
-            },
-            {
-              "claim": "Serviceable obtainable market is 10.6M trips with AB&B.",
-              "sources": [
-                "https://investors.airbnb.com/home/default.aspx",
-                "https://investors.airbnb.com/press-releases/default.aspx",
-                "https://news.airbnb.com/airbnb-q1-2026-financial-results",
-                "https://www.msn.com/en-us/money/companies/airbnb-outlines-q4-revenue-target-of-2-66b-2-72b-as-ai-integration-and-hotel-expansion-accelerate/ar-AA1PYgOs",
-                "https://www.cnbc.com/2026/02/12/q4-airbnb-abnb-earnings-2025.html"
-              ],
-              "verdict": "NOT_ENOUGH_INFO",
-              "reasoning": "The provided evidence consists of recent Airbnb financial results and investor relations pages, none of which mention a serviceable obtainable market of 10.6 million trips. Since the claim refers to a point-in-time metric likely from a 2008 pitch deck, and the evidence pertains to a different period, there is insufficient information to confirm or refute the claim.",
-              "confidence": 0.9,
-              "key_evidence": "No mention of \"serviceable obtainable market\" or \"10.6M trips\" in the provided sources.",
-              "total_sources": 10,
-              "dropped_sources": [],
-              "full_pages_read": 5,
-              "sources_dropped": 0,
-              "evidence_providers": {
-                "wikipedia": 5,
-                "duckduckgo": 5
-              }
-            }
-          ],
-          "refuted": 1,
-          "supported": 0,
-          "uncertain": 4,
-          "reliability_note": "MEDIUM \u2014 some claims unverified"
-        },
-        "market": {
-          "gaps": [
-            "Insufficient market evidence in the deck."
-          ],
-          "signals": [],
-          "_degraded": true,
-          "_component": "market-validation analyst",
-          "confidence": 0,
-          "recommendation": "Validate market size and buyer demand.",
-          "_degraded_reason": "provider error (DailyQuotaExhausted)",
-          "confidence_basis": "No specialist output was produced.",
-          "market_definition": "Insufficient data"
-        },
-        "bear_case": {
-          "thesis": "Insufficient evidence for a complete bear case",
-          "signals": [],
-          "_degraded": true,
-          "_component": "bear-case investment analyst",
-          "confidence": 0,
-          "_degraded_reason": "provider error (DailyQuotaExhausted)",
-          "confidence_basis": "No specialist output was produced.",
-          "diligence_required": [
-            "Validate financials, market demand and team execution."
-          ]
-        },
-        "bull_case": {
-          "thesis": "Insufficient evidence for a bull case",
-          "signals": [],
-          "_degraded": true,
-          "_component": "bull-case investment analyst",
-          "confidence": 0,
-          "_degraded_reason": "provider error (DailyQuotaExhausted)",
-          "confidence_basis": "No specialist output was produced.",
-          "conditions_to_invest": [
-            "Verify key commercial and product claims."
-          ]
-        },
-        "ai_analysis": "1. EXECUTIVE SUMMARY\nAirbnb has been reviewed with HIGH input completeness (85/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed). Extraction coverage for this deck was 54.5% (PARTIAL). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 1\n- Uncertain: 4\n\n3. RISK ASSESSMENT\n- Overall risk level: LOW\n- Risk score: 12.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: Insufficient data\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Zenter (B2B, Winter 2007, Y Combinator alumni) -- Exit, similarity 0.59\n- Omoi (formerly Azuki) (Consumer, Winter 2022, Y Combinator alumni) -- Still operating, similarity 0.55\n- Entry (B2B, Winter 2017, Y Combinator alumni) -- Shut down, similarity 0.54\n- BowieNet (Market-wide (non-accelerator)) -- Shut down, similarity 0.53\n- OzEmail (Market-wide (non-accelerator)) -- Shut down, similarity 0.50\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- Clear market problem and demand\n- Simple commission-based business model\n- Early mover advantage in peer\u2011to\u2011peer lodging\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
-        "rag_context": {
-          "reports_retrieved": 5
-        },
-        "venture_score": {
-          "model": {
-            "cv_ece": 0.0219,
-            "family": "rf",
-            "cv_brier": 0.2223,
-            "trained_n": 1298,
-            "cv_roc_auc": 0.6772,
-            "calibration": "isotonic",
-            "cv_roc_auc_ci95": [
-              0.6607,
-              0.6932
-            ],
-            "excluded_contaminated_features": [
-              "team_size",
-              "age_years",
-              "batch_year"
-            ]
-          },
-          "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
-          "available": true,
-          "base_rate": 0.4892,
-          "confidence": "medium",
-          "score_range": [
-            27,
-            45
-          ],
-          "ensemble_std": 0.0608,
-          "degraded_note": "This score was computed without stage and industry/sector, which together account for up to 66 points of the model's range. The deck did not state them, and nothing was assumed in their place. Treat the number as correspondingly less specific to this company.",
-          "venture_score": 37,
-          "missing_inputs": [
-            {
-              "input": "stage",
-              "consequence": "The largest single input to the score. Without it the model scores this deck as stage-unknown, which is a population average rather than a read on this company.",
-              "range_points": 42
-            },
-            {
-              "input": "industry/sector",
-              "consequence": "The second-largest input. Absent, the model cannot place the company against its own sector's base rate.",
-              "range_points": 24
-            }
-          ],
-          "degraded_inputs": true,
-          "evidence_fusion": {
-            "delta": -0.1386,
-            "terms": {
-              "low_risk": 0.0342,
-              "risk_severity": -0.0379,
-              "refuted_claims": -0.075,
-              "claims_supported": 0.0,
-              "claims_unresolved": -0.06,
-              "deck_risk_signals": 0.0,
-              "financials_disclosed": 0.0,
-              "specialist_grounding": 0.0
-            },
-            "bounds": {
-              "max_negative": -0.6,
-              "max_positive": 0.2
-            },
-            "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function.",
-            "clamped": false,
-            "features": {
-              "n_claims": 4,
-              "risk_severity": 0.3154,
-              "refuted_fraction": 0.25,
-              "deck_signal_count": 0,
-              "supported_fraction": 0.0,
-              "financial_disclosure": 0.0,
-              "specialist_grounding": null,
-              "unsupported_fraction": 0.75
-            },
-            "delta_points": -13.9,
-            "model_probability": 0.5056,
-            "adjusted_probability": 0.367
-          },
-          "evidence_penalty": 0.1386,
-          "feature_coverage": 0.625,
-          "imputed_features": [
-            "has_former_name",
-            "industry",
-            "is_any_remote",
-            "is_bay_area",
-            "is_fully_remote",
-            "is_partly_remote",
-            "is_us",
-            "nonprofit",
-            "stage"
-          ],
-          "model_only_score": 51,
-          "lift_over_base_rate": 0.0164,
-          "probability_exit_or_survive": 0.367
-        },
-        "evidence_fusion": {
-          "delta": -0.1386,
-          "terms": {
-            "low_risk": 0.0342,
-            "risk_severity": -0.0379,
-            "refuted_claims": -0.075,
-            "claims_supported": 0.0,
-            "claims_unresolved": -0.06,
-            "deck_risk_signals": 0.0,
-            "financials_disclosed": 0.0,
-            "specialist_grounding": 0.0
-          },
-          "bounds": {
-            "max_negative": -0.6,
-            "max_positive": 0.2
-          },
-          "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function.",
-          "clamped": false,
-          "features": {
-            "n_claims": 4,
-            "risk_severity": 0.3154,
-            "refuted_fraction": 0.25,
-            "deck_signal_count": 0,
-            "supported_fraction": 0.0,
-            "financial_disclosure": 0.0,
-            "specialist_grounding": null,
-            "unsupported_fraction": 0.75
-          },
-          "delta_points": -13.9,
-          "model_probability": 0.5056,
-          "adjusted_probability": 0.367
-        },
-        "financial_state": {
-          "arr": null,
-          "mrr": null,
-          "revenue": null,
-          "evidence": {},
-          "cash_on_hand": null,
-          "monthly_burn": null,
-          "burn_multiple": null,
-          "runway_months": null,
-          "runway_source": null,
-          "annual_revenue": null,
-          "growth_multiple": null,
-          "largest_customer_share": null
-        },
-        "technical_score": {
-          "reason": "No GitHub URL was provided.",
-          "available": false
-        },
-        "ml_outcome_model": {
-          "band": "unfavorable",
-          "caveat": "Weak proxy label, YC-only distribution, not validated outside this population. One input signal, not an investment verdict. team_size and age_years are excluded as hindsight features, which costs 0.058 ROC-AUC and is the reason this number is lower than the 0.70 reported before 23 Aug 2026.",
-          "available": true,
-          "trained_on": "1,560 Y Combinator companies (yc-oss/api), 3.5+ years post-launch, label = Acquired/Public vs. Inactive, Active/unresolved excluded",
-          "model_test_auc": 0.646,
-          "excluded_hindsight_features": [
-            "team_size",
-            "age_years"
-          ],
-          "probability_survives_or_exits": 0.123
-        },
-        "founder_discovery": {
-          "found": false,
-          "reason": "Founder research could not be completed: the daily Groq token quota is exhausted. 13 public source(s) were retrieved but never read, so nothing was established either way. This is a fact about this deployment, not about the company.",
-          "degraded": true,
-          "searched": true,
-          "attempted": true,
-          "sources_consulted": [
-            "https://en.wikipedia.org/wiki/Airbnb",
-            "https://en.wikipedia.org/wiki/List_of_Saturday_Night_Live_commercial_parodies",
-            "https://en.wikipedia.org/wiki/List_of_The_Weekly_with_Charlie_Pickering_episodes",
-            "https://en.wikipedia.org/wiki/Founders_Fund",
-            "https://en.wikipedia.org/wiki/Nathan_Blecharczyk",
-            "https://en.wikipedia.org/wiki/Brian_Chesky",
-            "https://en.wikipedia.org/wiki/Joe_Gebbia",
-            "https://en.wikipedia.org/wiki/Inside_Airbnb",
-            "https://en.wikipedia.org/wiki/LoveFrom",
-            "https://en.wikipedia.org/wiki/Sophie_Rain",
-            "https://en.wikipedia.org/wiki/Founder_mode",
-            "https://en.wikipedia.org/wiki/Brian_Armstrong_(businessman)",
-            "https://en.wikipedia.org/wiki/Adam_Neumann"
-          ]
-        },
-        "market_comparables": {
-          "caveat": "TWO POPULATIONS, SHOWN SEPARATELY. These are the nearest matches among 5,603 companies with a publicly recorded outcome: 5,133 Y Combinator alumni and 470 technology companies from public reference data that did not go through an accelerator. Places are reserved for each population rather than pooled, because the text embedder was fitted on YC's own writing and a pooled ranking returned 24 of 25 rows from YC for reasons of writing style rather than business similarity.\n\nDO NOT COMPARE THE TWO SIMILARITY COLUMNS. For the same reason, a 0.62 against a market-wide company is not weaker evidence than a 0.68 against a YC company; they are not on one scale.\n\nSIMILARITY IS LEXICAL, NOT SEMANTIC. Measured on this corpus, \"a commercial laundry servicing hotels\" scores 0.78 against its nearest match and \"an AI developer tools platform\" scores 0.84 -- so a high number does NOT establish that two businesses are alike. Read the company names and judge for yourself; treat these as leads to look into, not as validated comparables or valuation guidance.\n\nWHAT THE OUTCOME COLUMN MEANS. 'Still operating' is a real outcome and the most common one -- 70% of the Y Combinator population. 'Outsized outcome' is Y Combinator's own flag for its top companies, an editorial judgement rather than a financial figure; there is no free source of exit values, so an 'Exit' covers everything from an acquihire to a large sale.\n\nWHAT IS STILL MISSING. The market-wide corpus covers companies notable enough for an encyclopedia entry, so startups that failed quietly and early are under-represented in it. Neither population is a market census.",
-          "available": true,
-          "threshold": 0.5,
-          "population": {
-            "yc": {
-              "n": 5133,
-              "url": "https://github.com/yc-oss/api",
-              "note": "Accelerator-backed, mostly US, mostly 2012 onwards. Includes companies still operating with no exit, which are 70% of the population and were previously absent from this table.",
-              "label": "Y Combinator alumni",
-              "source": "yc-oss/api",
-              "best_similarity": 0.595,
-              "matches_above_floor": 5
-            },
-            "market": {
-              "n": 470,
-              "url": "https://www.wikidata.org/",
-              "note": "Technology companies founded 1990-2020 with an outcome recorded in public reference data. Covers companies notable enough for an encyclopedia entry, so quiet early failures are under-represented.",
-              "label": "Market-wide (non-accelerator)",
-              "source": "Wikidata (CC0) + English Wikipedia (CC BY-SA)",
-              "best_similarity": 0.527,
-              "matches_above_floor": 2
-            }
-          },
-          "comparables": [
-            {
-              "name": "Zenter",
-              "batch": "Winter 2007",
-              "stage": "Early",
-              "outcome": "Exit",
-              "industry": "B2B",
-              "population": "yc",
-              "similarity": 0.595,
-              "source_url": "https://www.ycombinator.com/companies/zenter",
-              "outcome_key": "exit",
-              "founded_year": 2007,
-              "outcome_tier": 2,
-              "outcome_basis": "",
-              "population_label": "Y Combinator alumni"
-            },
-            {
-              "name": "Omoi (formerly Azuki)",
-              "batch": "Winter 2022",
-              "stage": "Early",
-              "outcome": "Still operating",
-              "industry": "Consumer",
-              "population": "yc",
-              "similarity": 0.545,
-              "source_url": "https://www.ycombinator.com/companies/azuki",
-              "outcome_key": "operating",
-              "founded_year": 2022,
-              "outcome_tier": 1,
-              "outcome_basis": "",
-              "population_label": "Y Combinator alumni"
-            },
-            {
-              "name": "Entry",
-              "batch": "Winter 2017",
-              "stage": "Early",
-              "outcome": "Shut down",
-              "industry": "B2B",
-              "population": "yc",
-              "similarity": 0.538,
-              "source_url": "https://www.ycombinator.com/companies/entry",
-              "outcome_key": "shut_down",
-              "founded_year": 2017,
-              "outcome_tier": 0,
-              "outcome_basis": "",
-              "population_label": "Y Combinator alumni"
-            },
-            {
-              "name": "BowieNet",
-              "batch": "",
-              "stage": "",
-              "outcome": "Shut down",
-              "industry": "",
-              "population": "market",
-              "similarity": 0.527,
-              "source_url": "https://www.wikidata.org/wiki/Q116634775",
-              "outcome_key": "shut_down",
-              "founded_year": 1998,
-              "outcome_tier": 0,
-              "outcome_basis": "dissolved (P576), never listed and never acquired",
-              "population_label": "Market-wide (non-accelerator)"
-            },
-            {
-              "name": "OzEmail",
-              "batch": "",
-              "stage": "",
-              "outcome": "Shut down",
-              "industry": "",
-              "population": "market",
-              "similarity": 0.504,
-              "source_url": "https://www.wikidata.org/wiki/Q7116401",
-              "outcome_key": "shut_down",
-              "founded_year": 1992,
-              "outcome_tier": 0,
-              "outcome_basis": "dissolved (P576), never listed and never acquired",
-              "population_label": "Market-wide (non-accelerator)"
-            }
-          ],
-          "by_population": {
-            "yc": [
-              {
-                "name": "Zenter",
-                "batch": "Winter 2007",
-                "stage": "Early",
-                "outcome": "Exit",
-                "industry": "B2B",
-                "population": "yc",
-                "similarity": 0.595,
-                "source_url": "https://www.ycombinator.com/companies/zenter",
-                "outcome_key": "exit",
-                "founded_year": 2007,
-                "outcome_tier": 2,
-                "outcome_basis": "",
-                "population_label": "Y Combinator alumni"
-              },
-              {
-                "name": "Omoi (formerly Azuki)",
-                "batch": "Winter 2022",
-                "stage": "Early",
-                "outcome": "Still operating",
-                "industry": "Consumer",
-                "population": "yc",
-                "similarity": 0.545,
-                "source_url": "https://www.ycombinator.com/companies/azuki",
-                "outcome_key": "operating",
-                "founded_year": 2022,
-                "outcome_tier": 1,
-                "outcome_basis": "",
-                "population_label": "Y Combinator alumni"
-              }
-            ],
-            "market": [
-              {
-                "name": "BowieNet",
-                "batch": "",
-                "stage": "",
-                "outcome": "Shut down",
-                "industry": "",
-                "population": "market",
-                "similarity": 0.527,
-                "source_url": "https://www.wikidata.org/wiki/Q116634775",
-                "outcome_key": "shut_down",
-                "founded_year": 1998,
-                "outcome_tier": 0,
-                "outcome_basis": "dissolved (P576), never listed and never acquired",
-                "population_label": "Market-wide (non-accelerator)"
-              },
-              {
-                "name": "OzEmail",
-                "batch": "",
-                "stage": "",
-                "outcome": "Shut down",
-                "industry": "",
-                "population": "market",
-                "similarity": 0.504,
-                "source_url": "https://www.wikidata.org/wiki/Q7116401",
-                "outcome_key": "shut_down",
-                "founded_year": 1992,
-                "outcome_tier": 0,
-                "outcome_basis": "dissolved (P576), never listed and never acquired",
-                "population_label": "Market-wide (non-accelerator)"
-              }
-            ]
-          },
-          "outcome_rates": {
-            "n": 5133,
-            "note": "Across 5,133 Y Combinator technology companies, 70% are still operating with no exit, 15% exited, and 1.5% became one of YC's top companies. The score model's 49% base rate is a different figure: it is the share of exits among companies that had already exited or shut down, and excludes everything still operating.",
-            "rates": {
-              "exit": 0.1309,
-              "outsized": 0.0146,
-              "operating": 0.7002,
-              "shut_down": 0.1543
-            },
-            "counts": {
-              "exit": 672,
-              "outsized": 75,
-              "operating": 3594,
-              "shut_down": 792
-            },
-            "exit_rate": 0.1455,
-            "population": "Y Combinator technology companies",
-            "outsized_rate": 0.0146
-          },
-          "no_close_matches": false,
-          "population_total": 5603
-        },
-        "evidence_components": {
-          "no_revenue": 0.05,
-          "data_quality": -0.05,
-          "risk_signals": 0.024,
-          "claim_sparsity": 0.0,
-          "refuted_claims": 0.1,
-          "claims_unsupported": 0.1,
-          "specialist_uncertainty": 0.0
-        },
-        "extraction_coverage": {
-          "slides": [
-            {
-              "note": "",
-              "slide": 1,
-              "heading": "Welcome 1",
-              "represented": true,
-              "mapped_lines": 1,
-              "content_lines": 7
-            },
-            {
-              "note": "",
-              "slide": 2,
-              "heading": "Problem",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 8
-            },
-            {
-              "note": "",
-              "slide": 3,
-              "heading": "Solution",
-              "represented": true,
-              "mapped_lines": 2,
-              "content_lines": 10
-            },
-            {
-              "note": "",
-              "slide": 4,
-              "heading": "Market Validation",
-              "represented": true,
-              "mapped_lines": 6,
-              "content_lines": 8
-            },
-            {
-              "note": "",
-              "slide": 5,
-              "heading": "Market Size",
-              "represented": true,
-              "mapped_lines": 8,
-              "content_lines": 11
-            },
-            {
-              "note": "",
-              "slide": 6,
-              "heading": "Product",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 5
-            },
-            {
-              "note": "",
-              "slide": 7,
-              "heading": "Business Model",
-              "represented": true,
-              "mapped_lines": 6,
-              "content_lines": 10
-            },
-            {
-              "note": "",
-              "slide": 8,
-              "heading": "Market Adoption",
-              "represented": true,
-              "mapped_lines": 7,
-              "content_lines": 17
-            },
-            {
-              "note": "",
-              "slide": 9,
-              "heading": "Competition 9",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 5
-            },
-            {
-              "note": "",
-              "slide": 10,
-              "heading": "Competitive Advantages",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 22
-            },
-            {
-              "note": "",
-              "slide": 11,
-              "heading": "Download a PPT version of this",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 4
-            }
-          ],
-          "verdict": "PARTIAL",
-          "available": true,
-          "thin_text": false,
-          "coverage_pct": 54.5,
-          "mapped_chars": 525,
-          "mapped_lines": 30,
-          "content_chars": 2349,
-          "content_lines": 107,
-          "content_slides": 11,
-          "interpretation": "Some slides contributed nothing to the structured output. Read the findings below as possibly incomplete, and check the unrepresented slides before concluding the deck is thin.",
-          "image_only_slides": 0,
-          "line_coverage_pct": 22.3,
-          "unmapped_examples": [
-            "consectetur adipiscing elit. consectetur adipiscing elit.",
-            "consectetur adipiscing elit. consectetur adipiscing elit.",
-            "Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet,",
-            "Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet,",
-            "Integer nec odio. Praesent Integer nec odio. Praesent",
-            "Integer nec odio. Praesent Integer nec odio. Praesent",
-            "target events monthly cheap/alterna1ve travel",
-            "Book rooms with locals, rather than hotels."
-          ],
-          "represented_slides": 6,
-          "unrepresented_slides": [
-            {
-              "slide": 2,
-              "heading": "Problem"
-            },
-            {
-              "slide": 6,
-              "heading": "Product"
-            },
-            {
-              "slide": 9,
-              "heading": "Competition 9"
-            },
-            {
-              "slide": 10,
-              "heading": "Competitive Advantages"
-            },
-            {
-              "slide": 11,
-              "heading": "Download a PPT version of this"
-            }
-          ]
-        },
-        "founder_verification": [],
-        "personalized_ranking": {
-          "reason": "Not enough recorded decisions yet to personalize.",
-          "available": false,
-          "decisions_needed": 15,
-          "decisions_so_far": 0
-        },
-        "extraction_provenance": {
-          "method": "llm_schema",
-          "is_fallback": false,
-          "fallback_reason": ""
-        },
-        "financials_backfilled_from_deck": []
-      },
-      "data_quality": {
-        "label": "Input Completeness",
-        "score": 85,
-        "quality": "HIGH",
-        "measures": "Whether the analysis inputs were present: description length, how many claims were supplied, and whether revenue was given. This is NOT a measure of how much of the deck was successfully parsed -- see Extraction Coverage for that.",
-        "warnings": [
-          "No revenue data provided \u2014 financial analysis will be limited"
-        ],
-        "can_proceed": true,
-        "extraction_verdict": "PARTIAL",
-        "extraction_coverage_pct": 54.5
-      },
-      "similar_companies": [],
-      "incomplete_analysis": false,
-      "score_source": "venturescore_model",
-      "claims_unverified": false,
-      "claims_verification_degraded": false,
-      "provider_degraded": true,
-      "degraded_components": [
-        {
-          "reason": "provider error (DailyQuotaExhausted)",
-          "component": "market"
-        },
-        {
-          "reason": "provider error (DailyQuotaExhausted)",
-          "component": "bull_case"
-        },
-        {
-          "reason": "provider error (DailyQuotaExhausted)",
-          "component": "bear_case"
-        },
-        {
-          "reason": "provider error (DailyQuotaExhausted)",
-          "component": "team"
-        },
-        {
-          "reason": "claim verification raised",
-          "component": "claim_verification"
-        }
-      ],
-      "evidence_search_degraded": false,
-      "evidence_search_note": "",
-      "report_id": "149",
-      "session_id": "8666d060-8ab6-425d-8799-da6a1870b322"
-    },
-    "reread_status": 200,
-    "reread_checks": [
-      {
-        "check": "final_score",
-        "state": "PRESENT",
-        "detail": "37.0 (source: venturescore_model)"
-      },
-      {
-        "check": "venturescore_model_ran",
-        "state": "PRESENT",
-        "detail": "available=True reason='' score=37 coverage=0.625"
-      },
-      {
-        "check": "claims_checked",
-        "state": "PRESENT",
-        "detail": "checked=5 supported=0 refuted=1 uncertain=4"
-      },
-      {
-        "check": "claim_verification_not_degraded",
-        "state": "PRESENT",
-        "detail": "claims_verification_degraded=False"
-      },
-      {
-        "check": "bull_case",
-        "state": "BROKEN",
-        "detail": "0 signal(s), confidence=0, thesis='Insufficient evidence for a bull case'"
-      },
-      {
-        "check": "bear_case",
-        "state": "BROKEN",
-        "detail": "0 signal(s), confidence=0, thesis='Insufficient evidence for a complete bear case'"
-      },
-      {
-        "check": "founders_found",
-        "state": "EMPTY",
-        "detail": "0: []"
-      },
-      {
-        "check": "founder_search_ran",
-        "state": "PRESENT",
-        "detail": "searched=True attempted=True degraded=True sources=13 reason='Founder research could not be completed: the daily Groq token quota is exhausted. 13 public source(s) were ret'"
-      },
-      {
-        "check": "risk_signals",
-        "state": "PRESENT",
-        "detail": "total=2 concerns=0 red_flags=0"
-      },
-      {
-        "check": "investment_memo",
-        "state": "PRESENT",
-        "detail": "1742 chars"
-      },
-      {
-        "check": "extraction_provenance",
-        "state": "PRESENT",
-        "detail": "method='llm_schema' fallback=''"
-      },
-      {
-        "check": "extraction_coverage",
-        "state": "PRESENT",
-        "detail": "[{\"note\": \"\", \"slide\": 1, \"heading\": \"Welcome 1\", \"represented\": true, \"mapped_lines\": 1, \"content_lines\": 7}, {\"note\": "
-      },
-      {
-        "check": "comparables",
-        "state": "EMPTY",
-        "detail": "0: []"
-      },
-      {
-        "check": "no_provider_outage",
-        "state": "BROKEN",
-        "detail": "provider_degraded=True components=[{'reason': 'provider error (DailyQuotaExhausted)', 'component': 'market'}, {'reason': 'provider error (DailyQuotaExhausted)', 'component': 'bull_case'}, {'reason': 'provider error (DailyQuotaExhausted)', 'component': 'bear_case'}, {'reason': 'provider error (DailyQuotaExhausted)', 'component': 'team'}, {'reason': 'claim verification raised', 'component': 'claim_verification'}]"
-      },
-      {
-        "check": "evidence_search_degraded",
-        "state": "PRESENT",
-        "detail": "False "
-      }
-    ]
-  },
-  {
-    "deck": "Buffer",
-    "file": "Buffer.pdf",
-    "upload_status": 200,
-    "upload": {
-      "company_description_chars": 1199,
-      "extracted_chars": 2012,
-      "detected_claims": 12,
-      "detected_founders": [
-        "Joel Gascoigne",
-        "Leo Widrich",
-        "Hiten Shah"
-      ],
-      "deck_slides": 13,
-      "extraction_method": "regex_fallback",
-      "text_source": "text_layer",
-      "page_count": 13,
-      "stage": null,
-      "sector": null,
-      "revenue": 150000.0,
-      "burn_rate": null,
-      "scope_check": true
-    },
-    "analyze_status": 202,
-    "job_status": "complete",
-    "seconds": 105.7,
-    "company_as_analysed": "Buffer",
-    "checks": [
-      {
-        "check": "final_score",
-        "state": "PRESENT",
-        "detail": "53.0 (source: venturescore_model)"
-      },
-      {
-        "check": "venturescore_model_ran",
-        "state": "PRESENT",
-        "detail": "available=True reason='' score=53 coverage=0.625"
+        "detail": "available=True reason='' score=52 coverage=0.625"
       },
       {
         "check": "claims_checked",
@@ -1071,39 +54,44 @@
         "detail": "0 signal(s), confidence=0, thesis='Insufficient evidence for a complete bear case'"
       },
       {
-        "check": "founders_found",
+        "check": "founders_named",
         "state": "EMPTY",
-        "detail": "0: []"
+        "detail": "0 via research: []"
       },
       {
-        "check": "founder_search_ran",
-        "state": "EMPTY",
-        "detail": "searched=None attempted=False degraded=None sources=0 reason=''"
+        "check": "founder_route_explained",
+        "state": "PRESENT",
+        "detail": "discovery_attempted=True searched=True degraded=True reason='Founder research could not be completed: the language model could not be reached. 10 public source(s'"
       },
       {
         "check": "risk_signals",
         "state": "PRESENT",
-        "detail": "total=2 concerns=0 red_flags=0"
+        "detail": "total=3 concerns=0 red_flags=0"
       },
       {
         "check": "investment_memo",
         "state": "PRESENT",
-        "detail": "1659 chars"
+        "detail": "1793 chars"
       },
       {
         "check": "extraction_provenance",
         "state": "PRESENT",
-        "detail": "method='regex_fallback' fallback='provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 19 minute(s); retrying before then fails the same way.'"
+        "detail": "method='regex_fallback' fallback='provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 11 minute(s); retrying before then fails the same way.'"
       },
       {
         "check": "extraction_coverage",
         "state": "PRESENT",
-        "detail": "[{\"note\": \"no extractable text (image-only or decorative)\", \"slide\": 1, \"heading\": \"\", \"represented\": null, \"mapped_line"
+        "detail": "[{\"note\": \"\", \"slide\": 1, \"heading\": \"Next-Generation Car Service\", \"represented\": false, \"mapped_lines\": 0, \"content_li"
       },
       {
-        "check": "comparables",
+        "check": "market_comparables",
         "state": "PRESENT",
-        "detail": "1: ['06 buffer']"
+        "detail": "available=True n=5 ['CarDash', 'YourMechanic', 'RoboTire', 'World-Net']"
+      },
+      {
+        "check": "similar_companies_local",
+        "state": "EMPTY",
+        "detail": "0: [] (empty is correct on a clean database)"
       },
       {
         "check": "no_provider_outage",
@@ -1112,21 +100,21 @@
       },
       {
         "check": "evidence_search_degraded",
-        "state": "PRESENT",
-        "detail": "False "
+        "state": "EMPTY",
+        "detail": "True The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback "
       }
     ],
     "report": {
-      "company": "Buffer",
-      "final_score": 53.0,
+      "company": "Uber",
+      "final_score": 52.0,
       "recommendation": "NEEDS MORE DILIGENCE",
       "risk_level": "UNKNOWN",
-      "ai_analysis": "1. EXECUTIVE SUMMARY\nBuffer has been reviewed with HIGH input completeness (100/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed). Extraction coverage for this deck was 50.0% (PARTIAL). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 0\n- Uncertain: 5\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: $150,000\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Status (Consumer, Winter 2022, Y Combinator alumni) -- Still operating, similarity 0.78\n- Polly (Consumer, Summer 2017, Y Combinator alumni) -- Shut down, similarity 0.74\n- Rally (Consumer, Summer 2020, Y Combinator alumni) -- Still operating, similarity 0.71\n- Libero (Market-wide (non-accelerator)) -- Exit, similarity 0.54\n- Rediff (Market-wide (non-accelerator)) -- Exit, similarity 0.52\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+      "ai_analysis": "1. EXECUTIVE SUMMARY\nUber has been reviewed with HIGH input completeness (100/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed). Extraction coverage for this deck was 36.0% (LOW). Most of the deck's slides did not reach a structured field, so gaps below may be parsing failures rather than gaps in the deck. This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 0\n- Uncertain: 5\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: $1,000,000,000\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- CarDash (Consumer, Summer 2017, Y Combinator alumni) -- Exit, similarity 0.73\n- YourMechanic (Consumer, Winter 2012, Y Combinator alumni) -- Exit, similarity 0.69\n- RoboTire (Industrials, Winter 2020, Y Combinator alumni) -- Shut down, similarity 0.67\n- World-Net (Market-wide (non-accelerator)) -- Shut down, similarity 0.61\n- OzEmail (Market-wide (non-accelerator)) -- Shut down, similarity 0.59\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
       "claims_verified": 5,
       "claims_supported": 0,
       "claims_refuted": 0,
       "claims_uncertain": 5,
-      "risk_signals_found": 2,
+      "risk_signals_found": 3,
       "key_concerns": [],
       "red_flags": [],
       "positive_factors": [],
@@ -1139,21 +127,20 @@
           "deck_signals": [],
           "key_concerns": [],
           "overall_score": 30.0,
-          "total_signals": 2,
+          "total_signals": 3,
           "financial_state": {
-            "arr": 150000.0,
+            "arr": null,
             "mrr": null,
-            "revenue": 150000.0,
+            "revenue": 1000000000.0,
             "evidence": {
-              "arr": "\u2022 $150,000 annual revenue run rate",
-              "revenue": "\u2022 $150,000 annual revenue run rate"
+              "revenue": "\u2013 Becomes market leader, $1B+ in yearly revenue"
             },
             "cash_on_hand": null,
             "monthly_burn": null,
             "burn_multiple": null,
             "runway_months": null,
             "runway_source": null,
-            "annual_revenue": 150000.0,
+            "annual_revenue": 1000000000.0,
             "growth_multiple": null,
             "largest_customer_share": null
           },
@@ -1174,19 +161,14 @@
           },
           "positive_factors": [],
           "financial_metrics": {
-            "arr": {
-              "label": "annual revenue run",
-              "value": 150000.0,
-              "evidence": "\u2022 $150,000 annual revenue run rate"
-            },
             "revenue": {
               "label": "revenue",
-              "value": 150000.0,
-              "evidence": "\u2022 $150,000 annual revenue run rate"
+              "value": 1000000000.0,
+              "evidence": "\u2013 Becomes market leader, $1B+ in yearly revenue"
             }
           },
           "overall_risk_level": "UNKNOWN",
-          "disclosure_severity": 0.7127819215056961
+          "disclosure_severity": 0.7389598543282446
         },
         "team": {
           "gaps": [
@@ -1208,102 +190,13 @@
           "checked": 5,
           "details": [
             {
-              "claim": "5% churn equates to a LTV of $240 and allows us",
+              "claim": "Growing to a $3.5B industry by 2010",
               "sources": [
-                "https://www.growthverve.com/tools/ltv-calculator",
-                "https://churntools.com/blog/how-to-calculate-customer-lifetime-value",
-                "https://churnkey.co/tools/lifetime-value-calculator",
-                "https://churnkey.co/blog/ltv-calculator/",
-                "https://baremetrics.com/academy/lifetime-value-ltv"
-              ],
-              "verdict": "NOT_ENOUGH_INFO",
-              "_degraded": true,
-              "reasoning": "Claim verification did not run: the language model could not be reached. This is a fact about this deployment, not about the claim.",
-              "confidence": 0.0,
-              "key_evidence": "",
-              "total_sources": 15,
-              "dropped_sources": [],
-              "full_pages_read": 5,
-              "sources_dropped": 0,
-              "_degraded_reason": "claim verifier: the language model could not be reached",
-              "evidence_providers": {
-                "wikipedia": 10,
-                "duckduckgo": 5
-              }
-            },
-            {
-              "claim": "55,000 users, growing 40% per month",
-              "sources": [
-                "https://en.wikipedia.org/wiki/Transistor_count",
-                "https://en.wikipedia.org/wiki/West_Bank",
-                "https://en.wikipedia.org/wiki/Presidency_of_Lyndon_B._Johnson",
-                "https://en.wikipedia.org/wiki/History_of_personal_computers",
-                "https://en.wikipedia.org/wiki/Lockheed_U-2"
-              ],
-              "verdict": "NOT_ENOUGH_INFO",
-              "_degraded": true,
-              "reasoning": "Claim verification did not run: the language model could not be reached. This is a fact about this deployment, not about the claim.",
-              "confidence": 0.0,
-              "key_evidence": "",
-              "total_sources": 15,
-              "dropped_sources": [
-                {
-                  "url": "https://www.slideshare.net/slideshow/bufferpdf/255904001",
-                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-                },
-                {
-                  "url": "https://www.slideshare.net/slideshow/buffer-260903031/260903031",
-                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-                },
-                {
-                  "url": "https://www.scribd.com/doc/248969485/Buffer-Seed-Round-Deck",
-                  "reason": "circular: scribd.com republishes pitch decks, so this is the claim's own source"
-                },
-                {
-                  "url": "https://aifundingtracker.com/ai-startup-funding-news-today/",
-                  "reason": "off-topic (embedding similarity 0.053 < 0.120)"
-                }
-              ],
-              "full_pages_read": 5,
-              "sources_dropped": 4,
-              "_degraded_reason": "claim verifier: the language model could not be reached",
-              "evidence_providers": {
-                "wikipedia": 5,
-                "duckduckgo": 15
-              }
-            },
-            {
-              "claim": "1 million users ($3.6M revenue)",
-              "sources": [
-                "https://en.wikipedia.org/wiki/Floyd_Mayweather_Jr._vs._Manny_Pacquiao",
-                "https://en.wikipedia.org/wiki/Border_control",
-                "https://en.wikipedia.org/wiki/Itanium",
-                "https://getlatka.com/companies/buffer",
-                "https://www.startupnetworks.co.uk/files/file/26-buffer-scaling-social-media-management-with-a-high-growth-model/"
-              ],
-              "verdict": "NOT_ENOUGH_INFO",
-              "_degraded": true,
-              "reasoning": "Claim verification did not run: the language model could not be reached. This is a fact about this deployment, not about the claim.",
-              "confidence": 0.0,
-              "key_evidence": "",
-              "total_sources": 15,
-              "dropped_sources": [],
-              "full_pages_read": 5,
-              "sources_dropped": 0,
-              "_degraded_reason": "claim verifier: the language model could not be reached",
-              "evidence_providers": {
-                "wikipedia": 13,
-                "duckduckgo": 5
-              }
-            },
-            {
-              "claim": "At 1M users, our projected revenue is $3.6M",
-              "sources": [
-                "https://getlatka.com/companies/buffer",
-                "https://getalai.com/pitch-deck-examples/buffer",
-                "https://buffer.com/metrics",
-                "https://incfact.com/company/buffer-sanfrancisco-ca/",
-                "https://www.startupnetworks.co.uk/files/file/26-buffer-scaling-social-media-management-with-a-high-growth-model/"
+                "https://en.wikipedia.org/wiki/Waymo",
+                "https://en.wikipedia.org/wiki/Southern_Company",
+                "https://en.wikipedia.org/wiki/David_Sacks",
+                "https://en.wikipedia.org/wiki/Stryker_Corporation",
+                "https://en.wikipedia.org/wiki/Amazon_(company)"
               ],
               "verdict": "NOT_ENOUGH_INFO",
               "_degraded": true,
@@ -1313,29 +206,115 @@
               "total_sources": 12,
               "dropped_sources": [
                 {
-                  "url": "https://media.genppt.com/pitch-decks/buffer/buffer-pitch-deck-2011.pdf",
-                  "reason": "circular: media.genppt.com republishes pitch decks, so this is the claim's own source"
+                  "url": "https://en.wikipedia.org/wiki/PepsiCo",
+                  "reason": "off-topic (embedding similarity 0.101 < 0.120)"
                 },
                 {
-                  "url": "https://aifundingtracker.com/ai-startup-funding-news-today/",
-                  "reason": "off-topic (embedding similarity 0.051 < 0.120)"
+                  "url": "https://en.wikipedia.org/wiki/List_of_unicorn_startup_companies",
+                  "reason": "off-topic (embedding similarity 0.011 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Temasek_Holdings",
+                  "reason": "off-topic (embedding similarity 0.099 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Tomorrow.io",
+                  "reason": "off-topic (embedding similarity 0.081 < 0.120)"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 4,
+              "_degraded_reason": "claim verifier: the language model could not be reached",
+              "evidence_degraded": true,
+              "evidence_providers": {
+                "wikipedia": 20
+              },
+              "evidence_degraded_reason": "The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback providers only. On real deck claims the share of on-topic sources runs about 94% with that index and about 32% without it, so this is a weaker check, not a stronger finding."
+            },
+            {
+              "claim": "\u2013 Medallions cost ~$500k, drivers make 31k",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Deliveroo",
+                "https://en.wikipedia.org/wiki/Travis_Kalanick",
+                "https://en.wikipedia.org/wiki/Just_Eat",
+                "https://en.wikipedia.org/wiki/Uber",
+                "https://en.wikipedia.org/wiki/Ro_(company)"
+              ],
+              "verdict": "NOT_ENOUGH_INFO",
+              "_degraded": true,
+              "reasoning": "Claim verification did not run: the language model could not be reached. This is a fact about this deployment, not about the claim.",
+              "confidence": 0.0,
+              "key_evidence": "",
+              "total_sources": 7,
+              "dropped_sources": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Tomorrow.io",
+                  "reason": "off-topic (embedding similarity 0.056 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/List_of_unicorn_startup_companies",
+                  "reason": "off-topic (embedding similarity 0.069 < 0.120)"
                 }
               ],
               "full_pages_read": 5,
               "sources_dropped": 2,
               "_degraded_reason": "claim verifier: the language model could not be reached",
+              "evidence_degraded": true,
               "evidence_providers": {
-                "duckduckgo": 20
-              }
+                "wikipedia": 10
+              },
+              "evidence_degraded_reason": "The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback providers only. On real deck claims the share of on-topic sources runs about 94% with that index and about 32% without it, so this is a weaker check, not a stronger finding."
             },
             {
-              "claim": "$150,000 annual revenue run rate",
+              "claim": "Top 4 players combined only 22% of revenues",
               "sources": [
-                "https://www.funded.so/decks/buffer-buffer-seed-round-deck-c-zzn5",
-                "https://nen.wfglobal.org/highlights/buffer-pitch-deck-traction-metrics-629166",
-                "https://www.calcmastery.com/revenue-run-rate-calculator/",
-                "https://calculatorcorp.com/run-rate-calculator/",
-                "https://fastercapital.com/content/Annual-Revenue-Run-Rate--How-to-Calculate-and-Use-Annual-Revenue-Run-Rate-to-Forecast-Your-Future-Earnings.html"
+                "https://en.wikipedia.org/wiki/2020_AFL_season",
+                "https://en.wikipedia.org/wiki/Dirk_Nowitzki",
+                "https://en.wikipedia.org/wiki/Procter_&_Gamble",
+                "https://en.wikipedia.org/wiki/Paris_Saint-Germain_FC",
+                "https://en.wikipedia.org/wiki/Borussia_Dortmund"
+              ],
+              "verdict": "NOT_ENOUGH_INFO",
+              "_degraded": true,
+              "reasoning": "Claim verification did not run: the language model could not be reached. This is a fact about this deployment, not about the claim.",
+              "confidence": 0.0,
+              "key_evidence": "",
+              "total_sources": 13,
+              "dropped_sources": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Ligue_1",
+                  "reason": "off-topic (embedding similarity 0.027 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Aon_plc",
+                  "reason": "off-topic (embedding similarity 0.001 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Tomorrow.io",
+                  "reason": "off-topic (embedding similarity 0.073 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/List_of_unicorn_startup_companies",
+                  "reason": "off-topic (embedding similarity 0.074 < 0.120)"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 4,
+              "_degraded_reason": "claim verifier: the language model could not be reached",
+              "evidence_degraded": true,
+              "evidence_providers": {
+                "wikipedia": 20
+              },
+              "evidence_degraded_reason": "The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback providers only. On real deck claims the share of on-topic sources runs about 94% with that index and about 32% without it, so this is a weaker check, not a stronger finding."
+            },
+            {
+              "claim": "\u2013 Gets 5% of the top 5 US Cities",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Careem",
+                "https://en.wikipedia.org/wiki/Uber",
+                "https://en.wikipedia.org/wiki/DiDi",
+                "https://en.wikipedia.org/wiki/Uber_Eats",
+                "https://en.wikipedia.org/wiki/Appleton_International_Airport"
               ],
               "verdict": "NOT_ENOUGH_INFO",
               "_degraded": true,
@@ -1345,25 +324,56 @@
               "total_sources": 15,
               "dropped_sources": [
                 {
-                  "url": "https://startupfundraising.com/library/articles/buffer-round-pitch-deck-teardown",
-                  "reason": "circular: startupfundraising.com republishes pitch decks, so this is the claim's own source"
+                  "url": "https://en.wikipedia.org/wiki/Tomorrow.io",
+                  "reason": "off-topic (embedding similarity 0.082 < 0.120)"
                 },
                 {
-                  "url": "https://www.slideshare.net/slideshow/bufferpdf/255904001",
-                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
-                },
-                {
-                  "url": "https://www.pitchdeckinspo.com/deck/Buffer_d9872513-69b6-4438-87ab-02d2664c38a1/slides",
-                  "reason": "circular: pitchdeckinspo.com republishes pitch decks, so this is the claim's own source"
+                  "url": "https://en.wikipedia.org/wiki/List_of_unicorn_startup_companies",
+                  "reason": "off-topic (embedding similarity 0.084 < 0.120)"
                 }
               ],
-              "full_pages_read": 3,
-              "sources_dropped": 3,
+              "full_pages_read": 5,
+              "sources_dropped": 2,
               "_degraded_reason": "claim verifier: the language model could not be reached",
+              "evidence_degraded": true,
               "evidence_providers": {
-                "wikipedia": 5,
-                "duckduckgo": 15
-              }
+                "wikipedia": 30
+              },
+              "evidence_degraded_reason": "The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback providers only. On real deck claims the share of on-topic sources runs about 94% with that index and about 32% without it, so this is a weaker check, not a stronger finding."
+            },
+            {
+              "claim": "Car services transfers average over $60 + tax",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Bay_Area_Rapid_Transit",
+                "https://en.wikipedia.org/wiki/Massachusetts_Bay_Transportation_Authority",
+                "https://en.wikipedia.org/wiki/Toyota",
+                "https://en.wikipedia.org/wiki/Sharing_economy",
+                "https://en.wikipedia.org/wiki/Transportation_in_South_Florida"
+              ],
+              "verdict": "NOT_ENOUGH_INFO",
+              "_degraded": true,
+              "reasoning": "Claim verification did not run: the language model could not be reached. This is a fact about this deployment, not about the claim.",
+              "confidence": 0.0,
+              "key_evidence": "",
+              "total_sources": 15,
+              "dropped_sources": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Tomorrow.io",
+                  "reason": "off-topic (embedding similarity 0.061 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/List_of_unicorn_startup_companies",
+                  "reason": "off-topic (embedding similarity 0.075 < 0.120)"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 2,
+              "_degraded_reason": "claim verifier: the language model could not be reached",
+              "evidence_degraded": true,
+              "evidence_providers": {
+                "wikipedia": 20
+              },
+              "evidence_degraded_reason": "The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback providers only. On real deck claims the share of on-topic sources runs about 94% with that index and about 32% without it, so this is a weaker check, not a stronger finding."
             }
           ],
           "refuted": 0,
@@ -1408,7 +418,7 @@
             "Verify key commercial and product claims."
           ]
         },
-        "ai_analysis": "1. EXECUTIVE SUMMARY\nBuffer has been reviewed with HIGH input completeness (100/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed). Extraction coverage for this deck was 50.0% (PARTIAL). This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 0\n- Uncertain: 5\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: $150,000\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- Status (Consumer, Winter 2022, Y Combinator alumni) -- Still operating, similarity 0.78\n- Polly (Consumer, Summer 2017, Y Combinator alumni) -- Shut down, similarity 0.74\n- Rally (Consumer, Summer 2020, Y Combinator alumni) -- Still operating, similarity 0.71\n- Libero (Market-wide (non-accelerator)) -- Exit, similarity 0.54\n- Rediff (Market-wide (non-accelerator)) -- Exit, similarity 0.52\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
+        "ai_analysis": "1. EXECUTIVE SUMMARY\nUber has been reviewed with HIGH input completeness (100/100 -- a measure of whether the analysis inputs arrived, NOT of how much of the deck was parsed). Extraction coverage for this deck was 36.0% (LOW). Most of the deck's slides did not reach a structured field, so gaps below may be parsing failures rather than gaps in the deck. This memo should be treated as preliminary until unsupported claims and missing financials are verified.\n\n2. CLAIM VERIFICATION ANALYSIS\n- Claims checked: 5\n- Supported: 0\n- Refuted: 0\n- Uncertain: 5\n\n3. RISK ASSESSMENT\n- Overall risk level: UNKNOWN\n- Risk score: 30.0/100\n- Key concerns: Insufficient external evidence to identify specific concerns.\n\n4. FINANCIAL ANALYSIS\n- Annual revenue: $1,000,000,000\n- Monthly burn: Insufficient data\n- Runway: Insufficient data\n\n5. COMPARABLE COMPANIES\n- CarDash (Consumer, Summer 2017, Y Combinator alumni) -- Exit, similarity 0.73\n- YourMechanic (Consumer, Winter 2012, Y Combinator alumni) -- Exit, similarity 0.69\n- RoboTire (Industrials, Winter 2020, Y Combinator alumni) -- Shut down, similarity 0.67\n- World-Net (Market-wide (non-accelerator)) -- Shut down, similarity 0.61\n- OzEmail (Market-wide (non-accelerator)) -- Shut down, similarity 0.59\n\n6. RED FLAGS\n- None identified from available evidence.\n\n7. GREEN FLAGS / POSITIVE SIGNALS\n- No independently verified positive factors found.\n\n8. FINAL VERDICT\nNEEDS MORE DILIGENCE. The available evidence is not strong enough for an investment decision without follow-up validation.\n\n9. CONFIDENCE LEVEL\n75%. Confidence is constrained by input completeness, extraction coverage and the number of independently verified claims.\n\nSynthesis note: AI synthesis is temporarily unavailable. This preliminary memo uses the evidence collected so far.",
         "rag_context": {
           "reports_retrieved": 5
         },
@@ -1435,12 +445,12 @@
           "base_rate": 0.4892,
           "confidence": "medium",
           "score_range": [
-            44,
-            61
+            43,
+            60
           ],
           "ensemble_std": 0.0596,
           "degraded_note": "This score was computed without stage and industry/sector, which together account for up to 66 points of the model's range. The deck did not state them, and nothing was assumed in their place. Treat the number as correspondingly less specific to this company.",
-          "venture_score": 53,
+          "venture_score": 52,
           "missing_inputs": [
             {
               "input": "stage",
@@ -1455,10 +465,10 @@
           ],
           "degraded_inputs": true,
           "evidence_fusion": {
-            "delta": -0.0512,
+            "delta": -0.0556,
             "terms": {
-              "low_risk": 0.0144,
-              "risk_severity": -0.0855,
+              "low_risk": 0.0131,
+              "risk_severity": -0.0887,
               "refuted_claims": 0.0,
               "claims_supported": 0.0,
               "claims_unresolved": 0.0,
@@ -1474,7 +484,7 @@
             "clamped": false,
             "features": {
               "n_claims": 0,
-              "risk_severity": 0.7128,
+              "risk_severity": 0.739,
               "refuted_fraction": 0.0,
               "deck_signal_count": 0,
               "supported_fraction": 0.0,
@@ -1482,11 +492,11 @@
               "specialist_grounding": null,
               "unsupported_fraction": 0.0
             },
-            "delta_points": -5.1,
+            "delta_points": -5.6,
             "model_probability": 0.5773,
-            "adjusted_probability": 0.5261
+            "adjusted_probability": 0.5217
           },
-          "evidence_penalty": 0.0512,
+          "evidence_penalty": 0.0556,
           "feature_coverage": 0.625,
           "imputed_features": [
             "has_former_name",
@@ -1501,13 +511,13 @@
           ],
           "model_only_score": 58,
           "lift_over_base_rate": 0.0881,
-          "probability_exit_or_survive": 0.5261
+          "probability_exit_or_survive": 0.5217
         },
         "evidence_fusion": {
-          "delta": -0.0512,
+          "delta": -0.0556,
           "terms": {
-            "low_risk": 0.0144,
-            "risk_severity": -0.0855,
+            "low_risk": 0.0131,
+            "risk_severity": -0.0887,
             "refuted_claims": 0.0,
             "claims_supported": 0.0,
             "claims_unresolved": 0.0,
@@ -1523,7 +533,7 @@
           "clamped": false,
           "features": {
             "n_claims": 0,
-            "risk_severity": 0.7128,
+            "risk_severity": 0.739,
             "refuted_fraction": 0.0,
             "deck_signal_count": 0,
             "supported_fraction": 0.0,
@@ -1531,24 +541,23 @@
             "specialist_grounding": null,
             "unsupported_fraction": 0.0
           },
-          "delta_points": -5.1,
+          "delta_points": -5.6,
           "model_probability": 0.5773,
-          "adjusted_probability": 0.5261
+          "adjusted_probability": 0.5217
         },
         "financial_state": {
-          "arr": 150000.0,
+          "arr": null,
           "mrr": null,
-          "revenue": 150000.0,
+          "revenue": 1000000000.0,
           "evidence": {
-            "arr": "\u2022 $150,000 annual revenue run rate",
-            "revenue": "\u2022 $150,000 annual revenue run rate"
+            "revenue": "\u2013 Becomes market leader, $1B+ in yearly revenue"
           },
           "cash_on_hand": null,
           "monthly_burn": null,
           "burn_multiple": null,
           "runway_months": null,
           "runway_source": null,
-          "annual_revenue": 150000.0,
+          "annual_revenue": 1000000000.0,
           "growth_multiple": null,
           "largest_customer_share": null
         },
@@ -1566,21 +575,25 @@
             "team_size",
             "age_years"
           ],
-          "probability_survives_or_exits": 0.536
+          "probability_survives_or_exits": 0.48
         },
         "founder_discovery": {
-          "attempted": false
-        },
-        "portfolio_overlap": {
-          "flag": true,
-          "matches": [
-            {
-              "id": 80,
-              "name": "06 buffer",
-              "domain": null,
-              "sector": null,
-              "similarity": 0.7
-            }
+          "found": false,
+          "reason": "Founder research could not be completed: the language model could not be reached. 10 public source(s) were retrieved but never read, so nothing was established either way. This is a fact about this deployment, not about the company.",
+          "degraded": true,
+          "searched": true,
+          "attempted": true,
+          "sources_consulted": [
+            "https://en.wikipedia.org/wiki/Toyota",
+            "https://en.wikipedia.org/wiki/Ford_Motor_Company",
+            "https://en.wikipedia.org/wiki/Uber",
+            "https://en.wikipedia.org/wiki/Travis_Kalanick",
+            "https://en.wikipedia.org/wiki/Garrett_Camp",
+            "https://en.wikipedia.org/wiki/Uber_Eats",
+            "https://en.wikipedia.org/wiki/Controversies_surrounding_Uber",
+            "https://en.wikipedia.org/wiki/Deutschlandlied",
+            "https://en.wikipedia.org/wiki/Dara_Khosrowshahi",
+            "https://en.wikipedia.org/wiki/Lior_Ron_(business_executive)"
           ]
         },
         "market_comparables": {
@@ -1594,7 +607,7 @@
               "note": "Accelerator-backed, mostly US, mostly 2012 onwards. Includes companies still operating with no exit, which are 70% of the population and were previously absent from this table.",
               "label": "Y Combinator alumni",
               "source": "yc-oss/api",
-              "best_similarity": 0.784,
+              "best_similarity": 0.727,
               "matches_above_floor": 5
             },
             "market": {
@@ -1603,149 +616,149 @@
               "note": "Technology companies founded 1990-2020 with an outcome recorded in public reference data. Covers companies notable enough for an encyclopedia entry, so quiet early failures are under-represented.",
               "label": "Market-wide (non-accelerator)",
               "source": "Wikidata (CC0) + English Wikipedia (CC BY-SA)",
-              "best_similarity": 0.544,
-              "matches_above_floor": 3
+              "best_similarity": 0.615,
+              "matches_above_floor": 5
             }
           },
           "comparables": [
             {
-              "name": "Status",
-              "batch": "Winter 2022",
+              "name": "CarDash",
+              "batch": "Summer 2017",
               "stage": "Early",
-              "outcome": "Still operating",
+              "outcome": "Exit",
               "industry": "Consumer",
               "population": "yc",
-              "similarity": 0.784,
-              "source_url": "https://www.ycombinator.com/companies/status",
-              "outcome_key": "operating",
-              "founded_year": 2022,
-              "outcome_tier": 1,
+              "similarity": 0.727,
+              "source_url": "https://www.ycombinator.com/companies/cardash",
+              "outcome_key": "exit",
+              "founded_year": 2017,
+              "outcome_tier": 2,
               "outcome_basis": "",
               "population_label": "Y Combinator alumni"
             },
             {
-              "name": "Polly",
-              "batch": "Summer 2017",
-              "stage": "Early",
-              "outcome": "Shut down",
+              "name": "YourMechanic",
+              "batch": "Winter 2012",
+              "stage": "Growth",
+              "outcome": "Exit",
               "industry": "Consumer",
               "population": "yc",
-              "similarity": 0.737,
-              "source_url": "https://www.ycombinator.com/companies/polly",
+              "similarity": 0.694,
+              "source_url": "https://www.ycombinator.com/companies/yourmechanic",
+              "outcome_key": "exit",
+              "founded_year": 2012,
+              "outcome_tier": 2,
+              "outcome_basis": "",
+              "population_label": "Y Combinator alumni"
+            },
+            {
+              "name": "RoboTire",
+              "batch": "Winter 2020",
+              "stage": "Growth",
+              "outcome": "Shut down",
+              "industry": "Industrials",
+              "population": "yc",
+              "similarity": 0.666,
+              "source_url": "https://www.ycombinator.com/companies/robotire",
               "outcome_key": "shut_down",
-              "founded_year": 2017,
+              "founded_year": 2020,
               "outcome_tier": 0,
               "outcome_basis": "",
               "population_label": "Y Combinator alumni"
             },
             {
-              "name": "Rally",
-              "batch": "Summer 2020",
-              "stage": "Early",
-              "outcome": "Still operating",
-              "industry": "Consumer",
-              "population": "yc",
-              "similarity": 0.713,
-              "source_url": "https://www.ycombinator.com/companies/rally",
-              "outcome_key": "operating",
-              "founded_year": 2020,
-              "outcome_tier": 1,
-              "outcome_basis": "",
-              "population_label": "Y Combinator alumni"
-            },
-            {
-              "name": "Libero",
+              "name": "World-Net",
               "batch": "",
               "stage": "",
-              "outcome": "Exit",
+              "outcome": "Shut down",
               "industry": "",
               "population": "market",
-              "similarity": 0.544,
-              "source_url": "https://www.wikidata.org/wiki/Q3831673",
-              "outcome_key": "exit",
-              "founded_year": 2002,
-              "outcome_tier": 2,
-              "outcome_basis": "acquired in 2002, 0 years after founding",
+              "similarity": 0.615,
+              "source_url": "https://www.wikidata.org/wiki/Q3570034",
+              "outcome_key": "shut_down",
+              "founded_year": 1994,
+              "outcome_tier": 0,
+              "outcome_basis": "dissolved (P576), never listed and never acquired",
               "population_label": "Market-wide (non-accelerator)"
             },
             {
-              "name": "Rediff",
+              "name": "OzEmail",
               "batch": "",
               "stage": "",
-              "outcome": "Exit",
+              "outcome": "Shut down",
               "industry": "",
               "population": "market",
-              "similarity": 0.519,
-              "source_url": "https://www.wikidata.org/wiki/Q140676",
-              "outcome_key": "exit",
-              "founded_year": 1996,
-              "outcome_tier": 2,
-              "outcome_basis": "listed on a stock exchange (P414)",
+              "similarity": 0.588,
+              "source_url": "https://www.wikidata.org/wiki/Q7116401",
+              "outcome_key": "shut_down",
+              "founded_year": 1992,
+              "outcome_tier": 0,
+              "outcome_basis": "dissolved (P576), never listed and never acquired",
               "population_label": "Market-wide (non-accelerator)"
             }
           ],
           "by_population": {
             "yc": [
               {
-                "name": "Status",
-                "batch": "Winter 2022",
+                "name": "CarDash",
+                "batch": "Summer 2017",
                 "stage": "Early",
-                "outcome": "Still operating",
+                "outcome": "Exit",
                 "industry": "Consumer",
                 "population": "yc",
-                "similarity": 0.784,
-                "source_url": "https://www.ycombinator.com/companies/status",
-                "outcome_key": "operating",
-                "founded_year": 2022,
-                "outcome_tier": 1,
+                "similarity": 0.727,
+                "source_url": "https://www.ycombinator.com/companies/cardash",
+                "outcome_key": "exit",
+                "founded_year": 2017,
+                "outcome_tier": 2,
                 "outcome_basis": "",
                 "population_label": "Y Combinator alumni"
               },
               {
-                "name": "Polly",
-                "batch": "Summer 2017",
-                "stage": "Early",
-                "outcome": "Shut down",
+                "name": "YourMechanic",
+                "batch": "Winter 2012",
+                "stage": "Growth",
+                "outcome": "Exit",
                 "industry": "Consumer",
                 "population": "yc",
-                "similarity": 0.737,
-                "source_url": "https://www.ycombinator.com/companies/polly",
-                "outcome_key": "shut_down",
-                "founded_year": 2017,
-                "outcome_tier": 0,
+                "similarity": 0.694,
+                "source_url": "https://www.ycombinator.com/companies/yourmechanic",
+                "outcome_key": "exit",
+                "founded_year": 2012,
+                "outcome_tier": 2,
                 "outcome_basis": "",
                 "population_label": "Y Combinator alumni"
               }
             ],
             "market": [
               {
-                "name": "Libero",
+                "name": "World-Net",
                 "batch": "",
                 "stage": "",
-                "outcome": "Exit",
+                "outcome": "Shut down",
                 "industry": "",
                 "population": "market",
-                "similarity": 0.544,
-                "source_url": "https://www.wikidata.org/wiki/Q3831673",
-                "outcome_key": "exit",
-                "founded_year": 2002,
-                "outcome_tier": 2,
-                "outcome_basis": "acquired in 2002, 0 years after founding",
+                "similarity": 0.615,
+                "source_url": "https://www.wikidata.org/wiki/Q3570034",
+                "outcome_key": "shut_down",
+                "founded_year": 1994,
+                "outcome_tier": 0,
+                "outcome_basis": "dissolved (P576), never listed and never acquired",
                 "population_label": "Market-wide (non-accelerator)"
               },
               {
-                "name": "Rediff",
+                "name": "OzEmail",
                 "batch": "",
                 "stage": "",
-                "outcome": "Exit",
+                "outcome": "Shut down",
                 "industry": "",
                 "population": "market",
-                "similarity": 0.519,
-                "source_url": "https://www.wikidata.org/wiki/Q140676",
-                "outcome_key": "exit",
-                "founded_year": 1996,
-                "outcome_tier": 2,
-                "outcome_basis": "listed on a stock exchange (P414)",
+                "similarity": 0.588,
+                "source_url": "https://www.wikidata.org/wiki/Q7116401",
+                "outcome_key": "shut_down",
+                "founded_year": 1992,
+                "outcome_tier": 0,
+                "outcome_basis": "dissolved (P576), never listed and never acquired",
                 "population_label": "Market-wide (non-accelerator)"
               }
             ]
@@ -1784,210 +797,297 @@
         "extraction_coverage": {
           "slides": [
             {
-              "note": "no extractable text (image-only or decorative)",
+              "note": "",
               "slide": 1,
-              "heading": "",
-              "represented": null,
-              "mapped_lines": 0,
-              "content_lines": 0
-            },
-            {
-              "note": "",
-              "slide": 2,
-              "heading": "Social, the most",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 8
-            },
-            {
-              "note": "",
-              "slide": 3,
-              "heading": "How do you use social",
-              "represented": false,
-              "mapped_lines": 0,
-              "content_lines": 2
-            },
-            {
-              "note": "",
-              "slide": 4,
-              "heading": "Queue your updates",
+              "heading": "Next-Generation Car Service",
               "represented": false,
               "mapped_lines": 0,
               "content_lines": 1
             },
             {
               "note": "",
-              "slide": 5,
-              "heading": "Traction",
-              "represented": true,
-              "mapped_lines": 2,
-              "content_lines": 6
-            },
-            {
-              "note": "",
-              "slide": 6,
-              "heading": "Milestones",
-              "represented": true,
-              "mapped_lines": 2,
-              "content_lines": 13
-            },
-            {
-              "note": "",
-              "slide": 7,
-              "heading": "Business Model",
-              "represented": true,
-              "mapped_lines": 4,
-              "content_lines": 6
-            },
-            {
-              "note": "",
-              "slide": 8,
-              "heading": "Social Media",
-              "represented": true,
-              "mapped_lines": 2,
-              "content_lines": 8
-            },
-            {
-              "note": "",
-              "slide": 9,
-              "heading": "The effect of Buffering",
-              "represented": true,
-              "mapped_lines": 1,
-              "content_lines": 3
-            },
-            {
-              "note": "",
-              "slide": 10,
-              "heading": "A sharing standard",
+              "slide": 2,
+              "heading": "Cabs in 2008",
               "represented": false,
               "mapped_lines": 0,
               "content_lines": 7
             },
             {
               "note": "",
-              "slide": 11,
-              "heading": "Competitive",
+              "slide": 3,
+              "heading": "The Medallion System",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 6
+            },
+            {
+              "note": "",
+              "slide": 4,
+              "heading": "UberCab Concept",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 9
+            },
+            {
+              "note": "",
+              "slide": 5,
+              "heading": "1-Click Car Service",
               "represented": false,
               "mapped_lines": 0,
-              "content_lines": 11
+              "content_lines": 9
+            },
+            {
+              "note": "",
+              "slide": 6,
+              "heading": "Key Differentiators",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 8
+            },
+            {
+              "note": "",
+              "slide": 7,
+              "heading": "Operating Principles",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 8
+            },
+            {
+              "note": "",
+              "slide": 8,
+              "heading": "UberCab apps",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 3
+            },
+            {
+              "note": "",
+              "slide": 9,
+              "heading": "UberCab.com",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 6
+            },
+            {
+              "note": "",
+              "slide": 10,
+              "heading": "Use-Cases",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 8
+            },
+            {
+              "note": "",
+              "slide": 11,
+              "heading": "User Benefits",
+              "represented": true,
+              "mapped_lines": 2,
+              "content_lines": 7
             },
             {
               "note": "",
               "slide": 12,
-              "heading": "Team",
+              "heading": "Environmental Benefits",
               "represented": true,
-              "mapped_lines": 5,
-              "content_lines": 12
+              "mapped_lines": 2,
+              "content_lines": 10
             },
             {
               "note": "",
               "slide": 13,
-              "heading": "founders@bufferapp.com",
+              "heading": "UberCab Fleet",
+              "represented": true,
+              "mapped_lines": 2,
+              "content_lines": 5
+            },
+            {
+              "note": "",
+              "slide": 14,
+              "heading": "Initial Service Area",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 2
+            },
+            {
+              "note": "",
+              "slide": 15,
+              "heading": "Technology",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 6
+            },
+            {
+              "note": "",
+              "slide": 16,
+              "heading": "Demand Forecasting",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 4
+            },
+            {
+              "note": "",
+              "slide": 17,
+              "heading": "Overall Market",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 3
+            },
+            {
+              "note": "",
+              "slide": 18,
+              "heading": "Composition of Market",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 3
+            },
+            {
+              "note": "",
+              "slide": 19,
+              "heading": "Target Cities",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 4
+            },
+            {
+              "note": "",
+              "slide": 20,
+              "heading": "Potential Outcomes",
+              "represented": true,
+              "mapped_lines": 2,
+              "content_lines": 9
+            },
+            {
+              "note": "",
+              "slide": 21,
+              "heading": "SmartPhones, Aug2008",
               "represented": false,
               "mapped_lines": 0,
               "content_lines": 1
+            },
+            {
+              "note": "",
+              "slide": 22,
+              "heading": "Future Optimizations",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 7
+            },
+            {
+              "note": "",
+              "slide": 23,
+              "heading": "Marketing Ideas",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 7
+            },
+            {
+              "note": "",
+              "slide": 24,
+              "heading": "Location-Based Service",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 4
+            },
+            {
+              "note": "",
+              "slide": 25,
+              "heading": "Progress to Date",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 9
             }
           ],
-          "verdict": "PARTIAL",
+          "verdict": "LOW",
           "available": true,
           "thin_text": false,
-          "coverage_pct": 50.0,
-          "mapped_chars": 581,
-          "mapped_lines": 16,
-          "content_chars": 1935,
-          "content_lines": 78,
-          "content_slides": 12,
-          "interpretation": "Some slides contributed nothing to the structured output. Read the findings below as possibly incomplete, and check the unrepresented slides before concluding the deck is thin.",
-          "image_only_slides": 1,
-          "line_coverage_pct": 30.0,
+          "coverage_pct": 36.0,
+          "mapped_chars": 527,
+          "mapped_lines": 13,
+          "content_chars": 5179,
+          "content_lines": 146,
+          "content_slides": 25,
+          "interpretation": "WARNING: most of this deck's slides contributed nothing to the structured output. Treat any 'insufficient data' finding below as likely a parsing gap in this tool, NOT as evidence that the deck lacks content. The unrepresented slides are listed above.",
+          "image_only_slides": 0,
+          "line_coverage_pct": 10.2,
           "unmapped_examples": [
-            "\u201cit won\u2019t be long before Social Media Marketing will",
-            "\u2022 Traffic through social is soon to surpass traffic",
-            "\u2022 Publishers: Shareaholic, AddThis, yoono, Buffer",
-            "\u2022 Intelligent sharing: CrowdBooster, SocialFlow,",
-            "\u2022 Zuckerberg\u2019s Law shows exponential growth of",
-            "\u2022 Dashboards: Hootsuite, CoTweet, TweetDeck,",
-            "\u2022 Our differentiation: a platform approach",
-            "\u2022 Scheduling apps: SocialOomph, Twaitter,"
+            "\u2022 UberCab would be faster & cheaper than a limo, but",
+            "\u2013 In less dense cities, can be over half \u201cdead-time\u201d",
+            "\u2013 Reduce carbon footprint, better use of time in car",
+            "\u2013 minimize expected pickup time given hour of week &",
+            "\u2022 Digital Hail can now make street hail unnecessary",
+            "\u2022 Discounted rates for Sun-Tues multi-hour bookings",
+            "\u2013 As swarm size increases, efficiency will improve",
+            "\u2022 \u201cget here now\u201d costs more than \u201ctomorrow at 5pm\u201d"
           ],
-          "represented_slides": 6,
+          "represented_slides": 9,
           "unrepresented_slides": [
             {
+              "slide": 1,
+              "heading": "Next-Generation Car Service"
+            },
+            {
               "slide": 2,
-              "heading": "Social, the most"
+              "heading": "Cabs in 2008"
             },
             {
-              "slide": 3,
-              "heading": "How do you use social"
+              "slide": 5,
+              "heading": "1-Click Car Service"
             },
             {
-              "slide": 4,
-              "heading": "Queue your updates"
+              "slide": 6,
+              "heading": "Key Differentiators"
+            },
+            {
+              "slide": 7,
+              "heading": "Operating Principles"
+            },
+            {
+              "slide": 8,
+              "heading": "UberCab apps"
+            },
+            {
+              "slide": 9,
+              "heading": "UberCab.com"
             },
             {
               "slide": 10,
-              "heading": "A sharing standard"
+              "heading": "Use-Cases"
             },
             {
-              "slide": 11,
-              "heading": "Competitive"
+              "slide": 14,
+              "heading": "Initial Service Area"
             },
             {
-              "slide": 13,
-              "heading": "founders@bufferapp.com"
+              "slide": 15,
+              "heading": "Technology"
+            },
+            {
+              "slide": 16,
+              "heading": "Demand Forecasting"
+            },
+            {
+              "slide": 18,
+              "heading": "Composition of Market"
+            },
+            {
+              "slide": 21,
+              "heading": "SmartPhones, Aug2008"
+            },
+            {
+              "slide": 22,
+              "heading": "Future Optimizations"
+            },
+            {
+              "slide": 23,
+              "heading": "Marketing Ideas"
+            },
+            {
+              "slide": 25,
+              "heading": "Progress to Date"
             }
           ]
         },
-        "founder_verification": [
-          {
-            "name": "Joel Gascoigne",
-            "origin": "deck",
-            "sources": [
-              "https://www.linkedin.com/in/joelgascoigne",
-              "https://joel.is/",
-              "https://buffer.com/resources/author/joel/",
-              "https://biz.bio/founders/joel-gascoigne-and-buffer-building-an-enduring-company-without-chasing-hypergrowth/",
-              "https://businessofsoftware.org/2025/09/building-a-company-differently-the-buffer-story/"
-            ],
-            "available": true,
-            "assessment": "NOT_ENOUGH_INFO",
-            "confidence": 0.0,
-            "origin_label": "Named in the deck",
-            "evidence_summary": "Founder verification was temporarily unavailable."
-          },
-          {
-            "name": "Leo Widrich",
-            "origin": "deck",
-            "sources": [
-              "https://en.wikipedia.org/wiki/Buffer_(application)",
-              "https://en.wikipedia.org/wiki/Jay_Gould_(entrepreneur)",
-              "https://leowid.com/",
-              "https://buffer.com/resources/author/leo/",
-              "https://www.crunchbase.com/person/leo-widrich"
-            ],
-            "available": true,
-            "assessment": "NOT_ENOUGH_INFO",
-            "confidence": 0.0,
-            "origin_label": "Named in the deck",
-            "evidence_summary": "Founder verification was temporarily unavailable."
-          },
-          {
-            "name": "Hiten Shah",
-            "origin": "deck",
-            "sources": [
-              "https://www.linkedin.com/in/hnshah",
-              "https://in.linkedin.com/in/shah-hiten",
-              "https://in.linkedin.com/in/hiten-shahh",
-              "https://www.linkedin.com/in/hitennshah",
-              "https://getlatka.com/companies/buffer/contacts"
-            ],
-            "available": true,
-            "assessment": "NOT_ENOUGH_INFO",
-            "confidence": 0.0,
-            "origin_label": "Named in the deck",
-            "evidence_summary": "Founder verification was temporarily unavailable."
-          }
-        ],
+        "founder_verification": [],
         "personalized_ranking": {
           "reason": "Not enough recorded decisions yet to personalize.",
           "available": false,
@@ -1996,31 +1096,27 @@
         },
         "extraction_provenance": {
           "method": "regex_fallback",
-          "warning": "This report's facts were extracted by the REGEX FALLBACK, not the schema-validated LLM extractor. The fallback captures materially less of a deck and misses phrasing the schema path handles. Treat claim counts and coverage below as a floor, not a measurement of the deck. Reason: provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 19 minute(s); retrying before then fails the same way.",
+          "warning": "This report's facts were extracted by the REGEX FALLBACK, not the schema-validated LLM extractor. The fallback captures materially less of a deck and misses phrasing the schema path handles. Treat claim counts and coverage below as a floor, not a measurement of the deck. Reason: provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 11 minute(s); retrying before then fails the same way.",
           "is_fallback": true,
-          "fallback_reason": "provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 19 minute(s); retrying before then fails the same way."
+          "fallback_reason": "provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 11 minute(s); retrying before then fails the same way."
         },
-        "financials_backfilled_from_deck": []
+        "financials_backfilled_from_deck": [
+          "revenue"
+        ]
       },
       "data_quality": {
         "label": "Input Completeness",
         "score": 100,
         "quality": "HIGH",
         "measures": "Whether the analysis inputs were present: description length, how many claims were supplied, and whether revenue was given. This is NOT a measure of how much of the deck was successfully parsed -- see Extraction Coverage for that.",
-        "warnings": [],
+        "warnings": [
+          "Extraction coverage is 36.0% (9 of 25 content slides reached a structured field). Findings below may be incomplete because the deck was not fully parsed, not because the deck is thin."
+        ],
         "can_proceed": true,
-        "extraction_verdict": "PARTIAL",
-        "extraction_coverage_pct": 50.0
+        "extraction_verdict": "LOW",
+        "extraction_coverage_pct": 36.0
       },
-      "similar_companies": [
-        {
-          "id": 80,
-          "name": "06 buffer",
-          "domain": null,
-          "sector": null,
-          "similarity": 0.7
-        }
-      ],
+      "similar_companies": [],
       "incomplete_analysis": false,
       "score_source": "venturescore_model",
       "claims_unverified": false,
@@ -2052,22 +1148,22 @@
           "component": "risk_analysis"
         }
       ],
-      "evidence_search_degraded": false,
-      "evidence_search_note": "",
-      "report_id": "150",
-      "session_id": "bcd7d0fb-0618-4c91-af62-7a1b25063d40"
+      "evidence_search_degraded": true,
+      "evidence_search_note": "The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback providers only. On real deck claims the share of on-topic sources runs about 94% with that index and about 32% without it, so this is a weaker check, not a stronger finding.",
+      "report_id": "342",
+      "session_id": "3fd32b6a-aae5-4458-ad5e-a7e5aa5a4234"
     },
     "reread_status": 200,
     "reread_checks": [
       {
         "check": "final_score",
         "state": "PRESENT",
-        "detail": "53.0 (source: venturescore_model)"
+        "detail": "52.0 (source: venturescore_model)"
       },
       {
         "check": "venturescore_model_ran",
         "state": "PRESENT",
-        "detail": "available=True reason='' score=53 coverage=0.625"
+        "detail": "available=True reason='' score=52 coverage=0.625"
       },
       {
         "check": "claims_checked",
@@ -2090,39 +1186,44 @@
         "detail": "0 signal(s), confidence=0, thesis='Insufficient evidence for a complete bear case'"
       },
       {
-        "check": "founders_found",
+        "check": "founders_named",
         "state": "EMPTY",
-        "detail": "0: []"
+        "detail": "0 via research: []"
       },
       {
-        "check": "founder_search_ran",
-        "state": "EMPTY",
-        "detail": "searched=None attempted=False degraded=None sources=0 reason=''"
+        "check": "founder_route_explained",
+        "state": "PRESENT",
+        "detail": "discovery_attempted=True searched=True degraded=True reason='Founder research could not be completed: the language model could not be reached. 10 public source(s'"
       },
       {
         "check": "risk_signals",
         "state": "PRESENT",
-        "detail": "total=2 concerns=0 red_flags=0"
+        "detail": "total=3 concerns=0 red_flags=0"
       },
       {
         "check": "investment_memo",
         "state": "PRESENT",
-        "detail": "1659 chars"
+        "detail": "1793 chars"
       },
       {
         "check": "extraction_provenance",
         "state": "PRESENT",
-        "detail": "method='regex_fallback' fallback='provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 19 minute(s); retrying before then fails the same way.'"
+        "detail": "method='regex_fallback' fallback='provider call failed: DailyQuotaExhausted: Groq daily token quota (200,000/day) is exhausted. It resets in about 11 minute(s); retrying before then fails the same way.'"
       },
       {
         "check": "extraction_coverage",
         "state": "PRESENT",
-        "detail": "[{\"note\": \"no extractable text (image-only or decorative)\", \"slide\": 1, \"heading\": \"\", \"represented\": null, \"mapped_line"
+        "detail": "[{\"note\": \"\", \"slide\": 1, \"heading\": \"Next-Generation Car Service\", \"represented\": false, \"mapped_lines\": 0, \"content_li"
       },
       {
-        "check": "comparables",
+        "check": "market_comparables",
         "state": "PRESENT",
-        "detail": "1: ['06 buffer']"
+        "detail": "available=True n=5 ['CarDash', 'YourMechanic', 'RoboTire', 'World-Net']"
+      },
+      {
+        "check": "similar_companies_local",
+        "state": "EMPTY",
+        "detail": "0: [] (empty is correct on a clean database)"
       },
       {
         "check": "no_provider_outage",
@@ -2131,8 +1232,8 @@
       },
       {
         "check": "evidence_search_degraded",
-        "state": "PRESENT",
-        "detail": "False "
+        "state": "EMPTY",
+        "detail": "True The general web index (DuckDuckGo) was rate-limited, so this claim was checked against the fallback "
       }
     ]
   }
