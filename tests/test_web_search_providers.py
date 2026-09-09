@@ -85,12 +85,27 @@ class TestFailover:
         assert calls == ["alpha", "beta"]
         assert any("429" in e for e in outcome["errors"])
 
-    def test_an_empty_answer_is_an_answer_and_ends_the_chain(self, monkeypatch):
-        """A provider returning nothing has genuinely answered.
+    def test_an_empty_answer_is_confirmed_before_it_is_believed(self, monkeypatch):
+        """This test used to assert the opposite, and the reasoning it carried
+        was half right.
 
-        Falling through would turn "the web has nothing on this obscure
-        seed-stage company" into one redundant lookup per configured provider,
-        on every query, for the companies where that is the normal result.
+        It said a provider returning nothing has genuinely answered, and that
+        falling through would turn "the web has nothing on this obscure
+        seed-stage company" into a redundant lookup per provider. True of an
+        obscure company -- and false of everything else, because it assumed an
+        empty answer is always a real answer.
+
+        It is not. DuckDuckGo returns an empty result page when it
+        soft-throttles, byte-identical to the page it returns for a genuinely
+        unfindable query. On ml/eval/claim_benchmark.jsonl that cost two
+        outright errors: "IBM acquired Red Hat in 2019 for approximately $34
+        billion" and "WeWork successfully completed its initial IPO in 2019"
+        each retrieved zero sources and scored NOT_ENOUGH_INFO against gold
+        labels of SUPPORTS and REFUTES. Wikipedia answers both.
+
+        The cost the old reasoning was protecting against is preserved by
+        capping confirmations at two rather than trying the whole chain -- see
+        the test below, and EMPTY_CONFIRMATIONS in agents/web_search.py.
         """
         calls = stub_providers(
             monkeypatch,
@@ -99,10 +114,25 @@ class TestFailover:
         )
         outcome = web_search.search("anything")
 
-        assert outcome["provider"] == "alpha"
-        assert outcome["results"] == []
-        assert calls == ["alpha"]
+        assert outcome["provider"] == "beta"
+        assert outcome["results"] == _result("beta")
+        assert calls == ["alpha", "beta"]
         assert outcome["errors"] == []
+
+    def test_a_confirmed_empty_web_stops_after_two_providers(self, monkeypatch):
+        """The obscure-company case the old test was protecting: it must not
+        cost a lookup at every configured provider."""
+        calls = stub_providers(
+            monkeypatch,
+            ("alpha", []),
+            ("beta", []),
+            ("gamma", _result("gamma")),
+        )
+        outcome = web_search.search("Zarnathine Dynamics Series B")
+
+        assert outcome["results"] == []
+        assert calls == ["alpha", "beta"]
+        assert outcome["empty_confirmed_by"] == ["alpha", "beta"]
 
     def test_all_providers_failing_is_reported_not_hidden(self, monkeypatch):
         stub_providers(

@@ -12,7 +12,7 @@ import json
 
 from agents import risk_disclosure
 from agents.deck_financials import analyse as analyse_financials
-from groq_client import MODEL, get_client, pace_for
+from groq_client import note_provider_failure, MODEL, get_client, pace_for
 
 # ----------------------------
 # Risk keyword dictionary
@@ -205,6 +205,10 @@ Respond with ONLY valid JSON:
         return result
 
     except Exception as e:
+        # Tell the daily-quota breaker, so the remaining components in
+        # this run fail fast with an accurate reason instead of each
+        # spending six retries rediscovering the same exhausted quota.
+        note_provider_failure(e)
         print(f"  Groq risk error: {e}")
         return {
             "overall_risk_level": "UNKNOWN",

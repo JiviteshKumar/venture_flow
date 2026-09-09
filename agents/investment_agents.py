@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import observability
-from groq_client import MODEL, get_client, pace_for
+from groq_client import note_provider_failure, MODEL, get_client, pace_for
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +178,10 @@ EVIDENCE:
         return parsed if isinstance(parsed, dict) else _degraded(fallback, "response was not a JSON object")
     except Exception as exc:
         logger.exception("Specialist agent failed: %s", role)
+        # Tell the daily-quota breaker, so the remaining components in
+        # this run fail fast with an accurate reason instead of each
+        # spending six retries rediscovering the same exhausted quota.
+        note_provider_failure(exc)
         return _degraded({**fallback, "_component": role}, _describe_provider_failure(exc))
 
 

@@ -47,7 +47,7 @@ import os
 import re
 
 from agents.claim_verifier import fetch_page_text, search_web
-from groq_client import MODEL, get_client, pace_for
+from groq_client import note_provider_failure, MODEL, get_client, pace_for
 
 logger = logging.getLogger(__name__)
 
@@ -229,6 +229,20 @@ def _evidence_text(evidence: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
+class ProposalUnavailable(RuntimeError):
+    """The model that picks names out of the evidence could not run.
+
+    Distinct from "it ran and found nobody", and the distinction is the whole
+    point: both used to return an empty list, so a provider outage was reported
+    to the user as "Searched 14 public source(s) for the founders of Uber. No
+    founder name could be established from them."
+
+    Every clause of that was misleading. The sources included Garrett Camp's
+    own Wikipedia page; what failed was our call to the language model, not the
+    search and not the evidence.
+    """
+
+
 def _propose_names(company: str, evidence_block: str) -> list[str]:
     """Ask the model to pick founder names OUT OF the supplied evidence."""
     prompt = f"""Below are public web search results about the company "{company}".
@@ -280,10 +294,16 @@ Respond with ONLY valid JSON:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
         logger.warning("Founder-discovery returned unparseable JSON")
-        return []
-    except Exception:
+        raise ProposalUnavailable("the model's reply could not be parsed") from None
+    except Exception as exc:
         logger.warning("Founder-discovery model call failed", exc_info=True)
-        return []
+        note_provider_failure(exc)
+        detail = (
+            "the daily Groq token quota is exhausted"
+            if "tokens per day" in str(exc).lower() or "TPD" in str(exc)
+            else "the language model could not be reached"
+        )
+        raise ProposalUnavailable(detail) from exc
 
     names: list[str] = []
     for item in (parsed.get("founders") or [])[:MAX_FOUNDERS]:
@@ -461,7 +481,25 @@ def discover_founders(
         }
 
     consulted = [r.get("url", "") for r in evidence if r.get("url")]
-    proposed = _propose_names(company, _evidence_text(evidence))
+    try:
+        proposed = _propose_names(company, _evidence_text(evidence))
+    except ProposalUnavailable as exc:
+        # A fourth state, alongside "not attempted", "search failed" and
+        # "searched and found nothing": the search worked, the evidence is
+        # here, and the step that reads it did not run.
+        return {
+            "found": False,
+            "attempted": True,
+            "searched": True,
+            "degraded": True,
+            "sources_consulted": consulted,
+            "reason": (
+                f"Founder research could not be completed: {exc}. "
+                f"{len(consulted)} public source(s) were retrieved but never "
+                f"read, so nothing was established either way. This is a fact "
+                f"about this deployment, not about the company."
+            ),
+        }
 
     founders = []
     rejected = []

@@ -9,6 +9,7 @@ load_dotenv()
 
 import json
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -16,7 +17,7 @@ from bs4 import BeautifulSoup
 
 import observability
 from agents.evidence_filter import filter_sources
-from groq_client import MODEL, get_client, pace_for
+from groq_client import MODEL, get_client, note_provider_failure, pace_for
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,73 @@ def fetch_page_text(url: str, max_chars: int = 3000) -> str:
     except:
         return ""
 
+# Capitalised tokens that are never the subject of a claim. Without this the
+# extractor treats "March", "Series" and "Q3" as companies and spends a search
+# slot on each.
+_NOT_AN_ENTITY = {
+    "January", "February", "March", "April", "May", "June", "July", "August",
+    "September", "October", "November", "December",
+    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+    "Series", "Seed", "Round", "Pre", "Post", "The", "A", "An", "In", "It",
+    "This", "That", "They", "We", "Our", "Its", "Q1", "Q2", "Q3", "Q4",
+    "ARR", "MRR", "CAC", "LTV", "IPO", "CEO", "CTO", "COO", "CFO", "US", "USA",
+    "UK", "EU", "AI", "API", "SaaS", "B2B", "B2C",
+}
+
+_ENTITY = re.compile(r"\b([A-Z][A-Za-z0-9&.\-]*(?:\s+[A-Z][A-Za-z0-9&.\-]*){0,2})\b")
+
+
+def named_entities(claim: str) -> list:
+    """Distinct proper-noun-shaped mentions in a claim, in order of appearance.
+
+    Deliberately a regex and not a model. This runs on every claim, it must not
+    cost a language-model call, and a false positive is cheap: the worst an
+    invented entity does is spend one extra concurrent search whose results are
+    then dropped by the relevance gate. A false negative is what actually costs
+    accuracy, so the pattern errs towards over-matching.
+    """
+    text = claim or ""
+    seen, out = set(), []
+    for match in _ENTITY.finditer(text):
+        name = match.group(1).strip().rstrip(".").replace("'s", "").replace("’s", "")
+        if not name or name in _NOT_AN_ENTITY:
+            continue
+        # A multi-word match whose every word is a stopword is not an entity.
+        words = name.split()
+        if all(w in _NOT_AN_ENTITY for w in words):
+            continue
+        # Trim leading stopwords ("The Uber IPO" -> "Uber IPO").
+        while words and words[0] in _NOT_AN_ENTITY:
+            words = words[1:]
+        name = " ".join(words)
+
+        # "Series C" survives the stopword trim as the single letter "C", which
+        # retrieves nothing and costs a search slot. Nor is a bare number ever
+        # the subject of a claim.
+        if len(name) < 2 or name.replace(".", "").isdigit():
+            continue
+
+        # A single capitalised word at the very start of the claim is usually
+        # the sentence's first word rather than a name, and deck claims are
+        # written as fragments that begin with a verb -- "Partnered with Stripe
+        # and Plaid", "Launched in 2023", "Grew ARR 4x". Treating those as
+        # companies spent one of the two slots below on a search for
+        # "Partnered", which displaced the real second entity (Plaid).
+        #
+        # Dropping it costs nothing even when it IS the subject, because the
+        # whole-claim templates already anchor on whatever the claim leads
+        # with. What these extra queries are for is the entity mentioned
+        # second, which nothing else in the query set reaches.
+        if match.start() == 0 and len(words) == 1:
+            continue
+
+        key = name.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(name)
+    return out
+
+
 def build_queries(claim: str, company: str = "") -> list:
     """Search queries for one claim, scoped to the company when it is known.
 
@@ -117,12 +185,13 @@ def build_queries(claim: str, company: str = "") -> list:
     if not company:
         # Unscoped fallback: near the templates that measured 0.955 accuracy on
         # ml/eval/claim_benchmark.jsonl, minus the demonstrated noise generator.
-        return [
+        queries = [
             f'"{claim}"',
             f"fact check {claim}",
             f"{claim} evidence proof",
             f"{claim} false wrong debunked",
         ]
+        return queries + _secondary_entity_queries(claim, skip=[])
 
     return [
         f'"{company}" {claim}',
@@ -130,7 +199,43 @@ def build_queries(claim: str, company: str = "") -> list:
         f'"{claim}"',
         f'"{company}" funding revenue customers announcement',
         f"{company} startup company news",
-    ]
+    ] + _secondary_entity_queries(claim, skip=[company])
+
+
+def _secondary_entity_queries(claim: str, skip: list) -> list:
+    """One extra query per additional entity the claim talks about.
+
+    Every template above anchors on the claim as a whole, which retrieves
+    evidence about whichever entity the claim leads with. For a claim that
+    compares two of them, that is only ever half the evidence -- and the judge
+    is then correct, and useless, in saying so. Four of the six errors on
+    ml/eval/claim_benchmark.jsonl are exactly this shape:
+
+        "Lyft went public in March 2019, before Uber's initial public
+         offering."  -> every source was about Lyft; the judge said it could
+         not determine Uber's IPO date and returned NOT_ENOUGH_INFO against a
+         gold label of SUPPORTS.
+
+        "Lyft operates in more countries than Uber."  -> same, against REFUTES.
+
+    Anchoring a query on the trailing entity is the same move that fixed
+    company-scoped retrieval, applied to the entity the claim mentions second.
+
+    Capped at two, and they cost no language-model tokens: searches run
+    concurrently and the evidence handed to the judge is capped downstream at
+    fifteen snippets either way. The cost of being wrong here is latency, not
+    quota.
+    """
+    skipped = {str(x).strip().lower() for x in skip if x}
+    extra = []
+    for entity in named_entities(claim):
+        if entity.lower() in skipped:
+            continue
+        skipped.add(entity.lower())
+        if len(extra) >= 2:
+            break
+        extra.append(f'"{entity}" {claim}')
+    return extra
 
 def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
     """Gather web evidence for one claim.
@@ -154,11 +259,27 @@ def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
     all_snippets = []
     seen_urls    = set()
 
+    providers_used: dict = {}
+    general_web_unavailable = False
+
     with ThreadPoolExecutor(max_workers=min(5, len(queries))) as executor:
         # Results are collected in submission order, not completion order, so
         # the evidence a claim is judged on does not silently reorder run to
         # run purely because of network timing.
-        for results in executor.map(lambda q: search_web(q, max_results=5), queries):
+        for outcome in executor.map(
+            lambda q: search_web_with_provenance(q, max_results=5), queries
+        ):
+            answered = outcome.get("provider") or ""
+            results = outcome.get("results") or []
+            if answered and results:
+                providers_used[answered] = providers_used.get(answered, 0) + len(results)
+            # "The general web index was not reachable for this query" is the
+            # condition that changes what the evidence is worth, and it is
+            # invisible in the results themselves.
+            for attempt in outcome.get("attempts") or []:
+                if attempt.get("provider") == "duckduckgo" and \
+                        attempt.get("outcome") not in ("ok",):
+                    general_web_unavailable = True
             for r in results:
                 if r["url"] not in seen_urls:
                     seen_urls.add(r["url"])
@@ -206,6 +327,12 @@ def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
             for d in dropped
         ],
         "retrieved_before_filter": len(dropped) + len(all_snippets),
+        # Which index answered, and whether the general-web one was missing.
+        # A claim about a startup metric judged entirely on encyclopaedia
+        # articles is a materially weaker check than the same claim judged on
+        # the open web, and the two used to be indistinguishable downstream.
+        "providers": dict(providers_used),
+        "general_web_unavailable": general_web_unavailable,
     }
 
 def groq_judge(claim: str, evidence: dict, as_of: str = "") -> dict:
@@ -369,21 +496,34 @@ Respond with ONLY valid JSON, no other text:
 
     except Exception as exc:
         logger.exception("Groq claim-verification request failed")
+        # Tell the breaker. A daily-quota refusal means every remaining claim,
+        # specialist and the memo will fail the same way, and without this each
+        # of them spends six retries and up to 90 seconds finding that out.
+        note_provider_failure(exc)
         observability.track_degradation(
             "claim_verification_failed", component="claim_verifier",
             reason=f"{type(exc).__name__}: {exc}"[:200],
         )
+        # The reason a reader sees says WHICH failure it was. "Temporarily
+        # unavailable" is true of a network blip and of an exhausted daily
+        # quota, and only one of those is worth waiting out.
+        detail = (
+            "the daily Groq token quota is exhausted"
+            if "tokens per day" in str(exc).lower() or "TPD" in str(exc)
+            else "the language model could not be reached"
+        )
         return {
             "verdict":      "NOT_ENOUGH_INFO",
             "confidence":   0.0,
-            "reasoning":    "Claim verification is temporarily unavailable.",
+            "reasoning":    f"Claim verification did not run: {detail}. "
+                            f"This is a fact about this deployment, not about the claim.",
             "key_evidence": "",
             # Explicit marker, not prose. Downstream used to detect this by
             # string-comparing the reasoning text, which silently failed the
             # moment a second fallback site worded it "was" instead of "is" --
             # see the note in ventureflow_agent's degradation block.
             "_degraded":        True,
-            "_degraded_reason": "claim verifier provider call failed",
+            "_degraded_reason": f"claim verifier: {detail}",
         }
 
 def _evidence_text(evidence: dict) -> str:
@@ -449,7 +589,21 @@ def verify_claim(
             "full_pages_read": 0,
             "sources_dropped": len(evidence.get("dropped", [])),
             "dropped_sources": evidence.get("dropped", []),
+            "evidence_providers": evidence.get("providers", {}),
         }
+        # This early return is where provenance matters MOST and where it was
+        # missing: "no external evidence could be retrieved" reads as a fact
+        # about how little the world has written about this company, when the
+        # actual event may have been that the general web index was
+        # unreachable and only the fallback was asked.
+        if evidence.get("general_web_unavailable"):
+            empty["evidence_degraded"] = True
+            empty["evidence_degraded_reason"] = (
+                "No evidence was retrieved, but the general web index "
+                "(DuckDuckGo) was rate-limited during this search, so the open "
+                "web was never actually consulted for this claim. Absence of "
+                "evidence here is not evidence of absence."
+            )
         if include_evidence:
             empty["evidence_text"] = ""
         return empty
@@ -474,6 +628,40 @@ def verify_claim(
         "sources_dropped": len(evidence.get("dropped", [])),
         "dropped_sources": evidence.get("dropped", []),
     }
+
+    # Carry the provider-failure marker through.
+    #
+    # THIS DICT IS BUILT FIELD BY FIELD, and `_degraded` was not one of the
+    # fields, so the flag `groq_judge` sets on a provider failure died here --
+    # two lines after it was raised. Everything downstream that depends on it
+    # was therefore unreachable in production:
+    #
+    #   * ventureflow_agent's degraded-components block scans claim results for
+    #     `_degraded` and never found one, so `provider_degraded` stayed False
+    #     on reports whose every claim had failed to a 429.
+    #   * ml/evidence_fusion counted each of those NOT_ENOUGH_INFO verdicts as
+    #     an unresolved claim, which is what drives the evidence penalty.
+    #
+    # The visible result: with the Groq daily token quota exhausted, Uber's
+    # 2008 deck scored 35/100 -- a model prior of 50 minus a 15-point evidence
+    # penalty for claims that were never actually checked. The company was
+    # marked down for our outage, which is the precise failure the comment in
+    # ventureflow_agent describes and believed it had fixed.
+    for marker in ("_degraded", "_degraded_reason"):
+        if marker in judgment:
+            result[marker] = judgment[marker]
+
+    # Provenance of the evidence itself, distinct from the judgement above.
+    result["evidence_providers"] = evidence.get("providers", {})
+    if evidence.get("general_web_unavailable"):
+        result["evidence_degraded"] = True
+        result["evidence_degraded_reason"] = (
+            "The general web index (DuckDuckGo) was rate-limited, so this "
+            "claim was checked against the fallback providers only. On real "
+            "deck claims the share of on-topic sources runs about 94% with "
+            "that index and about 32% without it, so this is a weaker check, "
+            "not a stronger finding."
+        )
     if include_evidence:
         result["evidence_text"] = _evidence_text(evidence)
 

@@ -148,7 +148,32 @@ _PROVIDER_FAILURE_REASON = "Claim verification is temporarily unavailable."
 
 
 def _is_provider_failure(result: dict[str, Any]) -> bool:
-    return (result.get("reasoning") or "").strip() == _PROVIDER_FAILURE_REASON
+    """Did the verifier decline to judge, rather than judge?
+
+    Reads the structured flag first. This used to be an exact string comparison
+    against `_PROVIDER_FAILURE_REASON`, and that coupling broke silently the
+    moment the verifier's message improved: `verify_claim` now explains which
+    failure occurred ("Claim verification did not run: the daily Groq token
+    quota is exhausted."), which is not equal to the sentence this file was
+    comparing against, so every degraded result passed the guard as a genuine
+    prediction.
+
+    The consequence was the exact failure the guard was written to prevent. A
+    19-claim run made with an exhausted quota recorded all nineteen as
+    NOT_ENOUGH_INFO at confidence 0.0 and reported 0.0 accuracy on the
+    public-fact subset -- a number describing our token budget, published in a
+    results file as though it described the verifier.
+
+    The string check is kept as a fallback so partial logs written by older
+    runs are still recognised, but the flag is what this depends on now.
+    """
+    if result.get("_degraded"):
+        return True
+    reasoning = (result.get("reasoning") or "").strip()
+    if reasoning == _PROVIDER_FAILURE_REASON:
+        return True
+    # Older rows, and any path that sets the reason without the flag.
+    return reasoning.startswith("Claim verification did not run")
 
 
 def _load_partial(partial_path: Path) -> dict[str, dict[str, Any]]:

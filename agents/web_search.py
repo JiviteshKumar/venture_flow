@@ -19,8 +19,11 @@ simultaneously, and mostly quietly.
 WHAT THIS DOES
 
 Tries providers in order until one returns results, and reports which one
-answered. A provider that raises is recorded and skipped; a provider that
-succeeds with zero results is a real answer and ends the chain.
+answered. A provider that raises is recorded and skipped. A provider that
+succeeds with zero results does NOT end the chain on its own: an empty page is
+what DuckDuckGo returns when it soft-throttles as well as when the web really
+has nothing, so `EMPTY_CONFIRMATIONS` providers must agree before the chain
+reports nothing found.
 
     DuckDuckGo   no key   general web
     Wikipedia    no key   encyclopaedic, and the single most useful source for
@@ -75,6 +78,30 @@ logger = logging.getLogger(__name__)
 # sideline a provider for a whole analysis.
 COOLDOWN_S = float(os.getenv("VENTUREFLOW_SEARCH_COOLDOWN", "120"))
 
+# How many providers must independently answer "nothing" before the chain
+# believes the web is actually empty.
+#
+# This used to be 1, on the reasoning that a provider which answers with zero
+# results has genuinely answered, and that trying three more would turn "the web
+# has nothing on this obscure seed-stage company" into four redundant lookups.
+# The reasoning was right about obscure companies and wrong about everything
+# else, because it assumed an empty answer is always a real answer.
+#
+# It is not. DuckDuckGo does not return an error when it soft-throttles; it
+# returns an empty result page, which is byte-for-byte the same answer it gives
+# for a genuinely unfindable query. On the claim benchmark that cost two
+# outright errors -- "IBM acquired Red Hat in 2019 for approximately $34
+# billion" and "WeWork successfully completed its initial IPO in 2019" both came
+# back with zero sources and were scored NOT_ENOUGH_INFO. Neither is an obscure
+# fact. Wikipedia, one line further down the chain, answers both.
+#
+# Two is the number that distinguishes the two cases without reintroducing the
+# cost the original comment was worried about: a genuinely empty query now costs
+# one extra lookup (Wikipedia, keyless, ~1s, no practical rate limit), and the
+# four benchmark claims about companies that do not exist still correctly
+# retrieve nothing -- confirmed twice instead of asserted once.
+EMPTY_CONFIRMATIONS = int(os.getenv("VENTUREFLOW_SEARCH_EMPTY_CONFIRMATIONS", "2"))
+
 USER_AGENT = (
     "VentureFlow/1.0 (https://github.com/SageOtter2023/venture_flow; "
     "due-diligence research tool)"
@@ -99,17 +126,45 @@ def _strip_tags(text: str) -> str:
 
 
 def _duckduckgo(query: str, max_results: int) -> list[dict[str, str]]:
-    from ddgs import DDGS
+    """DuckDuckGo, with its one dangerous quirk handled.
 
-    with DDGS() as ddgs:
-        return [
-            {
-                "title": row.get("title", ""),
-                "url": row.get("href", ""),
-                "snippet": row.get("body", ""),
-            }
-            for row in ddgs.text(query, max_results=max_results)
-        ]
+    `ddgs` raises `DDGSException("No results found.")` for a query that simply
+    has no hits. That is an answer, not a failure, but it arrives as an
+    exception -- so the chain above recorded a provider failure and put
+    DuckDuckGo in a 120-second cooldown.
+
+    The consequence was out of all proportion to the cause. One analysis issues
+    roughly twenty-five searches (five claims x five query templates), and deck
+    claims are elliptical enough that at least one of them is always
+    unfindable. The first such query sidelined the general-web provider for two
+    minutes -- i.e. for the rest of the analysis -- leaving every remaining
+    claim to be judged on whatever Wikipedia alone could supply. The product
+    then reported thin evidence as a finding about the company.
+
+    A genuine rate limit and a genuine timeout have their own subclasses and
+    are still treated as failures, because they are.
+    """
+    from ddgs import DDGS
+    from ddgs.exceptions import DDGSException, RatelimitException, TimeoutException
+
+    try:
+        with DDGS() as ddgs:
+            rows = list(ddgs.text(query, max_results=max_results))
+    except (RatelimitException, TimeoutException):
+        raise
+    except DDGSException as exc:
+        if "no results" in str(exc).lower():
+            return []
+        raise
+
+    return [
+        {
+            "title": row.get("title", ""),
+            "url": row.get("href", ""),
+            "snippet": row.get("body", ""),
+        }
+        for row in rows
+    ]
 
 
 def _wikipedia(query: str, max_results: int) -> list[dict[str, str]]:
@@ -212,6 +267,7 @@ def search(query: str, max_results: int = 8) -> dict[str, Any]:
     """
     attempts: list[dict[str, Any]] = []
     errors: list[str] = []
+    answered_empty: list[str] = []
     now = time.monotonic()
 
     for name, fn, configured in PROVIDERS:
@@ -245,14 +301,18 @@ def search(query: str, max_results: int = 8) -> dict[str, Any]:
             "seconds": round(time.monotonic() - started, 2),
         })
         if results:
-            return {"results": results, "provider": name,
-                    "attempts": attempts, "errors": errors}
-        # A provider that answered with nothing has genuinely answered. Falling
-        # through to the next one would turn "the web has nothing on this
-        # obscure seed-stage company" into four redundant lookups per query.
-        return {"results": [], "provider": name, "attempts": attempts, "errors": errors}
+            return {"results": results, "provider": name, "attempts": attempts,
+                    "errors": errors, "empty_confirmed_by": []}
 
-    return {"results": [], "provider": "", "attempts": attempts, "errors": errors}
+        # An empty answer is not yet an answer. See EMPTY_CONFIRMATIONS.
+        answered_empty.append(name)
+        if len(answered_empty) >= EMPTY_CONFIRMATIONS:
+            return {"results": [], "provider": name, "attempts": attempts,
+                    "errors": errors, "empty_confirmed_by": list(answered_empty)}
+
+    return {"results": [], "provider": answered_empty[-1] if answered_empty else "",
+            "attempts": attempts, "errors": errors,
+            "empty_confirmed_by": list(answered_empty)}
 
 
 def search_or_raise(query: str, max_results: int = 8) -> dict[str, Any]:

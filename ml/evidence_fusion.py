@@ -217,7 +217,32 @@ def extract_features(
     runway_months: float | None = None,
 ) -> EvidenceFeatures:
     """Structured numbers only. No free text crosses this boundary."""
-    claims = claim_results or []
+    # Only claims that were actually CHECKED may move the score.
+    #
+    # A claim whose verification failed on a provider error carries the verdict
+    # NOT_ENOUGH_INFO, which is indistinguishable by verdict alone from "we
+    # searched and the web could not settle it". The first is a fact about our
+    # infrastructure; the second is a fact about the company. Counting the
+    # first as the second is how a working company gets marked down for our
+    # outage -- and it did: with the Groq daily quota exhausted, all five of
+    # Uber's deck claims failed to a 429, every one landed in `unresolved`, and
+    # the resulting evidence penalty took the report from a model prior of 50
+    # to a final 35.
+    #
+    # This mirrors the rule already applied to specialist agents a few lines
+    # below ("a degraded agent's zero reflects a provider failure, not a
+    # judgement"); it simply was never applied to claims, because the flag it
+    # keys on was being dropped in agents/claim_verifier.verify_claim.
+    #
+    # `n` counts only the checked claims too, so the fractions stay fractions
+    # of what was actually established. With every claim degraded, n is 0 and
+    # all three fractions are 0.0 -- no penalty, no bonus, which is the honest
+    # answer when nothing was verified either way.
+    all_claims = claim_results or []
+    claims = [
+        c for c in all_claims
+        if isinstance(c, dict) and not c.get("_degraded")
+    ]
     n = len(claims)
     verdicts = [str(c.get("verdict", "")).upper() for c in claims]
     refuted = sum(1 for v in verdicts if v == "REFUTES")

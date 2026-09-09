@@ -813,6 +813,21 @@ def run_due_diligence(
     # so rather than showing an unexplained empty chart.
     founder_discovery: dict = {"attempted": False}
     if founders:
+        # Discovery is skipped, and the report must say why rather than
+        # carrying a bare {"attempted": false}. Read on its own that is
+        # indistinguishable from the feature being broken or switched off --
+        # which is exactly the question this report was asked after a Buffer
+        # run showed an empty founder-discovery block while the three real
+        # founders sat, correctly, in founder_verification one key away.
+        founder_discovery = {
+            "attempted": False,
+            "reason": (
+                f"Not needed: the deck named "
+                f"{len(founders)} founder(s), so they were verified against "
+                f"public evidence rather than searched for. See "
+                f"founder_verification."
+            ),
+        }
         _stage("Checking founder backgrounds against public evidence")
         try:
             from agents.founder_verifier import verify_founders as _verify_founders
@@ -1119,6 +1134,31 @@ def run_due_diligence(
             "reason": risk_result.get("_degraded_reason", "provider unavailable"),
         })
     provider_degraded = bool(degraded_components)
+
+    # A THIRD state, deliberately kept out of `degraded_components` above.
+    #
+    # `_degraded` means the language model never ran, and its remedy is to drop
+    # the claim from the score so an outage cannot cost the company points.
+    # `evidence_degraded` means the opposite: the model ran and returned a real
+    # verdict, but the general web index was rate-limited so it judged the
+    # claim on the fallback providers alone. On real deck claims the share
+    # of on-topic sources runs ~94% with the general index and ~32% without
+    # it (14- and 17-claim runs; separate measurements, not a controlled A/B).
+    #
+    # Those verdicts are real and must keep counting -- excluding them would
+    # discard genuine findings. What must not happen is presenting them as if
+    # the open web had been consulted, because "NOT_ENOUGH_INFO" then reads as
+    # a fact about the company rather than about our search budget.
+    evidence_search_degraded = any(
+        isinstance(result, dict) and result.get("evidence_degraded")
+        for result in claim_results
+    )
+    evidence_search_note = next(
+        (result.get("evidence_degraded_reason", "")
+         for result in claim_results
+         if isinstance(result, dict) and result.get("evidence_degraded")),
+        "",
+    )
 
     # Only the specialists that actually answered may push the score down. An
     # agent that never ran has expressed no opinion about the company, and
@@ -1485,9 +1525,28 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
         all_specialists_failed and not provider_degraded
     ) or not claim_results
 
-    claims_unverified = bool(claim_results) and all(
-        result.get("verdict") == "NOT_ENOUGH_INFO" for result in claim_results
+    # "Nothing could be corroborated" is a statement about the COMPANY, and it
+    # is only true of claims that were actually checked.
+    #
+    # This used to be `all(verdict == NOT_ENOUGH_INFO)` over every result,
+    # including the ones whose verification never ran. With the Groq daily
+    # quota exhausted, all five of Uber's claims failed to a 429 and the report
+    # led with: "No deck claim could be independently corroborated. Every claim
+    # was searched, but public sources had nothing specific enough to confirm
+    # or contradict it -- normal for a company this early."
+    #
+    # Every clause of that was false. The claims were not searched to a verdict,
+    # public sources say a great deal about Uber, and the cause was our quota
+    # rather than the company's obscurity.
+    checked_claims = [
+        result for result in claim_results
+        if isinstance(result, dict) and not result.get("_degraded")
+    ]
+    claims_unverified = bool(checked_claims) and all(
+        result.get("verdict") == "NOT_ENOUGH_INFO" for result in checked_claims
     )
+    # Distinct from the above and reported separately: verification did not run.
+    claims_verification_degraded = bool(claim_results) and not checked_claims
     incomplete_analysis = analysis_failed
 
     if venture_score_result.get("available"):
@@ -1535,6 +1594,9 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
     # is a finding a VC should see stated plainly; "our pipeline broke" is a
     # different message entirely.
     report["claims_unverified"] = claims_unverified
+    # Surfaced so the UI can say "verification did not run" instead of
+    # rendering a 0/5 that reads as a finding about the company.
+    report["claims_verification_degraded"] = claims_verification_degraded
     # Third, distinct state: the pipeline ran and the model scored the company,
     # but one or more LLM-backed components could not be reached. The score
     # stands (the model never depended on them); the narrative around it is
@@ -1542,6 +1604,11 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
     # presenting a diminished analysis as a complete one.
     report["provider_degraded"] = provider_degraded
     report["degraded_components"] = degraded_components
+    # Between "the model never ran" and "the evidence was genuinely thin":
+    # the model ran on evidence gathered without the general web index. The
+    # verdicts count; the reader is told what they were based on.
+    report["evidence_search_degraded"] = evidence_search_degraded
+    report["evidence_search_note"] = evidence_search_note
     # Fourth state, and the one that replaced the hard cap: the pipeline ran
     # fine and the company simply gave it very little to work with. Graded into
     # the score, reported as a flag, and blocked from a decisive verdict.

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 
 import threading
 import time
@@ -142,13 +143,105 @@ PACING_ENABLED = os.getenv("GROQ_PACING", "on").strip().lower() not in {"off", "
 _pacer = TokenPacer(TOKENS_PER_MINUTE)
 
 
+# ── Daily-quota circuit breaker ───────────────────────────────────────────
+#
+# There are two kinds of 429 on this tier and they need opposite responses.
+#
+# A tokens-per-MINUTE 429 clears in seconds. The SDK retries it, honours
+# Retry-After, and the call usually succeeds -- that is what MAX_RETRIES is for.
+#
+# A tokens-per-DAY 429 does not clear for hours:
+#
+#   Rate limit reached ... on tokens per day (TPD): Limit 200000, Used 199553,
+#   Requested 3416. Please try again in 21m22.608s
+#
+# Retrying that is pure waste, and the waste compounds: an analysis makes about
+# a dozen LLM calls, and without this every one of them spends six retries and
+# up to 90 seconds of timeout discovering the same exhausted quota. The run
+# takes many minutes and produces a report with nothing in it.
+#
+# So the first TPD refusal trips a breaker and every later call fails
+# immediately with the same, accurate reason. The components still degrade --
+# that path is well-tested -- but they degrade in milliseconds and say WHY,
+# instead of timing out one after another.
+#
+# The TPD ceiling is worth stating plainly because it is easy to miss: it is
+# 200,000 tokens/day, it appears in NO response header (only TPM and RPD do),
+# and the only way to discover it is to hit it.
+class DailyQuotaExhausted(RuntimeError):
+    """The daily token allowance is spent. Retrying will not help today."""
+
+
+_daily_quota_blocked_until: float = 0.0
+_daily_quota_reason: str = ""
+
+
+def _parse_retry_seconds(message: str) -> float:
+    """Seconds from a "try again in 21m22.608s" message. 0 when absent."""
+    match = re.search(r"try again in\s+(?:(\d+)m)?\s*([\d.]+)s", message, re.IGNORECASE)
+    if not match:
+        return 0.0
+    minutes = float(match.group(1) or 0)
+    seconds = float(match.group(2) or 0)
+    return minutes * 60 + seconds
+
+
+def is_daily_quota_error(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return "429" in text and ("tokens per day" in text or "tpd" in text)
+
+
+def note_provider_failure(exc: BaseException) -> None:
+    """Record a failure so later calls can skip a hopeless retry.
+
+    Only a daily-quota refusal trips the breaker; a per-minute 429 is retryable
+    and must not stop the run.
+    """
+    global _daily_quota_blocked_until, _daily_quota_reason
+    if not is_daily_quota_error(exc):
+        return
+    wait = _parse_retry_seconds(str(exc)) or 900.0
+    _daily_quota_blocked_until = time.monotonic() + wait
+    _daily_quota_reason = (
+        f"Groq daily token quota (200,000/day) is exhausted. It resets in "
+        f"about {max(1, round(wait / 60))} minute(s); retrying before then "
+        f"fails the same way."
+    )
+    logger.error("Daily Groq quota exhausted; pausing LLM calls for %.0fs", wait)
+
+
+def daily_quota_status() -> dict[str, object]:
+    """For /health and the report's degradation block."""
+    remaining = _daily_quota_blocked_until - time.monotonic()
+    return {
+        "exhausted": remaining > 0,
+        "seconds_until_reset": max(0, round(remaining)),
+        "reason": _daily_quota_reason if remaining > 0 else "",
+    }
+
+
+def reset_quota_breaker() -> None:
+    """For tests, and for an operator who has upgraded the tier."""
+    global _daily_quota_blocked_until, _daily_quota_reason
+    _daily_quota_blocked_until = 0.0
+    _daily_quota_reason = ""
+
+
 def pace_for(prompt_chars: int, max_tokens: int = 1000) -> float:
     """Reserve budget for a call of roughly this size.
 
     Four characters per token is the usual rough conversion and is close enough:
     the pacer only needs to be approximately right to keep a burst from
     exceeding the window.
+
+    Raises `DailyQuotaExhausted` when the daily allowance is known to be spent.
+    Every LLM call site in this codebase calls this first, which makes it the
+    one place a breaker can cover all of them; each already wraps its call in a
+    try/except that degrades honestly, so the exception surfaces as a stated
+    degradation rather than a crash.
     """
+    if _daily_quota_blocked_until > time.monotonic():
+        raise DailyQuotaExhausted(_daily_quota_reason)
     if not PACING_ENABLED:
         return 0.0
     return _pacer.reserve(prompt_chars // 4 + max_tokens)

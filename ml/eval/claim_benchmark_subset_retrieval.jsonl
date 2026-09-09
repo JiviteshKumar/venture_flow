@@ -1,0 +1,19 @@
+{"id": "r1", "claim": "WeWork successfully completed its initial IPO in 2019.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "s9", "claim": "Tesla delivered its one millionth electric vehicle in March 2020.", "gold_verdict": "SUPPORTS", "category": "milestone", "subset": "public_fact"}
+{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "SUPPORTS", "category": "funding", "subset": "public_fact"}
+{"id": "s29", "claim": "Lyft went public in March 2019, before Uber's initial public offering.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
+{"id": "s35", "claim": "IBM acquired Red Hat in 2019 for approximately $34 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r35", "claim": "Lyft operates in more countries than Uber.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}
+{"id": "n12", "claim": "Deltafern Systems reduced its customer acquisition cost by 47% after changing acquisition channels in 2024.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o14", "claim": "Milky Way AI connected consumer packaged goods brands to more than 200,000 retail stores.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "n18", "claim": "Cindervale Energy's battery chemistry retains 80% of capacity after 900 charge cycles.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "product_claims", "subset": "nonexistent_company"}
+{"id": "o21", "claim": "Faction Technology's driverless electric vehicles completed 20,000 autonomous delivery miles.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "milestone", "subset": "obscure_real_company"}
+{"id": "s1", "claim": "Stripe was founded in 2010 by Patrick Collison and John Collison.", "gold_verdict": "SUPPORTS", "category": "founding_facts", "subset": "public_fact"}
+{"id": "n1", "claim": "Northwind Analytics reported $4.2M in ARR as of Q3 2025.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "o1", "claim": "Siasto, the Y Combinator Winter 2011 collaboration tool for small businesses, reached 12,000 paying teams before it shut down.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "traction", "subset": "obscure_real_company"}
+{"id": "n2", "claim": "Bramblecart Inc.'s customer churn rate is below 2% monthly.", "gold_verdict": "NOT_ENOUGH_INFO", "category": "financial_metrics", "subset": "nonexistent_company"}
+{"id": "s3", "claim": "OpenAI released ChatGPT to the public in November 2022.", "gold_verdict": "SUPPORTS", "category": "product_launch", "subset": "public_fact"}
+{"id": "r3", "claim": "Google was founded in 1995 by Mark Zuckerberg.", "gold_verdict": "REFUTES", "category": "founding_facts", "subset": "public_fact"}
+{"id": "s5", "claim": "Slack was acquired by Salesforce in a deal that closed in 2021.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
+{"id": "r6", "claim": "Facebook's IPO in 2012 was a flawless, glitch-free debut on Nasdaq.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
+{"id": "r8", "claim": "Elizabeth Holmes was acquitted of all fraud charges related to Theranos.", "gold_verdict": "REFUTES", "category": "legal", "subset": "public_fact"}

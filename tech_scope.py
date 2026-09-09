@@ -288,7 +288,7 @@ def _adjudicate(text: str, company_name: str) -> dict[str, Any] | None:
     try:
         import json
 
-        from groq_client import MODEL, get_client, pace_for
+        from groq_client import MODEL, get_client, note_provider_failure, pace_for
 
         prompt = _PROMPT.format(name=company_name or "(not given)", text=text[:6000])
         pace_for(len(prompt), 800)
@@ -315,7 +315,8 @@ def _adjudicate(text: str, company_name: str) -> dict[str, Any] | None:
             "confidence": max(0.0, min(1.0, float(parsed.get("confidence", 0.5)))),
             "reason": str(parsed.get("reason", ""))[:400],
         }
-    except Exception:
+    except Exception as exc:
+        note_provider_failure(exc)
         logger.warning("Tech-scope adjudication failed; defaulting to in-scope",
                        exc_info=True)
         return None
