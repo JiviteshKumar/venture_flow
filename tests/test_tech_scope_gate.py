@@ -219,7 +219,24 @@ class TestEndpointsEnforceIt:
         assert detail["scope_check"]["reason"]
         assert detail["scope_check"]["scope_statement"]
 
-    def test_analyze_accepts_a_tech_startup(self):
+    def test_analyze_accepts_a_tech_startup(self, monkeypatch):
+        """The job is stubbed, and that is the whole point of this test.
+
+        Without the stub, TestClient runs the queued BackgroundTask inline, so
+        asserting "the gate let this through" quietly performed a complete
+        analysis of a company called CodeLoop: roughly 30,000 Groq tokens --
+        about 15% of the free tier's daily budget -- several minutes of
+        wall-clock time, and a permanent report row in the production database,
+        on every run of the suite.
+
+        What this test is about is the gate's verdict on an in-scope
+        description. Everything after the 202 belongs to other tests.
+        """
+        submitted: dict = {}
+        monkeypatch.setattr(api, "create_analysis_job",
+                            lambda payload: (submitted.update(payload), "job-1")[1])
+        monkeypatch.setattr(api, "count_active_jobs", lambda: 0)
+
         client = TestClient(api.app)
         response = client.post("/analyze", json={
             "company_name": "CodeLoop",
@@ -227,6 +244,9 @@ class TestEndpointsEnforceIt:
         })
 
         assert response.status_code == 202, response.text
+        assert submitted["company_name"] == "CodeLoop", (
+            "the request was accepted but never reached the queue"
+        )
 
     def test_the_gate_is_not_only_at_upload(self, monkeypatch):
         """A gate a user can walk around by editing a text field is not a gate.

@@ -36,6 +36,17 @@ import ventureflow_agent
 from agents import claim_verifier
 from tests.test_worker_queue_integration import FakeJobStore
 
+
+@pytest.fixture(autouse=True)
+def _queue_tests_need_the_background_task(run_analyses_inline):
+    """This file is ABOUT the queued job, so it opts back in to the background
+    task that tests/conftest.py disables by default.
+
+    Safe here because the pipeline itself is stubbed below -- nothing in this
+    file reaches Groq or the database. The conftest default exists to stop
+    tests that are about the ENDPOINT from silently running a real analysis;
+    these tests are about what the endpoint queues, so they need it."""
+
 DECK_TEXT = (
     "Northwind Robotics 2011 seed deck. Warehouse automation for mid-size "
     "logistics operators. We have 800 paying users and $310K in annual revenue."

@@ -16,6 +16,18 @@ import pytest
 import api
 
 
+@pytest.fixture(autouse=True)
+def _queue_tests_need_the_background_task(run_analyses_inline):
+    """This file is ABOUT the queued job, so it opts back in to the background
+    task that tests/conftest.py disables by default.
+
+    Safe here because the pipeline itself is stubbed in this file -- nothing
+    reaches Groq or the database. The conftest default exists to stop tests
+    that are about the ENDPOINT from silently running a real analysis; these
+    tests are about what the endpoint queues, so they need it."""
+
+
+
 class _Recorder:
     """Stands in for db.update_analysis_job and remembers what was written."""
 

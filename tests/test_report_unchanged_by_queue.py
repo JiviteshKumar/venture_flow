@@ -26,6 +26,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import api
 from tests.test_worker_queue_integration import REPORT_FIELDS, FakeJobStore
 
+
+@pytest.fixture(autouse=True)
+def _queue_tests_need_the_background_task(run_analyses_inline):
+    """This file is ABOUT the queued job, so it opts back in to the background
+    task that tests/conftest.py disables by default.
+
+    Safe here because the pipeline itself is stubbed in this file -- nothing
+    reaches Groq or the database. The conftest default exists to stop tests
+    that are about the ENDPOINT from silently running a real analysis; these
+    tests are about what the endpoint queues, so they need it."""
+
+
 FIXED_DECK = {
     "company_name": "Northwind Robotics",
     "company_description": (

@@ -116,6 +116,28 @@ def disable_founder_research():
 
 
 @pytest.fixture(autouse=True)
+def reset_daily_quota_breaker():
+    """Give every test an unblocked provider.
+
+    Fourth instance of the pattern this file exists to document, and it behaved
+    exactly like the first three: `test_specialist_confidence.py` passed alone
+    (16 of 16) and failed five tests inside the suite.
+
+    `groq_client` trips a process-global breaker the first time it sees a
+    tokens-per-day 429, after which `pace_for` raises for every later call --
+    correct in production, where one exhausted quota should stop the other
+    eleven components wasting six retries each, and poison in a test process,
+    where one test simulating a quota failure silently disables the LLM path
+    for everything that runs after it.
+    """
+    import groq_client
+
+    groq_client.reset_quota_breaker()
+    yield
+    groq_client.reset_quota_breaker()
+
+
+@pytest.fixture(autouse=True)
 def no_live_scope_adjudication():
     """Keep the tech-scope gate running, but off the network.
 
@@ -183,3 +205,72 @@ def disable_groq_pacing():
     groq_client._pacer._spent = 0
     yield
     groq_client.PACING_ENABLED = original
+
+
+def _real_run_analysis_job():
+    """The genuine implementation, captured once at import.
+
+    Resolved here rather than inside the fixture because the fixture replaces
+    the attribute: reading it at setup time would capture whatever the previous
+    test left behind, which after the first test is the no-op.
+    """
+    import api
+
+    return api._run_analysis_job
+
+
+_REAL_RUN_ANALYSIS_JOB = _real_run_analysis_job()
+
+
+@pytest.fixture(autouse=True)
+def do_not_run_real_analyses():
+    """Posting to /analyze in a test must not perform a full analysis.
+
+    Fifth instance of the pattern this file exists to document, and the most
+    expensive one yet.
+
+    `/analyze` does two separate things: `create_analysis_job` writes the queue
+    row, and `background_tasks.add_task(_run_analysis_job, ...)` runs the
+    pipeline. Tests that wanted to assert something about the ENDPOINT --
+    that the scope gate accepts a tech company, that a filename is cleaned
+    before it reaches the queue -- mocked the first and left the second, which
+    looks complete and is not: Starlette's TestClient executes background tasks
+    inline, so every one of those tests quietly ran a real analysis.
+
+    The cost was invisible because nothing failed. Each such test spent roughly
+    30,000 Groq tokens -- about 15% of the free tier's entire daily budget, on a
+    quota that is the binding constraint on this whole product -- took minutes
+    of wall-clock time, and left a permanent report row in the production
+    database. Three of them ran on every full suite invocation.
+
+    Replaced with a no-op rather than left to fail, so the endpoint's own
+    behaviour (202, the queue row, the returned job id) is unchanged and the
+    tests asserting it keep passing. A test that genuinely wants the pipeline
+    calls `run_due_diligence` directly, as tests/test_fusion_end_to_end.py and
+    tests/test_extraction_fallback_is_visible.py already do, or overrides this
+    fixture explicitly.
+    """
+    import api
+
+    api._run_analysis_job = lambda job_id, payload: None
+    yield
+    api._run_analysis_job = _REAL_RUN_ANALYSIS_JOB
+
+
+@pytest.fixture
+def run_analyses_inline():
+    """Opt back in to the background task disabled above.
+
+    For the handful of tests that are ABOUT the queued job -- that it marks the
+    row complete, that a persistence failure is recorded as failed. Those stub
+    `run_due_diligence` and `persist_report` themselves, so nothing reaches
+    Groq or the database; what they need is simply for the task to be invoked.
+
+    Request this fixture BEFORE the assertions that depend on it. It restores
+    the real function for the duration of the test.
+    """
+    import api
+
+    api._run_analysis_job = _REAL_RUN_ANALYSIS_JOB
+    yield
+    api._run_analysis_job = lambda job_id, payload: None

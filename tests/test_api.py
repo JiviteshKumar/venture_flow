@@ -9,7 +9,7 @@ def test_analyze_rejects_invalid_payload():
     assert response.status_code == 422
 
 
-def test_analyze_returns_persisted_report(monkeypatch):
+def test_analyze_returns_persisted_report(monkeypatch, run_analyses_inline):
     monkeypatch.setattr(api, "create_analysis_job", lambda _: "job-id")
     updates = []
     monkeypatch.setattr(api, "update_analysis_job", lambda *args, **kw: updates.append(args))
@@ -50,7 +50,9 @@ def test_analyze_returns_persisted_report(monkeypatch):
     assert updates[-1][1] == "complete"
 
 
-def test_analyze_returns_a_clear_error_when_persistence_fails(monkeypatch):
+def test_analyze_returns_a_clear_error_when_persistence_fails(
+    monkeypatch, run_analyses_inline
+):
     monkeypatch.setattr(api, "create_analysis_job", lambda _: "job-id")
     updates = []
     monkeypatch.setattr(api, "update_analysis_job", lambda *args: updates.append(args))

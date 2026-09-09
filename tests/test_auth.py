@@ -188,6 +188,46 @@ def created_emails():
         pass
 
 
+# The same problem one table over.
+#
+# Deleting a test user leaves its reports behind by design (dd_reports
+# .owner_user_id is ON DELETE SET NULL, so the row survives unowned). Nothing
+# then removed the report, or the `companies` row created alongside it.
+#
+# That is worse than clutter, because `db.find_similar_companies` selects from
+# any company that has a report attached. Every `ScopeTest <hex>` fixture was
+# therefore a live candidate to appear in a real user's report as a similar
+# company -- which is exactly how "02 uber" came to be listed as a comparable
+# for Uber.
+#
+# Order matters: dd_reports.company_id is ON DELETE NO ACTION, so the reports
+# have to go first. investment_decisions and report_comments cascade from the
+# report; analysed_companies nulls its reference.
+@pytest.fixture
+def created_companies():
+    names: list[str] = []
+    yield names
+    try:
+        from db import connection
+        with connection() as conn, conn.cursor() as cur:
+            for name in names:
+                cur.execute(
+                    "DELETE FROM dd_reports WHERE company_id IN "
+                    "(SELECT id FROM companies WHERE name = %s)",
+                    (name,),
+                )
+                cur.execute("DELETE FROM companies WHERE name = %s", (name,))
+    except Exception:
+        # As with created_emails: a failed cleanup must not fail a passing
+        # test. The guard test below reports anything left behind.
+        pass
+
+
+def _track_company(created_companies, name):
+    created_companies.append(name)
+    return name
+
+
 @pytest.fixture
 def fresh_email(created_emails):
     email = f"test-{uuid.uuid4().hex[:12]}@example.test"
@@ -294,7 +334,9 @@ class TestRegistrationAndLogin:
 class TestReportScoping:
     """The defect accounts exist to close."""
 
-    def test_a_users_report_is_invisible_to_another_user(self, client, created_emails):
+    def test_a_users_report_is_invisible_to_another_user(
+        self, client, created_emails, created_companies
+    ):
         from db import persist_report
 
         owner = client.post("/auth/register", json={
@@ -307,7 +349,7 @@ class TestReportScoping:
         }).json()
 
         report_id = persist_report(
-            name=f"ScopeTest {uuid.uuid4().hex[:8]}",
+            name=_track_company(created_companies, f"ScopeTest {uuid.uuid4().hex[:8]}"),
             description="A private analysis.", sector=None, domain=None,
             report={"final_score": 50, "recommendation": "PASS", "sections": {}},
             owner_user_id=owner["user"]["id"],
@@ -327,7 +369,9 @@ class TestReportScoping:
         anonymous = client.get(f"/reports/{report_id}")
         assert anonymous.status_code == 404
 
-    def test_the_list_does_not_include_another_users_reports(self, client, created_emails):
+    def test_the_list_does_not_include_another_users_reports(
+        self, client, created_emails, created_companies
+    ):
         from db import persist_report
 
         owner = client.post("/auth/register", json={
@@ -339,7 +383,8 @@ class TestReportScoping:
             "password": PASSWORD,
         }).json()
 
-        name = f"ListScope {uuid.uuid4().hex[:8]}"
+        name = _track_company(
+            created_companies, f"ListScope {uuid.uuid4().hex[:8]}")
         persist_report(
             name=name, description="Private.", sector=None, domain=None,
             report={"final_score": 50, "recommendation": "PASS", "sections": {}},
@@ -351,7 +396,9 @@ class TestReportScoping:
         assert listed.status_code == 200
         assert name not in [row["company"] for row in listed.json()]
 
-    def test_an_unowned_report_stays_visible_and_is_flagged_as_shared(self, client, created_emails):
+    def test_an_unowned_report_stays_visible_and_is_flagged_as_shared(
+        self, client, created_emails, created_companies
+    ):
         """Reports written before accounts existed have no owner. They are not
         retro-assigned to whoever registers first -- inventing an owner is worse
         than admitting there is none -- so they stay visible and say why."""
@@ -361,7 +408,8 @@ class TestReportScoping:
             "email": _track(created_emails, f"legacy-{uuid.uuid4().hex[:10]}@example.test"),
             "password": PASSWORD,
         }).json()
-        name = f"Legacy {uuid.uuid4().hex[:8]}"
+        name = _track_company(
+            created_companies, f"Legacy {uuid.uuid4().hex[:8]}")
         persist_report(
             name=name, description="Pre-authentication.", sector=None, domain=None,
             report={"final_score": 50, "recommendation": "PASS", "sections": {}},
@@ -396,4 +444,38 @@ def test_no_test_accounts_are_left_behind():
         f"{leaked} test accounts are sitting in the database. The cleanup "
         f"fixture is not covering every account these tests create; see "
         f"`created_emails`."
+    )
+
+
+@pytestmark_db
+def test_no_test_companies_are_left_behind():
+    """The same guard, for the table that reaches real users.
+
+    A leaked `users` row is private clutter. A leaked `companies` row is not:
+    `db.find_similar_companies` selects comparables from any company that has a
+    report attached, so a fixture company is a live candidate to be shown to a
+    real user as similar to the deck they just uploaded.
+
+    That is not hypothetical. Before the `created_companies` fixture existed,
+    Neon held 81 companies of which 33 were fixtures -- `ScopeTest <hex>` x11,
+    `ListScope <hex>` x11, `Legacy <hex>` x11.
+
+    A ceiling rather than zero, for the same reason as the accounts guard: this
+    runs in the same session as tests that may be mid-flight.
+    """
+    from db import connection
+
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT count(*) AS n FROM companies "
+            "WHERE name LIKE 'ScopeTest %' OR name LIKE 'ListScope %' "
+            "OR name LIKE 'Legacy %'"
+        )
+        leaked = int(cur.fetchone()["n"])
+
+    assert leaked <= 3, (
+        f"{leaked} fixture companies are sitting in the database, where "
+        f"find_similar_companies can offer them to a real user as comparables. "
+        f"The `created_companies` fixture is not covering every company these "
+        f"tests create."
     )
