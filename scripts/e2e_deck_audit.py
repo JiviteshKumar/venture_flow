@@ -102,12 +102,20 @@ def audit_report(report: dict[str, Any]) -> list[dict[str, Any]]:
     # founders were sitting in the first.
     fd = sections.get("founder_discovery") or {}
     fv = sections.get("founder_verification") or []
-    from_deck = [entry.get("name") for entry in fv if entry.get("name")]
-    discovered = [entry.get("name") for entry in (fd.get("founders") or [])]
-    names = from_deck or discovered
+    # Label by each entry's `origin`, not by which section it sits in: founders
+    # found by public search are ALSO verified, so they land in
+    # founder_verification too. Reading the section alone labelled Uber's
+    # researched founders "via deck" when the report itself correctly said
+    # "Not in the deck - found by public search".
+    from_deck = [e.get("name") for e in fv if e.get("name") and e.get("origin") == "deck"]
+    researched = [e.get("name") for e in fv if e.get("name") and e.get("origin") != "deck"]
+    researched += [f.get("name") for f in (fd.get("founders") or [])
+                   if f.get("name") and f.get("name") not in researched]
+    names = from_deck + researched
+    route = ("deck" if from_deck and not researched
+             else "research" if researched and not from_deck else "deck+research")
     check("founders_named", bool(names),
-          f"{len(names)} via {'deck' if from_deck else 'research'}: {names[:4]}",
-          critical=False)
+          f"{len(names)} via {route}: {names[:4]}", critical=False)
     # Whichever route was taken, it has to account for itself: a report that
     # names no founder must say whether it looked.
     accounted = bool(names) or bool(fd.get("reason")) or fd.get("attempted") is not None

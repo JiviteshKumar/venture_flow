@@ -1,6 +1,6 @@
 {"id": "r1", "claim": "WeWork successfully completed its initial IPO in 2019.", "gold_verdict": "REFUTES", "category": "public_markets", "subset": "public_fact"}
 {"id": "s9", "claim": "Tesla delivered its one millionth electric vehicle in March 2020.", "gold_verdict": "SUPPORTS", "category": "milestone", "subset": "public_fact"}
-{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "SUPPORTS", "category": "funding", "subset": "public_fact"}
+{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "REFUTES", "category": "funding", "subset": "public_fact", "label_note": "Corrected 2026-09-11 from SUPPORTS. Notion's April 2020 raise was $50M at a $2B valuation (TechCrunch, Axios, Apr 1-2 2020) and was not reported as a Series C; its Series C was the $275M round of October 2021. The claim joins a true valuation to the wrong round, so it is false as written. Surfaced when the verifier returned REFUTES citing exactly this evidence."}
 {"id": "s29", "claim": "Lyft went public in March 2019, before Uber's initial public offering.", "gold_verdict": "SUPPORTS", "category": "public_markets", "subset": "public_fact"}
 {"id": "s35", "claim": "IBM acquired Red Hat in 2019 for approximately $34 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition", "subset": "public_fact"}
 {"id": "r35", "claim": "Lyft operates in more countries than Uber.", "gold_verdict": "REFUTES", "category": "market_position", "subset": "public_fact"}

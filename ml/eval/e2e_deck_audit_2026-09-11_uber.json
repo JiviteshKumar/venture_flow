@@ -1,0 +1,1342 @@
+[
+  {
+    "deck": "Uber",
+    "file": "Uber.pdf",
+    "upload_status": 200,
+    "upload": {
+      "company_description_chars": 178,
+      "extracted_chars": 5000,
+      "detected_claims": 12,
+      "detected_founders": [],
+      "deck_slides": 25,
+      "extraction_method": "llm_schema",
+      "text_source": "text_layer",
+      "page_count": 25,
+      "stage": null,
+      "sector": null,
+      "revenue": null,
+      "burn_rate": null,
+      "scope_check": true
+    },
+    "analyze_status": 202,
+    "job_status": "complete",
+    "seconds": 413.4,
+    "company_as_analysed": "Uber",
+    "checks": [
+      {
+        "check": "final_score",
+        "state": "PRESENT",
+        "detail": "44.0 (source: venturescore_model)"
+      },
+      {
+        "check": "venturescore_model_ran",
+        "state": "PRESENT",
+        "detail": "available=True reason='' score=44 coverage=0.625"
+      },
+      {
+        "check": "claims_checked",
+        "state": "PRESENT",
+        "detail": "checked=5 supported=2 refuted=0 uncertain=3"
+      },
+      {
+        "check": "claim_verification_not_degraded",
+        "state": "PRESENT",
+        "detail": "claims_verification_degraded=False"
+      },
+      {
+        "check": "bull_case",
+        "state": "PRESENT",
+        "detail": "5 signal(s), confidence=0.88, thesis='UberCab\u2019s member\u2011only, on\u2011demand premium car service leverag'"
+      },
+      {
+        "check": "bear_case",
+        "state": "PRESENT",
+        "detail": "5 signal(s), confidence=0.78, thesis='The deck rests on unverified market size, overly optimistic '"
+      },
+      {
+        "check": "founders_named",
+        "state": "PRESENT",
+        "detail": "2 via deck: ['Garrett Camp', 'Travis Kalanick']"
+      },
+      {
+        "check": "founder_route_explained",
+        "state": "PRESENT",
+        "detail": "discovery_attempted=True searched=True degraded=None reason=''"
+      },
+      {
+        "check": "risk_signals",
+        "state": "PRESENT",
+        "detail": "total=2 concerns=6 red_flags=4"
+      },
+      {
+        "check": "investment_memo",
+        "state": "PRESENT",
+        "detail": "6533 chars"
+      },
+      {
+        "check": "extraction_provenance",
+        "state": "PRESENT",
+        "detail": "method='llm_schema' fallback=''"
+      },
+      {
+        "check": "extraction_coverage",
+        "state": "PRESENT",
+        "detail": "[{\"note\": \"\", \"slide\": 1, \"heading\": \"Next-Generation Car Service\", \"represented\": true, \"mapped_lines\": 1, \"content_lin"
+      },
+      {
+        "check": "market_comparables",
+        "state": "PRESENT",
+        "detail": "available=True n=5 ['Mecho Autotech', 'Debitel', 'Drive Pulse', 'Alma']"
+      },
+      {
+        "check": "similar_companies_local",
+        "state": "EMPTY",
+        "detail": "0: [] (empty is correct on a clean database)"
+      },
+      {
+        "check": "no_provider_outage",
+        "state": "PRESENT",
+        "detail": "provider_degraded=False components=[]"
+      },
+      {
+        "check": "evidence_search_degraded",
+        "state": "PRESENT",
+        "detail": "False "
+      }
+    ],
+    "report": {
+      "company": "Uber",
+      "final_score": 44.0,
+      "recommendation": "PASS",
+      "risk_level": "MEDIUM",
+      "ai_analysis": "**VentureFlow Investment Memo \u2013 UberCab (members\u2011only luxury on\u2011demand car service)**  \n\n---\n\n### 1. EXECUTIVE SUMMARY  \nUberCab markets a members\u2011only, on\u2011demand luxury car service that positions itself as \u201cthe NetJets of car services.\u201d The deck provides a $1\u202fB annual\u2011revenue claim but supplies no independent financial verification, and several material legal and market\u2011size uncertainties remain. **Confidence in the investment thesis is low to medium** pending further validation.\n\n---\n\n### 1b. WHAT DRIVES THE VENTUREFLOW SCORE  \n* **Model\u2011generated score:** **44\u202f/\u202f100** (range 32\u201154).  \n* **Base model prior:** 49\u202f/\u202f100 \u2013 the statistical model, using typical sector signals, would have placed the company at a mid\u2011range score.  \n* **Evidence adjustment:** \u20135 points. The adjustment reflects:  \n  * Two **verified** claims (NetJets positioning; Mercedes\u2011Sedan fleet) \u2013 modest positive signal.  \n  * Multiple **unverified** or **refuted** claims (medallion cost, driver earnings, members\u2011only requirement, 1\u2011click hailing) \u2013 negative signal.  \n  * Presence of **legal red\u2011flags** (FTC lawsuit, shareholder and securities\u2011fraud investigations) \u2013 negative signal.  \n  * Missing key financial inputs (monthly burn, runway) \u2013 negative signal.  \n* **Model confidence:** *Medium* (feature coverage 62\u202f%). The model\u2019s confidence is tempered by low extraction coverage (40\u202f%) and the fact that many deck slides did not map to structured fields. Consequently, the score should be treated as a **pre\u2011liminary indicator**, not a definitive valuation.  \n\n---\n\n### 2. CLAIM VERIFICATION ANALYSIS  \n\n| Claim (as stated in deck) | Verification status | Evidence / Source | Confidence |\n|----------------------------|---------------------|-------------------|------------|\n| \u201cMedallions cost ~$500k, drivers make $31k\u201d | **UNVERIFIED** | Boston medallion price was $625k (2013) and $600k (2015); driver\u2011earnings discussion exists but no $31k figure. | 90\u202f% (unverified) |\n| UberCab is described as **\u201cThe NetJets of car services\u201d** | **VERIFIED** | Vox article quoting Travis Kalanick and Camp; deck repeats the phrasing. | 96\u202f% |\n| **Must be a member to use the service \u2013 Professional and trustworthy clientele** | **UNVERIFIED** | Account creation only requires email & phone; no membership gate shown. | 80\u202f% |\n| **1\u2011click hailing \u2013 \u201cPickup here in 5 mins\u201d** | **UNVERIFIED** | No supporting evidence extracted. | 90\u202f% |\n| **Luxury automobiles \u2013 Mercedes Sedans** | **VERIFIED** | Reference to Mercedes\u2011Benz W140 full\u2011size luxury sedan. | 96\u202f% |\n\n*Only two claims are verified; the remainder are unverified despite relatively high confidence scores from the automated check.*\n\n---\n\n### 3. RISK ASSESSMENT  \n\n| Risk | Evidence (from deck / verification) | Relative severity* |\n|------|--------------------------------------|--------------------|\n| **Regulatory & legal exposure** \u2013 FTC lawsuit (April\u202f2025) for deceptive Uber\u202fOne billing; shareholder lawsuit (June\u202f2026) alleging compliance failures; securities\u2011fraud investigations. | Explicitly listed in the *Risk Analysis* section. | HIGH |\n| **Business\u2011model concentration** \u2013 members\u2011only premium clientele limits addressable market and creates concentration risk. | Stated in *Risk Analysis*; unverified claim about membership requirement. | MEDIUM |\n| **Capital intensity** \u2013 need for premium hybrid/luxury fleet; vehicle depreciation. | Mentioned in *Risk Analysis*; verified luxury\u2011vehicle claim supports fleet cost concerns. | MEDIUM |\n| **Driver recruitment & classification** \u2013 incentive\u2011heavy model; potential classification disputes. | Listed in *Risk Analysis*. | MEDIUM |\n| **Medallion\u2011license risk** \u2013 operating without traditional taxi medallions. | Cited in *Risk Analysis*; medallion\u2011cost claim unverified. | MEDIUM |\n| **Financial opacity** \u2013 monthly burn and runway not disclosed; $1\u202fB revenue is founder\u2011stated only. | Financial metrics section; \u201ctreated as stated\u2011by\u2011founder, not independently verified.\u201d | HIGH |\n\n\\*Severity ranking is based on the explicit language of the risk analysis and the potential impact on valuation; no quantitative probability is provided.\n\n---\n\n### 4. FINANCIAL ANALYSIS  \n\n| Metric | Value | Verification | Comments |\n|--------|-------|---------------|----------|\n| **Annual Revenue** | $1,000,000,000 | **Founder\u2011stated only** (not independently verified). | Treated as a claim from the deck; no third\u2011party corroboration. |\n| **Monthly Burn** | Insufficient data | \u2013 | Not provided in the deck. |\n| **Runway** | Insufficient data | \u2013 | Not provided in the deck. |\n\nNo unit\u2011economics, cost structure, or profitability metrics are available.\n\n---\n\n### 5. COMPARABLE COMPANIES (from internal database)  \n\n* The database contains prior diligence reports for \u201cUber (unclassified)\u201d but those reports note **high input completeness** and **low extraction coverage**, with no concrete comparable\u2011company financials or market metrics extracted.  \n* **Insufficient data** to produce a meaningful comparable\u2011company analysis for UberCab.\n\n---\n\n### 6. RED FLAGS  \n\n* FTC lawsuit (April\u202f2025) \u2013 deceptive billing allegations.  \n* Shareholder lawsuit (June\u202f2026) \u2013 alleged compliance and safety failures.  \n* Ongoing securities\u2011fraud investigations.  \n* Legal risk around operating without traditional taxi medallions.  \n* Lack of verified financials (revenue, burn, runway).  \n* Majority of key commercial claims (membership requirement, pricing, driver earnings) are unverified.  \n\n---\n\n### 7. GREEN FLAGS / POSITIVE SIGNALS  \n\n* **Verified premium positioning** \u2013 \u201cNetJets of car services\u201d framing indicates a clear high\u2011value market narrative.  \n* **Verified luxury fleet** \u2013 Mercedes\u2011Sedan vehicles confirmed in the deck, supporting the premium service claim.  \n* **Revenue claim** \u2013 $1\u202fB annual revenue (though unverified) suggests the founders believe the business can achieve scale.  \n\n---\n\n### 8. FINAL VERDICT  \n\n**NEEDS MORE DILIGENCE** \u2013 The deck provides a compelling premium\u2011service narrative but lacks verifiable financials, market\u2011size validation, and contains multiple legal exposures. Additional data on unit economics, customer traction, and independent market research is required before an investment decision.\n\n---\n\n### 9. CONFIDENCE LEVEL  \n\n**45\u202f%** confidence.  \n*Rationale:* Only two claims are independently verified; extraction coverage is low (40\u202f%); key financial and market data are missing; and several high\u2011severity legal risks are documented. These gaps justify a confidence level well below the 60\u202f% threshold.  ",
+      "claims_verified": 5,
+      "claims_supported": 2,
+      "claims_refuted": 0,
+      "claims_uncertain": 3,
+      "risk_signals_found": 2,
+      "key_concerns": [
+        "Regulatory and legal exposure from FTC lawsuit alleging deceptive billing practices",
+        "Multiple securities\u2011fraud investigations and shareholder lawsuits alleging false statements and safety/compliance failures",
+        "Business model depends on a members\u2011only premium clientele, limiting addressable market and creating concentration risk",
+        "High upfront capital required for premium hybrid/luxury fleet and ongoing vehicle depreciation",
+        "Driver recruitment and retention risk given incentive\u2011heavy model and potential classification disputes",
+        "Potential regulatory challenges for operating without traditional taxi medallion licenses"
+      ],
+      "red_flags": [
+        "FTC lawsuit (April 2025) for deceptive Uber One subscription practices",
+        "Shareholder lawsuit (June 2026) alleging serial compliance failures and safety issues",
+        "Securities\u2011fraud investigations questioning false or misleading investor disclosures",
+        "Potential regulatory action for operating without traditional taxi medallion licenses"
+      ],
+      "positive_factors": [
+        "Clear market inefficiency in traditional taxi dispatch and pricing",
+        "Technology\u2011driven on\u2011demand platform reduces dead\u2011time and improves vehicle utilization",
+        "Environmental benefit claims from hybrid fleet and ridesharing incentives",
+        "Scalable software stack for geo\u2011aware dispatch and route optimization",
+        "Early focus on high\u2011density urban markets (SF, NYC) with sizable premium travel demand"
+      ],
+      "sections": {
+        "risk": {
+          "red_flags": [
+            "FTC lawsuit (April 2025) for deceptive Uber One subscription practices",
+            "Shareholder lawsuit (June 2026) alleging serial compliance failures and safety issues",
+            "Securities\u2011fraud investigations questioning false or misleading investor disclosures",
+            "Potential regulatory action for operating without traditional taxi medallion licenses"
+          ],
+          "risk_level": "MEDIUM",
+          "ai_reasoning": "The pitch deck outlines a compelling value proposition but reveals concrete risks: the company is already facing FTC and shareholder litigation, which materially raises legal and compliance exposure. The reliance on a limited premium membership base constrains growth and creates concentration risk. Capital intensity of a luxury hybrid fleet and driver incentive structures add financial pressure. While the technology and market inefficiencies are strengths, the combination of legal red flags and operational dependencies justifies a medium overall risk rating.",
+          "deck_signals": [],
+          "key_concerns": [
+            "Regulatory and legal exposure from FTC lawsuit alleging deceptive billing practices",
+            "Multiple securities\u2011fraud investigations and shareholder lawsuits alleging false statements and safety/compliance failures",
+            "Business model depends on a members\u2011only premium clientele, limiting addressable market and creating concentration risk",
+            "High upfront capital required for premium hybrid/luxury fleet and ongoing vehicle depreciation",
+            "Driver recruitment and retention risk given incentive\u2011heavy model and potential classification disputes",
+            "Potential regulatory challenges for operating without traditional taxi medallion licenses"
+          ],
+          "overall_score": 45.0,
+          "total_signals": 2,
+          "financial_state": {
+            "arr": null,
+            "mrr": null,
+            "revenue": 1000000000.0,
+            "evidence": {
+              "revenue": "\u2013 Becomes market leader, $1B+ in yearly revenue"
+            },
+            "cash_on_hand": null,
+            "monthly_burn": null,
+            "burn_multiple": null,
+            "runway_months": null,
+            "runway_source": null,
+            "annual_revenue": 1000000000.0,
+            "growth_multiple": null,
+            "largest_customer_share": null
+          },
+          "disclosure_model": {
+            "role": "severity ranking only; does not decide whether a risk fired",
+            "available": true,
+            "threshold": 0.6463357234785806,
+            "trained_on": "941 SEC 10-K/10-Q/8-K excerpts from 614 filings, weakly labelled by retrieval phrase, plus 16 structured deck features derived from the same text",
+            "why_not_voting": "Deck-subgroup AUC rose 0.667 -> 0.778 when structured features were added, but n=6 and the bootstrap 95% CI is [0.200, 1.000] -- an interval too wide to promote on. At the chosen threshold this model would still fire on the benchmark's risk-free team slide (p=0.691) and miss the founder-departure/IP flag (p=0.193), while the deterministic rules in agents/deck_financials get 3/3 with zero false positives. Two of the three deck positives score exactly 1.000 because the features encode those same rules, so most of the apparent gain is the model re-reading them rather than adding independent signal.",
+            "uses_deck_features": true,
+            "benchmark_auc_sec_filings": 1.0,
+            "benchmark_auc_deck_register": 0.778,
+            "benchmark_auc_deck_register_ci95": [
+              0.2,
+              1.0
+            ]
+          },
+          "positive_factors": [
+            "Clear market inefficiency in traditional taxi dispatch and pricing",
+            "Technology\u2011driven on\u2011demand platform reduces dead\u2011time and improves vehicle utilization",
+            "Environmental benefit claims from hybrid fleet and ridesharing incentives",
+            "Scalable software stack for geo\u2011aware dispatch and route optimization",
+            "Early focus on high\u2011density urban markets (SF, NYC) with sizable premium travel demand"
+          ],
+          "financial_metrics": {
+            "revenue": {
+              "label": "revenue",
+              "value": 1000000000.0,
+              "evidence": "\u2013 Becomes market leader, $1B+ in yearly revenue"
+            }
+          },
+          "overall_risk_level": "MEDIUM",
+          "disclosure_severity": 0.7389598543282446
+        },
+        "team": {
+          "gaps": [],
+          "questions": [
+            "Who are the founders and what are their relevant backgrounds?",
+            "What is the current team headcount and functional composition?",
+            "What prior startup or industry experience does the team have?",
+            "Are there any existing hires for technical, operations, or sales roles?",
+            "Can you provide evidence of product development progress or pilot customers?"
+          ],
+          "strengths": [],
+          "confidence": 0.05,
+          "capabilities": [],
+          "confidence_basis": "No checkable team evidence; assessment based on inference from deck lacking founder or team details",
+          "overall_assessment": "The deck provides product and market details but contains no information about the founders, team composition, or execution track record, preventing a substantive evaluation of team capabilities."
+        },
+        "claims": {
+          "checked": 5,
+          "details": [
+            {
+              "claim": "Medallions cost ~$500k, drivers make 31k",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Taxi_medallion",
+                "https://www.washingtonpost.com/business/economy/uber-lyft-and-the-hard-economics-of-taxi-cab-medallions/2019/05/24/cf1b56f4-7cda-11e9-a5b3-34f3edf1351e_story.html",
+                "https://hrlr.law.columbia.edu/hrlr-online/distressed-drivers-solving-the-new-york-city-taxi-medallion-debt-crisis/",
+                "https://www.adamsmith.org/blog/how-much-do-uber-drivers-value-flexibility",
+                "https://www.npr.org/2018/10/15/656595597/cities-made-millions-selling-taxi-medallions-now-drivers-are-paying-the-price"
+              ],
+              "verdict": "NOT_ENOUGH_INFO",
+              "reasoning": "All provided sources report medallion prices and driver earnings for years after 2010 (e.g., $625k in 2013, $600k in 2015, $160k in 2018) and do not mention a $500k price or $31k driver income. Since the claim refers to a 2007 point\u2011in\u2011time figure, the evidence does not cover that period and cannot confirm or refute the numbers.",
+              "confidence": 0.9,
+              "key_evidence": "Boston medallion price was $625,000 in 2013 and $600,000 in 2015; driver earnings reductions are discussed for 2013\u20112016, but no $31,000 figure is given.",
+              "total_sources": 15,
+              "dropped_sources": [],
+              "full_pages_read": 4,
+              "sources_dropped": 0,
+              "evidence_providers": {
+                "duckduckgo": 25
+              }
+            },
+            {
+              "claim": "UberCab is described as \u201cThe NetJets of car services\u201d",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Uber",
+                "https://www.vox.com/2017/8/23/16189048/uber-pitch-deck-2008-ubercab-travis-kalanick-founder-startup",
+                "https://www.peterfisk.com/wp-content/uploads/2022/09/Uber-Pitch-Deck-2008.pdf",
+                "https://www.businessinsider.com/7-5-2019-uber-original-2008-pitch-deck-2019-7",
+                "https://inc42.com/buzz/pitch-deck-uber-cab-aggregation/"
+              ],
+              "verdict": "SUPPORTS",
+              "reasoning": "Multiple independent sources (Vox and Business Insider) report that Uber's 2008 pitch deck explicitly described UberCab as \u201cthe NetJets of car services,\u201d confirming the claim.",
+              "confidence": 0.96,
+              "key_evidence": "Camp and Travis Kalanick compared UberCab to the \u201cNetJets of car services.\u201d (Vox article) and \u201cThe deck is not shy about this, calling it \u201cThe NetJets of car services.\u201d (Business Insider)",
+              "total_sources": 15,
+              "dropped_sources": [
+                {
+                  "url": "https://www.slideshare.net/slideshow/uberpdf-255904108/255904108",
+                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
+                },
+                {
+                  "url": "https://www.slideshare.net/slideshow/uber-pitch-deck-2008/79075025",
+                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
+                },
+                {
+                  "url": "https://startupfundraising.com/library/articles/uber-cab-first-dec-pitch-deck-teardown",
+                  "reason": "circular: startupfundraising.com republishes pitch decks, so this is the claim's own source"
+                },
+                {
+                  "url": "https://www.scribd.com/document/357024585/UberCab-Dec2008",
+                  "reason": "circular: scribd.com republishes pitch decks, so this is the claim's own source"
+                },
+                {
+                  "url": "https://startupfundraising.com/library/articles/uber-pitch-deck-teardown",
+                  "reason": "circular: startupfundraising.com republishes pitch decks, so this is the claim's own source"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 5,
+              "evidence_providers": {
+                "duckduckgo": 25
+              }
+            },
+            {
+              "claim": "Must be a member to use the service \u2013 Professional and trustworthy clientele",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Uber",
+                "https://help.uber.com/en/",
+                "https://www.uber.com/us/en/ride/how-it-works/",
+                "https://www.uber.com/",
+                "https://help.uber.com/riders/section/policies?nodeId=c316b333-f0f4-4c46-90ac-1f0a1e3babc8"
+              ],
+              "verdict": "NOT_ENOUGH_INFO",
+              "reasoning": "The evidence shows that Uber requires creating an account (i.e., being a member) to use the service, but it provides no information about the clientele being professional or trustworthy, so the claim is only partially addressed.",
+              "confidence": 0.8,
+              "key_evidence": "Create an account All you need is an email address and phone number.",
+              "total_sources": 15,
+              "dropped_sources": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Travis_Kalanick",
+                  "reason": "off-topic (embedding similarity 0.034 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Romania",
+                  "reason": "off-topic (embedding similarity 0.030 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/WikiLeaks",
+                  "reason": "off-topic (embedding similarity 0.097 < 0.120)"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 3,
+              "evidence_providers": {
+                "wikipedia": 9,
+                "duckduckgo": 15
+              }
+            },
+            {
+              "claim": "1\u2011click hailing \u2013 \u201cPickup here in 5 mins\u201d",
+              "sources": [
+                "https://www.uber.com/global/en/price-estimate/",
+                "https://m.uber.com/go/pickup",
+                "https://www.uber.com/",
+                "https://www.uber.com/us/en/ride/",
+                "https://www.grabon.in/indulge/travel/uber-alternatives-india-ride-hailing-apps/"
+              ],
+              "verdict": "NOT_ENOUGH_INFO",
+              "reasoning": "The provided evidence consists of Uber web pages about price estimates and ride requests, none of which mention a \"1\u2011click hailing\" feature or a \"Pickup here in 5 mins\" promise. Without explicit reference, the claim cannot be confirmed or refuted.",
+              "confidence": 0.9,
+              "key_evidence": "",
+              "total_sources": 15,
+              "dropped_sources": [
+                {
+                  "url": "https://www.slideshare.net/slideshow/uber-pitch-deck/79089661",
+                  "reason": "circular: slideshare.net republishes pitch decks, so this is the claim's own source"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Travis_Kalanick",
+                  "reason": "off-topic (embedding similarity 0.054 < 0.120)"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 2,
+              "evidence_providers": {
+                "wikipedia": 5,
+                "duckduckgo": 25
+              }
+            },
+            {
+              "claim": "Luxury automobiles \u2013 Mercedes Sedans",
+              "sources": [
+                "https://en.wikipedia.org/wiki/Mercedes-Benz_E-Class",
+                "https://en.wikipedia.org/wiki/Mercedes-Benz_W140",
+                "https://en.wikipedia.org/wiki/List_of_Mercedes-Benz_vehicles",
+                "https://en.wikipedia.org/wiki/Mercedes-Benz_W124",
+                "https://en.wikipedia.org/wiki/Deliveroo"
+              ],
+              "verdict": "SUPPORTS",
+              "reasoning": "The evidence describes Mercedes-Benz models such as the W140 and S-Class as full-size luxury cars with sedan body styles, confirming that Mercedes sedans are luxury automobiles.",
+              "confidence": 0.96,
+              "key_evidence": "Mercedes-Benz W140 ... Body and chassis Class Full-size luxury car (F) Body style 4-door sedan",
+              "total_sources": 14,
+              "dropped_sources": [
+                {
+                  "url": "https://en.wikipedia.org/wiki/Mercedes-Benz_S-Class",
+                  "reason": "off-topic (embedding similarity 0.068 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Mercedes-Benz_S-Class_(W220)",
+                  "reason": "off-topic (embedding similarity 0.061 < 0.120)"
+                },
+                {
+                  "url": "https://en.wikipedia.org/wiki/Travis_Kalanick",
+                  "reason": "off-topic (embedding similarity 0.051 < 0.120)"
+                }
+              ],
+              "full_pages_read": 5,
+              "sources_dropped": 3,
+              "evidence_providers": {
+                "wikipedia": 16,
+                "duckduckgo": 5
+              }
+            }
+          ],
+          "refuted": 0,
+          "supported": 2,
+          "uncertain": 3,
+          "reliability_note": "HIGH \u2014 multiple claims verified"
+        },
+        "market": {
+          "gaps": [
+            "No third\u2011party verification of the $4.2\u202fB market size",
+            "No disclosed customer acquisition or usage metrics",
+            "No concrete competitive analysis beyond a single brand mention",
+            "No evidence of pilot performance, revenue or profit figures",
+            "No independent validation of technology patents or IP"
+          ],
+          "signals": [
+            {
+              "finding": "Current taxi system is costly and inefficient for drivers and riders",
+              "evidence": "Medallions cost ~$500k, drivers make 31k"
+            },
+            {
+              "finding": "Significant dead\u2011time in existing cabs reduces utilization",
+              "evidence": "In NYC, 35% of time is spend looking for fares"
+            },
+            {
+              "finding": "Market is fragmented \u2013 top 4 players hold only 22% of revenues",
+              "evidence": "Top 4 players combined only 22% of revenues"
+            },
+            {
+              "finding": "Limited recognizable competition; YellowCab is the only known brand",
+              "evidence": "YellowCab is the only recognizable brand"
+            }
+          ],
+          "confidence": 0.78,
+          "recommendation": "The deck defines a clear market and problem, but relies on internal estimates and lacks verifiable traction or competitive data; pursue further diligence to validate market size, early customer adoption, and competitive landscape before any investment decision.",
+          "confidence_basis": "Four findings quote specific figures or named entities (market size $4.2B, medallion cost $500k, dead\u2011time 35%, top 4 players 22% revenue) while other points are inferred",
+          "market_definition": {
+            "finding": "The service targets the US urban on\u2011demand car market, estimated at $4.2\u202fB annually",
+            "evidence": "Overall Market \u2022 $4.2B annually and growing"
+          }
+        },
+        "bear_case": {
+          "thesis": "The deck rests on unverified market size, overly optimistic financial projections, and unproven technology, while providing no concrete customer traction or validated cost structure, creating a high\u2011risk downside scenario.",
+          "signals": [
+            {
+              "detail": "No source or methodology provided for the $4.2B figure, making the addressable market unclear.",
+              "finding": "Unsubstantiated market size claim",
+              "evidence": "Overall Market \u2022 $4.2B annually and growing"
+            },
+            {
+              "detail": "Revenue and profit targets lack supporting cost assumptions, pricing models, or customer volume data.",
+              "finding": "Overly optimistic financial projections without unit economics",
+              "evidence": "Best-Case Scenario \u2013 Becomes market leader, $1B+ in yearly revenue; Realistic Success Scenario \u2013 Gets 5% of the top 5 US Cities \u2013 Generates 20-30M+ per year profit"
+            },
+            {
+              "detail": "The 2x efficiency claim is not backed by independent data; fleet mpg numbers are presented without verification.",
+              "finding": "Questionable vehicle efficiency claims",
+              "evidence": "Hybrid vehicles (2x efficiency of a cab) \u2013 Mercedes S400 BlueHybrid, Lexus GS-450h"
+            },
+            {
+              "detail": "The deck mentions a members\u2011only model but provides no named members, pilots, or signed agreements.",
+              "finding": "No evidence of actual customers or contracts",
+              "evidence": "Must be a member to use the service \u2013 Professional and trustworthly clientele"
+            },
+            {
+              "detail": "No patent numbers, filing dates, or prototype demonstrations are provided to substantiate the technology claim.",
+              "finding": "Unproven technology and IP status",
+              "evidence": "Patent-pending system design; Geo-aware auto-dispatch"
+            }
+          ],
+          "confidence": 0.78,
+          "confidence_basis": "5 findings, 4 contain specific figures or named entities (e.g., $4.2B market size, $1B revenue, 5% market share, $500k medallion cost), remaining are inference from deck",
+          "diligence_required": [
+            "Obtain third\u2011party market research to validate the $4.2B market size claim",
+            "Request detailed financial model showing unit economics, pricing, cost structure, and break\u2011even analysis",
+            "Verify hybrid vehicle fuel\u2011efficiency claims and actual fleet mpg through vehicle specifications or testing data",
+            "Secure evidence of signed member agreements, pilot programs, or early\u2011stage revenue",
+            "Review patent filings for the claimed patent\u2011pending system and assess prototype functionality",
+            "Confirm medallion cost and driver salary figures cited in the deck",
+            "Validate demand\u2011forecasting methodology and underlying data sources"
+          ]
+        },
+        "bull_case": {
+          "thesis": "UberCab\u2019s member\u2011only, on\u2011demand premium car service leverages technology\u2011driven dispatch, a hybrid luxury fleet, and high\u2011value urban markets (SF/NYC) to capture a share of the $4.2B annual on\u2011demand car market and achieve profitable scale.",
+          "signals": [
+            {
+              "finding": "Medallion cost and driver earnings",
+              "evidence": "Medallions cost ~$500k, drivers make 31k"
+            },
+            {
+              "finding": "Fuel efficiency of fleet vehicles",
+              "evidence": "30mpg with S400 BlueHybrid (in 2010) and Standard \u2013 Lexus GS450h or e320 \u2013 23mpg"
+            },
+            {
+              "finding": "Overall market size",
+              "evidence": "Overall Market \u2022 $4.2B annually and growing"
+            },
+            {
+              "finding": "Competitive concentration",
+              "evidence": "Top 4 players combined only 22% of revenues"
+            },
+            {
+              "finding": "Projected financial outcomes",
+              "evidence": "Realistic Success Scenario \u2013 Gets 5% of the top 5 US Cities \u2013 Generates 20-30M+ per year profit"
+            }
+          ],
+          "confidence": 0.88,
+          "confidence_basis": "5 findings contain checkable particulars (figures, dates, named entities) quoted from the deck; other statements are inferred",
+          "conditions_to_invest": "Verify unit\u2011economics through pilot data (cost per ride vs revenue), secure regulatory approval for member\u2011only service without medallion licenses, demonstrate ability to acquire and maintain a hybrid luxury fleet at scale, and obtain measurable demand in target cities (SF, NYC) before expanding to additional markets."
+        },
+        "ai_analysis": "**VentureFlow Investment Memo \u2013 UberCab (members\u2011only luxury on\u2011demand car service)**  \n\n---\n\n### 1. EXECUTIVE SUMMARY  \nUberCab markets a members\u2011only, on\u2011demand luxury car service that positions itself as \u201cthe NetJets of car services.\u201d The deck provides a $1\u202fB annual\u2011revenue claim but supplies no independent financial verification, and several material legal and market\u2011size uncertainties remain. **Confidence in the investment thesis is low to medium** pending further validation.\n\n---\n\n### 1b. WHAT DRIVES THE VENTUREFLOW SCORE  \n* **Model\u2011generated score:** **44\u202f/\u202f100** (range 32\u201154).  \n* **Base model prior:** 49\u202f/\u202f100 \u2013 the statistical model, using typical sector signals, would have placed the company at a mid\u2011range score.  \n* **Evidence adjustment:** \u20135 points. The adjustment reflects:  \n  * Two **verified** claims (NetJets positioning; Mercedes\u2011Sedan fleet) \u2013 modest positive signal.  \n  * Multiple **unverified** or **refuted** claims (medallion cost, driver earnings, members\u2011only requirement, 1\u2011click hailing) \u2013 negative signal.  \n  * Presence of **legal red\u2011flags** (FTC lawsuit, shareholder and securities\u2011fraud investigations) \u2013 negative signal.  \n  * Missing key financial inputs (monthly burn, runway) \u2013 negative signal.  \n* **Model confidence:** *Medium* (feature coverage 62\u202f%). The model\u2019s confidence is tempered by low extraction coverage (40\u202f%) and the fact that many deck slides did not map to structured fields. Consequently, the score should be treated as a **pre\u2011liminary indicator**, not a definitive valuation.  \n\n---\n\n### 2. CLAIM VERIFICATION ANALYSIS  \n\n| Claim (as stated in deck) | Verification status | Evidence / Source | Confidence |\n|----------------------------|---------------------|-------------------|------------|\n| \u201cMedallions cost ~$500k, drivers make $31k\u201d | **UNVERIFIED** | Boston medallion price was $625k (2013) and $600k (2015); driver\u2011earnings discussion exists but no $31k figure. | 90\u202f% (unverified) |\n| UberCab is described as **\u201cThe NetJets of car services\u201d** | **VERIFIED** | Vox article quoting Travis Kalanick and Camp; deck repeats the phrasing. | 96\u202f% |\n| **Must be a member to use the service \u2013 Professional and trustworthy clientele** | **UNVERIFIED** | Account creation only requires email & phone; no membership gate shown. | 80\u202f% |\n| **1\u2011click hailing \u2013 \u201cPickup here in 5 mins\u201d** | **UNVERIFIED** | No supporting evidence extracted. | 90\u202f% |\n| **Luxury automobiles \u2013 Mercedes Sedans** | **VERIFIED** | Reference to Mercedes\u2011Benz W140 full\u2011size luxury sedan. | 96\u202f% |\n\n*Only two claims are verified; the remainder are unverified despite relatively high confidence scores from the automated check.*\n\n---\n\n### 3. RISK ASSESSMENT  \n\n| Risk | Evidence (from deck / verification) | Relative severity* |\n|------|--------------------------------------|--------------------|\n| **Regulatory & legal exposure** \u2013 FTC lawsuit (April\u202f2025) for deceptive Uber\u202fOne billing; shareholder lawsuit (June\u202f2026) alleging compliance failures; securities\u2011fraud investigations. | Explicitly listed in the *Risk Analysis* section. | HIGH |\n| **Business\u2011model concentration** \u2013 members\u2011only premium clientele limits addressable market and creates concentration risk. | Stated in *Risk Analysis*; unverified claim about membership requirement. | MEDIUM |\n| **Capital intensity** \u2013 need for premium hybrid/luxury fleet; vehicle depreciation. | Mentioned in *Risk Analysis*; verified luxury\u2011vehicle claim supports fleet cost concerns. | MEDIUM |\n| **Driver recruitment & classification** \u2013 incentive\u2011heavy model; potential classification disputes. | Listed in *Risk Analysis*. | MEDIUM |\n| **Medallion\u2011license risk** \u2013 operating without traditional taxi medallions. | Cited in *Risk Analysis*; medallion\u2011cost claim unverified. | MEDIUM |\n| **Financial opacity** \u2013 monthly burn and runway not disclosed; $1\u202fB revenue is founder\u2011stated only. | Financial metrics section; \u201ctreated as stated\u2011by\u2011founder, not independently verified.\u201d | HIGH |\n\n\\*Severity ranking is based on the explicit language of the risk analysis and the potential impact on valuation; no quantitative probability is provided.\n\n---\n\n### 4. FINANCIAL ANALYSIS  \n\n| Metric | Value | Verification | Comments |\n|--------|-------|---------------|----------|\n| **Annual Revenue** | $1,000,000,000 | **Founder\u2011stated only** (not independently verified). | Treated as a claim from the deck; no third\u2011party corroboration. |\n| **Monthly Burn** | Insufficient data | \u2013 | Not provided in the deck. |\n| **Runway** | Insufficient data | \u2013 | Not provided in the deck. |\n\nNo unit\u2011economics, cost structure, or profitability metrics are available.\n\n---\n\n### 5. COMPARABLE COMPANIES (from internal database)  \n\n* The database contains prior diligence reports for \u201cUber (unclassified)\u201d but those reports note **high input completeness** and **low extraction coverage**, with no concrete comparable\u2011company financials or market metrics extracted.  \n* **Insufficient data** to produce a meaningful comparable\u2011company analysis for UberCab.\n\n---\n\n### 6. RED FLAGS  \n\n* FTC lawsuit (April\u202f2025) \u2013 deceptive billing allegations.  \n* Shareholder lawsuit (June\u202f2026) \u2013 alleged compliance and safety failures.  \n* Ongoing securities\u2011fraud investigations.  \n* Legal risk around operating without traditional taxi medallions.  \n* Lack of verified financials (revenue, burn, runway).  \n* Majority of key commercial claims (membership requirement, pricing, driver earnings) are unverified.  \n\n---\n\n### 7. GREEN FLAGS / POSITIVE SIGNALS  \n\n* **Verified premium positioning** \u2013 \u201cNetJets of car services\u201d framing indicates a clear high\u2011value market narrative.  \n* **Verified luxury fleet** \u2013 Mercedes\u2011Sedan vehicles confirmed in the deck, supporting the premium service claim.  \n* **Revenue claim** \u2013 $1\u202fB annual revenue (though unverified) suggests the founders believe the business can achieve scale.  \n\n---\n\n### 8. FINAL VERDICT  \n\n**NEEDS MORE DILIGENCE** \u2013 The deck provides a compelling premium\u2011service narrative but lacks verifiable financials, market\u2011size validation, and contains multiple legal exposures. Additional data on unit economics, customer traction, and independent market research is required before an investment decision.\n\n---\n\n### 9. CONFIDENCE LEVEL  \n\n**45\u202f%** confidence.  \n*Rationale:* Only two claims are independently verified; extraction coverage is low (40\u202f%); key financial and market data are missing; and several high\u2011severity legal risks are documented. These gaps justify a confidence level well below the 60\u202f% threshold.  ",
+        "rag_context": {
+          "reports_retrieved": 5
+        },
+        "venture_score": {
+          "model": {
+            "cv_ece": 0.0219,
+            "family": "rf",
+            "cv_brier": 0.2223,
+            "trained_n": 1298,
+            "cv_roc_auc": 0.6772,
+            "calibration": "isotonic",
+            "cv_roc_auc_ci95": [
+              0.6607,
+              0.6932
+            ],
+            "excluded_contaminated_features": [
+              "team_size",
+              "age_years",
+              "batch_year"
+            ]
+          },
+          "caveat": "Calibrated probability that a company with these characteristics survived or exited, trained on 1,560 resolved-outcome Y Combinator companies. Features that encode hindsight (current headcount, company age, batch year) were deliberately excluded, which lowers headline accuracy and is the reason this number is usable on an early-stage company at all. Not a return multiple, not validated outside the YC population, and not an investment verdict.",
+          "available": true,
+          "base_rate": 0.4892,
+          "confidence": "medium",
+          "score_range": [
+            32,
+            54
+          ],
+          "ensemble_std": 0.0765,
+          "degraded_note": "This score was computed without stage and industry/sector, which together account for up to 66 points of the model's range. The deck did not state them, and nothing was assumed in their place. Treat the number as correspondingly less specific to this company.",
+          "venture_score": 44,
+          "missing_inputs": [
+            {
+              "input": "stage",
+              "consequence": "The largest single input to the score. Without it the model scores this deck as stage-unknown, which is a population average rather than a read on this company.",
+              "range_points": 42
+            },
+            {
+              "input": "industry/sector",
+              "consequence": "The second-largest input. Absent, the model cannot place the company against its own sector's base rate.",
+              "range_points": 24
+            }
+          ],
+          "degraded_inputs": true,
+          "evidence_fusion": {
+            "delta": -0.0543,
+            "terms": {
+              "low_risk": 0.0131,
+              "risk_severity": -0.0887,
+              "refuted_claims": 0.0,
+              "claims_supported": 0.012,
+              "claims_unresolved": -0.048,
+              "deck_risk_signals": 0.0,
+              "financials_disclosed": 0.02,
+              "specialist_grounding": 0.0374
+            },
+            "bounds": {
+              "max_negative": -0.6,
+              "max_positive": 0.2
+            },
+            "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function.",
+            "clamped": false,
+            "features": {
+              "n_claims": 5,
+              "risk_severity": 0.739,
+              "refuted_fraction": 0.0,
+              "deck_signal_count": 0,
+              "supported_fraction": 0.4,
+              "financial_disclosure": 0.3333,
+              "specialist_grounding": 0.6225,
+              "unsupported_fraction": 0.6
+            },
+            "delta_points": -5.4,
+            "model_probability": 0.4924,
+            "adjusted_probability": 0.4381
+          },
+          "evidence_penalty": 0.0543,
+          "feature_coverage": 0.625,
+          "imputed_features": [
+            "has_former_name",
+            "industry",
+            "is_any_remote",
+            "is_bay_area",
+            "is_fully_remote",
+            "is_partly_remote",
+            "is_us",
+            "nonprofit",
+            "stage"
+          ],
+          "model_only_score": 49,
+          "lift_over_base_rate": 0.0031,
+          "probability_exit_or_survive": 0.4381
+        },
+        "evidence_fusion": {
+          "delta": -0.0543,
+          "terms": {
+            "low_risk": 0.0131,
+            "risk_severity": -0.0887,
+            "refuted_claims": 0.0,
+            "claims_supported": 0.012,
+            "claims_unresolved": -0.048,
+            "deck_risk_signals": 0.0,
+            "financials_disclosed": 0.02,
+            "specialist_grounding": 0.0374
+          },
+          "bounds": {
+            "max_negative": -0.6,
+            "max_positive": 0.2
+          },
+          "method": "Explicit bounded arithmetic over structured agent outputs. Not a fitted layer: fitting needs examples labelled (evidence state, outcome), and the seven decks with known outcomes are all successes. Not an LLM judgement: no free text enters this function.",
+          "clamped": false,
+          "features": {
+            "n_claims": 5,
+            "risk_severity": 0.739,
+            "refuted_fraction": 0.0,
+            "deck_signal_count": 0,
+            "supported_fraction": 0.4,
+            "financial_disclosure": 0.3333,
+            "specialist_grounding": 0.6225,
+            "unsupported_fraction": 0.6
+          },
+          "delta_points": -5.4,
+          "model_probability": 0.4924,
+          "adjusted_probability": 0.4381
+        },
+        "financial_state": {
+          "arr": null,
+          "mrr": null,
+          "revenue": 1000000000.0,
+          "evidence": {
+            "revenue": "\u2013 Becomes market leader, $1B+ in yearly revenue"
+          },
+          "cash_on_hand": null,
+          "monthly_burn": null,
+          "burn_multiple": null,
+          "runway_months": null,
+          "runway_source": null,
+          "annual_revenue": 1000000000.0,
+          "growth_multiple": null,
+          "largest_customer_share": null
+        },
+        "technical_score": {
+          "reason": "No GitHub URL was provided.",
+          "available": false
+        },
+        "ml_outcome_model": {
+          "band": "mixed",
+          "caveat": "Weak proxy label, YC-only distribution, not validated outside this population. One input signal, not an investment verdict. team_size and age_years are excluded as hindsight features, which costs 0.058 ROC-AUC and is the reason this number is lower than the 0.70 reported before 23 Aug 2026.",
+          "available": true,
+          "trained_on": "1,560 Y Combinator companies (yc-oss/api), 3.5+ years post-launch, label = Acquired/Public vs. Inactive, Active/unresolved excluded",
+          "model_test_auc": 0.646,
+          "excluded_hindsight_features": [
+            "team_size",
+            "age_years"
+          ],
+          "probability_survives_or_exits": 0.533
+        },
+        "founder_discovery": {
+          "found": true,
+          "founders": [
+            {
+              "name": "Garrett Camp",
+              "role": "",
+              "discovery_sources": [
+                "https://en.wikipedia.org/wiki/Uber_Eats"
+              ]
+            },
+            {
+              "name": "Travis Kalanick",
+              "role": "",
+              "discovery_sources": [
+                "https://www.investopedia.com/articles/personal-finance/111015/story-uber.asp",
+                "https://en.wikipedia.org/wiki/Uber_Eats"
+              ]
+            }
+          ],
+          "searched": true,
+          "attempted": true,
+          "sources_consulted": [
+            "https://en.wikipedia.org/wiki/Uber",
+            "https://en.wikipedia.org/wiki/Travis_Kalanick",
+            "https://en.wikipedia.org/wiki/Chhatrapati_Shivaji_Terminus",
+            "https://en.wikipedia.org/wiki/John_Deere",
+            "https://en.wikipedia.org/wiki/Toyota",
+            "https://www.investopedia.com/articles/personal-finance/111015/story-uber.asp",
+            "https://www.britannica.com/money/Uber",
+            "https://www.uber.com/us/en/newsroom/ubers-founding/"
+          ],
+          "rejected_ungrounded": [],
+          "possible_same_person": []
+        },
+        "market_comparables": {
+          "caveat": "TWO POPULATIONS, SHOWN SEPARATELY. These are the nearest matches among 5,603 companies with a publicly recorded outcome: 5,133 Y Combinator alumni and 470 technology companies from public reference data that did not go through an accelerator. Places are reserved for each population rather than pooled, because the text embedder was fitted on YC's own writing and a pooled ranking returned 24 of 25 rows from YC for reasons of writing style rather than business similarity.\n\nDO NOT COMPARE THE TWO SIMILARITY COLUMNS. For the same reason, a 0.62 against a market-wide company is not weaker evidence than a 0.68 against a YC company; they are not on one scale.\n\nSIMILARITY IS LEXICAL, NOT SEMANTIC. Measured on this corpus, \"a commercial laundry servicing hotels\" scores 0.78 against its nearest match and \"an AI developer tools platform\" scores 0.84 -- so a high number does NOT establish that two businesses are alike. Read the company names and judge for yourself; treat these as leads to look into, not as validated comparables or valuation guidance.\n\nWHAT THE OUTCOME COLUMN MEANS. 'Still operating' is a real outcome and the most common one -- 70% of the Y Combinator population. 'Outsized outcome' is Y Combinator's own flag for its top companies, an editorial judgement rather than a financial figure; there is no free source of exit values, so an 'Exit' covers everything from an acquihire to a large sale.\n\nWHAT IS STILL MISSING. The market-wide corpus covers companies notable enough for an encyclopedia entry, so startups that failed quietly and early are under-represented in it. Neither population is a market census.",
+          "available": true,
+          "threshold": 0.5,
+          "population": {
+            "yc": {
+              "n": 5133,
+              "url": "https://github.com/yc-oss/api",
+              "note": "Accelerator-backed, mostly US, mostly 2012 onwards. Includes companies still operating with no exit, which are 70% of the population and were previously absent from this table.",
+              "label": "Y Combinator alumni",
+              "source": "yc-oss/api",
+              "best_similarity": 0.653,
+              "matches_above_floor": 5
+            },
+            "market": {
+              "n": 470,
+              "url": "https://www.wikidata.org/",
+              "note": "Technology companies founded 1990-2020 with an outcome recorded in public reference data. Covers companies notable enough for an encyclopedia entry, so quiet early failures are under-represented.",
+              "label": "Market-wide (non-accelerator)",
+              "source": "Wikidata (CC0) + English Wikipedia (CC BY-SA)",
+              "best_similarity": 0.62,
+              "matches_above_floor": 5
+            }
+          },
+          "comparables": [
+            {
+              "name": "Mecho Autotech",
+              "batch": "Summer 2021",
+              "stage": "Early",
+              "outcome": "Still operating",
+              "industry": "Industrials",
+              "population": "yc",
+              "similarity": 0.653,
+              "source_url": "https://www.ycombinator.com/companies/mecho-autotech",
+              "outcome_key": "operating",
+              "founded_year": 2021,
+              "outcome_tier": 1,
+              "outcome_basis": "",
+              "population_label": "Y Combinator alumni"
+            },
+            {
+              "name": "Debitel",
+              "batch": "",
+              "stage": "",
+              "outcome": "Shut down",
+              "industry": "",
+              "population": "market",
+              "similarity": 0.62,
+              "source_url": "https://www.wikidata.org/wiki/Q1181510",
+              "outcome_key": "shut_down",
+              "founded_year": 1991,
+              "outcome_tier": 0,
+              "outcome_basis": "dissolved (P576), never listed and never acquired",
+              "population_label": "Market-wide (non-accelerator)"
+            },
+            {
+              "name": "Drive Pulse",
+              "batch": "Winter 2014",
+              "stage": "Early",
+              "outcome": "Shut down",
+              "industry": "Consumer",
+              "population": "yc",
+              "similarity": 0.616,
+              "source_url": "https://www.ycombinator.com/companies/drive-pulse",
+              "outcome_key": "shut_down",
+              "founded_year": 2014,
+              "outcome_tier": 0,
+              "outcome_basis": "",
+              "population_label": "Y Combinator alumni"
+            },
+            {
+              "name": "Alma",
+              "batch": "Summer 2022",
+              "stage": "Early",
+              "outcome": "Shut down",
+              "industry": "Fintech",
+              "population": "yc",
+              "similarity": 0.615,
+              "source_url": "https://www.ycombinator.com/companies/alma",
+              "outcome_key": "shut_down",
+              "founded_year": 2022,
+              "outcome_tier": 0,
+              "outcome_basis": "",
+              "population_label": "Y Combinator alumni"
+            },
+            {
+              "name": "Orange UK",
+              "batch": "",
+              "stage": "",
+              "outcome": "Exit",
+              "industry": "",
+              "population": "market",
+              "similarity": 0.608,
+              "source_url": "https://www.wikidata.org/wiki/Q10859717",
+              "outcome_key": "exit",
+              "founded_year": 1993,
+              "outcome_tier": 2,
+              "outcome_basis": "acquired in 2015, 22 years after founding",
+              "population_label": "Market-wide (non-accelerator)"
+            }
+          ],
+          "by_population": {
+            "yc": [
+              {
+                "name": "Mecho Autotech",
+                "batch": "Summer 2021",
+                "stage": "Early",
+                "outcome": "Still operating",
+                "industry": "Industrials",
+                "population": "yc",
+                "similarity": 0.653,
+                "source_url": "https://www.ycombinator.com/companies/mecho-autotech",
+                "outcome_key": "operating",
+                "founded_year": 2021,
+                "outcome_tier": 1,
+                "outcome_basis": "",
+                "population_label": "Y Combinator alumni"
+              },
+              {
+                "name": "Drive Pulse",
+                "batch": "Winter 2014",
+                "stage": "Early",
+                "outcome": "Shut down",
+                "industry": "Consumer",
+                "population": "yc",
+                "similarity": 0.616,
+                "source_url": "https://www.ycombinator.com/companies/drive-pulse",
+                "outcome_key": "shut_down",
+                "founded_year": 2014,
+                "outcome_tier": 0,
+                "outcome_basis": "",
+                "population_label": "Y Combinator alumni"
+              }
+            ],
+            "market": [
+              {
+                "name": "Debitel",
+                "batch": "",
+                "stage": "",
+                "outcome": "Shut down",
+                "industry": "",
+                "population": "market",
+                "similarity": 0.62,
+                "source_url": "https://www.wikidata.org/wiki/Q1181510",
+                "outcome_key": "shut_down",
+                "founded_year": 1991,
+                "outcome_tier": 0,
+                "outcome_basis": "dissolved (P576), never listed and never acquired",
+                "population_label": "Market-wide (non-accelerator)"
+              },
+              {
+                "name": "Orange UK",
+                "batch": "",
+                "stage": "",
+                "outcome": "Exit",
+                "industry": "",
+                "population": "market",
+                "similarity": 0.608,
+                "source_url": "https://www.wikidata.org/wiki/Q10859717",
+                "outcome_key": "exit",
+                "founded_year": 1993,
+                "outcome_tier": 2,
+                "outcome_basis": "acquired in 2015, 22 years after founding",
+                "population_label": "Market-wide (non-accelerator)"
+              }
+            ]
+          },
+          "outcome_rates": {
+            "n": 5133,
+            "note": "Across 5,133 Y Combinator technology companies, 70% are still operating with no exit, 15% exited, and 1.5% became one of YC's top companies. The score model's 49% base rate is a different figure: it is the share of exits among companies that had already exited or shut down, and excludes everything still operating.",
+            "rates": {
+              "exit": 0.1309,
+              "outsized": 0.0146,
+              "operating": 0.7002,
+              "shut_down": 0.1543
+            },
+            "counts": {
+              "exit": 672,
+              "outsized": 75,
+              "operating": 3594,
+              "shut_down": 792
+            },
+            "exit_rate": 0.1455,
+            "population": "Y Combinator technology companies",
+            "outsized_rate": 0.0146
+          },
+          "no_close_matches": false,
+          "population_total": 5603
+        },
+        "evidence_components": {
+          "no_revenue": 0.0,
+          "data_quality": -0.05,
+          "risk_signals": 0.09,
+          "claim_sparsity": 0.0,
+          "refuted_claims": 0.0,
+          "claims_unsupported": 0.06,
+          "specialist_uncertainty": 0.0566
+        },
+        "extraction_coverage": {
+          "slides": [
+            {
+              "note": "",
+              "slide": 1,
+              "heading": "Next-Generation Car Service",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 1
+            },
+            {
+              "note": "",
+              "slide": 2,
+              "heading": "Cabs in 2008",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 7
+            },
+            {
+              "note": "",
+              "slide": 3,
+              "heading": "The Medallion System",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 6
+            },
+            {
+              "note": "",
+              "slide": 4,
+              "heading": "UberCab Concept",
+              "represented": true,
+              "mapped_lines": 2,
+              "content_lines": 9
+            },
+            {
+              "note": "",
+              "slide": 5,
+              "heading": "1-Click Car Service",
+              "represented": true,
+              "mapped_lines": 5,
+              "content_lines": 9
+            },
+            {
+              "note": "",
+              "slide": 6,
+              "heading": "Key Differentiators",
+              "represented": true,
+              "mapped_lines": 2,
+              "content_lines": 8
+            },
+            {
+              "note": "",
+              "slide": 7,
+              "heading": "Operating Principles",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 8
+            },
+            {
+              "note": "",
+              "slide": 8,
+              "heading": "UberCab apps",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 3
+            },
+            {
+              "note": "",
+              "slide": 9,
+              "heading": "UberCab.com",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 6
+            },
+            {
+              "note": "",
+              "slide": 10,
+              "heading": "Use-Cases",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 8
+            },
+            {
+              "note": "",
+              "slide": 11,
+              "heading": "User Benefits",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 7
+            },
+            {
+              "note": "",
+              "slide": 12,
+              "heading": "Environmental Benefits",
+              "represented": true,
+              "mapped_lines": 1,
+              "content_lines": 10
+            },
+            {
+              "note": "",
+              "slide": 13,
+              "heading": "UberCab Fleet",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 5
+            },
+            {
+              "note": "",
+              "slide": 14,
+              "heading": "Initial Service Area",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 2
+            },
+            {
+              "note": "",
+              "slide": 15,
+              "heading": "Technology",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 6
+            },
+            {
+              "note": "",
+              "slide": 16,
+              "heading": "Demand Forecasting",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 4
+            },
+            {
+              "note": "",
+              "slide": 17,
+              "heading": "Overall Market",
+              "represented": true,
+              "mapped_lines": 3,
+              "content_lines": 3
+            },
+            {
+              "note": "",
+              "slide": 18,
+              "heading": "Composition of Market",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 3
+            },
+            {
+              "note": "",
+              "slide": 19,
+              "heading": "Target Cities",
+              "represented": true,
+              "mapped_lines": 2,
+              "content_lines": 4
+            },
+            {
+              "note": "",
+              "slide": 20,
+              "heading": "Potential Outcomes",
+              "represented": true,
+              "mapped_lines": 5,
+              "content_lines": 9
+            },
+            {
+              "note": "",
+              "slide": 21,
+              "heading": "SmartPhones, Aug2008",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 1
+            },
+            {
+              "note": "",
+              "slide": 22,
+              "heading": "Future Optimizations",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 7
+            },
+            {
+              "note": "",
+              "slide": 23,
+              "heading": "Marketing Ideas",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 7
+            },
+            {
+              "note": "",
+              "slide": 24,
+              "heading": "Location-Based Service",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 4
+            },
+            {
+              "note": "",
+              "slide": 25,
+              "heading": "Progress to Date",
+              "represented": false,
+              "mapped_lines": 0,
+              "content_lines": 9
+            }
+          ],
+          "verdict": "LOW",
+          "available": true,
+          "thin_text": false,
+          "coverage_pct": 40.0,
+          "mapped_chars": 796,
+          "mapped_lines": 23,
+          "content_chars": 5179,
+          "content_lines": 146,
+          "content_slides": 25,
+          "interpretation": "WARNING: most of this deck's slides contributed nothing to the structured output. Treat any 'insufficient data' finding below as likely a parsing gap in this tool, NOT as evidence that the deck lacks content. The unrepresented slides are listed above.",
+          "image_only_slides": 0,
+          "line_coverage_pct": 15.4,
+          "unmapped_examples": [
+            "\u2022 UberCab would be faster & cheaper than a limo, but",
+            "\u2013 In less dense cities, can be over half \u201cdead-time\u201d",
+            "\u2013 Reduce carbon footprint, better use of time in car",
+            "\u2013 minimize expected pickup time given hour of week &",
+            "\u2022 Digital Hail can now make street hail unnecessary",
+            "\u2022 Discounted rates for Sun-Tues multi-hour bookings",
+            "\u2013 As swarm size increases, efficiency will improve",
+            "\u2022 \u201cget here now\u201d costs more than \u201ctomorrow at 5pm\u201d"
+          ],
+          "represented_slides": 10,
+          "unrepresented_slides": [
+            {
+              "slide": 2,
+              "heading": "Cabs in 2008"
+            },
+            {
+              "slide": 8,
+              "heading": "UberCab apps"
+            },
+            {
+              "slide": 9,
+              "heading": "UberCab.com"
+            },
+            {
+              "slide": 10,
+              "heading": "Use-Cases"
+            },
+            {
+              "slide": 11,
+              "heading": "User Benefits"
+            },
+            {
+              "slide": 13,
+              "heading": "UberCab Fleet"
+            },
+            {
+              "slide": 14,
+              "heading": "Initial Service Area"
+            },
+            {
+              "slide": 15,
+              "heading": "Technology"
+            },
+            {
+              "slide": 16,
+              "heading": "Demand Forecasting"
+            },
+            {
+              "slide": 18,
+              "heading": "Composition of Market"
+            },
+            {
+              "slide": 21,
+              "heading": "SmartPhones, Aug2008"
+            },
+            {
+              "slide": 22,
+              "heading": "Future Optimizations"
+            },
+            {
+              "slide": 23,
+              "heading": "Marketing Ideas"
+            },
+            {
+              "slide": 24,
+              "heading": "Location-Based Service"
+            },
+            {
+              "slide": 25,
+              "heading": "Progress to Date"
+            }
+          ]
+        },
+        "founder_verification": [
+          {
+            "name": "Garrett Camp",
+            "origin": "external_research",
+            "sources": [
+              "https://en.wikipedia.org/wiki/Garrett_Camp",
+              "https://en.wikipedia.org/wiki/Travis_Kalanick",
+              "https://www.investopedia.com/tech/garrett-camp-uber-founder-crypto-inventor/",
+              "https://www.wikiwand.com/en/Garrett_Camp",
+              "https://www.forbes.com/profile/garrett-camp/"
+            ],
+            "available": true,
+            "assessment": "CONSISTENT",
+            "confidence": 0.9,
+            "origin_label": "Not in the deck - found by public search",
+            "evidence_summary": "Wikipedia and Wikiwand entries for Garrett Camp explicitly state he is a co\u2011founder of Uber. Investopedia and Forbes profiles also describe him as the Uber co\u2011founder and note his role in building StumbleUpon.",
+            "discovery_sources": [
+              "https://en.wikipedia.org/wiki/Uber_Eats"
+            ]
+          },
+          {
+            "name": "Travis Kalanick",
+            "origin": "external_research",
+            "sources": [
+              "https://en.wikipedia.org/wiki/Travis_Kalanick",
+              "https://www.britannica.com/money/Travis-Kalanick",
+              "https://www.forbes.com/profile/travis-kalanick/",
+              "https://www.cnbc.com/2026/03/13/uber-ex-ceo-kalanick-rebrands-latest-venture-atoms-move-into-robotics.html",
+              "https://atouchofbusiness.com/biographies/travis-kalanick/"
+            ],
+            "available": true,
+            "assessment": "CONSISTENT",
+            "confidence": 0.9,
+            "origin_label": "Not in the deck - found by public search",
+            "evidence_summary": "Wikipedia and Britannica entries identify Travis Cordell Kalanick (born Aug 6, 1976) as the co\u2011founder and former CEO of Uber. Multiple reputable sources (Forbes, CNBC) repeatedly reference his role in founding Uber in 2009 and leading the company.",
+            "discovery_sources": [
+              "https://www.investopedia.com/articles/personal-finance/111015/story-uber.asp",
+              "https://en.wikipedia.org/wiki/Uber_Eats"
+            ]
+          }
+        ],
+        "personalized_ranking": {
+          "reason": "Not enough recorded decisions yet to personalize.",
+          "available": false,
+          "decisions_needed": 15,
+          "decisions_so_far": 0
+        },
+        "extraction_provenance": {
+          "method": "llm_schema",
+          "is_fallback": false,
+          "fallback_reason": ""
+        },
+        "financials_backfilled_from_deck": [
+          "revenue"
+        ]
+      },
+      "data_quality": {
+        "label": "Input Completeness",
+        "score": 100,
+        "quality": "HIGH",
+        "measures": "Whether the analysis inputs were present: description length, how many claims were supplied, and whether revenue was given. This is NOT a measure of how much of the deck was successfully parsed -- see Extraction Coverage for that.",
+        "warnings": [
+          "Extraction coverage is 40.0% (10 of 25 content slides reached a structured field). Findings below may be incomplete because the deck was not fully parsed, not because the deck is thin."
+        ],
+        "can_proceed": true,
+        "extraction_verdict": "LOW",
+        "extraction_coverage_pct": 40.0
+      },
+      "similar_companies": [],
+      "incomplete_analysis": false,
+      "score_source": "venturescore_model",
+      "claims_unverified": false,
+      "claims_verification_degraded": false,
+      "provider_degraded": false,
+      "degraded_components": [],
+      "evidence_search_degraded": false,
+      "evidence_search_note": "",
+      "report_id": "388",
+      "session_id": "66013e18-0fd8-4e34-a1c7-df78837a75c2"
+    },
+    "reread_status": 200,
+    "reread_checks": [
+      {
+        "check": "final_score",
+        "state": "PRESENT",
+        "detail": "44.0 (source: venturescore_model)"
+      },
+      {
+        "check": "venturescore_model_ran",
+        "state": "PRESENT",
+        "detail": "available=True reason='' score=44 coverage=0.625"
+      },
+      {
+        "check": "claims_checked",
+        "state": "PRESENT",
+        "detail": "checked=5 supported=2 refuted=0 uncertain=3"
+      },
+      {
+        "check": "claim_verification_not_degraded",
+        "state": "PRESENT",
+        "detail": "claims_verification_degraded=False"
+      },
+      {
+        "check": "bull_case",
+        "state": "PRESENT",
+        "detail": "5 signal(s), confidence=0.88, thesis='UberCab\u2019s member\u2011only, on\u2011demand premium car service leverag'"
+      },
+      {
+        "check": "bear_case",
+        "state": "PRESENT",
+        "detail": "5 signal(s), confidence=0.78, thesis='The deck rests on unverified market size, overly optimistic '"
+      },
+      {
+        "check": "founders_named",
+        "state": "PRESENT",
+        "detail": "2 via deck: ['Garrett Camp', 'Travis Kalanick']"
+      },
+      {
+        "check": "founder_route_explained",
+        "state": "PRESENT",
+        "detail": "discovery_attempted=True searched=True degraded=None reason=''"
+      },
+      {
+        "check": "risk_signals",
+        "state": "PRESENT",
+        "detail": "total=2 concerns=6 red_flags=4"
+      },
+      {
+        "check": "investment_memo",
+        "state": "PRESENT",
+        "detail": "6533 chars"
+      },
+      {
+        "check": "extraction_provenance",
+        "state": "PRESENT",
+        "detail": "method='llm_schema' fallback=''"
+      },
+      {
+        "check": "extraction_coverage",
+        "state": "PRESENT",
+        "detail": "[{\"note\": \"\", \"slide\": 1, \"heading\": \"Next-Generation Car Service\", \"represented\": true, \"mapped_lines\": 1, \"content_lin"
+      },
+      {
+        "check": "market_comparables",
+        "state": "PRESENT",
+        "detail": "available=True n=5 ['Mecho Autotech', 'Debitel', 'Drive Pulse', 'Alma']"
+      },
+      {
+        "check": "similar_companies_local",
+        "state": "EMPTY",
+        "detail": "0: [] (empty is correct on a clean database)"
+      },
+      {
+        "check": "no_provider_outage",
+        "state": "PRESENT",
+        "detail": "provider_degraded=False components=[]"
+      },
+      {
+        "check": "evidence_search_degraded",
+        "state": "PRESENT",
+        "detail": "False "
+      }
+    ]
+  }
+]

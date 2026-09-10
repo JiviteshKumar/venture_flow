@@ -16,7 +16,7 @@ figure can be recomputed without trusting a log line.
 
 | File | What it is |
 |---|---|
-| `claim_benchmark.jsonl` | 150 hand-labeled claims — 50 SUPPORTS, 50 REFUTES, 50 NOT_ENOUGH_INFO |
+| `claim_benchmark.jsonl` | 150 hand-labeled claims — 49 SUPPORTS, 51 REFUTES, 50 NOT_ENOUGH_INFO (after one label correction; see below) |
 | `claim_benchmark_v1_30.jsonl` | The original 30-example set, kept so the "before" number stays reproducible |
 | `claim_benchmark_results_v1_30.json` | The 30-example run — the first time this harness was ever executed |
 | `claim_benchmark_results.json` | The expanded run. Carries `complete` and `n_scored`; currently 134 of 150, the rest blocked on the daily token cap |
@@ -312,3 +312,18 @@ regression tests matter more here than the headline number.
 - The comparables check (`no_fabricated_comparable`) is reported but never
   scored: capitalised prose produces too many false positives for it to be a
   pass/fail signal, so it is a pointer for a human rather than a number.
+
+### Label corrections
+
+Corrections are recorded here and on the row itself (`label_note`), never made
+silently. A corrected label changes every accuracy figure computed from the
+benchmark, so a reader must be able to see what changed, when, and on what
+evidence.
+
+| id | was | now | evidence |
+|---|---|---|---|
+| s10 | SUPPORTS | REFUTES | "Notion raised a Series C funding round in 2020 at a $2 billion valuation." The April 2020 raise was $50M at $2B and was not a Series C; Notion's Series C was the $275M round of October 2021. A true valuation attached to the wrong round is false as written. Found 11 Sep 2026 when the verifier returned REFUTES citing exactly this. |
+
+Results files produced before a correction were scored against the old label;
+they are left as they were rather than rewritten.
+

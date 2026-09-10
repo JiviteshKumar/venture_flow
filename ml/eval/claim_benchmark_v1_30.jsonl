@@ -7,7 +7,7 @@
 {"id": "s7", "claim": "Zoom's user base grew dramatically during the COVID-19 pandemic in 2020.", "gold_verdict": "SUPPORTS", "category": "growth"}
 {"id": "s8", "claim": "Instagram was acquired by Facebook in 2012 for approximately $1 billion.", "gold_verdict": "SUPPORTS", "category": "acquisition"}
 {"id": "s9", "claim": "Tesla delivered its one millionth electric vehicle in March 2020.", "gold_verdict": "SUPPORTS", "category": "milestone"}
-{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "SUPPORTS", "category": "funding"}
+{"id": "s10", "claim": "Notion raised a Series C funding round in 2020 at a $2 billion valuation.", "gold_verdict": "REFUTES", "category": "funding", "label_note": "Corrected 2026-09-11 from SUPPORTS. Notion's April 2020 raise was $50M at a $2B valuation (TechCrunch, Axios, Apr 1-2 2020) and was not reported as a Series C; its Series C was the $275M round of October 2021. The claim joins a true valuation to the wrong round, so it is false as written. Surfaced when the verifier returned REFUTES citing exactly this evidence."}
 {"id": "r1", "claim": "WeWork successfully completed its initial IPO in 2019.", "gold_verdict": "REFUTES", "category": "public_markets"}
 {"id": "r2", "claim": "Theranos's blood-testing technology was validated as accurate by independent regulators.", "gold_verdict": "REFUTES", "category": "product_claims"}
 {"id": "r3", "claim": "Google was founded in 1995 by Mark Zuckerberg.", "gold_verdict": "REFUTES", "category": "founding_facts"}
