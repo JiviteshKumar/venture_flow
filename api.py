@@ -1508,12 +1508,43 @@ class DecisionRequest(BaseModel):
     notes: str = Field(default="", max_length=2000)
 
 
-@app.get("/companies/{company_name}/history")
-async def company_score_history(company_name: str):
-    """Real historical score data for one company (p2 on the Ship List) --
-    powers Dashboard.tsx's score-trend chart once 2+ analyses exist."""
+async def _require_readable_report(report_id: str, http_request: Request) -> None:
+    """404 unless the caller may read this report.
+
+    One rule for every route that touches a report by id, so they cannot drift
+    apart again: a report is reachable when it is unowned (shared, written
+    before accounts existed) or when it belongs to the caller. That is exactly
+    what GET /reports/{id} enforces.
+
+    Four routes used to skip this entirely -- comments (read and write),
+    decisions, and company history -- which let any caller read and write other
+    users' private reports. 404 rather than 403 on purpose: a 403 confirms the
+    id is real, and report ids are sequential integers.
+    """
+    user = await current_user(http_request)
     try:
-        history = await run_in_threadpool(get_score_history, company_name)
+        stored = await run_in_threadpool(
+            get_report, report_id, str(user["id"]) if user else None
+        )
+    except Exception as exc:
+        logger.exception("Could not load report %s for an ownership check", report_id)
+        raise HTTPException(
+            status_code=503, detail="Saved report is currently unavailable."
+        ) from exc
+    if not stored:
+        raise HTTPException(status_code=404, detail="Saved report not found.")
+
+
+@app.get("/companies/{company_name}/history")
+async def company_score_history(company_name: str, request: Request):
+    """Score history for one company, limited to reports the caller may see --
+    powers Dashboard.tsx's score-trend chart once 2+ analyses exist."""
+    user = await current_user(request)
+    try:
+        history = await run_in_threadpool(
+            get_score_history, company_name,
+            owner_user_id=str(user["id"]) if user else None,
+        )
     except Exception:
         logger.warning("Score history unavailable for %s", company_name, exc_info=True)
         history = []
@@ -1531,11 +1562,18 @@ async def company_score_history(company_name: str):
 
 
 @app.post("/reports/{report_id}/decision")
-async def record_report_decision(report_id: str, request: DecisionRequest):
+async def record_report_decision(
+    report_id: str, request: DecisionRequest, http_request: Request
+):
     """Record the user's own invest/pass call on a report. This is the
     feedback signal the firm-personalization ranking layer trains against
     (see ml/personalization.py) -- it accumulates from here, one decision
-    at a time, and is worth nothing until there's real usage behind it."""
+    at a time, and is worth nothing until there's real usage behind it.
+
+    Ownership-checked: this table is TRAINING DATA, so an unchecked write here
+    was not only an authorization gap but a way for any caller to poison the
+    signal the personalization model learns from."""
+    await _require_readable_report(report_id, http_request)
     try:
         await run_in_threadpool(record_decision, report_id, request.decision, request.notes)
         decided = await run_in_threadpool(count_decisions)
@@ -1635,10 +1673,16 @@ class CommentRequest(BaseModel):
 
 
 @app.post("/reports/{report_id}/comments")
-async def create_comment(report_id: str, request: CommentRequest):
-    """No accounts exist yet (Section 3 of the Ship List) -- author_name is
-    free text, not a verified identity. This is shared commenting on one
-    Neon database, honestly short of real per-user team collaboration."""
+async def create_comment(
+    report_id: str, request: CommentRequest, http_request: Request
+):
+    """Comment on a report the caller may read.
+
+    `author_name` is still free text, not a verified identity -- accounts exist
+    now, but comments are not yet attributed to them. What IS enforced is who
+    can reach the report at all: this used to accept a comment on any report id
+    from any caller, including other users' private analyses."""
+    await _require_readable_report(report_id, http_request)
     try:
         comment = await run_in_threadpool(add_comment, report_id, request.author_name, request.body)
     except Exception as exc:
@@ -1648,7 +1692,10 @@ async def create_comment(report_id: str, request: CommentRequest):
 
 
 @app.get("/reports/{report_id}/comments")
-async def get_comments(report_id: str):
+async def get_comments(report_id: str, request: Request):
+    # Ownership first. Comments on a private deal are as confidential as the
+    # deal, and this used to return them to any caller who knew the id.
+    await _require_readable_report(report_id, request)
     try:
         return await run_in_threadpool(list_comments, report_id)
     except Exception:
@@ -1674,6 +1721,21 @@ def _describe_failure(exc: BaseException) -> str:
     """
     text = str(exc)
     name = type(exc).__name__
+
+    # The daily quota, in either of its shapes. The branch below only knew
+    # Groq's own 429 wording ("tokens per day" / "TPD"); once that first 429
+    # trips groq_client's breaker, later failures arrive as DailyQuotaExhausted,
+    # whose message matches neither -- so they fell through to the raw
+    # "Analysis failed: DailyQuotaExhausted: ..." instead of the message that
+    # says when it resets and that retrying now is pointless.
+    from groq_client import is_quota_exhausted
+    if is_quota_exhausted(exc):
+        return (
+            "The Groq API daily token quota is exhausted, so the AI analysis "
+            "steps could not run. This resets every 24 hours, or the tier can "
+            "be upgraded at console.groq.com/settings/billing. Retrying now "
+            "will fail the same way."
+        )
 
     if "rate_limit_exceeded" in text or "RateLimitError" in name:
         if "tokens per day" in text or "TPD" in text:

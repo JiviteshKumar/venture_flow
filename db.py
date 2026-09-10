@@ -822,11 +822,18 @@ def list_comments(report_id: str) -> list[dict[str, Any]]:
         return list(cur.fetchall())
 
 
-def get_score_history(company_name: str, limit: int = 20) -> list[dict[str, Any]]:
-    """Every persisted report's score/verdict/date for one company, oldest
-    first -- the real data behind the "historical score tracking per
-    company" ship-list item. Empty (not raised) if the company/DB isn't
-    reachable, so a caller can treat that the same as "no history yet"."""
+def get_score_history(
+    company_name: str, limit: int = 20, owner_user_id: str | None = None
+) -> list[dict[str, Any]]:
+    """Score/verdict/date for one company's reports that the caller may see,
+    oldest first -- the data behind Dashboard.tsx's score-trend chart.
+
+    Scoped with the same rule as `get_report`: unowned (shared, pre-accounts)
+    reports plus the caller's own. This used to select every report for the
+    company name with no owner filter at all, so anyone could read the score
+    and verdict history of every other user's private analyses of a company
+    just by knowing its name -- a leak, not merely a missing feature.
+    """
     with connection() as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -835,10 +842,12 @@ def get_score_history(company_name: str, limit: int = 20) -> list[dict[str, Any]
                    COALESCE(dr.verdict, 'NEEDS MORE DILIGENCE') AS recommendation
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
             WHERE lower(c.name) = lower(%s)
+              AND (dr.owner_user_id IS NULL
+                   OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid))
             ORDER BY dr.created_at ASC
             LIMIT %s
             """,
-            (company_name, limit),
+            (company_name, owner_user_id, owner_user_id, limit),
         )
         return list(cur.fetchall())
 
