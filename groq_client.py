@@ -305,3 +305,32 @@ def pace_for(prompt_chars: int, max_tokens: int = 1000) -> float:
     if not PACING_ENABLED:
         return 0.0
     return _pacer.reserve(prompt_chars // 4 + max_tokens)
+
+
+def is_quota_exhausted(exc: BaseException) -> bool:
+    """The daily quota, however it was reported.
+
+    Two shapes reach a caller: Groq's own 429 ("tokens per day (TPD)"), and --
+    after the first one trips the breaker -- this module's DailyQuotaExhausted,
+    whose message says "daily token quota" and contains neither of Groq's
+    phrases. Call sites used to test for Groq's wording only, so every call
+    after the first was described as "the language model could not be reached":
+    the most common real failure, given the wrong explanation.
+    """
+    return isinstance(exc, DailyQuotaExhausted) or is_daily_quota_error(exc)
+
+
+def describe_provider_failure(exc: BaseException) -> str:
+    """One sentence fragment naming what actually failed, for a reader.
+
+    Shared so the call sites cannot word it differently again. The three cases
+    need different responses: a spent daily quota comes back tomorrow, a
+    per-minute limit clears in seconds, and an unreachable service is neither.
+    """
+    if is_quota_exhausted(exc):
+        return "the daily Groq token quota is exhausted"
+    text = str(exc).lower()
+    if "tokens per minute" in text or "rate_limit" in text or "429" in text:
+        return "the language model's per-minute rate limit was hit"
+    return "the language model could not be reached"
+

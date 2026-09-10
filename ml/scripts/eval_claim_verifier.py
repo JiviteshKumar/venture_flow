@@ -55,6 +55,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 # run dies with UnicodeEncodeError partway through -- see console_safety.py.
 import console_safety  # noqa: F401  (imported for side effect)
 
+# Structured logging, the same configuration api.py uses.
+#
+# Without it this script emitted none of the SDK's INFO lines, so a benchmark
+# run that hit a per-minute 429 showed the final RateLimitError and no trace of
+# the six Retry-After retries that preceded it -- which made "the SDK never
+# retried" and "it retried six times and the window stayed full" look the same.
+import observability  # noqa: E402
+
+observability.configure_logging()
+
 ROOT = Path(__file__).resolve().parents[2]
 BENCHMARK_PATH = ROOT / "ml" / "eval" / "claim_benchmark.jsonl"
 RESULTS_PATH = ROOT / "ml" / "eval" / "claim_benchmark_results.json"
@@ -168,7 +178,12 @@ def _is_provider_failure(result: dict[str, Any]) -> bool:
     runs are still recognised, but the flag is what this depends on now.
     """
     if result.get("_degraded"):
-        return True
+        # An unparseable reply is the verifier failing on ONE claim -- scored
+        # as what the product actually output (NOT_ENOUGH_INFO), because that
+        # is a real verifier error the benchmark should count. Only a provider
+        # outage stops the run, since it would fail every remaining claim the
+        # same way and say nothing about the verifier.
+        return result.get("_degraded_kind") != "unparseable"
     reasoning = (result.get("reasoning") or "").strip()
     if reasoning == _PROVIDER_FAILURE_REASON:
         return True

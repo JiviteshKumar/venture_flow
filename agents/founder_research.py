@@ -47,7 +47,7 @@ import os
 import re
 
 from agents.claim_verifier import fetch_page_text, search_web
-from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage
+from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage, describe_provider_failure
 
 logger = logging.getLogger(__name__)
 
@@ -302,11 +302,7 @@ Respond with ONLY valid JSON:
     except Exception as exc:
         logger.warning("Founder-discovery model call failed", exc_info=True)
         note_provider_failure(exc)
-        detail = (
-            "the daily Groq token quota is exhausted"
-            if "tokens per day" in str(exc).lower() or "TPD" in str(exc)
-            else "the language model could not be reached"
-        )
+        detail = describe_provider_failure(exc)
         raise ProposalUnavailable(detail) from exc
 
     names: list[str] = []

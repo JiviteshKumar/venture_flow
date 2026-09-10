@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 
 import observability
 from agents.evidence_filter import filter_sources
-from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage
+from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage, describe_provider_failure
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ def fetch_page_text(url: str, max_chars: int = 3000) -> str:
                          "footer", "header", "aside"]):
             tag.decompose()
         return soup.get_text(separator=" ", strip=True)[:max_chars]
-    except:
+    except Exception:
         return ""
 
 # Capitalised tokens that are never the subject of a claim. Without this the
@@ -335,6 +335,93 @@ def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
         "general_web_unavailable": general_web_unavailable,
     }
 
+# Completion budgets for the claim judge, tried in order.
+#
+# `openai/gpt-oss-120b` is a reasoning model: it spends completion tokens
+# thinking before it writes the JSON. At the old 500-token ceiling, against a
+# ~6,000-character evidence prompt, the thinking regularly consumed the whole
+# budget and the answer arrived truncated or empty. 2,000 is in line with the
+# other structured call sites; the retry exists for the genuinely long cases.
+# settle_usage refunds whatever is not used, so a larger ceiling only costs
+# pacing time when the model actually needs the room.
+JUDGE_TOKEN_BUDGETS = (2000, 4000)
+
+_VERDICTS = ("SUPPORTS", "REFUTES", "NOT_ENOUGH_INFO")
+
+
+def _judge_once(prompt: str, max_tokens: int) -> tuple[str, str | None]:
+    """One call to the judge. Returns (content, finish_reason)."""
+    pace_for(len(prompt), max_tokens)
+    response = get_client().chat.completions.create(
+        model=MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a professional fact-checker. "
+                           "Always respond with valid JSON only."
+            },
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.1,
+        max_tokens=max_tokens,
+        # Every other structured call site already constrains the reply to a
+        # JSON object; the judge was the one that did not.
+        response_format={"type": "json_object"},
+    )
+    # Return the completion budget this call reserved but did not use.
+    # Bookkeeping only -- it cannot change what the model said, and it stops
+    # the next call waiting on tokens nobody spent.
+    settle_usage(response, len(prompt), max_tokens)
+    choice = response.choices[0]
+    content = (getattr(choice.message, "content", None) or "").strip()
+    return content, getattr(choice, "finish_reason", None)
+
+
+def parse_judgment(raw: str) -> dict | None:
+    """The judge's reply as a validated dict, or None if there is no usable one.
+
+    None is the important return. The previous fallback turned an unparseable
+    reply into a verdict by searching the text for "REFUTES" and then
+    "SUPPORTS" -- so "this evidence does not refute the claim" scored as
+    REFUTES -- and attached a confidence of 0.5 that the model never gave.
+    Returning None lets the caller retry or report the failure honestly.
+    """
+    text = (raw or "").strip()
+    if not text:
+        return None
+    if "```" in text:
+        for part in text.split("```"):
+            part = part.strip()
+            if part.startswith("json"):
+                part = part[4:].strip()
+            if part.startswith("{"):
+                text = part
+                break
+    start, end = text.find("{"), text.rfind("}") + 1
+    if start == -1 or end <= start:
+        return None
+    try:
+        result = json.loads(text[start:end])
+    except (json.JSONDecodeError, ValueError):
+        return None
+    if not isinstance(result, dict):
+        return None
+
+    verdict = str(result.get("verdict", "")).strip().upper()
+    if verdict not in _VERDICTS:
+        # A reply with no recognisable verdict has not judged the claim.
+        return None
+    result["verdict"] = verdict
+    try:
+        confidence = float(result.get("confidence", 0.0))
+    except (TypeError, ValueError):
+        confidence = 0.0
+    result["confidence"] = min(1.0, max(0.0, confidence))
+    result.setdefault("reasoning", "")
+    result.setdefault("key_evidence", "")
+    return result
+
+
 def groq_judge(claim: str, evidence: dict, as_of: str = "") -> dict:
     """Judge one claim against retrieved evidence.
 
@@ -439,63 +526,41 @@ Respond with ONLY valid JSON, no other text:
         # Stay inside the free tier's 8,000 tokens/minute. Without this the
         # pipeline bursts its whole budget in seconds and every later call
         # 429s, which is how six of six real deck runs came back degraded.
-        pace_for(len(prompt), 500)
-        response = get_client().chat.completions.create(
-            model=MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a professional fact-checker. "
-                               "Always respond with valid JSON only."
-                },
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1,
-            max_tokens=500,
-        )
-        # Return the completion budget this call reserved but did not use.
-        # Bookkeeping only -- it cannot change what the model said, and it
-        # stops the next call waiting on tokens nobody spent.
-        settle_usage(response, len(prompt), 500)
+        attempts = []
+        for budget in JUDGE_TOKEN_BUDGETS:
+            raw, finish_reason = _judge_once(prompt, budget)
+            parsed = parse_judgment(raw)
+            if parsed is not None:
+                return parsed
+            attempts.append(f"{budget} tokens -> finish_reason={finish_reason}, "
+                            f"{len(raw)} chars")
+            logger.warning(
+                "Claim judge reply unusable at max_tokens=%d (finish_reason=%s, "
+                "%d chars); %s", budget, finish_reason, len(raw),
+                "retrying with a larger budget" if budget != JUDGE_TOKEN_BUDGETS[-1]
+                else "giving up on this claim",
+            )
 
-        raw = response.choices[0].message.content.strip()
-
-        if "```" in raw:
-            parts = raw.split("```")
-            for part in parts:
-                part = part.strip()
-                if part.startswith("json"):
-                    part = part[4:].strip()
-                if part.startswith("{"):
-                    raw = part
-                    break
-
-        start = raw.find("{")
-        end   = raw.rfind("}") + 1
-        if start != -1 and end > start:
-            raw = raw[start:end]
-
-        result = json.loads(raw)
-
-        if result.get("verdict") not in [
-            "SUPPORTS", "REFUTES", "NOT_ENOUGH_INFO"
-        ]:
-            result["verdict"] = "NOT_ENOUGH_INFO"
-
-        return result
-
-    except json.JSONDecodeError:
-        raw_upper = raw.upper()
-        verdict = (
-            "REFUTES"          if "REFUTES"  in raw_upper else
-            "SUPPORTS"         if "SUPPORTS" in raw_upper else
-            "NOT_ENOUGH_INFO"
+        # Both attempts produced nothing parseable. Say so, and keep it out of
+        # the score: this is a failure to judge, not a judgment. The old
+        # fallback sniffed the raw text for "REFUTES"/"SUPPORTS" and stamped a
+        # made-up confidence of 0.5 on the result, which is how a truncated
+        # reply was scored as a verdict.
+        observability.track_degradation(
+            "claim_judgment_unparseable", component="claim_verifier",
+            reason="; ".join(attempts)[:200],
         )
         return {
-            "verdict":      verdict,
-            "confidence":   0.5,
-            "reasoning":    raw[:300],
+            "verdict":      "NOT_ENOUGH_INFO",
+            "confidence":   0.0,
+            "reasoning":    "This claim was not judged: the fact-checking model's "
+                            "reply was truncated or unreadable on two attempts. "
+                            "Nothing was established either way.",
             "key_evidence": "",
+            "_degraded":        True,
+            "_degraded_kind":   "unparseable",
+            "_degraded_reason": "claim verifier: the judge's reply was truncated "
+                                "or unparseable twice",
         }
 
     except Exception as exc:
@@ -511,11 +576,7 @@ Respond with ONLY valid JSON, no other text:
         # The reason a reader sees says WHICH failure it was. "Temporarily
         # unavailable" is true of a network blip and of an exhausted daily
         # quota, and only one of those is worth waiting out.
-        detail = (
-            "the daily Groq token quota is exhausted"
-            if "tokens per day" in str(exc).lower() or "TPD" in str(exc)
-            else "the language model could not be reached"
-        )
+        detail = describe_provider_failure(exc)
         return {
             "verdict":      "NOT_ENOUGH_INFO",
             "confidence":   0.0,
@@ -527,6 +588,7 @@ Respond with ONLY valid JSON, no other text:
             # moment a second fallback site worded it "was" instead of "is" --
             # see the note in ventureflow_agent's degradation block.
             "_degraded":        True,
+            "_degraded_kind":   "provider",
             "_degraded_reason": f"claim verifier: {detail}",
         }
 
@@ -651,7 +713,7 @@ def verify_claim(
     # penalty for claims that were never actually checked. The company was
     # marked down for our outage, which is the precise failure the comment in
     # ventureflow_agent describes and believed it had fixed.
-    for marker in ("_degraded", "_degraded_reason"):
+    for marker in ("_degraded", "_degraded_kind", "_degraded_reason"):
         if marker in judgment:
             result[marker] = judgment[marker]
 
