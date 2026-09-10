@@ -24,11 +24,13 @@ contains `render.yaml`, so Render can read most of this configuration itself.
 
 ---
 
-## Step 1 — Decide what happens to the 93 existing reports
+## Step 1 — Decide what happens to the existing unowned reports
 
 **Do this before the service is reachable from the internet, not after.**
 
-Every report currently in your Neon database has `owner_user_id = NULL`. That is
+Every report written before accounts existed -- and every report created
+while nobody was signed in -- has `owner_user_id = NULL`. On the day this
+was written that was every report in the database (93). That is
 the marker for "written before accounts existed", and the API treats it as
 *shared* — readable by any caller, signed in or not. Report ids are sequential
 integers, so once the backend is public, `GET /reports/1`, `/reports/2` … walks

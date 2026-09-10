@@ -335,8 +335,18 @@ def extract_document(filename: str, data: bytes) -> dict:
     # memo can all say the true thing: we could not read this file, here is
     # why, and here is what to do about it.
     stripped = (text or "").strip()
-    if page_count and len(stripped) < _TEXT_LAYER_MIN_CHARS:
-        text_layer = "none" if not stripped else "sparse"
+    # "Sparse" is a PDF concept: few characters per page means the content is
+    # probably in the page images, which is what triggers OCR. A Word document,
+    # a slide deck's XML or a text file IS its text -- a short one is simply
+    # short. Classifying a 67-character memo as "sparse" logged a no_text_layer
+    # degradation for a file that was read perfectly, inflating the counts
+    # /observability exists to report. Empty is still "none" for every format:
+    # nothing was extracted, and that is worth counting.
+    is_pdf = str(extension or "").lstrip(".").lower() == "pdf"
+    if not stripped:
+        text_layer = "none"
+    elif is_pdf and page_count and len(stripped) < _TEXT_LAYER_MIN_CHARS:
+        text_layer = "sparse"
     else:
         text_layer = "present"
 

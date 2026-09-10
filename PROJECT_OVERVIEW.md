@@ -527,6 +527,78 @@ public sources with `origin: "deck"`.
 
 ---
 
+## 8c. Pre-launch pass, 11 September 2026
+
+A last sweep of every route and every LLM call site, with each defect fixed and
+pinned by a test before moving on.
+
+**Four routes exposed other users' private reports.** `GET /reports/{id}` has
+always applied the ownership rule; four routes touching the same reports never
+asked who was calling. `GET /companies/{name}/history` returned the score and
+verdict history of every user's private analyses of a company;
+`GET /reports/{id}/comments` returned comments on private reports; and
+`POST .../comments` and `POST .../decision` wrote onto other users' reports --
+the last one into `investment_decisions`, which is the training signal for the
+personalization model, so it was also a data-poisoning path. All four now go
+through one helper, `_require_readable_report`, so they cannot drift apart
+again (`tests/test_report_side_routes_are_scoped.py`). The remaining routes
+were checked and are sound: job status and chat sessions are addressed by
+random UUIDs, and `/observability` and `/database/stats` return only aggregate
+counts.
+
+**The claim judge recorded parse failures as verdicts.** It ran with
+`max_tokens=500` on a reasoning model, so the thinking consumed the budget and
+the JSON arrived truncated or empty. A fallback then picked a verdict by
+searching the raw text for "REFUTES" and then "SUPPORTS" -- so "this does not
+refute the claim" scored as REFUTES -- and stamped a confidence of 0.5 the model
+never gave. It is now a 2,000-token budget with a `json_object` response
+format, one retry at 4,000 on a truncated reply, and an explicit
+`_degraded_kind: "unparseable"` if both fail, which keeps the non-judgment out
+of the score (`tests/test_claim_judge_parsing.py`).
+
+**Analyses are 44% faster.** The token pacer reserved each call's `max_tokens`
+ceiling and never gave back the unused part. Reconciling reservations against
+real usage took a full Uber analysis from 736 s to 413 s with every output
+present (`ml/eval/e2e_deck_audit_2026-09-11_uber.json`; the 9 September
+three-deck audit in 8b stays in `ml/eval/e2e_deck_audit.json`). Of the remaining 413 s, 320 are genuine pacing against the free tier's
+8,000 tokens/minute; cutting further means spending fewer tokens or a paid tier.
+
+**Smaller fixes.** Four bare `except:` clauses in live code (which also swallow
+Ctrl+C and worker shutdown) narrowed to `except Exception:`. A short Word
+document was being counted as a "no text layer" degradation -- a PDF-only
+concept -- inflating `/observability`. The end-to-end audit labelled founders
+found by public search as "via deck"; it now reads each founder's `origin`.
+
+**One benchmark label was wrong.** Claim s10 -- "Notion raised a Series C
+funding round in 2020 at a $2 billion valuation" -- was labelled SUPPORTS. The
+April 2020 raise was $50M at $2B and was not a Series C; Notion's Series C was
+October 2021. Corrected to REFUTES with the evidence recorded on the row and in
+`ml/eval/README.md`; results files scored against the old label are left as
+they were.
+
+**Measured on the claim benchmark subset.** 19 claims chosen for risk: the
+six the verifier got wrong before, plus the controls most likely to be broken by
+the retrieval changes (multi-entity claims and claims about companies that do
+not exist). The run stopped cleanly at the daily token ceiling after 15, which
+is what the harness is built to do. On those 15, scored against the corrected
+labels: **old code 9 correct, new code 12**. Fixed: WeWork's withdrawn IPO,
+Lyft's IPO before Uber's, IBM's acquisition of Red Hat. Broken: none. Controls:
+9 of 9 still correct, including every claim about a non-existent company still
+retrieving nothing. Still wrong: "Lyft operates in more countries than Uber"
+(this run retrieved Uber's 70 countries but nothing on Lyft's footprint -- a
+retrieval miss), Notion (now a properly parsed NOT_ENOUGH_INFO rather than a
+fabricated 0.5), and "Tesla delivered its one millionth vehicle in March 2020"
+(the sources say produced; a defensible reading of an arguable label). The last
+4 of the 19 resume with `python scripts/verify_when_quota_returns.py`.
+
+**Verified live.** OCR on an image-only rendering of Airbnb's deck recovers
+every word of the real text layer (substring recall 1.00; RapidOCR drops the
+spaces in tightly kerned small print, which is why a naive word count reads
+0.68). The sign-in and sign-up screens render with no console errors. Signed-in
+flows were exercised through the API rather than the browser.
+
+---
+
 ## 9. Running it locally
 
 Two terminals from the repo root:

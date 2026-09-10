@@ -639,7 +639,7 @@ def extract_company_info(text: str) -> dict:
                 if num >= 1000:
                     info["revenue"] = num
                     break
-            except:
+            except Exception:
                 pass
 
     # CarbonCycle has "$0" revenue explicitly — detect zero revenue
@@ -662,7 +662,7 @@ def extract_company_info(text: str) -> dict:
                 if num >= 1000:
                     info["burn_rate"] = num
                     break
-            except:
+            except Exception:
                 pass
 
     # Runway
@@ -680,7 +680,7 @@ def extract_company_info(text: str) -> dict:
                 if 1 <= val <= 120:
                     info["runway_months"] = val
                     break
-            except:
+            except Exception:
                 pass
 
     return info
