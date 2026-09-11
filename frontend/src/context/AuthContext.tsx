@@ -70,6 +70,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
+  // The server rejected this session -- expired, revoked, or the production
+  // sign-in gate. Clear local state so RequireAuth sends the user to sign in,
+  // rather than leaving them on a page whose every request now fails.
+  useEffect(() => {
+    const onSignedOut = () => {
+      setUser(null);
+      setStatus("signed-out");
+    };
+    window.addEventListener("vf:signin-required", onSignedOut);
+    return () => window.removeEventListener("vf:signin-required", onSignedOut);
+  }, []);
+
   const signIn = useCallback(async (email: string, password: string) => {
     try {
       const session = await api.login(email, password);

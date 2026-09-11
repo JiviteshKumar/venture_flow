@@ -134,15 +134,57 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+/**
+ * Two different 401s reach this client and they need opposite responses.
+ *
+ * The passphrase gate's 401 means "this deployment wants the shared
+ * passphrase" and is answered by DemoGate's prompt. The sign-in gate's 401
+ * (`code: "signin_required"`, sent in production for every non-public route)
+ * means "your session is missing or no longer valid" and is answered by the
+ * sign-in page. Treating both as the first -- which this interceptor used to --
+ * would show an expired session a passphrase prompt that cannot help it.
+ */
+function isSigninRequired(body: unknown): boolean {
+  return typeof body === "object" && body !== null
+    && (body as { code?: string }).code === "signin_required";
+}
+
+/** Forget the session locally and tell AuthContext, so RequireAuth redirects. */
+export function signalSignedOut(): void {
+  sessionToken.clear();
+  window.dispatchEvent(new CustomEvent("vf:signin-required"));
+}
+
+/**
+ * The same check for raw fetch() calls, which bypass the axios interceptor.
+ * Returns true when the response was the sign-in gate, so the caller can stop.
+ */
+export async function handleSignedOut(res: Response): Promise<boolean> {
+  if (res.status !== 401) return false;
+  try {
+    if (isSigninRequired(await res.clone().json())) {
+      signalSignedOut();
+      return true;
+    }
+  } catch {
+    // Not JSON: not the sign-in gate.
+  }
+  return false;
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      gateRequired = true;
-      // Drop a passphrase the server rejected, so the prompt reappears rather
-      // than the app retrying a known-bad value forever.
-      demoToken.clear();
-      window.dispatchEvent(new CustomEvent("vf:gate-required"));
+      if (isSigninRequired(error.response.data)) {
+        signalSignedOut();
+      } else {
+        gateRequired = true;
+        // Drop a passphrase the server rejected, so the prompt reappears rather
+        // than the app retrying a known-bad value forever.
+        demoToken.clear();
+        window.dispatchEvent(new CustomEvent("vf:gate-required"));
+      }
     }
     return Promise.reject(error);
   },

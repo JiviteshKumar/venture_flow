@@ -24,39 +24,25 @@ contains `render.yaml`, so Render can read most of this configuration itself.
 
 ---
 
-## Step 1 — Decide what happens to the existing unowned reports
+## Step 1 — Nothing to delete: production mode protects the old reports
 
-**Do this before the service is reachable from the internet, not after.**
+Every report written before accounts existed -- and every report created while
+nobody was signed in -- has `owner_user_id = NULL`. Locally those are shared,
+which is what the scripts and the test suite rely on. On a public URL that would
+publish the whole history to anyone walking `/reports/1`, `/reports/2` …,
+because report ids are sequential integers.
 
-Every report written before accounts existed -- and every report created
-while nobody was signed in -- has `owner_user_id = NULL`. On the day this
-was written that was every report in the database (93). That is
-the marker for "written before accounts existed", and the API treats it as
-*shared* — readable by any caller, signed in or not. Report ids are sequential
-integers, so once the backend is public, `GET /reports/1`, `/reports/2` … walks
-the entire history.
+`render.yaml` sets `VENTUREFLOW_ENV=production`, which does two things:
 
-Check the count yourself:
+- **Unowned reports are hidden from every caller.** Hidden, not deleted --
+  the rows stay in Neon, and setting `VENTUREFLOW_SHARE_UNOWNED_REPORTS=true`
+  would bring them back exactly as they were.
+- **Every route except sign-in, health and the docs requires an account.**
+  Otherwise anyone with `curl` could run analyses anonymously and spend the
+  free tier's 200,000 tokens a day -- the whole deployment's capacity.
 
-```bash
-python -c "from dotenv import load_dotenv; load_dotenv(); import db; c=db.connection().__enter__().cursor(); c.execute('SELECT count(*) AS n FROM dd_reports WHERE owner_user_id IS NULL'); print(c.fetchone())"
-```
-
-Pick one:
-
-- **Delete them.** They are analyses of test decks and public pitch decks; none
-  is a real customer's. This is what I would do.
-
-  ```bash
-  python -c "from dotenv import load_dotenv; load_dotenv(); import db; conn=db.connection().__enter__(); cur=conn.cursor(); cur.execute('DELETE FROM dd_reports WHERE owner_user_id IS NULL'); print('deleted', cur.rowcount)"
-  ```
-
-- **Assign them to your own account.** Register first, then set
-  `owner_user_id` to your user id for every NULL row.
-
-- **Gate the whole API** by setting `DEMO_ACCESS_TOKEN` in Step 4. This is a
-  shared passphrase in front of everything, which is a blunt instrument but
-  closes the hole in one move.
+If you build the service by hand (Option B below), you must add
+`VENTUREFLOW_ENV=production` yourself -- it is in the Required table in Step 4.
 
 ---
 
@@ -145,6 +131,7 @@ Render Dashboard → your service → **Environment**. Add each of these.
 | `GROQ_API_KEY` | your Groq key |
 | `PYTHON_VERSION` | `3.13.2` |
 | `TRUST_PROXY_HEADERS` | `true` |
+| `VENTUREFLOW_ENV` | `production` |
 
 `TRUST_PROXY_HEADERS` matters more than it looks. Render terminates TLS at a
 load balancer, so without it every request appears to come from the same proxy
@@ -155,7 +142,7 @@ request in a minute, from anyone, gets a 429.
 
 | Key | Value | Why |
 |---|---|---|
-| `DEMO_ACCESS_TOKEN` | a long random passphrase | The outer gate from Step 1. Leave unset only if you deleted or assigned the unowned reports. |
+| `DEMO_ACCESS_TOKEN` | *(leave unset)* | No longer needed: production mode already requires an account. Set it only if you want a shared passphrase in front of the sign-in page too. |
 | `ALLOWED_ORIGINS` | your Vercel URL (Step 7) | Without it, the browser blocks every response. |
 
 ### Defaults that are already correct

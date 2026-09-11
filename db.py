@@ -528,6 +528,30 @@ def find_similar_reports_by_vector(embedding: list[float], top_k: int = 5) -> li
         return list(cur.fetchall())
 
 
+
+def _env_flag(name: str, default: bool) -> bool:
+    value = os.getenv(name, "").strip().lower()
+    if not value:
+        return default
+    return value in {"1", "true", "yes", "on"}
+
+
+# Whether reports with no owner are visible to everyone.
+#
+# owner_user_id IS NULL marks a report written before accounts existed, or by a
+# caller who was not signed in. Locally that is useful -- scripts and the test
+# suite run anonymously and need to read back what they wrote. On a public
+# deployment it is a disclosure: report ids are sequential integers, and on the
+# day this switch was added every one of the 94 stored reports was unowned.
+#
+# Off in production (VENTUREFLOW_ENV=production): unowned reports are hidden
+# from every caller, not deleted, so turning this back on restores them exactly.
+# VENTUREFLOW_SHARE_UNOWNED_REPORTS overrides the default either way.
+SHARE_UNOWNED_REPORTS = _env_flag(
+    "VENTUREFLOW_SHARE_UNOWNED_REPORTS",
+    default=os.getenv("VENTUREFLOW_ENV", "development").strip().lower() != "production",
+)
+
 def list_reports(limit: int = 20, owner_user_id: str | None = None) -> list[dict[str, Any]]:
     """Compact saved-report metadata for the history view.
 
@@ -550,12 +574,12 @@ def list_reports(limit: int = 20, owner_user_id: str | None = None) -> list[dict
                    dr.created_at,
                    (dr.owner_user_id IS NULL) AS shared
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
-            WHERE dr.owner_user_id IS NULL
+            WHERE (%s AND dr.owner_user_id IS NULL)
                OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid)
             ORDER BY dr.created_at DESC
             LIMIT %s
             """,
-            (owner_user_id, owner_user_id, limit),
+            (SHARE_UNOWNED_REPORTS, owner_user_id, owner_user_id, limit),
         )
         return list(cur.fetchall())
 
@@ -576,10 +600,10 @@ def get_report(report_id: str, owner_user_id: str | None = None) -> dict[str, An
                    (dr.owner_user_id IS NULL) AS shared
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
             WHERE dr.id::text = %s
-              AND (dr.owner_user_id IS NULL
+              AND ((%s AND dr.owner_user_id IS NULL)
                    OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid))
             """,
-            (report_id, owner_user_id, owner_user_id),
+            (report_id, SHARE_UNOWNED_REPORTS, owner_user_id, owner_user_id),
         )
         return cur.fetchone()
 
@@ -842,12 +866,12 @@ def get_score_history(
                    COALESCE(dr.verdict, 'NEEDS MORE DILIGENCE') AS recommendation
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
             WHERE lower(c.name) = lower(%s)
-              AND (dr.owner_user_id IS NULL
+              AND ((%s AND dr.owner_user_id IS NULL)
                    OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid))
             ORDER BY dr.created_at ASC
             LIMIT %s
             """,
-            (company_name, owner_user_id, owner_user_id, limit),
+            (company_name, SHARE_UNOWNED_REPORTS, owner_user_id, owner_user_id, limit),
         )
         return list(cur.fetchall())
 

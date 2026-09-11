@@ -157,6 +157,22 @@ _origin_pattern = re.compile(ALLOWED_ORIGIN_REGEX) if ALLOWED_ORIGIN_REGEX else 
 # a real origin, and ungated.
 DEMO_ACCESS_TOKEN = os.getenv("DEMO_ACCESS_TOKEN", "").strip() or None
 
+# "production" on the public deployment (render.yaml sets it). Everything that
+# differs between a laptop and a public URL keys off this one value, so a
+# deployment cannot end up half-hardened.
+DEPLOYMENT_ENV = os.getenv("VENTUREFLOW_ENV", "development").strip().lower()
+IS_PRODUCTION = DEPLOYMENT_ENV == "production"
+
+# Every non-public route requires a signed-in account.
+#
+# The UI already requires sign-in on every page; the API did not. On a public
+# URL that meant anyone with curl could run analyses anonymously and spend the
+# free tier's 200,000 tokens a day -- the entire deployment's capacity -- and
+# read every unowned report. On by default in production; overridable with
+# VENTUREFLOW_REQUIRE_SIGNIN for local testing of the gate itself.
+_signin_env = os.getenv("VENTUREFLOW_REQUIRE_SIGNIN", "").strip().lower()
+REQUIRE_SIGNIN = (_signin_env in {"1", "true", "yes", "on"}) if _signin_env else IS_PRODUCTION
+
 # Reachable without the passphrase. `/` and `/health` are how a platform health
 # check and a human both establish the service is alive, and neither exposes
 # any report data. The OpenAPI routes are listed so the docs page can load its
@@ -259,6 +275,10 @@ async def current_user(request: Request) -> dict[str, Any] | None:
     in changes is OWNERSHIP: an authenticated analysis is scoped to its owner,
     and an anonymous one is visible to everyone, exactly as before.
     """
+    # Already resolved by the sign-in gate for this request.
+    cached = getattr(getattr(request, "state", None), "vf_user", None)
+    if cached:
+        return cached
     token = _bearer_token(request)
     if not token:
         return None
@@ -351,6 +371,38 @@ async def require_demo_token(request: Request, call_next):
             headers=_cors_headers_for(request),
         )
     return await call_next(request)
+
+
+@app.middleware("http")
+async def require_signin(request: Request, call_next):
+    """401 for any non-public route without a valid session, when enabled.
+
+    The response carries `code: "signin_required"` so the frontend can tell it
+    apart from the passphrase gate's 401 and send the user to the sign-in page
+    rather than to a passphrase prompt that would not help them.
+
+    The resolved user is stashed on `request.state` so `current_user` does not
+    look the same session up a second time for the route handler.
+    """
+    if (not REQUIRE_SIGNIN or request.method == "OPTIONS"
+            or request.url.path in PUBLIC_PATHS
+            or request.url.path.startswith("/auth/")):
+        return await call_next(request)
+    token = _bearer_token(request)
+    if token:
+        try:
+            user = await run_in_threadpool(get_session_user, auth.hash_token(token))
+        except Exception:
+            logger.warning("Session check failed inside the sign-in gate", exc_info=True)
+            user = None
+        if user:
+            request.state.vf_user = user
+            return await call_next(request)
+    return JSONResponse(
+        status_code=401,
+        content={"detail": "Sign in to use VentureFlow.", "code": "signin_required"},
+        headers=_cors_headers_for(request),
+    )
 
 
 # Registered BEFORE CORSMiddleware, deliberately. Starlette applies middleware

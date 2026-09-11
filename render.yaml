@@ -47,6 +47,13 @@ services:
       - key: PYTHON_VERSION
         value: "3.13.2"
 
+      # The public-deployment switch. Every route except sign-in, health and
+      # the docs requires a signed-in account, and reports written before
+      # accounts existed are hidden (not deleted). Without it, anyone with curl
+      # could read every unowned report and spend the day's Groq quota.
+      - key: VENTUREFLOW_ENV
+        value: production
+
       # ── Set these yourself, in the dashboard. sync:false means Render will
       #    prompt for them rather than storing them in this file. Never commit
       #    a real value here.

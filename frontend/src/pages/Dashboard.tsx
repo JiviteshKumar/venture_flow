@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import { api, authHeaders, ReportSummary } from "../services/apiClient";
+import { api, authHeaders, handleSignedOut, ReportSummary } from "../services/apiClient";
 import { formatDate, formatDateShort, displayDeckId } from "../utils/format";
 import { ChartTooltip } from "../components/charts/ChartTooltip";
 
@@ -182,7 +182,7 @@ const Dashboard = () => {
       return;
     }
     fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/companies/${encodeURIComponent(report.company)}/history`, { headers: authHeaders() })
-      .then((res) => (res.ok ? res.json() : { history: [] }))
+      .then(async (res) => ((await handleSignedOut(res)) || !res.ok ? { history: [] } : res.json()))
       .then((data) => setScoreHistory(data.history || []))
       .catch(() => setScoreHistory([]));
   }, [report?.company]);

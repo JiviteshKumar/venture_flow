@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import { CheckCircle, AlertTriangle, ChevronDown, ChevronUp, Download, ExternalLink, Upload, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { authHeaders } from "../services/apiClient";
+import { authHeaders, handleSignedOut } from "../services/apiClient";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
 import VentureScorePanel from "../components/analysis/VentureScorePanel";
@@ -60,6 +60,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ session_id: sessionId, question: q }),
       });
+      if (await handleSignedOut(res)) return;
       const data = await res.json();
       setMessages(m => [...m, {
         role: "bot" as const,
@@ -173,7 +174,7 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
   const refresh = () => {
     if (!reportId) return;
     fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${reportId}/comments`, { headers: authHeaders() })
-      .then((res) => (res.ok ? res.json() : []))
+      .then(async (res) => ((await handleSignedOut(res)) || !res.ok ? [] : res.json()))
       .then(setComments)
       .catch(() => setComments([]));
   };
@@ -190,6 +191,7 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
         headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ author_name: authorName || "Anonymous", body }),
       });
+      if (await handleSignedOut(res)) return;
       if (res.ok) {
         setBody("");
         refresh();
@@ -536,6 +538,7 @@ const Analysis = () => {
     setPdfExporting(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/reports/${report.report_id}/pdf`, { headers: authHeaders() });
+      if (await handleSignedOut(res)) return;
       if (!res.ok) throw new Error("PDF export failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
