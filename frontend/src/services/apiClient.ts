@@ -452,6 +452,13 @@ export interface AnalyzeResponse {
    */
   evidence_search_degraded?: boolean;
   evidence_search_note?: string;
+  /**
+   * "provisional" when a component that moves the score did not run, so
+   * this number is built from less evidence than a complete report's and is
+   * not comparable with one. The note names what was missing.
+   */
+  score_status?: "final" | "provisional";
+  score_status_note?: string;
   similar_companies?: Array<{ name: string; domain?: string | null; sector?: string | null; similarity?: number }>;
   founders?: string[];
   // full nested sections from backend
@@ -818,6 +825,8 @@ const normalizeAnalyzeResponse = (raw: any): AnalyzeResponse => {
     degraded_components: Array.isArray(raw?.degraded_components) ? raw.degraded_components : [],
     evidence_search_degraded: Boolean(raw?.evidence_search_degraded),
     evidence_search_note: String(raw?.evidence_search_note ?? ""),
+    score_status: raw?.score_status === "provisional" ? "provisional" : "final",
+    score_status_note: String(raw?.score_status_note ?? ""),
     score_source: raw?.score_source ? String(raw.score_source) : null,
     similar_companies: Array.isArray(raw?.similar_companies) ? raw.similar_companies : [],
     founders: Array.isArray(raw?.founders) ? raw.founders.map(asText).filter(Boolean) : [],

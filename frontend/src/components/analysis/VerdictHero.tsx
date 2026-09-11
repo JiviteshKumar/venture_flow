@@ -57,6 +57,8 @@ export default function VerdictHero({
   high,
   baseRate,
   modelAvailable,
+  provisional = false,
+  provisionalNote = "",
   onExport,
   exporting,
 }: {
@@ -72,6 +74,13 @@ export default function VerdictHero({
   high?: number;
   baseRate?: number;
   modelAvailable: boolean;
+  /**
+   * The score was built without a component that normally moves it, so it
+   * is not comparable with a complete report's. Shown beside the numeral,
+   * not in a footnote: the number and its status are one fact.
+   */
+  provisional?: boolean;
+  provisionalNote?: string;
   onExport: () => void;
   exporting: boolean;
 }) {
@@ -156,6 +165,13 @@ export default function VerdictHero({
         /* The score block. Right-aligned so the eye lands on the numeral after
            the company name, which is the reading order that matters. */
         .vh-score-block { text-align: right; padding-bottom: 4px; min-width: 260px; }
+        .vh-provisional {
+          display: inline-flex; flex-direction: column; gap: 3px; margin-top: 8px;
+          padding: 6px 10px; border-radius: 8px; max-width: 320px; text-align: left;
+          background: rgba(240,183,47,0.12); border: 1px solid rgba(240,183,47,0.35);
+          color: #F0B72F; font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
+        }
+        .vh-provisional-note { color: rgba(232,238,249,0.78); font-weight: 400; line-height: 1.45; }
         .vh-score-line { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
         .vh-score {
           font-family: var(--font-display);
@@ -289,6 +305,12 @@ export default function VerdictHero({
               <div className="vh-band-label" style={{ color: band.fg }}>
                 {band.label}
               </div>
+              {provisional && (
+                <div className="vh-provisional" role="note" title={provisionalNote}>
+                  Provisional score
+                  {provisionalNote && <span className="vh-provisional-note">{provisionalNote}</span>}
+                </div>
+              )}
 
               {hasInterval && (
                 <div className="vh-track">

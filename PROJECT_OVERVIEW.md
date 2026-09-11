@@ -141,8 +141,11 @@ growth that already happened and `age_years` encodes right-censoring. Keeping
 them would have inflated the score.
 
 **Verified out-of-sample** (`ml/eval/validation/out_of_sample_verified.json`):
-261 companies with **zero name overlap** with training → **AUC 0.6356**
-(CI 0.5617–0.7021).
+261 companies with **zero name overlap** with training → **AUC 0.6636**
+(CI 0.5914–0.7310). This was 0.6356 (CI 0.5617–0.7021) before description
+length stopped being read as a feature -- see section 8d. The intervals
+overlap, so the honest reading is "no worse, possibly slightly better", not
+an improvement.
 
 An earlier reported figure of 0.668 was **in-sample and void** — the evaluation
 sampled from the model's own training file. The correction is recorded rather
@@ -466,7 +469,11 @@ the product promises as PRESENT, EMPTY or BROKEN. It exists because
 skips the endpoints, the response model, the job queue and persistence, which is
 where most of this project's shipped defects have actually lived.
 
-Three decks, run 9 September 2026. Uber ran with token budget available; Airbnb
+Three decks, run 9 September 2026. The figures are read from the stored
+reports (ids 140, 149, 150), rebuilt into
+`ml/eval/e2e_deck_audit_2026-09-09.json`; the table originally gave Airbnb's
+score as 53.0, a figure that was never actually read from its report -- the
+stored value is 37.0. Uber ran with token budget available; Airbnb
 and Buffer exhausted it partway (three full analyses is roughly one day's
 200,000 tokens), and the interest of those two runs is that the degradation
 machinery reported the outage instead of hiding it.
@@ -474,7 +481,7 @@ machinery reported the outage instead of hiding it.
 | | Uber | Airbnb | Buffer |
 |---|---|---|---|
 | extraction | llm_schema, 25 slides | llm_schema, 11 slides | regex_fallback (quota), 13 slides |
-| score | 41.0, model | 53.0, model | 53.0, model |
+| score | 41.0, model | 37.0, model | 53.0, model |
 | claims checked | 5 (1 supported) | 5 | 5, degraded |
 | bull / bear | 6 / 5 signals | outage, stated | outage, stated |
 | founders | researched, 11 sources, model unreachable | none named, research quota-blocked | 3 from the deck, verified |
@@ -560,7 +567,7 @@ of the score (`tests/test_claim_judge_parsing.py`).
 ceiling and never gave back the unused part. Reconciling reservations against
 real usage took a full Uber analysis from 736 s to 413 s with every output
 present (`ml/eval/e2e_deck_audit_2026-09-11_uber.json`; the 9 September
-three-deck audit in 8b stays in `ml/eval/e2e_deck_audit.json`). Of the remaining 413 s, 320 are genuine pacing against the free tier's
+three-deck audit behind 8b is `ml/eval/e2e_deck_audit_2026-09-09.json`). Of the remaining 413 s, 320 are genuine pacing against the free tier's
 8,000 tokens/minute; cutting further means spending fewer tokens or a paid tier.
 
 **Smaller fixes.** Four bare `except:` clauses in live code (which also swallow
@@ -597,6 +604,57 @@ every word of the real text layer (substring recall 1.00; RapidOCR drops the
 spaces in tightly kerned small print, which is why a naive word count reads
 0.68). The sign-in and sign-up screens render with no console errors. Signed-in
 flows were exercised through the API rather than the browser.
+
+---
+
+## 8d. Launch sequence: deployment hardening and score consistency
+
+**The public deployment fails closed (`VENTUREFLOW_ENV=production`).** Two gaps
+stood between the backend and a public URL. Every report with no owner -- all
+94 of them, written before accounts existed -- was readable by anyone walking
+sequential ids; and every analysis route accepted anonymous callers, so anyone
+with `curl` could spend the free tier's entire daily token budget. In
+production, every route except `/`, `/health`, the docs and `/auth/*` now
+requires a session (a 401 with `code: "signin_required"`), and unowned reports
+are hidden -- not deleted; `VENTUREFLOW_SHARE_UNOWNED_REPORTS=true` restores
+them. The frontend tells this 401 apart from the passphrase gate's: an expired
+session is sent to sign in rather than shown a passphrase prompt. Development
+and the test suite keep the old behaviour (`tests/test_production_mode.py`).
+
+**The same deck now gets the same starting score, whichever way it was read.**
+Uber scored 41 and 44 on healthy runs and 52 on a run where Groq was out of
+tokens -- higher when the product was broken. Taking the three scores apart term
+by term showed the evidence adjustment was almost identical (-5.6 vs -5.4
+points); the whole gap was the model's starting score, 58 against 49. The cause
+was one feature. `desc_len` means "how much a company wrote on its YC profile"
+in training, but in this product it was the length of whatever the extraction
+step produced: a 178-character LLM summary, or a 1,200-character slab of raw
+deck text under the regex fallback. Measured on the same content, length alone
+moved the score from 41 (100 characters) to 51 (800+), so every fallback run
+started at 58 whatever the company -- Uber, Buffer and Airbnb alike.
+
+Length is now imputed (it measures the pipeline, not the company) and keyword
+tags come from the full deck text, which is identical on both paths; tags from
+the full deck (0-3 per deck) stay inside the training range (median 2, max 5).
+Result on Uber, Airbnb, Buffer and Coinbase: **the gap between extraction paths
+went from up to 9 points to 0**. Every deck's starting score rises 3 to 11
+points, because the old path always fed a short summary and shorter text scored
+lower; length is now neutral. Out of sample the model is no worse (AUC 0.6356 ->
+0.6636, overlapping intervals).
+
+What cannot be made identical is a run whose claim checks, risk analysis or
+specialists failed: their evidence terms are simply absent. Such a report now
+carries `score_status: "provisional"` with a sentence naming what was missing,
+shown beside the number in the UI, rather than presenting a partial score in the
+same form as a complete one (`tests/test_score_is_consistent_across_runs.py`).
+
+**Two evidence errors in this document, corrected.** The file cited as the 9
+September three-deck audit had been overwritten by a later single-deck run in
+which the Groq quota had run out; it is now named for what it is
+(`ml/eval/e2e_deck_audit_uber_quota_exhausted.json`), the real audit is rebuilt
+from the stored reports, and `scripts/e2e_deck_audit.py` writes a new dated file
+per run instead of one fixed file. And Airbnb's score in 8b was corrected from
+53.0 to the stored 37.0.
 
 ---
 

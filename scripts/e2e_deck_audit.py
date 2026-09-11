@@ -43,7 +43,28 @@ load_dotenv(ROOT / ".env")
 import console_safety  # noqa: F401,E402
 
 DECKS = ROOT / "ml" / "eval" / "decks"
-OUT = ROOT / "ml" / "eval" / "e2e_deck_audit.json"
+OUT_DIR = ROOT / "ml" / "eval"
+
+
+def output_path(decks: list[str]) -> Path:
+    """A new file per run, named for its date and decks. Never overwrites.
+
+    This wrote to one fixed file, `e2e_deck_audit.json`, on every run. A later
+    single-deck run -- one where the Groq quota had run out -- overwrote the
+    three-deck audit that PROJECT_OVERVIEW section 8b cited as its evidence,
+    and the substitution went unnoticed until the numbers were checked against
+    the stored reports. An audit file is evidence; a tool that silently
+    replaces evidence cannot be trusted to produce it.
+    """
+    import datetime
+
+    stem = f"e2e_deck_audit_{datetime.date.today().isoformat()}_{'-'.join(decks).lower()}"
+    candidate = OUT_DIR / f"{stem}.json"
+    counter = 2
+    while candidate.exists():
+        candidate = OUT_DIR / f"{stem}_{counter}.json"
+        counter += 1
+    return candidate
 
 # Deliberately mixed: Uber is the deck that produced the 35/100 report, Airbnb
 # has a rich text layer, Buffer is short and metric-heavy.
@@ -307,7 +328,8 @@ def main() -> int:
                 traceback.print_exc()
                 rows.append({"deck": name, "error": traceback.format_exc()[-1500:]})
 
-    OUT.write_text(json.dumps(rows, indent=2, default=str), encoding="utf-8")
+    out = output_path(args.decks)
+    out.write_text(json.dumps(rows, indent=2, default=str), encoding="utf-8")
 
     print(f"\n\n{'=' * 74}\nSUMMARY\n{'=' * 74}")
     broken_total = 0
@@ -321,7 +343,7 @@ def main() -> int:
         broken_total += len(broken)
         print(f"{row['deck']:10s} {row.get('seconds')}s  broken={broken or '-'}  "
               f"empty={empty or '-'}")
-    print(f"\nwrote {OUT}")
+    print(f"\nwrote {out}")
     return 1 if broken_total else 0
 
 

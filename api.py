@@ -726,6 +726,11 @@ class DiligenceResponse(BaseModel):
     # component had failed.
     evidence_search_degraded: bool = False
     evidence_search_note: str = ""
+    # "final" or "provisional". Provisional means a component that moves the
+    # score did not run, so this number is not comparable with a complete
+    # report's -- see ventureflow_agent's score_status block.
+    score_status: str = "final"
+    score_status_note: str = ""
     report_id: str | None = None
     session_id: str
 
@@ -1208,6 +1213,8 @@ async def _perform_analysis(request: DiligenceRequest, on_stage=None,
         degraded_components=report.get("degraded_components") or [],
         evidence_search_degraded=bool(report.get("evidence_search_degraded")),
         evidence_search_note=report.get("evidence_search_note") or "",
+        score_status=report.get("score_status") or "final",
+        score_status_note=report.get("score_status_note") or "",
         report_id=report_id,
         session_id=session_id,
     )
@@ -1544,6 +1551,8 @@ async def saved_report(report_id: str, request: Request):
         degraded_components=report.get("degraded_components") or [],
         evidence_search_degraded=bool(report.get("evidence_search_degraded")),
         evidence_search_note=report.get("evidence_search_note") or "",
+        score_status=report.get("score_status") or "final",
+        score_status_note=report.get("score_status_note") or "",
         report_id=report_id, session_id=stored_session,
     )
 

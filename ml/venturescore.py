@@ -94,6 +94,7 @@ def score_company(
     industry: str | None = None,
     stage: str | None = None,
     location: str | None = None,
+    tag_text: str | None = None,
 ) -> dict[str, Any]:
     """Score a company on the 0-100 VentureFlow Score.
 
@@ -101,6 +102,10 @@ def score_company(
     coverage and therefore narrows the reported confidence band; nothing
     else is mandatory, and an absent field is reported as imputed rather
     than quietly guessed.
+
+    `tag_text`, when given, is the text the keyword tags are derived from. The
+    pipeline passes the full deck text, because it is the one input that is
+    the same whichever extraction path ran -- see the note on desc_len below.
     """
     _load()
     if _state is None:
@@ -113,17 +118,33 @@ def score_company(
         import numpy as np
 
         text = f"{one_liner}. {description}".strip()
-        tag_flags, n_tags = _derive_tags(text)
+        tag_flags, n_tags = _derive_tags(tag_text if tag_text else text)
         location_text = (location or "").lower()
         has_location = bool(location_text)
 
         observed: dict[str, bool] = {}
         values: dict[str, float] = {}
 
-        # -- text shape: always observed, straight from the deck --
-        values["desc_len"] = float(len(description))
-        values["one_liner_len"] = float(len(one_liner))
-        observed["desc_len"] = observed["one_liner_len"] = True
+        # -- text shape: IMPUTED, never observed --
+        #
+        # In training, desc_len is how much a company wrote on its YC profile
+        # (median 410 characters). In this product it was the length of
+        # whatever text our extraction step produced -- a 178-character LLM
+        # summary when Groq answered, a 1,200-character slab of raw deck text
+        # when it fell back to regex. Same deck, same company, and the length
+        # alone moved the score ~10 points (measured: 41 at 100 characters, 51
+        # at 800+), so a Groq outage raised Uber's starting score from 49 to 58.
+        #
+        # That is a measurement of our pipeline, not of the company, so it is
+        # imputed to the training mean (0 after scaling) and reported as
+        # imputed, exactly as the model already treats fields a deck cannot
+        # supply. one_liner_len is derived from the same text and goes with it.
+        scaler = _state["scaler"]
+        feature_index = {f: i for i, f in enumerate(_state["numeric_features"])}
+        for name in ("desc_len", "one_liner_len"):
+            if name in feature_index and hasattr(scaler, "mean_"):
+                values[name] = float(scaler.mean_[feature_index[name]])
+            observed[name] = False
 
         # -- tags: derived from deck text (weaker than YC's curated tags) --
         for name, flag in tag_flags.items():

@@ -782,6 +782,8 @@ const Analysis = () => {
               : undefined
           }
           modelAvailable={Boolean(vs?.available && typeof vs.venture_score === "number")}
+          provisional={report.score_status === "provisional"}
+          provisionalNote={report.score_status_note ?? ""}
           onExport={exportReportPdf}
           exporting={pdfExporting}
         />

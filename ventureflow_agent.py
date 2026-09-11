@@ -1247,6 +1247,10 @@ def run_due_diligence(
             # real deck landing in a 9-point band.
             stage=stage or None,
             location=None,
+            # Tags from the full deck text: identical whichever extraction path
+            # ran, unlike company_description (a short LLM summary, or a raw
+            # 1,200-character slab under the regex fallback).
+            tag_text=filing_text or company_description or "",
         )
         # Bidirectional evidence fusion.
         #
@@ -1657,6 +1661,30 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
     # presenting a diminished analysis as a complete one.
     report["provider_degraded"] = provider_degraded
     report["degraded_components"] = degraded_components
+
+    # Whether this number is comparable with a complete run's.
+    #
+    # The starting score no longer depends on which extraction path ran (see
+    # ml/venturescore.py on desc_len), but the evidence adjustment still does:
+    # a component that failed contributes no term, so the run's number is
+    # built from less evidence. The recommendation is already withheld in that
+    # case; this makes the NUMBER say so too, instead of presenting a partial
+    # score in the same form as a complete one.
+    _score_moving = {"claim_verification", "risk_analysis", "market", "team",
+                     "bull_case", "bear_case"}
+    _missing = sorted({c.get("component") for c in degraded_components
+                       if c.get("component") in _score_moving})
+    _extraction_method = (report.get("extraction_provenance") or {}).get("method")
+    if _extraction_method == "regex_fallback":
+        _missing.append("structured extraction")
+    report["score_status"] = "provisional" if _missing else "final"
+    report["score_status_note"] = (
+        "Provisional: built without "
+        + ", ".join(m.replace("_", " ") for m in _missing)
+        + ", which did not run. Re-run the analysis for a score comparable with "
+          "other complete reports."
+        if _missing else ""
+    )
     # Between "the model never ran" and "the evidence was genuinely thin":
     # the model ran on evidence gathered without the general web index. The
     # verdicts count; the reader is told what they were based on.
