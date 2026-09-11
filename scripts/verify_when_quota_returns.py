@@ -14,7 +14,8 @@ covered by the test suite. What is left is the work that genuinely cannot be
 done without one, collected here so it can be started with a single command
 rather than reconstructed from notes:
 
-    python scripts/verify_when_quota_returns.py
+    python scripts/verify_when_quota_returns.py          # the subset
+    python scripts/verify_when_quota_returns.py --full   # then the full benchmark
 
 Steps run in priority order and the script stops at the first one that hits the
 ceiling, reporting exactly how far it got. Re-running resumes: the benchmark
@@ -105,6 +106,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check-only", action="store_true",
                         help="report the remaining budget and exit")
+    # The full 150-claim benchmark costs ~600,000 tokens -- three days of the
+    # free tier. It used to run automatically after the subset, so a command
+    # described as "finish the last few claims" went on to spend the entire
+    # day's budget on a job that cannot finish today. Now it is asked for.
+    parser.add_argument("--full", action="store_true",
+                        help="after the subset, also resume the full 150-claim "
+                             "benchmark (~600k tokens; spans several days)")
     args = parser.parse_args()
 
     ok, detail = budget()
@@ -116,8 +124,12 @@ def main() -> int:
               "has aged out (usually the next day).")
         return 1
 
-    for index, step in enumerate(STEPS, 1):
-        print(f"\n{'=' * 70}\n[{index}/{len(STEPS)}] {step['name']}")
+    steps = STEPS if args.full else STEPS[:1]
+    if not args.full:
+        print("Running the subset only. Add --full to continue into the "
+              "150-claim benchmark afterwards.\n")
+    for index, step in enumerate(steps, 1):
+        print(f"\n{'=' * 70}\n[{index}/{len(steps)}] {step['name']}")
         print(f"  approx cost : {step['cost']:,} tokens")
         print(f"  why         : {step['why']}\n{'=' * 70}\n")
         result = subprocess.run(step["cmd"], cwd=ROOT)

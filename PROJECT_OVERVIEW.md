@@ -577,19 +577,20 @@ October 2021. Corrected to REFUTES with the evidence recorded on the row and in
 they were.
 
 **Measured on the claim benchmark subset.** 19 claims chosen for risk: the
-six the verifier got wrong before, plus the controls most likely to be broken by
-the retrieval changes (multi-entity claims and claims about companies that do
-not exist). The run stopped cleanly at the daily token ceiling after 15, which
-is what the harness is built to do. On those 15, scored against the corrected
-labels: **old code 9 correct, new code 12**. Fixed: WeWork's withdrawn IPO,
-Lyft's IPO before Uber's, IBM's acquisition of Red Hat. Broken: none. Controls:
-9 of 9 still correct, including every claim about a non-existent company still
-retrieving nothing. Still wrong: "Lyft operates in more countries than Uber"
-(this run retrieved Uber's 70 countries but nothing on Lyft's footprint -- a
-retrieval miss), Notion (now a properly parsed NOT_ENOUGH_INFO rather than a
-fabricated 0.5), and "Tesla delivered its one millionth vehicle in March 2020"
-(the sources say produced; a defensible reading of an arguable label). The last
-4 of the 19 resume with `python scripts/verify_when_quota_returns.py`.
+six the verifier got wrong before, plus the thirteen controls most likely to be
+broken by the retrieval changes (multi-entity claims and claims about companies
+that do not exist). Scored against the corrected labels: **old code 13 of 19,
+new code 16 of 19** (`ml/eval/claim_benchmark_subset_retrieval_results.json`).
+Fixed: WeWork's withdrawn IPO, Lyft's IPO before Uber's, IBM's acquisition of
+Red Hat. Broken: none. Controls: 13 of 13, including every claim about a
+non-existent company still retrieving nothing. The judge gave up on no claim.
+Still wrong: "Lyft operates in more countries than Uber" (this run retrieved
+Uber's 70 countries but nothing on Lyft's footprint -- a retrieval miss),
+Notion (now a properly parsed NOT_ENOUGH_INFO rather than a fabricated 0.5),
+and "Tesla delivered its one millionth vehicle in March 2020" (the sources say
+produced; a defensible reading of an arguable label). The first 15 claims ran
+on 11 September and the last 4 on the next day's budget, resumed from the
+partial log.
 
 **Verified live.** OCR on an image-only rendering of Airbnb's deck recovers
 every word of the real text layer (substring recall 1.00; RapidOCR drops the
