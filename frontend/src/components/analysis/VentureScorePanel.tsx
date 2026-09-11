@@ -1,5 +1,5 @@
 import { AlertTriangle, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import type { AnalyzeResponse } from "../../services/apiClient";
+import type { AnalyzeResponse, ScoreContext } from "../../services/apiClient";
 
 // `sections` is itself optional on AnalyzeResponse, so both levels need
 // unwrapping before indexing.
@@ -31,12 +31,23 @@ const bandFor = (score: number) =>
     : score >= 45 ? { fg: "#C47A0A", text: "Near comparable base rate" }
       : { fg: "#D93025", text: "Below comparable base rate" };
 
+// Colours for the server-computed band (ml/score_context.py), which is read off
+// the model's own interval against the base rate rather than fixed thresholds.
+const BAND_BY_KEY = {
+  above: { fg: "#0EA66A" },
+  within: { fg: "#C47A0A" },
+  below: { fg: "#D93025" },
+} as const;
+
 export default function VentureScorePanel({
   data,
   reportedScore,
   incompleteAnalysis,
+  context,
 }: {
   data?: VentureScore;
+  /** What the score means, from ml/score_context.py. */
+  context?: ScoreContext;
   /** The report's headline final_score, which may have been capped. */
   reportedScore?: number;
   /** True when verification was too thin for the report to stand on. */
@@ -61,6 +72,14 @@ export default function VentureScorePanel({
   }
 
   const score = data.venture_score;
+
+  // One band for the whole report: the server's, when it has one.
+
+  const band = context?.available && context.band
+
+    ? { fg: BAND_BY_KEY[context.band].fg, text: context.band_label || "" }
+
+    : bandFor(score);
   const confidence = CONFIDENCE_STYLES[data.confidence ?? "low"];
   const baseRate = Math.round((data.base_rate ?? 0) * 100);
   const coverage = Math.round((data.feature_coverage ?? 0) * 100);
@@ -111,7 +130,7 @@ export default function VentureScorePanel({
           </div>
           <div className="vs-bd-row vs-bd-total">
             <span>VentureFlow Score</span>
-            <strong style={{ color: bandFor(score).fg }}>{score}</strong>
+            <strong style={{ color: band.fg }}>{score}</strong>
           </div>
         </div>
       )}
@@ -119,7 +138,7 @@ export default function VentureScorePanel({
       <div className="vs-stats">
         <div className="vs-stat">
           <span className="vs-stat-k">vs. base rate</span>
-          <span className="vs-stat-v" style={{ color: bandFor(score).fg }}>
+          <span className="vs-stat-v" style={{ color: band.fg }}>
             <LiftIcon size={12} aria-hidden="true" /> {lift > 0 ? "+" : ""}{lift} pts
           </span>
         </div>
@@ -194,6 +213,15 @@ export default function VentureScorePanel({
               </div>
             )}
           </dl>
+          {context?.available && (
+            <div className="vs-meaning">
+              <h3 className="vs-meaning-h">What this score means</h3>
+              <p>{context.measures}</p>
+              {context.band_reason && <p>{context.band_reason}</p>}
+              {context.comparable_mix?.sentence && <p>{context.comparable_mix.sentence}</p>}
+              {context.base_rate_note && <p className="vs-meaning-note">{context.base_rate_note}</p>}
+            </div>
+          )}
           {data.caveat && <p className="vs-caveat">{data.caveat}</p>}
         </details>
       )}

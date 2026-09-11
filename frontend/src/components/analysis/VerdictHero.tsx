@@ -59,6 +59,9 @@ export default function VerdictHero({
   modelAvailable,
   provisional = false,
   provisionalNote = "",
+  bandKey,
+  bandLabel,
+  measures = "",
   onExport,
   exporting,
 }: {
@@ -81,11 +84,25 @@ export default function VerdictHero({
    */
   provisional?: boolean;
   provisionalNote?: string;
+  /** Server-computed band (ml/score_context.py): read off the interval, not fixed thresholds. */
+  bandKey?: "above" | "within" | "below";
+  bandLabel?: string;
+  /** What the number measures, as a tooltip on the short line below the band. */
+  measures?: string;
   onExport: () => void;
   exporting: boolean;
 }) {
   const reduced = useReducedMotion();
-  const band = bandFor(score);
+  const HERO_BANDS = {
+    above: { fg: "#3DDC97", glow: "rgba(61,220,151,0.22)" },
+    within: { fg: "#F0B72F", glow: "rgba(240,183,47,0.20)" },
+    below: { fg: "#FF6B5E", glow: "rgba(255,107,94,0.20)" },
+  } as const;
+  // The server's band when there is one, so the headline and the score panel
+  // below it can never describe the same number two different ways.
+  const band: Band = bandKey
+    ? { ...HERO_BANDS[bandKey], label: bandLabel || bandFor(score).label }
+    : bandFor(score);
   const hasInterval =
     typeof low === "number" && typeof high === "number" && high > low;
 
@@ -165,6 +182,7 @@ export default function VerdictHero({
         /* The score block. Right-aligned so the eye lands on the numeral after
            the company name, which is the reading order that matters. */
         .vh-score-block { text-align: right; padding-bottom: 4px; min-width: 260px; }
+        .vh-measures { margin-top: 4px; font-size: 11.5px; color: rgba(232,238,249,0.62); letter-spacing: 0.01em; cursor: help; }
         .vh-provisional {
           display: inline-flex; flex-direction: column; gap: 3px; margin-top: 8px;
           padding: 6px 10px; border-radius: 8px; max-width: 320px; text-align: left;
@@ -304,6 +322,9 @@ export default function VerdictHero({
               </div>
               <div className="vh-band-label" style={{ color: band.fg }}>
                 {band.label}
+              </div>
+              <div className="vh-measures" title={measures}>
+                Survival-or-exit likelihood · not a forecast of returns
               </div>
               {provisional && (
                 <div className="vh-provisional" role="note" title={provisionalNote}>

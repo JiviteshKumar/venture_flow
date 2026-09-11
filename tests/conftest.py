@@ -274,3 +274,25 @@ def run_analyses_inline():
     api._run_analysis_job = _REAL_RUN_ANALYSIS_JOB
     yield
     api._run_analysis_job = lambda job_id, payload: None
+
+
+@pytest.fixture(autouse=True)
+def disable_claim_cache():
+    """Never read or write remembered claim verdicts in a test.
+
+    Sixth instance of the pattern this file documents. agents/claim_cache.py
+    stores verdicts in Neon so a re-analysed deck gets the same answer. In a
+    test that is two separate bugs waiting to happen: a test that exercises the
+    real verify_claim would write rows into the production database, and a
+    verdict stored by one test would be served to the next, so a test could
+    pass or fail depending on what ran before it.
+
+    Disabled at the module switch, so tests/test_claim_cache.py can turn it on
+    for its own duration against a fake connection.
+    """
+    import agents.claim_cache as claim_cache
+
+    original = claim_cache.ENABLED
+    claim_cache.ENABLED = False
+    yield
+    claim_cache.ENABLED = original

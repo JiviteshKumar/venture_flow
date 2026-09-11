@@ -121,6 +121,20 @@ def build_report_blocks(report: dict[str, Any], generated_on: str) -> list[Block
             "founder with little public footprint and is not itself a negative signal."
         )})
 
+    # What the headline number means -- the same text the UI shows beside it
+    # (ml/score_context.py), so the PDF and the screen cannot describe one
+    # score two different ways.
+    context = sections.get("score_context") or {}
+    if context.get("available"):
+        blocks.append({"kind": "heading", "text": "What the Score Means"})
+        blocks.append({"kind": "text", "text": str(context.get("measures", ""))})
+        if context.get("band_reason"):
+            blocks.append({"kind": "text", "text": str(context["band_reason"])})
+        mix_sentence = (context.get("comparable_mix") or {}).get("sentence")
+        if mix_sentence:
+            blocks.append({"kind": "text", "text": str(mix_sentence)})
+        if context.get("base_rate_note"):
+            blocks.append({"kind": "caveat", "text": str(context["base_rate_note"])})
     comparables = sections.get("market_comparables") or {}
     if comparables.get("available"):
         rows = [[

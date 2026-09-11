@@ -658,6 +658,64 @@ per run instead of one fixed file. And Airbnb's score in 8b was corrected from
 
 ---
 
+## 8e. Claim checking on real claims, and what the score means
+
+**Most "can't tell" verdicts were never a verifier failure.** Of 128 distinct
+claims ever checked and stored, 108 (84%) came back NOT_ENOUGH_INFO -- but the
+large majority come from synthetic test decks, companies that do not exist and
+so can never be corroborated. Read one by one, the rest were four fixable
+problems, now handled by `agents/claim_router.py`:
+
+- **Private operating metrics** ("ARR $11.4M", "We have 40 enterprise
+  customers"). No public source confirms or contradicts these; 0 of 10 stored
+  ones ever got a verdict. A NOT_ENOUGH_INFO on one is no longer counted against
+  the company (`ml/evidence_fusion.extract_features`, and the fallback formula
+  to match); a SUPPORTS or REFUTES on one still counts in full. The UI labels
+  them "Not publicly checkable" rather than "Unverified".
+- **General statements searched with the company's name glued on.** Every query
+  was anchored on the company, which buries "There are over 2 million mid-size
+  farms in the US" under pages about one small company. A claim that names no
+  company is now searched with and without the anchor, and the relevance gate
+  judges it against the claim itself.
+- **Extraction fragments** ("...tutoring costs ₹500- Parents rarely know...")
+  are skipped rather than spending a full judge call.
+- **Duplicates** -- AgroPulse's market claim was checked twice in one report --
+  are dropped.
+
+The five verification slots now go to the most checkable claims first (market
+statements, then public company facts, then private metrics) rather than simply
+the first five extracted, and the report lists every skipped claim with the
+reason.
+
+**Verdicts are repeatable.** The judge runs at temperature 0, and verdicts are
+cached against the exact claim, company, deck year and search mode for seven
+days (`agents/claim_cache.py`, migration 011). A degraded or thin-evidence
+verdict is never cached, a database failure is only a cache miss, and every
+cached verdict says it is one. The cache is off in tests.
+
+**Measured on real decks -- partially.** `ml/scripts/eval_claim_routing.py`
+runs the old and new search modes back to back in one session on the real-deck
+claims (Uber, Airbnb, Buffer, Coinbase), so retrieval noise between days cannot
+masquerade as an effect. It stopped cleanly at the daily Groq ceiling after 3
+paired claims: "Growing to a $3.5B industry by 2010" moved from NOT_ENOUGH_INFO
+to **SUPPORTS at 0.96** (citing a July 2010 article); the other two stayed
+NOT_ENOUGH_INFO in both modes. Three pairs is an anecdote, not a result; the
+script resumes from `ml/eval/claim_routing_real_decks.json` when the quota
+resets.
+
+**The headline now says what it measures** (`ml/score_context.py`, one source
+for the UI and the PDF). The band is read off the model's own interval against
+the base rate instead of fixed 65/45 thresholds, which called a 64 with an
+interval of 58-70 "Near" the 49% base rate. The number is described as the
+chance a company like this survived or exited rather than shut down -- not a
+forecast of returns. The 49% base rate is explained: it is exits among
+companies whose fate is settled and excludes the 70% still operating, so it
+overstates "how often companies like this exit" (15%) by more than three times.
+And the outcome mix of the nearest real comparables is stated beside the score:
+for Uber's 2008 deck, 1 exited, 1 is still operating and 3 shut down.
+
+---
+
 ## 9. Running it locally
 
 Two terminals from the repo root:

@@ -388,6 +388,29 @@ export interface ClaimDetail {
   sources: string[];
   total_sources: number;
   full_pages_read: number;
+  /** market | company | internal -- see agents/claim_router.py. */
+  claim_kind?: string;
+  routing_reason?: string;
+  /** True when this verdict was remembered from an earlier identical check. */
+  cached?: boolean;
+  search_mode?: string;
+}
+
+/**
+ * What the headline score means, built server-side (ml/score_context.py) so the
+ * UI and the PDF describe it identically. `band` is read off the model's own
+ * interval against the base rate, not fixed thresholds.
+ */
+export interface ScoreContext {
+  available: boolean;
+  score?: number;
+  band?: "above" | "within" | "below";
+  band_label?: string;
+  band_reason?: string;
+  measures?: string;
+  base_rate?: number | null;
+  base_rate_note?: string;
+  comparable_mix?: { n: number; counts: Record<string, number>; sentence: string };
 }
 
 export interface AnalyzeResponse {
@@ -642,6 +665,7 @@ export interface AnalyzeResponse {
      * `{available: false, reason}` when the model file is missing, and the
      * report then falls back to the legacy formula. The UI must handle that.
      */
+    score_context?: ScoreContext;
     venture_score?: {
       available: boolean;
       reason?: string;

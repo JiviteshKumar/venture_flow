@@ -148,7 +148,7 @@ def named_entities(claim: str) -> list:
     return out
 
 
-def build_queries(claim: str, company: str = "") -> list:
+def build_queries(claim: str, company: str = "", search: str = "company") -> list:
     """Search queries for one claim, scoped to the company when it is known.
 
     The company parameter is the fix for a measured retrieval failure. This
@@ -182,6 +182,19 @@ def build_queries(claim: str, company: str = "") -> list:
     """
     claim = (claim or "").strip()
     company = (company or "").strip()
+    if company and search == "both":
+        # A claim that does not name the company (agents/claim_router.py). It
+        # may be a general market fact -- "Medallions cost ~$500k, drivers make
+        # 31k" -- which anchoring on "UberCab" buries under pages about one
+        # company, or a deck tagline that IS about the company. Search both
+        # ways and let the relevance gate decide. The two company-news
+        # templates are left out: they retrieve the company, not the claim.
+        return [
+            f'"{claim}"',
+            f"fact check {claim}",
+            f"{claim} evidence proof",
+            f'"{company}" {claim}',
+        ] + _secondary_entity_queries(claim, skip=[company])
     if not company:
         # Unscoped fallback: near the templates that measured 0.955 accuracy on
         # ml/eval/claim_benchmark.jsonl, minus the demonstrated noise generator.
@@ -237,7 +250,8 @@ def _secondary_entity_queries(claim: str, skip: list) -> list:
         extra.append(f'"{entity}" {claim}')
     return extra
 
-def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
+def collect_evidence(claim: str, company: str = "", context: str = "",
+                     search: str = "company") -> dict:
     """Gather web evidence for one claim.
 
     The searches and page fetches run concurrently. They used to run one after
@@ -254,7 +268,7 @@ def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
     their own exceptions and return empty results, so one failed query or
     unreachable page degrades that item rather than the claim.
     """
-    queries = build_queries(claim, company=company)
+    queries = build_queries(claim, company=company, search=search)
     print(f"  Running {len(queries)} searches concurrently...")
     all_snippets = []
     seen_urls    = set()
@@ -293,7 +307,14 @@ def collect_evidence(claim: str, company: str = "", context: str = "") -> dict:
     # company that happens to share a word with this one. The gate is a cheap
     # TF-IDF similarity check plus a small blocklist, and it records what it
     # removed so the report can say so rather than just showing fewer sources.
-    filter_context = " ".join(filter(None, [company, context, claim]))
+    # For a claim that names no company, judge relevance against the claim
+    # itself. The deck's own description dilutes the similarity of a page about
+    # taxi medallion prices to "Medallions cost ~$500k" -- and sources that do
+    # name the company are kept by the gate's name rule regardless.
+    filter_context = (
+        claim if search == "both"
+        else " ".join(filter(None, [company, context, claim]))
+    )
     kept, dropped = filter_sources(
         all_snippets, context=filter_context, company=company,
     )
@@ -362,7 +383,11 @@ def _judge_once(prompt: str, max_tokens: int) -> tuple[str, str | None]:
             },
             {"role": "user", "content": prompt}
         ],
-        temperature=0.1,
+        # Zero, not 0.1. The same evidence should get the same verdict; at 0.1
+        # a re-run of an unchanged deck could flip a borderline claim, which is
+        # one of the two reasons verdicts differed between runs (the other is
+        # retrieval, addressed by the verdict cache in agents/claim_cache.py).
+        temperature=0.0,
         max_tokens=max_tokens,
         # Every other structured call site already constrains the reply to a
         # JSON object; the judge was the one that did not.
@@ -614,6 +639,7 @@ def verify_claim(
     company: str = "",
     context: str = "",
     as_of: str = "",
+    search: str = "company",
 ) -> dict:
     """Verify one claim against live web search.
 
@@ -631,7 +657,19 @@ def verify_claim(
             print(f"Company:   {company}")
         print(f"{'='*60}")
 
-    evidence = collect_evidence(claim_text, company=company, context=context)
+    # A recent verdict for this exact check is returned as it was. Retrieval
+    # varies run to run, so without this an unchanged deck re-analysed an hour
+    # later could get a different verdict on the same sentence. See
+    # agents/claim_cache.py for what is and is not remembered.
+    from agents import claim_cache
+
+    cached = claim_cache.get(claim_text, company, as_of, search)
+    if cached is not None:
+        if include_evidence:
+            cached.setdefault("evidence_text", "")
+        return cached
+
+    evidence = collect_evidence(claim_text, company=company, context=context, search=search)
 
     # A model must never be allowed to infer a verdict without retrieved evidence.
     if not evidence["snippets"] and not evidence["full_texts"]:
@@ -670,6 +708,8 @@ def verify_claim(
                 "web was never actually consulted for this claim. Absence of "
                 "evidence here is not evidence of absence."
             )
+        empty["search_mode"] = search
+        claim_cache.put(claim_text, company, as_of, search, empty)
         if include_evidence:
             empty["evidence_text"] = ""
         return empty
@@ -739,6 +779,8 @@ def verify_claim(
         print(f"  Sources:      {result['total_sources']} snippets, "
               f"{result['full_pages_read']} full pages")
 
+    result["search_mode"] = search
+    claim_cache.put(claim_text, company, as_of, search, result)
     return result
 
 if __name__ == "__main__":

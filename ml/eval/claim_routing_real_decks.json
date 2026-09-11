@@ -1,0 +1,102 @@
+{
+  "complete": false,
+  "stopped": "provider unavailable at claim 4: The sources list the five largest US cities and describe top\u20115% income thresholds, but none mention any entity \u201cgetting ",
+  "rows": [
+    {
+      "company": "Uber",
+      "claim": "Growing to a $3.5B industry by 2010",
+      "report_id": 73,
+      "stored_verdict": "NOT_ENOUGH_INFO",
+      "stored_sources": 10,
+      "kind": "market",
+      "search": "both",
+      "year": "2008",
+      "new": {
+        "verdict": "SUPPORTS",
+        "confidence": 0.96,
+        "sources": 15,
+        "degraded": false,
+        "reasoning": "The claim states the industry would reach $3.5\u202fbillion by 2010. Snippet\u202f6, dated July\u202f28\u202f2010, explicitly reports that quilting is a $3.5\u202fbillion industry in the US, confirming the stated size for that year."
+      },
+      "old": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.85,
+        "sources": 15,
+        "degraded": false,
+        "reasoning": "None of the provided snippets mention the size of the relevant industry in 2010 or a $3.5\u202fbillion figure, so the claim cannot be confirmed or refuted from the given evidence."
+      }
+    },
+    {
+      "company": "Uber",
+      "claim": "\u2013 Medallions cost ~$500k, drivers make 31k",
+      "report_id": 73,
+      "stored_verdict": "NOT_ENOUGH_INFO",
+      "stored_sources": 13,
+      "kind": "company",
+      "search": "both",
+      "year": "2008",
+      "new": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.9,
+        "sources": 9,
+        "degraded": false,
+        "reasoning": "The only source that mentions $500\u202fk medallions and $31\u202fk driver income is the pitch\u2011deck PDF itself, which cannot independently verify its own claim. Other available evidence (2025\u20112026 sources) reports medallion prices far below $500\u202fk and provides no data on $31\u202fk driver earnings, and these sourc"
+      },
+      "old": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.8,
+        "sources": 11,
+        "degraded": false,
+        "reasoning": "The only relevant evidence (source 9) reports 2026 medallion prices ranging $25k\u2011$200k+, which differs from the $500k claim, but it reflects a later period; the claim pertains to circa 2008, so the evidence cannot confirm or refute the historical figure."
+      }
+    },
+    {
+      "company": "Uber",
+      "claim": "Top 4 players combined only 22% of revenues",
+      "report_id": 73,
+      "stored_verdict": "NOT_ENOUGH_INFO",
+      "stored_sources": 13,
+      "kind": "market",
+      "search": "both",
+      "year": "2008",
+      "new": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.9,
+        "sources": 12,
+        "degraded": false,
+        "reasoning": "None of the provided sources mention the revenue share of the top four players, so the claim cannot be verified or contradicted."
+      },
+      "old": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.9,
+        "sources": 15,
+        "degraded": false,
+        "reasoning": "None of the provided snippets mention the revenue share of the top four players, so there is no direct evidence to confirm or contradict the claim that they combined for only 22% of revenues."
+      }
+    },
+    {
+      "company": "Uber",
+      "claim": "\u2013 Gets 5% of the top 5 US Cities",
+      "report_id": 73,
+      "stored_verdict": "NOT_ENOUGH_INFO",
+      "stored_sources": 13,
+      "kind": "market",
+      "search": "both",
+      "year": "2008",
+      "new": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.9,
+        "sources": 15,
+        "degraded": false,
+        "reasoning": "The sources list the five largest US cities and describe top\u20115% income thresholds, but none mention any entity \u201cgetting 5% of the top 5 US Cities.\u201d There is no evidence that directly confirms or contradicts the claim, particularly for the 2008 period referenced."
+      },
+      "old": {
+        "verdict": "NOT_ENOUGH_INFO",
+        "confidence": 0.0,
+        "sources": 15,
+        "degraded": true,
+        "reasoning": "Claim verification did not run: the daily Groq token quota is exhausted. This is a fact about this deployment, not about the claim."
+      }
+    }
+  ]
+}

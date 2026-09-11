@@ -242,6 +242,14 @@ def extract_features(
     claims = [
         c for c in all_claims
         if isinstance(c, dict) and not c.get("_degraded")
+        # A private operating metric that public sources could not settle
+        # ("ARR $11.4M", "We have 40 enterprise customers") says nothing about
+        # the company: no private company publishes those numbers. Counting its
+        # NOT_ENOUGH_INFO as an unsupported claim penalised every deck for
+        # being private. Across the stored claims, 0 of 10 such claims ever got
+        # a verdict. A SUPPORTS or REFUTES on one still counts in full.
+        and not (c.get("claim_kind") == "internal"
+                 and str(c.get("verdict", "")).upper() == "NOT_ENOUGH_INFO")
     ]
     n = len(claims)
     verdicts = [str(c.get("verdict", "")).upper() for c in claims]

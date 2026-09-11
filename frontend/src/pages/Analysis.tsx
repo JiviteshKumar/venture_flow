@@ -413,7 +413,12 @@ const Analysis = () => {
   const claimsTableData = claimsDetails.slice(0, 5).map(c => ({
     claim: c.claim.slice(0, 30) + (c.claim.length > 30 ? "…" : ""),
     founder: "As stated",
-    aiEstimate: c.verdict === "SUPPORTS" ? "Confirmed" : c.verdict === "REFUTES" ? "Disputed" : "Unverified",
+    // A private metric (ARR, customer counts) that public sources could not
+    // settle is not "unverified" in the sense of a failed check -- no private
+    // company publishes those numbers. It is labelled for what it is, and the
+    // score no longer counts it against the company either.
+    aiEstimate: c.verdict === "SUPPORTS" ? "Confirmed" : c.verdict === "REFUTES" ? "Disputed"
+      : c.claim_kind === "internal" ? "Not publicly checkable" : "Unverified",
     match: c.verdict === "SUPPORTS" ? "verified" : c.verdict === "REFUTES" ? "flagged" : "close",
     delta: `${Math.round(c.confidence * 100)}%`,
   }));
@@ -625,6 +630,10 @@ const Analysis = () => {
         .vs-dl dt { font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding-top: 2px; }
         .vs-dl dd { margin: 0; line-height: 1.55; }
         .vs-caveat { font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--border); }
+        .vs-meaning { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: rgba(15,23,42,0.03); border: 1px solid var(--border); font-size: 13px; line-height: 1.55; color: var(--text-primary); }
+        .vs-meaning p { margin: 6px 0 0; }
+        .vs-meaning-h { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; margin: 0; }
+        .vs-meaning-note { color: var(--text-secondary); font-size: 12px; }
 
         @media (max-width: 720px) {
           .vs-stats { grid-template-columns: 1fr; }
@@ -782,6 +791,9 @@ const Analysis = () => {
               : undefined
           }
           modelAvailable={Boolean(vs?.available && typeof vs.venture_score === "number")}
+          bandKey={report.sections?.score_context?.available ? report.sections.score_context.band : undefined}
+          bandLabel={report.sections?.score_context?.band_label}
+          measures={report.sections?.score_context?.measures}
           provisional={report.score_status === "provisional"}
           provisionalNote={report.score_status_note ?? ""}
           onExport={exportReportPdf}
@@ -943,6 +955,7 @@ const Analysis = () => {
                 <Reveal>
                   <VentureScorePanel
                     data={report.sections?.venture_score}
+                    context={report.sections?.score_context}
                     reportedScore={Math.round(score)}
                     incompleteAnalysis={report.incomplete_analysis}
                   />

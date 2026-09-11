@@ -266,7 +266,13 @@ def test_unverifiable_claims_do_not_cap_the_score(monkeypatch, tmp_path):
     report = ventureflow_agent.run_due_diligence(
         "Unknown Seed Co",
         company_description="An AI-powered SaaS platform for enterprise developer teams. " * 3,
-        claims_to_verify=["claim one", "claim two"],
+        # Real claims, not placeholders. agents/claim_router.py skips extraction
+        # fragments like "claim one" by design, so a placeholder is never
+        # checked and this test would silently stop testing anything.
+        claims_to_verify=[
+            "The platform integrates with GitHub, GitLab and Bitbucket.",
+            "Unknown Seed Co was founded in Austin, Texas in 2023.",
+        ],
         sector="B2B", revenue=500_000,
     )
     assert report["claims_unverified"] is True
@@ -335,7 +341,14 @@ def test_no_extractable_claims_is_priced_as_thin_evidence_not_as_a_cap(monkeypat
     with_claims = _score_with(
         monkeypatch, "Some Claims Co",
         specialists={"market": {"confidence": 0.6}},
-        claims=["claim one", "claim two", "claim three"],
+        # Real claims, not placeholders. agents/claim_router.py skips extraction
+        # fragments like "claim one" by design, so a placeholder is never
+        # checked and this test would silently stop testing anything.
+        claims=[
+            "The platform integrates with GitHub, GitLab and Bitbucket.",
+            "Some Claims Co was founded in Austin, Texas in 2023.",
+            "The product was launched publicly in March 2024.",
+        ],
     )
     without = _score_with(
         monkeypatch, "No Claims Co",

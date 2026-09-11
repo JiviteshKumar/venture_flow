@@ -4,7 +4,7 @@
     {
       "artifact": "VentureFlow Score (ml/venturescore.py)",
       "status": "OK",
-      "detail": "venture_score=61 confidence=medium"
+      "detail": "venture_score=77 confidence=medium"
     },
     {
       "artifact": "Outcome Model (ml/inference.py)",

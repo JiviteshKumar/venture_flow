@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 import re
 
+from agents.claim_router import prioritise as prioritise_claims
 from agents.claim_verifier import verify_claim
 from agents.investment_agents import run_investment_agents
 from agents.risk_detector import score_risk
@@ -725,8 +726,16 @@ def run_due_diligence(
     # ── 1. Claim Verification ──────────────────────────────────
     _stage("Verifying claims against live web search")
     claim_results = []
+    # Which five claims to spend the checks on. This used to be simply the
+    # first five, which in the stored reports meant garbled extraction
+    # fragments, the same claim twice, and private metrics no public source can
+    # confirm, while checkable market facts further down went unchecked. See
+    # agents/claim_router.py.
+    claim_routing: dict = {"selected": [], "skipped": []}
     if claims_to_verify:
-        for claim in claims_to_verify[:5]:
+        claim_routing = prioritise_claims(claims_to_verify, company_name, slots=5)
+        for routed in claim_routing["selected"]:
+            claim = routed.claim
             try:
                 # The company name and deck context are what make a deck claim
                 # searchable at all. Without them "Seed round target is $8M" is
@@ -742,6 +751,9 @@ def run_due_diligence(
                     # the four wrong REFUTES documented in
                     # agents/claim_verifier.groq_judge.
                     as_of=deck_date or _infer_deck_vintage(filing_text or company_description),
+                    # Anchored on the company only when the claim names it;
+                    # otherwise searched both ways (claim_router).
+                    search=routed.search,
                 )
             except Exception:
                 logger.exception("Claim verification failed")
@@ -757,6 +769,11 @@ def run_due_diligence(
                     "_degraded": True,
                     "_degraded_reason": "claim verification raised",
                 }
+            # What kind of claim this was, so the score and the UI can treat a
+            # private metric's NOT_ENOUGH_INFO as uninformative rather than as
+            # a failure to corroborate.
+            result.setdefault("claim_kind", routed.kind)
+            result.setdefault("routing_reason", routed.reason)
             claim_results.append(result)
 
     supported = sum(1 for r in claim_results if r["verdict"] == "SUPPORTS")
@@ -769,6 +786,9 @@ def run_due_diligence(
         "refuted":   refuted,
         "uncertain": uncertain,
         "details":   claim_results,
+        # Claims not checked, each with the reason: duplicates, extraction
+        # fragments, and those beyond the five most checkable.
+        "skipped":   claim_routing["skipped"],
         "reliability_note": (
             "HIGH — multiple claims verified"  if supported >= 2 and refuted == 0 else
             "MEDIUM — some claims unverified"   if uncertain > 0 else
@@ -1223,7 +1243,16 @@ def run_due_diligence(
     evidence_components = _evidence_components(
         refuted=refuted,
         supported=supported,
-        n_claims=len(claim_results),
+        # Only claims that can move the score, matching ml/evidence_fusion:
+        # not degraded, and not a private metric the web could not settle.
+        # This formula is the fallback when fusion raises, and it must not
+        # quietly re-import the penalty the primary path removed.
+        n_claims=sum(
+            1 for c in claim_results
+            if isinstance(c, dict) and not c.get("_degraded")
+            and not (c.get("claim_kind") == "internal"
+                     and str(c.get("verdict", "")).upper() == "NOT_ENOUGH_INFO")
+        ),
         risk_score=risk_score,
         has_revenue=bool(revenue),
         quality_score=quality["score"],
@@ -1685,6 +1714,20 @@ If input completeness is LOW, or extraction coverage is LOW, confidence must be 
           "other complete reports."
         if _missing else ""
     )
+
+    # What the headline number means, stated beside it: the band read off the
+    # model's own interval against the base rate, what the score measures, why
+    # the 49% base rate is not "how often companies like this exit", and the
+    # outcome mix of the nearest real comparables. One source for the UI and
+    # the PDF -- see ml/score_context.py.
+    try:
+        from ml.score_context import build_score_context
+        report["sections"]["score_context"] = build_score_context(
+            venture_score_result, market_comparables,
+        )
+    except Exception:
+        logger.exception("Score context could not be built")
+        report["sections"]["score_context"] = {"available": False}
     # Between "the model never ran" and "the evidence was genuinely thin":
     # the model ran on evidence gathered without the general web index. The
     # verdicts count; the reader is told what they were based on.

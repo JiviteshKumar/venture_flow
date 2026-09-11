@@ -162,7 +162,13 @@ def test_a_failed_claim_check_is_flagged_however_its_message_is_worded(monkeypat
     report = ventureflow_agent.run_due_diligence(
         company_name="Northwind Robotics",
         company_description=DECK,
-        claims_to_verify=["a claim", "another claim"],
+        # Real claims, not placeholders. agents/claim_router.py skips extraction
+        # fragments like "claim one" by design, so a placeholder is never
+        # checked and this test would silently stop testing anything.
+        claims_to_verify=[
+            "Northwind Robotics was founded in Pittsburgh in 2019.",
+            "The platform integrates with SAP and Oracle warehouse systems.",
+        ],
         filing_text=DECK,
         revenue=500_000,
     )
