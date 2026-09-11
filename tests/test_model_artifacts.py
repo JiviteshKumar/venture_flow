@@ -24,12 +24,15 @@ SCRIPT = ROOT / "ml" / "scripts" / "check_model_artifacts.py"
 
 
 @pytest.fixture(scope="module")
-def artifact_report():
+def artifact_report(tmp_path_factory):
+    # A fresh path, never the tracked ml/eval/model_artifact_check.json: that
+    # file changed on every test run, and if the script crashed before writing,
+    # the previous run's report was still there for these tests to pass on.
+    path = tmp_path_factory.mktemp("artifacts") / "model_artifact_check.json"
     result = subprocess.run(
-        [sys.executable, "-W", "ignore", str(SCRIPT)],
+        [sys.executable, "-W", "ignore", str(SCRIPT), "--out", str(path)],
         capture_output=True, text=True, cwd=str(ROOT), timeout=900,
     )
-    path = ROOT / "ml" / "eval" / "model_artifact_check.json"
     if not path.exists():
         pytest.fail(f"artifact check produced no report:\n{result.stdout}\n{result.stderr}")
     return json.loads(path.read_text(encoding="utf-8"))

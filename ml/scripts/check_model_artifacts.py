@@ -195,7 +195,13 @@ def main() -> int:
     print(f"\n{len(rows) - len(failed) - len(missing)}/{len(rows)} artifacts load and "
           f"produce output in a fresh process.")
 
+    # `--out PATH` writes the report somewhere else. The test suite uses it: it
+    # used to rewrite this tracked file on every run, so every test run left an
+    # unrelated diff in git, and a script that crashed before writing left the
+    # previous run's file behind for the test to read and pass on.
     out = ROOT / "ml" / "eval" / "model_artifact_check.json"
+    if "--out" in sys.argv:
+        out = Path(sys.argv[sys.argv.index("--out") + 1])
     out.write_text(json.dumps({
         "what_this_checks": (
             "That every trained artifact can be LOADED AND USED by a fresh "

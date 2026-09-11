@@ -62,8 +62,9 @@ def client():
 
 @pytest.fixture
 def rows_to_clean():
-    """These tests write to the real database (there is no fixture one), so
-    every row they create is registered here and removed afterwards."""
+    """Every row these tests create is registered here and removed afterwards.
+    The run's schema is private (tests/conftest.py), so this is about not
+    leaving rows for the next test in the same run to trip over."""
     emails: list[str] = []
     companies: list[str] = []
     yield emails, companies
@@ -175,10 +176,20 @@ class TestScopingIsNotSimplyRemoved:
         emails, _ = rows_to_clean
         other_email = f"stranger-{uuid.uuid4().hex[:10]}@example.test"
         emails.append(other_email)
-        stranger = client.post(
+        registered = client.post(
             "/auth/register",
             json={"email": other_email, "password": PASSWORD},
-        ).json()
+        )
+        # The one step the original version never checked. If registering the
+        # stranger fails, the request below goes out with no usable token and
+        # the test fails as a KeyError or an anonymous call -- which reads like
+        # an authorization bug and is not one.
+        assert registered.status_code == 201, (
+            f"could not create the second account ({registered.status_code}: "
+            f"{registered.text[:200]})"
+        )
+        stranger = registered.json()
+        assert stranger.get("token"), f"registration returned no token: {stranger}"
 
         response = client.get(
             f"/reports/{report_id}/{path}",

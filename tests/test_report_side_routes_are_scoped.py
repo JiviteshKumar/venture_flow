@@ -66,9 +66,10 @@ def client():
 
 @pytest.fixture
 def rows_to_clean():
-    """These tests write to the real database, so everything they create is
-    removed afterwards. Deleting a report cascades to its comments and its
-    decision (both ON DELETE CASCADE)."""
+    """Everything these tests create is removed afterwards, so later tests in
+    the same run (which share the run's private schema) never see it. Deleting
+    a report cascades to its comments and its decision (both ON DELETE
+    CASCADE)."""
     emails: list[str] = []
     companies: list[str] = []
     yield emails, companies

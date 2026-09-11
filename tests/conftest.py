@@ -32,12 +32,141 @@ Run the suite in randomised order to keep finding these:
     python -m pytest tests/ -p randomly --randomly-seed=<n>
 """
 
+import os
 import sys
+import time
+import urllib.parse
 from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+
+# ── The suite gets its own database schema ─────────────────────────────────
+#
+# Every test used to run against the production Neon database. Tests that
+# register accounts or persist reports cleaned up after themselves, but only
+# when they finished: one run left 22 test accounts in `users` next to the one
+# real account, and `ScopeTest <hex>` companies surfaced as "similar
+# companies" in real reports. A test also read whatever else happened to be in
+# the shared tables, which is the leading suspect for the one unreproducible
+# failure of `test_a_stranger_cannot_download_someone_elses_report[export/md]`.
+#
+# So each run creates a fresh schema, applies every migration to it, points
+# DATABASE_URL at it for the rest of the process (subprocesses inherit it), and
+# drops it at the end. `search_path` is `<schema>, public` so the extensions
+# installed in `public` (pgcrypto, pg_trgm, vector) still resolve.
+#
+# Neon's pooled endpoint refuses `search_path` as a startup option ("unsupported
+# startup parameter"), so the tests use the direct endpoint -- the same host
+# without `-pooler`. Measured before writing this.
+#
+# If the database is unreachable, or the schema cannot be set up, DATABASE_URL
+# is blanked and the database tests SKIP, as they always did without a
+# database. It never falls back to the production schema.
+
+TEST_SCHEMA_PREFIX = "vf_test_"
+_STALE_AFTER_SECONDS = 6 * 3600
+_db_state = {"live_url": None, "schema": None, "note": "no DATABASE_URL configured"}
+
+
+def _with_ssl(url: str) -> str:
+    return url if "sslmode=" in url else f"{url}{'&' if '?' in url else '?'}sslmode=require"
+
+
+def isolated_database_url(url: str, schema: str) -> str:
+    """The configured URL, on the direct endpoint, with `schema` first on the
+    search path. An existing `options` parameter is kept."""
+    parts = urllib.parse.urlsplit(url)
+    query = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+    existing = " ".join(value for key, value in query if key == "options")
+    query = [(key, value) for key, value in query if key != "options"]
+    options = f"{existing} -csearch_path={schema},public".strip()
+    query.append(("options", options))
+    return urllib.parse.urlunsplit((
+        parts.scheme,
+        parts.netloc.replace("-pooler", "", 1),
+        parts.path,
+        urllib.parse.urlencode(query, quote_via=urllib.parse.quote),
+        parts.fragment,
+    ))
+
+
+def _drop_stale_test_schemas(conn) -> None:
+    """Schemas left by runs that crashed before their teardown. The name
+    carries its creation time, so only old ones are touched and a run going on
+    in parallel keeps its schema."""
+    rows = conn.execute(
+        "SELECT nspname FROM pg_namespace WHERE nspname LIKE %s",
+        (TEST_SCHEMA_PREFIX + "%",),
+    ).fetchall()
+    for (name,) in rows:
+        try:
+            created = int(name[len(TEST_SCHEMA_PREFIX):].split("_")[0])
+        except ValueError:
+            continue
+        if time.time() - created > _STALE_AFTER_SECONDS:
+            conn.execute(f'DROP SCHEMA IF EXISTS "{name}" CASCADE')
+
+
+def pytest_sessionstart(session):
+    from dotenv import load_dotenv
+
+    load_dotenv(ROOT / ".env")
+    live_url = os.environ.get("DATABASE_URL", "").strip()
+    if not live_url:
+        return
+
+    schema = f"{TEST_SCHEMA_PREFIX}{int(time.time())}_{os.getpid()}"
+    try:
+        import psycopg
+
+        with psycopg.connect(_with_ssl(live_url), connect_timeout=10) as conn:
+            _drop_stale_test_schemas(conn)
+            conn.execute(f'CREATE SCHEMA "{schema}"')
+            conn.commit()
+        _db_state.update(live_url=live_url, schema=schema)
+
+        os.environ["DATABASE_URL"] = isolated_database_url(live_url, schema)
+        import db
+
+        db.close_pool()
+        db.ensure_schema()
+        _db_state["note"] = f"isolated schema {schema} (dropped at the end of the run)"
+    except Exception as exc:
+        # Blank, not delete: `db` calls load_dotenv() on import, which would put
+        # the production URL straight back if the variable were absent.
+        os.environ["DATABASE_URL"] = ""
+        _db_state["note"] = (
+            f"database tests SKIPPED: could not set up an isolated schema "
+            f"({type(exc).__name__}: {str(exc).splitlines()[0][:160] if str(exc) else ''})"
+        )
+
+
+def pytest_sessionfinish(session, exitstatus):
+    schema, live_url = _db_state["schema"], _db_state["live_url"]
+    if not schema:
+        return
+    try:
+        import db
+
+        db.close_pool()
+    except Exception:
+        pass
+    try:
+        import psycopg
+
+        with psycopg.connect(_with_ssl(live_url), connect_timeout=10) as conn:
+            conn.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
+            conn.commit()
+    except Exception as exc:
+        _db_state["note"] += f"; DROP failed ({type(exc).__name__}), the next run removes it"
+
+
+def pytest_terminal_summary(terminalreporter):
+    terminalreporter.write_line(f"database: {_db_state['note']}")
 
 
 @pytest.fixture(autouse=True)
@@ -282,8 +411,7 @@ def disable_claim_cache():
 
     Sixth instance of the pattern this file documents. agents/claim_cache.py
     stores verdicts in Neon so a re-analysed deck gets the same answer. In a
-    test that is two separate bugs waiting to happen: a test that exercises the
-    real verify_claim would write rows into the production database, and a
+    test that is a bug waiting to happen even in the run's private schema: a
     verdict stored by one test would be served to the next, so a test could
     pass or fail depending on what ran before it.
 

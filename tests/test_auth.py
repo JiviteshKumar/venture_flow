@@ -162,11 +162,13 @@ def client():
 
 # Every account these tests create is registered here and deleted afterwards.
 #
-# This is not tidiness. `DATABASE_URL` points at the real Neon database -- these
-# tests have no fixture database of their own -- so without cleanup every run
-# leaves permanent accounts behind. One run of this file did exactly that:
-# 22 of the 23 rows in `users` were @example.test artifacts, sitting in
-# production alongside the one real account.
+# This started as damage control. `DATABASE_URL` used to point these tests at
+# the real Neon database, so without cleanup every run left permanent accounts
+# behind. One run of this file did exactly that: 22 of the 23 rows in `users`
+# were @example.test artifacts, sitting in production alongside the one real
+# account. The suite now runs in its own schema (tests/conftest.py), which is
+# dropped after the run; the cleanup stays so tests inside one run do not see
+# each other's rows.
 #
 # Deleting the user cascades to its sessions (user_sessions.user_id ON DELETE
 # CASCADE) and nulls the owner on any report it made (dd_reports.owner_user_id
@@ -428,8 +430,10 @@ class TestReportScoping:
 def test_no_test_accounts_are_left_behind():
     """The guard on the cleanup above.
 
-    These tests run against the real database, so a leaked account is a real
-    row in production. This asserts a ceiling rather than zero: it runs inside
+    The run's schema is private and dropped afterwards, so a leaked account no
+    longer reaches production -- but it is still visible to every later test in
+    the same run, which is how shared state turns into order-dependent
+    failures. This asserts a ceiling rather than zero: it runs inside
     the same session as the tests that are mid-flight when pytest orders them
     that way, and a handful of live accounts is expected.
     """

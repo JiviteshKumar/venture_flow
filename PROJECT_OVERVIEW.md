@@ -518,7 +518,8 @@ Five defects were found by running it, none of which any unit test had caught:
    report attached, every one was a live candidate to be shown to a real user.
    The tests now delete what they create, the read side filters what is left,
    and `scripts/clean_junk_companies.py` removed the backlog (81 -> 34
-   companies, 138 -> 85 reports).
+   companies, 138 -> 85 reports). Since 8f the suite no longer touches the
+   production schema at all: each run gets its own schema, dropped afterwards.
 
 5. **`founder_discovery` reported a bare `{"attempted": false}`** when the deck
    named its own team -- indistinguishable, read alone, from the feature being
@@ -716,6 +717,55 @@ for Uber's 2008 deck, 1 exited, 1 is still operating and 3 shut down.
 
 ---
 
+## 8f. A lighter frontend, and a test suite that stays out of production
+
+**The frontend no longer ships as one file.** It was a single 977 KB
+JavaScript bundle (281 KB gzipped): every page, the charting library and the
+animation library, all downloaded before the sign-in screen could draw. Each
+page is now loaded when it is first visited, and React has its own long-lived
+chunk. Measured on the production build:
+
+| | Before | After |
+|---|---|---|
+| First load of the sign-in screen | 977 KB (281 KB gzipped) | ~393 KB (~130 KB gzipped) |
+| Chart library | in the first load | 360 KB, fetched only by Dashboard and Analysis |
+
+Splitting introduced one failure the single bundle could not have: a tab
+opened before a deploy asks for page files the deploy removed. A failed page
+load now reloads the tab once (`frontend/src/lazyPage.ts`); a second failure
+shows the error screen with the real cause instead of looping. Checked in the
+browser against the built files by removing a page file and restoring it.
+
+**Tests run in their own database schema.** Until now the suite ran against the
+production Neon database -- the source of the 47 junk companies in 8b. Each run
+now creates a schema, applies every migration to it, points `DATABASE_URL` at
+it, and drops it at the end (`tests/conftest.py`). Neon's pooled endpoint
+refuses a `search_path` startup option, so tests use the direct endpoint;
+both measured at the same ~250 ms per query. If the schema cannot be set up the
+database tests skip -- they never fall back to production -- and
+`tests/test_suite_uses_an_isolated_database.py` fails if a test process, or a
+script it launches, is ever connected to anything but a test schema. Full
+suite: 844 passed, 1 skipped; no test schema and no test account left behind.
+
+**The once-flaky authorization test.** `test_a_stranger_cannot_download_
+someone_elses_report[export/md]` failed once in a full run and was never
+reproduced. Two things were wrong with how it could fail. It shared tables
+with every other test and with production -- now removed. And it never checked
+that the second account was actually created, so a failed registration would
+have surfaced as a KeyError or an anonymous request that looks like an
+authorization bug; it now asserts that step like every other. Run 50 times in
+one session (25 per format), at the same time as a full suite run in a
+separate schema: 50 of 50 passed. The original failure's cause is still not
+known for certain; what has changed is that the shared state it most likely
+came from is gone, and a recurrence would now say which step broke.
+
+**The model-artifact test no longer rewrites a tracked file.** It wrote
+`ml/eval/model_artifact_check.json` on every run, leaving an unrelated diff in
+git -- and if the check crashed before writing, the test read the previous
+run's file and passed. It now writes to a temporary path.
+
+---
+
 ## 9. Running it locally
 
 Two terminals from the repo root:
@@ -734,9 +784,12 @@ From scratch you need `pip install -r requirements.txt`, a `.env` with
 `DATABASE_URL` (Neon) and `GROQ_API_KEY`, then
 `python scripts/migrate_neon.py`, then `npm install --prefix frontend`.
 
-**Do not create `frontend/.env` locally** — with no such file the frontend
-calls `/api`, which `vite.config.ts` proxies to port 8000. The template
-contains a deployment placeholder that breaks local dev.
+**`frontend/.env` is optional locally.** With no such file the frontend calls
+`/api`, which `vite.config.ts` proxies to port 8000. This checkout has one
+that sets `VITE_API_BASE_URL=http://127.0.0.1:8000`: on this Windows machine
+`localhost` tries IPv6 first and stalls about 2 seconds per call, measured.
+Do not copy `frontend/.env.example` as-is -- it holds a deployment
+placeholder URL that breaks local dev.
 
 Tests:
 
@@ -744,7 +797,9 @@ Tests:
 GROQ_MAX_RETRIES=0 .venv/Scripts/python.exe -m pytest tests/ -q -p no:randomly
 ```
 
-A passing run is **406 tests**.
+A passing run is **844 passed, 1 skipped** (about 11 minutes; most of it is
+Neon round trips). Each run uses a throwaway schema -- see 8f -- and the last
+line of the output names it.
 
 ---
 
