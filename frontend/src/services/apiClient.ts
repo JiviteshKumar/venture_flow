@@ -144,7 +144,7 @@ apiClient.interceptors.request.use((config) => {
  * sign-in page. Treating both as the first -- which this interceptor used to --
  * would show an expired session a passphrase prompt that cannot help it.
  */
-function isSigninRequired(body: unknown): boolean {
+export function isSigninRequired(body: unknown): boolean {
   return typeof body === "object" && body !== null
     && (body as { code?: string }).code === "signin_required";
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api, demoToken } from "../../services/apiClient";
+import { api, demoToken, isSigninRequired } from "../../services/apiClient";
 
 /**
  * Passphrase prompt for the gated demo deployment.
@@ -29,11 +29,21 @@ export default function DemoGate({ children }: { children: React.ReactNode }) {
 
   // Probe once on mount so a gated deployment asks immediately, rather than
   // letting the user pick a file and only then discovering they cannot proceed.
+  //
+  // The 401 has to be the RIGHT 401. In production every non-public route
+  // answers 401 {code:"signin_required"} to a signed-out visitor, and this
+  // probe treated that as a missing passphrase -- so a deployment with no
+  // passphrase at all put an unanswerable passphrase wall in front of its own
+  // sign-in screen. The interceptor already draws this distinction
+  // (isSigninRequired); this second, independent check did not.
   useEffect(() => {
     let cancelled = false;
     api.listReports()
       .then(() => { if (!cancelled) setLocked(false); })
-      .catch((e) => { if (!cancelled && e?.response?.status === 401) setLocked(true); });
+      .catch((e) => {
+        if (cancelled || e?.response?.status !== 401) return;
+        if (!isSigninRequired(e?.response?.data)) setLocked(true);
+      });
     return () => { cancelled = true; };
   }, []);
 
