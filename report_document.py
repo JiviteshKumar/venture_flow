@@ -155,7 +155,7 @@ def build_report_blocks(report: dict[str, Any], generated_on: str) -> list[Block
     if outcome_model.get("available"):
         blocks.append({"kind": "heading", "text": "Outcome Model Signal"})
         blocks.append({"kind": "text", "text": (
-            f"Probability of survival/exit: "
+            f"Probability of an exit (acquired or public) rather than a shutdown: "
             f"{float(outcome_model.get('probability_survives_or_exits') or 0):.0%} "
             f"({outcome_model.get('band', 'n/a')}) · "
             f"model test ROC-AUC {outcome_model.get('model_test_auc', 'n/a')}"

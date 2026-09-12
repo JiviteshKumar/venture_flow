@@ -324,7 +324,7 @@ export default function VerdictHero({
                 {band.label}
               </div>
               <div className="vh-measures" title={measures}>
-                Survival-or-exit likelihood · not a forecast of returns
+                Exit-or-shutdown likelihood · not a forecast of returns
               </div>
               {provisional && (
                 <div className="vh-provisional" role="note" title={provisionalNote}>

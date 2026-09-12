@@ -117,8 +117,9 @@ YC directory. Snapshot committed at `ml/data/yc_companies_raw.json` (10.4 MB).
 Prepared into `ml/data/venturescore_dataset.jsonl` by
 `ml/scripts/prepare_venturescore_dataset.py`.
 
-**Label:** a coarse *survived-or-exited* proxy — acquired/public/still-operating
-= 1, dead = 0. **Not** a returns model. Companies younger than 3.5 years are
+**Label:** a coarse *exit-or-shutdown* proxy — acquired/public = 1, dead = 0,
+and companies still operating are dropped as right-censored, not counted as
+successes. **Not** a returns model. Companies younger than 3.5 years are
 filtered out, because "Active" for a company founded last year carries no
 outcome information.
 
@@ -708,7 +709,8 @@ resets.
 for the UI and the PDF). The band is read off the model's own interval against
 the base rate instead of fixed 65/45 thresholds, which called a 64 with an
 interval of 58-70 "Near" the 49% base rate. The number is described as the
-chance a company like this survived or exited rather than shut down -- not a
+chance a company like this was acquired or went public rather than shutting
+down -- not a
 forecast of returns. The 49% base rate is explained: it is exits among
 companies whose fate is settled and excludes the 70% still operating, so it
 overstates "how often companies like this exit" (15%) by more than three times.

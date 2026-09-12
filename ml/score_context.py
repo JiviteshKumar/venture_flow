@@ -21,8 +21,10 @@ something it is not. Three things were being misread:
     overstates the real figure (15%) by more than three times. The headline
     showed it without saying so.
 
-  * THE OUTCOME. The label is survived-or-exited, so a company that quietly
-    kept operating and one that returned a fund score the same. The comparables
+  * THE OUTCOME. The label is exit-or-shutdown: acquired or public counts as a
+    success, shut down as a failure, and companies still operating are dropped
+    from training because their outcome is not yet known. So a modest acquisition
+    and a fund-returning IPO score the same. The comparables
     corpus already grades outcomes in four tiers (shut down / still operating /
     exit / outsized), but none of that reached the headline. Now the outcome mix
     of the nearest real comparables is stated beside the number: for Uber's 2008
@@ -45,10 +47,11 @@ BAND_LABELS = {
 }
 
 MEASURES = (
-    "The estimated chance that a company with these characteristics survived or "
-    "exited rather than shut down, learned from Y Combinator companies whose "
-    "outcome is known. It is not a forecast of returns: a company that quietly "
-    "kept operating and one that returned a fund count the same."
+    "The estimated chance that a company with these characteristics was acquired "
+    "or went public rather than shutting down, learned from Y Combinator companies "
+    "whose outcome is already settled; companies still operating are left out, "
+    "because their outcome is not yet known. It is not a forecast of returns: a "
+    "small acquisition and a fund-returning IPO count the same."
 )
 
 # Highest tier first, so the sentence leads with the best outcome present.

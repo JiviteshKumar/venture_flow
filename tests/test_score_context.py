@@ -2,8 +2,8 @@
 
 See ml/score_context.py for the three misreadings this closes: a band from
 fixed thresholds rather than the model's interval, a 49% "base rate" that
-excludes the 70% of companies still operating, and a survived-or-exited label
-that scores a quiet survivor the same as a fund-returner.
+excludes the 70% of companies still operating, and an exit-or-shutdown label
+that scores a modest acquisition the same as a fund-returner.
 """
 
 from __future__ import annotations
@@ -53,7 +53,8 @@ class TestTheBandComesFromTheInterval:
 class TestItSaysWhatTheNumberIs:
     def test_the_measure_is_stated(self):
         ctx = sc.build_score_context(UBER_VS, UBER_COMPS)
-        assert "survived or exited" in ctx["measures"]
+        assert "acquired or went public" in ctx["measures"]
+        assert "still operating are left out" in ctx["measures"]
         assert "not a forecast of returns" in ctx["measures"]
 
     def test_the_base_rate_is_not_left_to_be_misread(self):
