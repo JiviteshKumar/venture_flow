@@ -33,6 +33,10 @@ def build_report_markdown(report: dict[str, Any], generated_on: str) -> str:
             lines += [f"_{block['text']}_", ""]
         elif kind == "heading":
             lines += [f"## {block['text']}", ""]
+        elif kind == "subheading":
+            # Memo headings sit one level under the report's own sections, so
+            # a table of contents built from this file nests correctly.
+            lines += [f"### {block['text']}", ""]
         elif kind == "text":
             lines += [str(block["text"]).strip(), ""]
         elif kind == "bullets":

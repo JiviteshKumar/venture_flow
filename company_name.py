@@ -59,6 +59,13 @@ _VERSION_OR_YEAR = re.compile(r"^(?:v\.?\d+(?:\.\d+)*|(?:19|20)\d{2})$", re.IGNO
 # plain space -- see the docstring for why a bare "500 Startups" is left alone.
 _LEADING_ORDINAL = re.compile(r"^\s*(?:0\d{0,2}|\d{1,3})\s*[.\-_)\]]+\s*|^\s*0\d{0,2}\s+")
 
+# A leading dataset index on a file that is otherwise lower-case:
+# "11 tinder.pdf", "07 airbnb.pdf". Only applied once the value is already
+# known to be a filename, and only when what follows starts lower-case --
+# which is what separates "11 tinder" from "500 Startups" and "3 Arrows
+# Capital", names a person would capitalise.
+_LEADING_INDEX_LOWER = re.compile(r"^\s*\d{1,3}\s+(?=[a-z])")
+
 _SEPARATORS = re.compile(r"[_\-–—]+")
 _WHITESPACE = re.compile(r"\s+")
 _TRAILING_JUNK = re.compile(r"[\s\-_.,;:()\[\]]+$")
@@ -120,6 +127,7 @@ def clean(raw: str) -> str:
 
     name = strip_extension(original)
     name = _LEADING_ORDINAL.sub("", name)
+    name = _LEADING_INDEX_LOWER.sub("", name)
     name = _SEPARATORS.sub(" ", name)
     name = _SERIES_ROUND.sub(" ", name)
     name = _WHITESPACE.sub(" ", name).strip()

@@ -21,7 +21,13 @@ Block kinds, all plain dicts so they serialise and diff cleanly:
     {"kind": "text",     "text": str}          # may contain newlines
     {"kind": "bullets",  "items": [str]}
     {"kind": "table",    "header": [str], "rows": [[str]]}
+    {"kind": "subheading", "text": str}        # a heading inside the memo
     {"kind": "caveat",   "text": str}          # small print, must never be dropped
+
+Inline `**bold**` survives in `text` and in bullet items. It is markup each
+renderer resolves differently -- reportlab wants `<b>`, python-docx wants a
+separate run, Markdown already speaks it -- so it is left in the block rather
+than decided here.
 
 Every section is read with .get() and emitted only when it has content, which
 is the same degrade-don't-crash contract every other reader of `sections` in
@@ -29,6 +35,7 @@ this codebase follows.
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
 Block = dict[str, Any]
@@ -38,6 +45,108 @@ FOOTER_CAVEAT = (
     "analysis with additional trained/rule-based signals where available; it is "
     "not a substitute for independent due diligence."
 )
+
+
+# ── The memo arrives as Markdown ───────────────────────────────────────────
+#
+# The model writes the investment memo in Markdown: `**1. EXECUTIVE SUMMARY**`
+# headings, `- ` bullets, `---` rules and pipe tables. It used to be emitted as
+# a single text block, so the reader got the asterisks and the pipes verbatim:
+# a claim-verification table arrived as a wall of `| ... | ... |` lines in the
+# PDF. The structure was already in the text; it only needed reading.
+
+_RULE_LINE = re.compile(r"^\s*([-*_])\1{2,}\s*$")
+_MD_HEADING = re.compile(r"^\s*#{1,6}\s+(.+?)\s*$")
+# A line that is entirely bold is a heading, with or without a trailing colon:
+# "**1. EXECUTIVE SUMMARY**", "**What drives the score:**".
+_BOLD_LINE = re.compile(r"^\s*\*\*(.+?)\*\*\s*:?\s*$")
+_BULLET_LINE = re.compile(r"^\s*[-*•]\s+(.+?)\s*$")
+# The `|---|:--:|` row beneath a Markdown table header carries no content.
+_TABLE_SEPARATOR = re.compile(r"^\s*\|?[\s:|-]+\|[\s:|-]*$")
+
+
+def _table_cells(line: str) -> list[str]:
+    parts = line.strip().split("|")
+    if parts and not parts[0].strip():
+        parts = parts[1:]
+    if parts and not parts[-1].strip():
+        parts = parts[:-1]
+    return [cell.strip() for cell in parts]
+
+
+def memo_blocks(memo: str) -> list[Block]:
+    """The model's Markdown, as typed blocks. Never raises.
+
+    Anything it cannot classify stays a paragraph, so a memo written as plain
+    prose comes through unchanged rather than mangled.
+    """
+    lines = str(memo or "").replace("\r\n", "\n").split("\n")
+    blocks: list[Block] = []
+    paragraph: list[str] = []
+    bullets: list[str] = []
+
+    def flush_paragraph() -> None:
+        if paragraph:
+            text = "\n".join(paragraph).strip()
+            if text:
+                blocks.append({"kind": "text", "text": text})
+            paragraph.clear()
+
+    def flush_bullets() -> None:
+        if bullets:
+            blocks.append({"kind": "bullets", "items": list(bullets)})
+            bullets.clear()
+
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        stripped = line.strip()
+
+        if stripped.startswith("|") and stripped.count("|") >= 2:
+            flush_paragraph()
+            flush_bullets()
+            rows: list[list[str]] = []
+            while index < len(lines) and lines[index].strip().startswith("|"):
+                if not _TABLE_SEPARATOR.match(lines[index]):
+                    cells = _table_cells(lines[index])
+                    if cells:
+                        rows.append(cells)
+                index += 1
+            if rows:
+                width = max(len(row) for row in rows)
+                padded = [row + [""] * (width - len(row)) for row in rows]
+                blocks.append({"kind": "table", "header": padded[0], "rows": padded[1:]})
+            continue
+
+        if not stripped or _RULE_LINE.match(stripped):
+            flush_paragraph()
+            flush_bullets()
+            index += 1
+            continue
+
+        heading = _MD_HEADING.match(line) or _BOLD_LINE.match(line)
+        if heading:
+            flush_paragraph()
+            flush_bullets()
+            blocks.append({"kind": "subheading",
+                           "text": heading.group(1).strip().strip("*").strip()})
+            index += 1
+            continue
+
+        bullet = _BULLET_LINE.match(line)
+        if bullet:
+            flush_paragraph()
+            bullets.append(bullet.group(1).strip())
+            index += 1
+            continue
+
+        flush_bullets()
+        paragraph.append(stripped)
+        index += 1
+
+    flush_paragraph()
+    flush_bullets()
+    return blocks
 
 
 def _clean_list(items: Any) -> list[str]:
@@ -57,6 +166,9 @@ def build_report_blocks(report: dict[str, Any], generated_on: str) -> list[Block
 
     blocks.append({
         "kind": "table",
+        # Flagged so a renderer can lead with the headline rather than treat it
+        # as one more grid. A renderer that ignores the flag is still correct.
+        "role": "summary",
         "header": ["Overall Score", "Recommendation", "Risk Level"],
         "rows": [[
             f"{report.get('final_score', 0)}/100",
@@ -66,7 +178,9 @@ def build_report_blocks(report: dict[str, Any], generated_on: str) -> list[Block
     })
 
     blocks.append({"kind": "heading", "text": "Investment Memo"})
-    blocks.append({"kind": "text", "text": sections.get("ai_analysis") or "No AI memo was generated."})
+    memo = sections.get("ai_analysis")
+    blocks.extend(memo_blocks(memo) if memo
+                  else [{"kind": "text", "text": "No AI memo was generated."}])
 
     claims = sections.get("claims") or {}
     if claims:

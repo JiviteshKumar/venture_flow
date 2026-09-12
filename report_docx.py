@@ -11,6 +11,7 @@ their own note next to a red flag needs the .docx.
 from __future__ import annotations
 
 import io
+import re
 from typing import Any
 
 from docx import Document
@@ -21,6 +22,23 @@ from report_document import build_report_blocks
 
 MUTED = RGBColor(0x94, 0xA3, 0xB8)
 META = RGBColor(0x4A, 0x55, 0x68)
+
+# The memo keeps its Markdown emphasis (see report_document): Word can render
+# it properly as a bold run, where printing the asterisks would just look like
+# the export had failed.
+_BOLD = re.compile(r"\*\*(.+?)\*\*", re.DOTALL)
+
+
+def _write_markup(paragraph, text: str) -> None:
+    position = 0
+    for match in _BOLD.finditer(str(text)):
+        if match.start() > position:
+            paragraph.add_run(str(text)[position:match.start()])
+        paragraph.add_run(match.group(1)).bold = True
+        position = match.end()
+    remainder = str(text)[position:]
+    if remainder or position == 0:
+        paragraph.add_run(remainder)
 
 
 def build_report_docx(report: dict[str, Any], generated_on: str) -> bytes:
@@ -45,14 +63,19 @@ def build_report_docx(report: dict[str, Any], generated_on: str) -> bytes:
             run.font.color.rgb = META
         elif kind == "heading":
             document.add_heading(block["text"], level=1)
+        elif kind == "subheading":
+            document.add_heading(re.sub(r"\*\*", "", str(block["text"])), level=2)
         elif kind == "text":
             # Blank lines in an LLM memo are paragraph breaks; emitting the
             # whole memo as one run would collapse its structure.
             for line in str(block["text"]).split("\n"):
-                document.add_paragraph(line) if line.strip() else document.add_paragraph()
+                if line.strip():
+                    _write_markup(document.add_paragraph(), line)
+                else:
+                    document.add_paragraph()
         elif kind == "bullets":
             for item in block["items"] or ["None identified."]:
-                document.add_paragraph(str(item), style="List Bullet")
+                _write_markup(document.add_paragraph(style="List Bullet"), item)
         elif kind == "table":
             table = document.add_table(rows=1, cols=len(block["header"]))
             table.style = "Light Grid Accent 1"

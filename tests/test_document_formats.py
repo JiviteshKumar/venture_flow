@@ -32,7 +32,7 @@ from document_extractor import (
     is_supported,
 )
 from pdf_extractor import extract_founders
-from report_document import build_report_blocks
+from report_document import build_report_blocks, memo_blocks
 from report_docx import build_report_docx
 from report_markdown import build_report_markdown
 from report_pdf import build_report_pdf
@@ -240,3 +240,93 @@ def test_exports_do_not_crash_on_an_empty_report():
     assert build_report_pdf(bare, "2026-08-23").startswith(b"%PDF-")
     assert build_report_docx(bare, "2026-08-23")[:2] == b"PK"
     assert "VentureFlow Due Diligence Report" in build_report_markdown(bare, "2026-08-23")
+
+
+# ── The memo is Markdown, and it has to stop reaching the page as Markdown ──
+
+MEMO = "\n".join([
+    "**1. EXECUTIVE SUMMARY**",
+    "Match Box is a dating app.",
+    "It matches users who both opt in.",
+    "",
+    "---",
+    "",
+    "**2. CLAIM VERIFICATION**",
+    "",
+    "| Claim | Status | Confidence |",
+    "|-------|--------|------------|",
+    "| Proximity matching | **Verified** | 96 % |",
+    "| Mutual opt-in | Unverified | 90 % |",
+    "",
+    "- **Model-only baseline:** 62 / 100",
+    "- **Evidence adjustment:** -2 points",
+])
+
+
+class TestTheMemoBecomesStructure:
+    """An exported memo used to carry its own Markup: `**1. EXECUTIVE
+    SUMMARY**` with the asterisks, and a claim table as a wall of `| ... |`
+    lines."""
+
+    def test_a_bold_only_line_is_a_heading(self):
+        kinds = [b["kind"] for b in memo_blocks(MEMO)]
+        assert kinds[0] == "subheading"
+        assert memo_blocks(MEMO)[0]["text"] == "1. EXECUTIVE SUMMARY"
+
+    def test_a_pipe_table_becomes_a_table(self):
+        table = next(b for b in memo_blocks(MEMO) if b["kind"] == "table")
+        assert table["header"] == ["Claim", "Status", "Confidence"]
+        assert len(table["rows"]) == 2, "the |---| separator row is not content"
+        assert table["rows"][0][0] == "Proximity matching"
+
+    def test_dashes_become_bullets_and_the_rule_disappears(self):
+        bullets = next(b for b in memo_blocks(MEMO) if b["kind"] == "bullets")
+        assert len(bullets["items"]) == 2
+        assert not any(b.get("text", "").strip() == "---" for b in memo_blocks(MEMO))
+
+    def test_consecutive_prose_lines_stay_one_paragraph(self):
+        paragraphs = [b["text"] for b in memo_blocks(MEMO) if b["kind"] == "text"]
+        assert paragraphs[0].startswith("Match Box is a dating app.")
+        assert "both opt in" in paragraphs[0]
+
+    def test_plain_prose_survives_untouched(self):
+        """A memo with no Markdown at all must not be mangled by the parser."""
+        blocks = memo_blocks("One sentence.\n\nAnother paragraph.")
+        assert [b["kind"] for b in blocks] == ["text", "text"]
+
+    def test_the_pdf_carries_no_stray_asterisks(self, sample_report):
+        sample_report["sections"]["ai_analysis"] = MEMO
+        text = _pdf_text(build_report_pdf(sample_report, "2026-08-23"))
+        assert "**" not in text
+        assert "1. EXECUTIVE SUMMARY" in text
+        assert "|---" not in text
+
+
+class TestCharactersHelveticaCannotDraw:
+    """The model writes non-breaking hyphens and narrow spaces. Helvetica's
+    WinAnsi encoding has neither, and reportlab draws a filled black box for
+    each -- "hyper-local" arrived as "hyper[]local"."""
+
+    def test_they_are_mapped_to_something_the_font_has(self):
+        from report_pdf import _normalise_glyphs
+
+        assert _normalise_glyphs("hyper‑local") == "hyper-local"
+        assert _normalise_glyphs("96 %") == "96 %"
+        assert _normalise_glyphs("opted‐in") == "opted-in"
+
+    def test_the_exported_pdf_contains_no_box_characters(self, sample_report):
+        sample_report["sections"]["ai_analysis"] = "A hyper‑local app at 96 % confidence."
+        text = _pdf_text(build_report_pdf(sample_report, "2026-08-23"))
+        assert "hyper-local" in text
+        assert "‑" not in text
+
+
+def _pdf_text(data: bytes) -> str:
+    """Read the rendered page text back, which is the only way to assert on
+    what a reader actually sees."""
+    import io
+
+    import pypdfium2 as pdfium
+
+    document = pdfium.PdfDocument(io.BytesIO(data))
+    return "\n".join(page.get_textpage().get_text_range() for page in document)

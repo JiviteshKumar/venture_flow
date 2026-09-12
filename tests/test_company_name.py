@@ -163,3 +163,54 @@ class TestTheApiAppliesIt:
         })
 
         assert captured["company_name"] == "500 Startups"
+
+
+class TestADatasetIndexOnAnOtherwiseLowerCaseFile:
+    """`11 tinder.pdf` reached founder research as the company "11 tinder".
+
+    It searched 12 public sources for the founders of a company by that name,
+    found nothing that could be attributed to it, and reported "no founder
+    name could be established" -- about Tinder, whose founder is the first
+    result of a plain web search. The leading index was never stripped because
+    it is not zero-padded and is followed by a space rather than punctuation.
+    """
+
+    @pytest.mark.parametrize("raw, expected", [
+        ("11 tinder.pdf", "Tinder"),
+        ("07 airbnb.pdf", "Airbnb"),
+        ("3 intercom deck.pdf", "Intercom"),
+    ])
+    def test_the_index_goes(self, raw, expected):
+        assert company_name.clean(raw) == expected
+
+    @pytest.mark.parametrize("raw", [
+        "500 Startups deck.pdf",   # a real firm whose name starts with a number
+        "3 Arrows Capital.pdf",
+        "23andMe.pdf",
+    ])
+    def test_a_capitalised_name_after_a_number_is_left_alone(self, raw):
+        """The lower-case rule is what separates an index from a name: nobody
+        writes their own company in lower case, and every one of these would be
+        mangled by a bare digit-stripping rule."""
+        assert company_name.clean(raw).startswith(raw.split(".")[0].split(" ")[0])
+
+
+class TestTheUploadedFilenameIsUsedWhenTheFieldIsStillThePrefill:
+    """The form fills the company field from the file and strips the extension
+    and separators on the way, which removes the very marks clean() uses to
+    recognise a filename. The file itself still carries them."""
+
+    def test_it_recognises_the_untouched_prefill(self):
+        import api
+        assert api._is_the_uploaded_filename("11 tinder", "11 tinder.pdf")
+        assert api._is_the_uploaded_filename("28 canva", "28_canva.pdf")
+
+    def test_a_name_the_user_typed_is_not_treated_as_the_filename(self):
+        import api
+        assert not api._is_the_uploaded_filename("Tinder", "11 tinder.pdf")
+        assert not api._is_the_uploaded_filename("Acme Robotics", "11 tinder.pdf")
+
+    def test_missing_values_are_not_a_match(self):
+        import api
+        assert not api._is_the_uploaded_filename("", "11 tinder.pdf")
+        assert not api._is_the_uploaded_filename("11 tinder", None)

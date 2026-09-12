@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # This has to happen before any module that prints is imported.
 import console_safety  # noqa: F401  (imported for side effect)
 import auth
-from company_name import clean as clean_company_name
+from company_name import clean as clean_company_name, strip_extension
 from chatbot import chat_with_document, store_document
 from config_check import check_configuration
 from config_check import enforce as enforce_configuration
@@ -1270,6 +1270,21 @@ def _merge_slide_text(layer_text: str, ocr_text: str) -> str:
     return layer_text if not fresh else layer_text + "\n" + "\n".join(fresh)
 
 
+def _is_the_uploaded_filename(typed: str, filename: str | None) -> bool:
+    """Whether the company field is still just the file it came from.
+
+    Compared after the same flattening the form applies, so "11 tinder"
+    matches "11 tinder.pdf" and a name the user actually typed does not.
+    """
+    if not (typed or "").strip() or not (filename or "").strip():
+        return False
+
+    def flatten(value: str) -> str:
+        return re.sub(r"[\s_\-]+", " ", value).strip().lower()
+
+    return flatten(typed) == flatten(strip_extension(filename))
+
+
 async def _extract_uploaded_document(
     file: UploadFile, company_name: str
 ) -> PDFExtractResponse:
@@ -1293,8 +1308,19 @@ async def _extract_uploaded_document(
     # Cleaned here rather than only in the form, so a script or a direct API
     # call gets the same protection. See company_name.clean for why it declines
     # to touch anything that does not look like a filename.
+    #
+    # Clean the FILENAME, not the pre-filled field, whenever the two still
+    # match. The form fills this field from the file and strips the extension
+    # and the separators on the way ("11 tinder.pdf" -> "11 tinder"), which
+    # removes exactly the marks clean() uses to tell a filename from a name
+    # somebody typed -- so "11 tinder" reached founder research intact, and
+    # every search asked the web who founded a company of that name. The file
+    # still has those marks.
     company_name_as_uploaded = company_name
-    company_name = clean_company_name(company_name) or company_name
+    if _is_the_uploaded_filename(company_name, file.filename):
+        company_name = clean_company_name(file.filename or "") or company_name
+    else:
+        company_name = clean_company_name(company_name) or company_name
     if company_name != company_name_as_uploaded:
         logger.info("Company name cleaned for search: %r -> %r",
                     company_name_as_uploaded, company_name)
