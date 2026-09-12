@@ -45,6 +45,14 @@ interface AppState {
 
   // Company name the user typed
   companyName: string;
+
+  /**
+   * When the current run began, for the elapsed clock the progress panels
+   * show. A run takes minutes and the backend's own stage labels do not carry
+   * time, so without this the UI can say what it is doing but not how long it
+   * has been doing it -- which is the question a waiting user actually has.
+   */
+  startedAt: number | null;
 }
 
 interface AppContextValue extends AppState {
@@ -74,6 +82,7 @@ const INITIAL: AppState = {
   status: "idle",
   currentStage: "",
   progressPct: 0,
+  startedAt: null,
   uploadResult: null,
   report: null,
   sessionId: null,
@@ -112,6 +121,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       status: "uploading",
       currentStage: "Reading the deck…",
       progressPct: 5,
+      // The clock starts here, not at "Run AI Analysis": reading the deck is
+      // where an image-only deck spends two minutes in OCR, which is exactly
+      // the wait a user needs to see.
+      startedAt: Date.now(),
       error: null,
       outOfScope: null,
       companyName,
@@ -169,6 +182,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         error: null,
         outOfScope: null,
         companyName,
+        startedAt: Date.now(),
       }));
 
       try {

@@ -59,6 +59,18 @@ export default function SignIn() {
     if (status === "signed-in") navigate("/", { replace: true });
   }, [status, navigate]);
 
+  // A deployment with no database cannot have accounts at all. RequireAuth
+  // sends a signed-out visitor here before /auth/me has answered -- it has to,
+  // or every visit waits on a sleeping backend -- so when the answer comes back
+  // "accounts are impossible", send them on to where they were going rather
+  // than stranding them on a form that can never succeed. Only for visitors
+  // who were redirected: someone who opened /signin deliberately still gets
+  // the explanation below.
+  const redirectedFrom = (location.state as { from?: string } | null)?.from;
+  useEffect(() => {
+    if (!accountsEnabled && redirectedFrom) navigate(redirectedFrom, { replace: true });
+  }, [accountsEnabled, redirectedFrom, navigate]);
+
   useEffect(() => {
     emailRef.current?.focus();
   }, []);

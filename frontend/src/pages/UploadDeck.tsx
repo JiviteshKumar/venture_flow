@@ -8,6 +8,7 @@ import {
   Activity, Eye, Layers, Target
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { formatElapsed, useElapsedSeconds } from "../hooks/useElapsed";
 import OutOfScopeDialog from "../components/common/OutOfScopeDialog";
 import { formatBytes } from "../utils/format";
 
@@ -165,8 +166,9 @@ const UploadDeck = () => {
   const navigate = useNavigate();
   const {
     status, currentStage, progressPct, prepareUpload, runAnalysis,
-    uploadResult, report, error, outOfScope, dismissOutOfScope, reset,
+    uploadResult, report, error, outOfScope, dismissOutOfScope, reset, startedAt,
   } = useApp();
+  const elapsed = useElapsedSeconds(status === "uploading" || status === "analyzing" ? startedAt : null);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
@@ -1077,7 +1079,7 @@ const UploadDeck = () => {
 
                     <div className="up-eta">
                       <Clock size={10} />
-                      Estimated 2–4 minutes · Do not close this tab
+                      {formatElapsed(elapsed)} elapsed · estimated 2–4 minutes · Do not close this tab
                     </div>
                   </motion.div>
                 )}

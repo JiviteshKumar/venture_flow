@@ -5,6 +5,7 @@ import {
   ChevronRight, Activity, Menu, X, LogOut,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { formatElapsed, useElapsedSeconds } from "../../hooks/useElapsed";
 import { useAuth } from "../../context/AuthContext";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { motion } from "framer-motion";
@@ -20,7 +21,7 @@ const initialsOf = (name: string) =>
 
 const Sidebar = () => {
   const navigate = useNavigate();
-  const { report, status, currentStage, progressPct, companyName, reset } = useApp();
+  const { report, status, currentStage, progressPct, companyName, reset, startedAt } = useApp();
 
   // A label this browser remembers, not an identity. See the user row below.
   const [displayName, setDisplayName] = useLocalStorage<string>("vf.displayName", "");
@@ -37,6 +38,7 @@ const Sidebar = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isAnalyzing = status === "uploading" || status === "analyzing";
+  const elapsed = useElapsedSeconds(isAnalyzing ? startedAt : null);
   const isDone = status === "done" && report !== null;
 
   const navItems = [
@@ -481,8 +483,11 @@ const Sidebar = () => {
               <div style={{ fontSize: 13, fontWeight: 600, color: "#0B1120", marginBottom: 3 }}>
                 {companyName || "Processing deck"}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", marginBottom: 10 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", marginBottom: 3 }}>
                 {currentStage}
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#8A94A6", marginBottom: 10 }}>
+                {formatElapsed(elapsed)} elapsed
               </div>
               <div style={{ height: 3, background: "rgba(15,23,42,0.07)", borderRadius: 3, overflow: "hidden" }}>
                 <motion.div
