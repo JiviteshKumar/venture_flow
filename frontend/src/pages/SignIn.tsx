@@ -39,7 +39,20 @@ export default function SignIn() {
   const [displayName, setDisplayName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A submit that takes 50 seconds is a cold start, not a hang -- say so
+  // rather than spinning silently. Same threshold reasoning as RequireAuth:
+  // silent while the request is merely normal-slow.
+  const [slowSubmit, setSlowSubmit] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!busy) {
+      setSlowSubmit(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setSlowSubmit(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, [busy]);
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -429,6 +442,15 @@ export default function SignIn() {
                 </>
               )}
             </button>
+
+            {slowSubmit && (
+              <div className="si-hint" role="status">
+                <span>
+                  Waking the server &mdash; the first request after a quiet spell can
+                  take up to a minute.
+                </span>
+              </div>
+            )}
           </form>
 
           <div className="si-switch">

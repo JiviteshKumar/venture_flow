@@ -43,7 +43,19 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthStatus>("loading");
+  // A visitor with no stored session is signed out, and we know that without
+  // asking the server. The "loading" hold exists only to stop a sign-in form
+  // flashing at someone who IS signed in, which cannot happen when there is no
+  // token to restore.
+  //
+  // Holding regardless cost a full minute on the deployed service: a sleeping
+  // free-tier instance takes ~50s to answer /auth/me (measured at 52.5s), so
+  // opening the link showed an empty app shell with a "not signed in" sidebar
+  // for that whole time instead of the sign-in screen. The check still runs
+  // underneath -- it is what tells us whether accounts exist at all.
+  const [status, setStatus] = useState<AuthStatus>(
+    () => (sessionToken.get() ? "loading" : "signed-out"),
+  );
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accountsEnabled, setAccountsEnabled] = useState(true);
   const [emailNote, setEmailNote] = useState("");
