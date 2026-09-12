@@ -182,3 +182,71 @@ def test_health_reports_misconfiguration_without_returning_an_error_status(monke
         # Restore module state -- the leak class this suite already got bitten by.
         monkeypatch.undo()
         importlib.reload(api)
+
+
+# ── Sign-in supersedes the passphrase ──────────────────────────────────────
+
+
+def test_a_signed_in_deployment_does_not_need_the_passphrase(credentials):
+    """The passphrase rule exists because the deployed API once had no accounts.
+
+    With VENTUREFLOW_ENV=production every non-public route answers 401 to a
+    caller without a session, so an unset passphrase no longer means "the API
+    is open". Reporting CRITICAL there made /health say `misconfigured` about a
+    correctly locked deployment -- which is how a real warning stops being
+    read.
+    """
+    report = check_configuration(
+        origins=DEPLOYED,
+        allowed_origin_regex=r"^https://venture-flow-[a-z0-9-]+\.vercel\.app$",
+        demo_access_token=None,
+        requires_signin=True,
+    )
+    assert report.ok, [p.variable for p in report.problems]
+    assert not any(p.variable == "DEMO_ACCESS_TOKEN" for p in report.problems)
+
+
+def test_without_sign_in_the_passphrase_is_still_required(credentials):
+    """The original failure, unchanged: no accounts and no passphrase is open."""
+    report = check_configuration(
+        origins=DEPLOYED,
+        allowed_origin_regex=r"^https://venture-flow-[a-z0-9-]+\.vercel\.app$",
+        demo_access_token=None,
+        requires_signin=False,
+    )
+    assert not report.ok
+    assert any(p.variable == "DEMO_ACCESS_TOKEN" and p.severity == "critical"
+               for p in report.problems)
+
+
+# ── Which commit is running ────────────────────────────────────────────────
+
+
+def test_health_names_the_commit_it_is_running(monkeypatch):
+    """Answering "is the deployment up to date?" from outside needs a build
+    identity in the response. Everything the recent commits changed lives in
+    free-form `sections`, which never reaches the OpenAPI schema, so there was
+    nothing to probe."""
+    import api
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "0123456789abcdef0123456789abcdef01234567")
+    monkeypatch.setenv("RENDER_GIT_BRANCH", "main")
+
+    body = TestClient(api.app).get("/health").json()
+    assert body["version"]["short"] == "0123456"
+    assert body["version"]["commit"].startswith("0123456789abcdef")
+    assert body["version"]["branch"] == "main"
+
+
+def test_health_says_unknown_rather_than_guessing(monkeypatch):
+    """A host that sets neither variable must not invent a version."""
+    import api
+    from fastapi.testclient import TestClient
+
+    monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
+    monkeypatch.delenv("RENDER_GIT_BRANCH", raising=False)
+    monkeypatch.delenv("VENTUREFLOW_GIT_SHA", raising=False)
+
+    body = TestClient(api.app).get("/health").json()
+    assert body["version"] == {"commit": "unknown", "short": "unknown", "branch": "unknown"}

@@ -457,6 +457,7 @@ def current_config_report():
         origins=origins,
         allowed_origin_regex=ALLOWED_ORIGIN_REGEX,
         demo_access_token=DEMO_ACCESS_TOKEN,
+        requires_signin=REQUIRE_SIGNIN,
     )
 
 
@@ -1041,6 +1042,28 @@ def root():
     }
 
 
+def deployed_version() -> dict[str, str]:
+    """Which commit is actually running.
+
+    Asked "is the deployment up to date?", there was no way to answer it from
+    outside: the response models carry no build identity, and everything the
+    recent commits changed lives inside free-form `sections`, which never
+    reaches the OpenAPI schema. The answer was "open the Render dashboard and
+    read the hash", which is exactly the kind of thing nobody does.
+
+    Render sets RENDER_GIT_COMMIT and RENDER_GIT_BRANCH on every build;
+    VENTUREFLOW_GIT_SHA is the manual fallback for hosts that do not. The
+    repository is public, so the hash reveals nothing the source does not.
+    """
+    commit = (os.getenv("RENDER_GIT_COMMIT") or os.getenv("VENTUREFLOW_GIT_SHA") or "").strip()
+    branch = (os.getenv("RENDER_GIT_BRANCH") or "").strip()
+    return {
+        "commit": commit[:40] or "unknown",
+        "short": commit[:7] or "unknown",
+        "branch": branch or "unknown",
+    }
+
+
 @app.get("/health")
 def health():
     """Liveness, database reachability, AND configuration.
@@ -1066,6 +1089,7 @@ def health():
     return {
         "status": status,
         "database": database,
+        "version": deployed_version(),
         "config": config.as_dict(),
     }
 

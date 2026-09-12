@@ -89,6 +89,7 @@ def check_configuration(
     origins: list[str],
     allowed_origin_regex: str | None,
     demo_access_token: str | None,
+    requires_signin: bool = False,
 ) -> ConfigReport:
     """Inspect the environment and report what is missing.
 
@@ -124,8 +125,18 @@ def check_configuration(
     if not looks_deployed:
         return report
 
-    # Required only once a real frontend points at this process.
-    if not demo_access_token:
+    # Required only once a real frontend points at this process -- and only
+    # while the passphrase is the ONLY thing standing in front of the data.
+    #
+    # This rule was written when the deployed API had no accounts, so an unset
+    # passphrase really did mean every report was readable over sequential
+    # integer ids. Production mode changed that: VENTUREFLOW_ENV=production
+    # makes every non-public route answer 401 to a caller without a session,
+    # and reports are scoped to the account that created them. Still reporting
+    # CRITICAL "THE API IS OPEN" there is not a small inaccuracy -- /health
+    # returns `status: misconfigured` for a correctly locked deployment, which
+    # is how a real warning stops being read.
+    if not demo_access_token and not requires_signin:
         report.problems.append(ConfigProblem(
             variable="DEMO_ACCESS_TOKEN",
             severity="critical",
