@@ -277,9 +277,9 @@ export default function SignIn() {
             its working.
           </h1>
           <p className="si-sub">
-            Upload a deck. Every claim is checked against live sources, every
-            figure is traced to the slide it came from, and anything the tool
-            could not establish is said out loud rather than filled in.
+            Upload a deck. Its key claims are checked against live sources,
+            the report shows which slides it actually read, and anything the
+            tool could not establish is said out loud rather than filled in.
           </p>
         </div>
 

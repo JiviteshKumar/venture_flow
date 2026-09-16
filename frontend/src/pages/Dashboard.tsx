@@ -193,7 +193,7 @@ const Dashboard = () => {
       <PageHero
         eyebrow="Dashboard"
         title="Nothing analysed yet"
-        subtitle="Upload a pitch deck and VentureFlow will check every claim against live sources, score it against companies with recorded outcomes, and show you what it could not establish."
+        subtitle="Upload a pitch deck and VentureFlow will check its key claims against live sources, score it against companies with recorded outcomes, and show you what it could not establish."
       />
       <EmptyDashboard />
       <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 40px" }}><PastAnalyses /></div>

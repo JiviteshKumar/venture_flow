@@ -867,7 +867,7 @@ const Analysis = () => {
             )}
             {!report.incomplete_analysis && report.claims_unverified && !report.claims_verification_degraded && (
               <div role="status" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F0D9A8", borderRadius: 10, background: "#FFFBF0", color: "#7A5514", fontSize: 13, lineHeight: 1.55 }}>
-                <strong>No deck claim could be independently corroborated.</strong> Every claim was
+                <strong>No deck claim could be independently corroborated.</strong> Every checked claim was
                 searched, but public sources had nothing specific enough to confirm or contradict
                 it — normal for a company this early, and not a sign the analysis failed. The score
                 already reflects this, and an INVEST verdict is withheld until at least two claims

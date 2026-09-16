@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
  * Seconds since `startedAt`, ticking once a second.
  *
  * An analysis takes minutes, and on a sleeping free-tier backend the first
- * step alone can take another one. "Estimated 2-4 minutes" tells you what to
+ * step alone can take another one. The panel's estimate tells you what to
  * expect; it does not tell you where you are in it, which is the difference
  * between waiting and wondering whether the thing has died.
  *

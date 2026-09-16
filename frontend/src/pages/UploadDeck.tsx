@@ -62,12 +62,12 @@ const howItWorksSteps = [
     // are valid, human-legible PDFs that extract to exactly ZERO characters,
     // because every page is a slide image. A parser that read charts would
     // return something for those.
-    desc: "Drop your deck as a text-based PDF, PowerPoint, or Word file. The parser reads the document's text layer — scanned or image-only decks cannot be read and are rejected with an explanation.",
+    desc: "Drop your deck as a PDF, PowerPoint or Word file. The text layer is read directly; slides that are only images are read with OCR, and the report says when it did.",
     color: "#1D6FE8", bg: "rgba(29,111,232,0.07)",
   },
   {
     number: "02", icon: Activity, title: "Dual-Agent Scan",
-    desc: "Bull & Bear agents independently stress-test every claim — market size, revenue projections, competitive moats.",
+    desc: "Bull and Bear agents stress-test the deck's case — market size, revenue projections, competitive moats.",
     color: "#0EA66A", bg: "rgba(14,166,106,0.07)",
   },
   {
@@ -87,11 +87,11 @@ const howItWorksSteps = [
     // Crunchbase/PitchBook fabrication from this same string, which is a good
     // reminder that removing one false claim from a sentence does not
     // validate the rest of it.
-    desc: "Every claim is checked against live web search, with the verdict and the supporting evidence shown per claim.",
+    desc: "The deck's most checkable claims — up to five — are checked against live web search, with the verdict and the evidence shown for each.",
     color: "#C47A0A", bg: "rgba(196,122,10,0.07)",
   },
   {
-    number: "04", icon: Target, title: "VC-Grade Report",
+    number: "04", icon: Target, title: "Investment Report",
     desc: "Structured memo with conviction score, red flags, comps, and suggested due diligence questions.",
     color: "#9B59B6", bg: "rgba(155,89,182,0.07)",
   },
@@ -794,8 +794,8 @@ const UploadDeck = () => {
             </div>
             <h1 className="up-title">Upload a deck</h1>
             <p className="up-subtitle">
-              Every claim checked against live sources, every figure traced to
-              the slide it came from. Typically 2–4 minutes.
+              Key claims checked against live sources, and anything the tool
+              could not establish said plainly. Usually 5–10 minutes.
             </p>
           </div>
         </header>
@@ -1079,7 +1079,7 @@ const UploadDeck = () => {
 
                     <div className="up-eta">
                       <Clock size={10} />
-                      {formatElapsed(elapsed)} elapsed · estimated 2–4 minutes · Do not close this tab
+                      {formatElapsed(elapsed)} elapsed · usually 5–10 minutes · Do not close this tab
                     </div>
                   </motion.div>
                 )}
@@ -1134,7 +1134,7 @@ const UploadDeck = () => {
               {fileName && !isAnalyzing && !showPreview && (
                 <p className="up-hint">
                   <CheckCircle size={11} color="#0EA66A" />
-                  Analysis typically completes in 2–4 minutes
+                  Analysis usually takes 5–10 minutes
                 </p>
               )}
             </motion.div>
@@ -1146,7 +1146,7 @@ const UploadDeck = () => {
               <div className="up-how-header">
                 <div>
                   <h2 className="up-how-title">How it works</h2>
-                  <p className="up-how-sub">From upload to VC-grade memo in 2–4 minutes</p>
+                  <p className="up-how-sub">From upload to investment memo in about 5–10 minutes</p>
                 </div>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--text-muted)", letterSpacing: "0.1em" }}>4 STEPS</span>
               </div>
