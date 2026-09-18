@@ -103,7 +103,7 @@ COOLDOWN_S = float(os.getenv("VENTUREFLOW_SEARCH_COOLDOWN", "120"))
 EMPTY_CONFIRMATIONS = int(os.getenv("VENTUREFLOW_SEARCH_EMPTY_CONFIRMATIONS", "2"))
 
 USER_AGENT = (
-    "VentureFlow/1.0 (https://github.com/SageOtter2023/venture_flow; "
+    "VentureFlow/1.0 (https://github.com/JiviteshKumar/venture_flow; "
     "due-diligence research tool)"
 )
 

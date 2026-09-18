@@ -108,7 +108,7 @@ WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 # Wikidata asks every automated client to identify itself and to say how to get
 # in touch. An anonymous scraper gets throttled, and deservedly.
 USER_AGENT = (
-    "VentureFlow/1.0 (https://github.com/SageOtter2023/venture_flow; "
+    "VentureFlow/1.0 (https://github.com/JiviteshKumar/venture_flow; "
     "research use, contact via repository issues) python-requests"
 )
 
