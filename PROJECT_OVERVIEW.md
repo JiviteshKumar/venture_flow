@@ -113,7 +113,11 @@ reasons are as informative as the results.
 
 **Dataset:** Y Combinator's public company directory.
 🔗 **https://github.com/yc-oss/api** — a continuously-updated open mirror of the
-YC directory. Snapshot committed at `ml/data/yc_companies_raw.json` (10.4 MB).
+YC directory. The snapshot the models were trained on is kept at
+`ml/data/yc_companies_raw.json` (10.4 MB) on the development machine and is
+**not committed** -- `ml/data/` is git-ignored except for the files the live
+service loads. Re-pulling from yc-oss/api gets today's directory, which has
+moved on since, so a rebuild from GitHub alone will not match exactly.
 Prepared into `ml/data/venturescore_dataset.jsonl` by
 `ml/scripts/prepare_venturescore_dataset.py`.
 
