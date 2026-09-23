@@ -1,0 +1,14 @@
+# Who must review a change before it can reach `main`.
+#
+# The pattern `*` covers every file in the repository, so every pull request
+# requires a review from the owner below.
+#
+# This exists because of a specific gap: branch protection can require "1
+# approval", and with two collaborators that approval can come from each other.
+# Requiring a review from a CODEOWNER instead means the approval has to come
+# from the person named here, whoever else has already looked at it.
+#
+# Collaborators push their own branches and open pull requests; nothing lands
+# on `main` until it is approved here.
+
+* @JiviteshKumar
