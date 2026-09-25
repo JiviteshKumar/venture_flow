@@ -14,7 +14,7 @@ import type { DeckPage } from "../components/analysis/DeckSculpture";
 import AskDrawer from "../components/analysis/AskDrawer";
 import EvidenceGraph from "../components/analysis/EvidenceGraph";
 import ScoreLedger from "../components/analysis/ScoreLedger";
-import { CapabilityRadar, ClaimBreakdown } from "../components/charts/Charts";
+import { CapabilityRadar, ClaimBreakdown, FounderRadar } from "../components/charts/Charts";
 import { Reveal, Tilt } from "../components/ui/scroll";
 import ReliabilityStrip from "../components/analysis/ReliabilityStrip";
 import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
@@ -613,6 +613,8 @@ const Analysis = () => {
 
   const marketComparables = report.sections?.market_comparables;
   const corpusComparables = (marketComparables?.available && marketComparables.comparables) || [];
+  /** Real competitors, from the public record. See agents/competitor_search.py. */
+  const namedCompetitors = report.sections?.named_competitors;
   const portfolioMatches = report.similar_companies ?? [];
   const competitors = corpusComparables.length
     ? corpusComparables.map(c => ({
@@ -940,6 +942,45 @@ const Analysis = () => {
         /* A chapter: a number, a title, and the thing itself. The numbers are
            the reader's position in the document, which a stack of identical
            cards never tells them. */
+        /* The methodology disclosures on Competitor Insights. Open they
+           buried a five-row table under four hundred words; deleted they would
+           have taken the caveats that stop the number being misread. */
+        .an-comp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .an-comp-chip {
+          display: flex; flex-direction: column; gap: 2px;
+          padding: 9px 12px; border-radius: 10px;
+          border: 1px solid var(--line); background: var(--surface-2);
+          max-width: 260px;
+          transition: border-color var(--dur-fast) var(--ease-out),
+                      transform var(--dur-fast) var(--ease-out);
+        }
+        .an-comp-chip:hover { border-color: var(--line-strong); }
+        :root[data-motion="on"] .an-comp-chip:hover { transform: translateY(-1px); }
+        .an-comp-chip-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .an-comp-chip-what { font-size: 11.5px; line-height: 1.5; color: var(--text-3); }
+        .an-comp-chip-src {
+          font-size: 11px; color: var(--accent); text-decoration: none;
+          margin-top: 2px; width: fit-content;
+        }
+        .an-comp-chip-src:hover { text-decoration: underline; }
+
+        .an-comp-why { margin-top: 10px; }
+        .an-comp-why > summary {
+          cursor: pointer; list-style: none;
+          font-family: var(--font-sans); font-size: 11.5px; font-weight: 600;
+          color: var(--text-3); letter-spacing: 0.02em;
+          padding: 4px 0;
+          transition: color var(--dur-fast) var(--ease-out);
+        }
+        .an-comp-why > summary::-webkit-details-marker { display: none; }
+        .an-comp-why > summary::before { content: "▸ "; display: inline-block; transition: transform var(--dur-fast) var(--ease-out); }
+        .an-comp-why[open] > summary::before { content: "▾ "; }
+        .an-comp-why > summary:hover { color: var(--text); }
+        .an-comp-why > p {
+          color: var(--text-3); font-size: 11.5px; line-height: 1.65;
+          margin: 6px 0 0;
+        }
+
         .an-chapter { display: flex; flex-direction: column; gap: 26px; }
         .an-chapter-body { display: flex; flex-direction: column; gap: 26px; }
         /* The hint sits under the title inside its own reveal wrapper, so the
@@ -1508,35 +1549,67 @@ const Analysis = () => {
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 250px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                    <SLabel>Team Capability Radar</SLabel>
-                    {teamRadarData.length > 0 ? (
+                    {/* The founder radar, not the team one.
+                        This panel used to hold a Team Capability Radar scoring
+                        Technical Depth, Commercial Execution and the like --
+                        judgements about people this pipeline has never met, sat
+                        directly above a section that often said no founder could
+                        be established at all. It was the most confident thing on
+                        a page with nothing to be confident about. What replaces
+                        it plots how well each NAME is established, every axis a
+                        recorded fact about the evidence. Capability scores that
+                        survive grounding are still listed as chips below. */}
+                    {/* No SLabel: the chart frame carries its own label and
+                        caption, and two "Founder evidence" headings stacked. */}
+                    {/* Capability by field, then how well the names behind it
+                        are established. Two questions a reader asks in that
+                        order, and the second qualifies the first: a strong
+                        capability profile built on one source is not the same
+                        finding as the same profile built on five. */}
+                    {teamRadarData.length > 0 && (
                       <CapabilityRadar
                         capabilities={teamRadarData.map((d) => ({ area: d.subject, score: d.value }))}
                       />
-                    ) : <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7 }}>
-                      {/* Do not assert *why* the scores are missing. The team analyst
-                          returns the same empty `capabilities` list whether the deck
-                          genuinely had no team slide or the agent call failed, and
-                          claiming the former when the latter happened is the kind of
-                          confidently-wrong empty state this tab already had once. */}
-                      The team analyst produced no capability scores for this deck.
-                      {founderChecks.length > 0
-                        ? " Founder names were found and checked against public web evidence — see below."
-                        : founderDiscovery?.attempted
-                          ? " The deck names no founders; a public search was run for them — see below."
-                          : " No founder names were submitted and no public search was run."}
-                      {report.incomplete_analysis
-                        ? " This analysis is flagged incomplete, so the agent may not have run at all."
-                        : ""}
-                    </p>}
+                    )}
+                    <FounderRadar
+                      founders={founderChecks.map((f) => ({
+                        name: f.name || "",
+                        assessment: f.assessment,
+                        confidence: f.confidence,
+                        sources: f.sources,
+                        origin: f.origin,
+                      }))}
+                    />
+                    {/* The sentence that used to sit here explained why there
+                        were no capability scores. With the capability radar back
+                        above it, reading its own axes off the founder background
+                        checks, it was a caption for something that is no longer
+                        missing. */}
+                    {/* Each chip carries the line the score was read off, because a
+                        capability score is only worth what is behind it. The server
+                        already drops any whose quote is not in the deck or in the
+                        founder checks (agents/investment_agents.ground_team_capabilities);
+                        showing the quote is how a reader checks that for themselves. */}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F" }}>{r.subject}</span>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
+                        <div
+                          key={i}
+                          data-tip={r.evidence || undefined}
+                          style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}
+                        >
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "var(--text-2)" }}>{r.subject}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "var(--verified)" : "var(--caution)" }}>{r.value}</span>
                         </div>
                       ))}
                     </div>
+
+                    {/* A radar that silently loses half its axes looks like a smaller
+                        assessment rather than a rejected one, so the report says it. */}
+                    {team?.capabilities_dropped_reason && (
+                      <p style={{ marginTop: 12, fontSize: 12.5, lineHeight: 1.65, color: "var(--caution)" }}>
+                        {team.capabilities_dropped_reason}
+                      </p>
+                    )}
                   </Panel>
 
                   <Panel accentColor="#D93025">
@@ -1694,7 +1767,53 @@ const Analysis = () => {
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                    <SLabel>Competitive Landscape</SLabel>
+                    {/* NAMED COMPETITORS, then the outcome corpus.
+                        These answer different questions and the order matters.
+                        The corpus table below is matched with a TF-IDF
+                        embedder, so its similarity is LEXICAL -- shared
+                        wording, not shared business. That is the right tool
+                        for giving the score a base rate and the wrong tool for
+                        "who does this company compete with": Canva's deck
+                        returned a surf gear store, a job board and an
+                        education startup at 55-61%. So the competitor question
+                        is answered from the public record first, and the
+                        corpus keeps its own heading for what it actually is. */}
+                    {namedCompetitors?.available && (namedCompetitors.competitors?.length ?? 0) > 0 && (
+                      <div style={{ marginBottom: 22 }}>
+                        <SLabel>Named as competitors</SLabel>
+                        <p style={{ color: "var(--text-3)", fontSize: 12, lineHeight: 1.6, margin: "6px 0 10px" }}>
+                          {namedCompetitors.note}
+                        </p>
+                        <div className="an-comp-chips">
+                          {namedCompetitors.competitors!.map((c) => (
+                            <div className="an-comp-chip" key={c.name}>
+                              <span className="an-comp-chip-name">{c.name}</span>
+                              {c.what_it_does && (
+                                <span className="an-comp-chip-what">{c.what_it_does}</span>
+                              )}
+                              {(c.sources?.length ?? 0) > 0 && (
+                                <a
+                                  className="an-comp-chip-src"
+                                  href={c.sources![0]}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  data-cursor="Visit"
+                                >
+                                  {c.sources!.length} source{c.sources!.length === 1 ? "" : "s"}
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {namedCompetitors && !namedCompetitors.available && (
+                      <p style={{ color: "var(--text-3)", fontSize: 12.5, lineHeight: 1.65, margin: "0 0 18px" }}>
+                        {namedCompetitors.reason}
+                      </p>
+                    )}
+
+                    <SLabel>Companies with a recorded outcome</SLabel>
                     {/*
                       The population scope is stated ABOVE the table, not in an
                       11px footnote below it.
@@ -1737,9 +1856,23 @@ const Analysis = () => {
                         border: "1px solid rgba(234,179,8,0.35)",
                         borderRadius: 6, padding: "8px 10px", margin: "8px 0 12px",
                       }}>
+                        {/* WHY THIS IS COLLAPSED AND NOT CUT
+                            Four paragraphs of methodology used to sit open above
+                            a five-row table. Every one of them is true and two of
+                            them stop a specific misreading, so deleting them would
+                            trade honesty for tidiness. Collapsed, the table is
+                            readable at a glance and the reasoning is one click away
+                            for the reader who is weighing the number rather than
+                            skimming it. */}
                         <p style={{ color: "#EAB308", fontSize: 12, fontWeight: 600, margin: 0 }}>
                           Two populations, searched separately
                         </p>
+                        <p style={{ color: "var(--text-2)", fontSize: 11.5, lineHeight: 1.6, margin: "4px 0 0" }}>
+                          These are the nearest matches by wording, not by business
+                          relevance. Read the names, not the number.
+                        </p>
+                        <details className="an-comp-why">
+                          <summary>How this list was built</summary>
                         {/*
                           This banner used to read "Y Combinator companies only
                           -- no non-YC startups are represented". That was true
@@ -1780,6 +1913,7 @@ const Analysis = () => {
                               .join(" ")}
                           </p>
                         )}
+                        </details>
                       </div>
                     )}
 
@@ -1857,10 +1991,17 @@ const Analysis = () => {
                           ))}
                         </tbody>
                       </table>
-                      <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, marginTop: 12 }}>
-                        Source: {comparablesSource}
-                        {marketComparables?.caveat && corpusComparables.length ? ` — ${marketComparables.caveat}` : ""}
-                      </p>
+                      {/* Roughly four hundred words of corpus provenance. It
+                          belongs in the report -- somebody weighing these rows
+                          needs to know what "similarity" measures here -- and it
+                          does not belong open, under a five-row table. */}
+                      <details className="an-comp-why">
+                        <summary>Where this corpus comes from</summary>
+                        <p>
+                          {comparablesSource}
+                          {marketComparables?.caveat && corpusComparables.length ? ` — ${marketComparables.caveat}` : ""}
+                        </p>
+                      </details>
                       {corpusComparables.length > 0 && portfolioMatches.length > 0 && (
                         <p style={{ color: "#64748B", fontSize: 12, marginTop: 8 }}>
                           Also matched in your own history: {portfolioMatches.map(m => m.name).join(", ")}.

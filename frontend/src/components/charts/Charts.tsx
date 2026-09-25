@@ -195,6 +195,135 @@ export function CapabilityRadar({
   );
 }
 
+// ── Founder evidence ─────────────────────────────────────────────────────────
+
+export type FounderPoint = {
+  name: string;
+  /** CONSISTENT | CONTRADICTS | NOT_ENOUGH_INFO, from agents/founder_verifier.py. */
+  assessment?: string;
+  /** The verifier's own confidence, 0-1. */
+  confidence?: number;
+  /** Pages the background check read. */
+  sources?: string[];
+  /** "deck" when the deck named them, "external_research" when we searched. */
+  origin?: string;
+};
+
+/** Distinct hosts, because five pages on one site is one publication. */
+function distinctHosts(urls: string[]): number {
+  const hosts = new Set<string>();
+  for (const url of urls) {
+    try { hosts.add(new URL(url).hostname.replace(/^www\./, "")); }
+    catch { hosts.add(url); }
+  }
+  return hosts.size;
+}
+
+const AGREEMENT: Record<string, number> = {
+  CONSISTENT: 100,
+  NOT_ENOUGH_INFO: 40,
+  CONTRADICTS: 0,
+};
+
+/** The five axes, and the recorded fact each one reads. */
+const FOUNDER_AXES = [
+  "Corroboration",
+  "Independence",
+  "Agreement",
+  "Confidence",
+  "Disclosed",
+] as const;
+
+/**
+ * How well each founder is established. NOT how good they are.
+ *
+ * WHY THE DISTINCTION IS THE WHOLE POINT
+ *
+ * The obvious chart for a page headed "Founder Analysis" is a radar scoring
+ * each founder's technical depth, commercial instinct and so on. There is no
+ * honest way to draw that here: this pipeline has never met these people. It
+ * has a name, some pages that mention it, and a verifier's reading of whether
+ * those pages agree with the deck. A radar of a stranger's abilities built
+ * from web snippets would be the most confident-looking fabrication in the
+ * product, and the team radar it replaces was already halfway there --
+ * scoring "Commercial Execution 80" for a deck with no team slide.
+ *
+ * So every axis is a recorded fact about the EVIDENCE, and the chart says so
+ * in its caption:
+ *
+ *   Corroboration   distinct sites that mention this founder, 5+ reads full
+ *   Independence    how much of that is separate publications rather than
+ *                   several pages of the same one
+ *   Agreement       the verifier's verdict: consistent with the deck, unable
+ *                   to tell, or contradicting it
+ *   Confidence      the verifier's own confidence in that verdict
+ *   Disclosed       whether the deck named them, or we had to go and find
+ *                   them -- a name a founder put in writing is stronger
+ *                   evidence than one this tool recovered
+ *
+ * A reader who wants the underlying pages has them: they are listed as links
+ * directly beneath this chart.
+ */
+export function FounderRadar({ founders }: { founders: FounderPoint[] }) {
+  const usable = founders.filter((f) => f.name);
+  if (usable.length === 0) {
+    return (
+      <Frame
+        label="Founder evidence"
+        empty="No founder has been established for this deck, so there is nothing to plot. The deck named none, and the public search is reported below."
+      >{null}</Frame>
+    );
+  }
+
+  // Recharts wants one row per axis, one key per founder.
+  const rows = FOUNDER_AXES.map((axis) => {
+    const row: Record<string, string | number> = { axis };
+    for (const f of usable) {
+      const sources = f.sources ?? [];
+      const hosts = distinctHosts(sources);
+      const value =
+        axis === "Corroboration" ? Math.min(100, (hosts / 5) * 100)
+        : axis === "Independence" ? (sources.length ? (hosts / sources.length) * 100 : 0)
+        : axis === "Agreement" ? (AGREEMENT[(f.assessment || "").toUpperCase()] ?? 40)
+        : axis === "Confidence" ? Math.max(0, Math.min(100, (f.confidence ?? 0) * 100))
+        // A name in the deck is a claim its authors are answerable for. One we
+        // found is real evidence, and weaker evidence.
+        : f.origin === "deck" ? 100 : 45;
+      row[f.name] = Math.round(value);
+    }
+    return row;
+  });
+
+  const PALETTE = ["var(--viz-1)", "var(--viz-2)", "var(--viz-3)", "var(--viz-4)"];
+
+  return (
+    <Frame
+      label="Founder evidence"
+      caption="how well each name is established, 0-100 - not an assessment of the person"
+      height={260}
+    >
+      <RadarChart data={rows} outerRadius="70%">
+        <PolarGrid stroke="var(--viz-grid)" />
+        <PolarAngleAxis dataKey="axis" tick={AXIS} />
+        <Tooltip content={<ChartTip />} />
+        {usable.slice(0, 4).map((f, i) => (
+          <Radar
+            key={f.name}
+            name={f.name}
+            dataKey={f.name}
+            stroke={PALETTE[i % PALETTE.length]}
+            fill={PALETTE[i % PALETTE.length]}
+            fillOpacity={0.14}
+            strokeWidth={2}
+            isAnimationActive
+            animationDuration={800}
+          />
+        ))}
+      </RadarChart>
+    </Frame>
+  );
+}
+
 // ── Score history ────────────────────────────────────────────────────────────
 
 /** One company's score across the times it has been analysed. */

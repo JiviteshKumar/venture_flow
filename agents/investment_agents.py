@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import observability
+from grounding import is_grounded, normalised_words
 from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage
 
 logger = logging.getLogger(__name__)
@@ -227,6 +228,81 @@ def _evidence_block(
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Grounding the team capability scores
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The team agent is asked for 4-6 capability areas, each scored 0-100 with "a
+# short verbatim evidence excerpt", and told to return an empty list when there
+# is no team evidence at all. That instruction is not enforcement, and the
+# difference showed up in the product: one report said "SEARCHED -- NO FOUNDERS
+# FOUND" at the bottom of the page while a radar above it scored Commercial
+# Execution at 80. Nothing in the deck said that. Nothing had to.
+#
+# This is the same class of failure `agents/founder_research.py` already guards
+# against for names, and it takes the same remedy: the model may only pick out
+# text it was handed, and a claim whose evidence is not actually in the source
+# is dropped by a string check the model does not participate in.
+#
+# The comparison itself lives in `grounding.py`, because the slide sweep in
+# structured_extractor.py needs exactly the same rule and a safety check with
+# two implementations is a safety check with one bug in it.
+
+def ground_team_capabilities(
+    team: dict[str, Any], document: str, founder_checks: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    """Drop any capability score whose evidence is not in the source material.
+
+    Returns the team section with `capabilities` filtered, plus a record of
+    what was removed so the report can say so rather than quietly showing a
+    smaller radar. Never raises: a malformed specialist result loses its
+    capabilities, which is the safe direction.
+    """
+    capabilities = team.get("capabilities")
+    if not isinstance(capabilities, list) or not capabilities:
+        return team
+
+    # Everything the agent was actually shown about the team.
+    sources = [document or ""]
+    for check in founder_checks or []:
+        if not isinstance(check, dict):
+            continue
+        for key in ("evidence_summary", "name", "assessment"):
+            value = check.get(key)
+            if isinstance(value, str):
+                sources.append(value)
+    haystack = normalised_words(" ".join(sources))
+
+    kept: list[dict[str, Any]] = []
+    dropped: list[str] = []
+    for capability in capabilities:
+        if not isinstance(capability, dict):
+            continue
+        area = str(capability.get("area") or "").strip()
+        evidence = str(capability.get("evidence") or "").strip()
+        if area and evidence and is_grounded(evidence, haystack):
+            kept.append(capability)
+        elif area:
+            dropped.append(area)
+
+    team = dict(team)
+    team["capabilities"] = kept
+    if dropped:
+        team["capabilities_dropped"] = dropped
+        # Said in the report's own words, because a radar that silently loses
+        # half its axes looks like a smaller assessment rather than a rejected
+        # one.
+        team["capabilities_dropped_reason"] = (
+            f"{len(dropped)} capability score(s) were discarded because the evidence "
+            "quoted for them does not appear in the deck or in the founder background "
+            "checks: " + ", ".join(dropped) + "."
+        )
+        logger.warning(
+            "Dropped %d ungrounded team capabilities: %s", len(dropped), ", ".join(dropped)
+        )
+    return team
+
+
 def run_investment_agents(
     company: str,
     document: str,
@@ -245,10 +321,12 @@ def run_investment_agents(
         ),
         "team": (
             "founder and team diligence analyst",
-            "Assess team capabilities, hiring gaps and execution evidence. Use both the deck text and the FOUNDER BACKGROUND CHECKS section, which is independent web evidence about the named founders. "
+            "Assess founder and team capability. You have two sources and they are NOT interchangeable: the deck text, which the founders wrote about themselves, and the FOUNDER BACKGROUND CHECKS section, which is independent web evidence about the named founders. "
+            "MOST DECKS HAVE NO TEAM SLIDE. When the deck says nothing about the team, score from the background checks instead of returning nothing -- a founder's prior companies, roles and domain history in that section are real evidence about capability, and they are the ONLY evidence for most of the decks you will see. "
             "Return JSON with keys confidence, confidence_basis, overall_assessment, capabilities (area/score/evidence), strengths, gaps, questions. "
-            "`capabilities` must hold 4-6 named capability areas scored 0-100 (for example Technical Depth, Domain Experience, Commercial Execution, Prior Startup Experience, Team Completeness), each with a short verbatim evidence excerpt. "
-            "Return capabilities as an empty list ONLY when there is genuinely no team evidence of any kind -- a scored area with nothing behind it is worse than an absent one.",
+            "`capabilities` must hold 4-6 named capability areas scored 0-100 (for example Technical Depth, Domain Experience, Commercial Execution, Prior Startup Experience, Team Completeness), each with a short verbatim evidence excerpt COPIED from the deck or from the background checks. "
+            "The excerpt is checked against both sources word for word after you answer, and an area whose excerpt is not found there is discarded -- so quote, never paraphrase, and never score an area you cannot quote for. "
+            "Return capabilities as an empty list ONLY when neither source says anything about these people.",
             {"confidence": 0, "confidence_basis": "No specialist output was produced.", "overall_assessment": "Insufficient team information", "capabilities": [], "strengths": [], "gaps": ["Deck does not provide enough team evidence."], "questions": ["Provide founder biographies and relevant operating experience."]},
         ),
         "bull_case": (
@@ -282,4 +360,10 @@ def run_investment_agents(
         futures = {executor.submit(_json_agent, role, task, evidence, fallback): name for name, (role, task, fallback) in jobs.items()}
         for future in as_completed(futures):
             results[futures[future]] = future.result()
+
+    # The team agent's capability scores are checked against the material it
+    # was given before they leave this module, so no consumer has to trust
+    # them. See ground_team_capabilities.
+    if isinstance(results.get("team"), dict):
+        results["team"] = ground_team_capabilities(results["team"], document, founder_checks)
     return results

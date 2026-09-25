@@ -527,6 +527,14 @@ export interface AnalyzeResponse {
       confidence: number;
       overall_assessment: string;
       capabilities: Array<{ area: string; score: number; evidence: string }>;
+      /**
+       * Capability areas the server scored and then discarded, because the
+       * evidence quoted for them does not appear in the deck or in the founder
+       * background checks. See agents/investment_agents.ground_team_capabilities.
+       * Present only when something was dropped.
+       */
+      capabilities_dropped?: string[];
+      capabilities_dropped_reason?: string;
       strengths: string[];
       gaps: string[];
       questions: string[];
@@ -564,6 +572,22 @@ export interface AnalyzeResponse {
      * searched and found nothing" is a real diligence result and the tab shows
      * it rather than the old dead end ("No founder names were submitted").
      */
+    /**
+     * Companies the public record names as competing with this one.
+     *
+     * Separate from `market_comparables`, which matches the outcome corpus with
+     * a TF-IDF embedder and is therefore LEXICAL -- it scores shared wording,
+     * not shared business, which is why a design tool can return a surf gear
+     * store. That table exists to give the score a base rate; this one answers
+     * the question the tab's name asks. See agents/competitor_search.py.
+     */
+    named_competitors?: {
+      available: boolean;
+      reason?: string;
+      note?: string;
+      competitors?: Array<{ name: string; what_it_does?: string; sources?: string[] }>;
+      sources_consulted?: string[];
+    };
     founder_discovery?: {
       attempted?: boolean;
       found?: boolean;

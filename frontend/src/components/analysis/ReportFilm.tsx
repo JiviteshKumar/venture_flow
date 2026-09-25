@@ -2,7 +2,7 @@ import { ArrowDown, ArrowLeft, Download, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { type DeckPage } from "./DeckSculpture";
 import Constellation, { type ComparablePoint } from "./Constellation";
-import { Act, beat, easeOut, Reveal, SplitWords } from "../ui/scroll";
+import { Act, beat, easeOut, Reveal, SplitWords, ActStyles } from "../ui/scroll";
 
 /**
  * The opening of the report, as a sequence of scenes.
@@ -110,6 +110,7 @@ export default function ReportFilm({
 
   return (
     <div className="film">
+      <ActStyles />
       <style>{`
         .film { position: relative; background: transparent; color: var(--text-on-ink); }
 
@@ -318,11 +319,14 @@ export default function ReportFilm({
       </div>
 
       {/* ── ACT I · The subject ─────────────────────────────────────────── */}
-      <Act length={2.4}>
+      <Act length={1.7}>
         {(p, reduced) => {
           // Nothing departs when motion is suppressed: there is no scroll
           // scrub to bring the next scene in, so leaving is just vanishing.
-          const leave = reduced ? 0 : beat(p, 0.55, 1);
+          // Nothing departs. The scene used to be pinned, so it had to fade
+          // itself out to make way; now it simply scrolls off like any other
+          // part of the page, and animating that as well read as a flicker.
+          const leave = 0;
           return (
             <div className="film-scene">
               {/* The deck sculpture used to hang here: a stack of translucent
@@ -362,7 +366,7 @@ export default function ReportFilm({
                 </Reveal>
               </div>
 
-              <span className="film-cue" style={{ opacity: 1 - beat(p, 0.1, 0.4) }}>
+              <span className="film-cue" style={{ opacity: 1 - beat(p, 0.06, 0.28) }}>
                 <ArrowDown size={13} /> Scroll
               </span>
             </div>
@@ -371,16 +375,16 @@ export default function ReportFilm({
       </Act>
 
       {/* ── ACT II · The number ─────────────────────────────────────────── */}
-      <Act length={2.8}>
+      <Act length={2.0}>
         {(p) => {
-          const grow = easeOut(beat(p, 0.02, 0.34));
-          const counted = Math.round(score * easeOut(beat(p, 0.04, 0.38)));
-          const drawn = easeOut(beat(p, 0.32, 0.56));
-          const told = easeOut(beat(p, 0.44, 0.68));
+          const grow = easeOut(beat(p, 0, 0.22));
+          const counted = Math.round(score * easeOut(beat(p, 0.02, 0.26)));
+          const drawn = easeOut(beat(p, 0.22, 0.42));
+          const told = easeOut(beat(p, 0.34, 0.52));
           return (
             <div className="film-scene">
               <div className="film-inner">
-                <div className="film-eyebrow" style={{ opacity: easeOut(beat(p, 0, 0.14)) }}>
+                <div className="film-eyebrow" style={{ opacity: easeOut(beat(p, 0, 0.1)) }}>
                   The number
                 </div>
 
@@ -470,11 +474,11 @@ export default function ReportFilm({
 
       {/* ── ACT III · What was read ─────────────────────────────────────── */}
       {hasCoverage && (
-        <Act length={2.6}>
+        <Act length={1.9}>
           {(p) => {
-            const lit = beat(p, 0.04, 0.58);
+            const lit = beat(p, 0.02, 0.4);
             const shownPages = Math.round(lit * (totalPages ?? 0));
-            const told = 0.4 + 0.6 * easeOut(beat(p, 0, 0.5));
+            const told = 0.4 + 0.6 * easeOut(beat(p, 0, 0.34));
             const tone = (coveragePct ?? 0) >= 75 ? "var(--positive-on-ink)"
               : (coveragePct ?? 0) >= 40 ? "var(--caution-on-ink)" : "var(--negative-on-ink)";
             return (
@@ -488,7 +492,7 @@ export default function ReportFilm({
                       className="film-score"
                       style={{ color: tone, fontSize: "clamp(96px, 12vw, 240px)", display: "block" }}
                     >
-                      {Math.round((coveragePct ?? 0) * easeOut(beat(p, 0.08, 0.5)))}%
+                      {Math.round((coveragePct ?? 0) * easeOut(beat(p, 0.04, 0.34)))}%
                     </span>
                     <span style={{ display: "block", marginTop: 18, fontSize: 16, color: "color-mix(in srgb, var(--text-on-ink) 55%, transparent)" }}>
                       of the deck reached a structured field
@@ -526,11 +530,11 @@ export default function ReportFilm({
 
       {/* ── ACT IV · The case, both ways ────────────────────────────────── */}
       {(bull.length > 0 || bear.length > 0 || !bullRan || !bearRan) && (
-        <Act length={2.4}>
+        <Act length={1.7}>
           {(p, reduced) => {
             // The two halves arrive from their own sides and meet at the seam.
-            const enter = reduced ? 1 : easeOut(beat(p, 0.06, 0.46));
-            const items = reduced ? 1 : beat(p, 0.2, 0.8);
+            const enter = reduced ? 1 : easeOut(beat(p, 0, 0.26));
+            const items = reduced ? 1 : beat(p, 0.12, 0.58);
             return (
               <div className="film-scene" style={{ padding: 0 }}>
                 <div className="film-versus">
@@ -595,8 +599,8 @@ export default function ReportFilm({
           {(p, reduced) => {
             // Each claim is dealt in turn rather than all at once: the point of
             // this scene is that they were checked one at a time.
-            const dealt = reduced ? claims.length : beat(p, 0.1, 0.78) * claims.length;
-            const told = reduced ? 1 : easeOut(beat(p, 0.04, 0.24));
+            const dealt = reduced ? claims.length : beat(p, 0.05, 0.6) * claims.length;
+            const told = reduced ? 1 : easeOut(beat(p, 0, 0.18));
             return (
               <div className="film-scene">
                 <div className="film-inner">
@@ -646,9 +650,9 @@ export default function ReportFilm({
 
       {/* ── ACT VI · The population ─────────────────────────────────────── */}
       {comparables.length > 0 && (
-        <Act length={2.2}>
+        <Act length={1.6}>
           {(p) => {
-            const told = easeOut(beat(p, 0.08, 0.34));
+            const told = easeOut(beat(p, 0.02, 0.24));
             return (
               <div className="film-scene">
                 <div style={{ position: "absolute", inset: 0, opacity: 0.9 }}>
