@@ -5,6 +5,10 @@ import { lazyPage } from "./lazyPage";
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import DemoGate from "./components/common/DemoGate";
+import Ambience from "./components/ui/Ambience";
+import Cursor from "./components/ui/Cursor";
+import Intro from "./components/ui/Intro";
+import RouteTransition from "./components/ui/RouteTransition";
 import RequireAuth from "./components/common/RequireAuth";
 
 /**
@@ -46,6 +50,15 @@ function App() {
       <AppProvider>
         <DemoGate>
           <BrowserRouter>
+            {/* Chrome that belongs to the whole application rather than to any
+                page: the entrance, the pointer, and the wipe between routes.
+                All three are inert under `prefers-reduced-motion` and on
+                touch, and none of them gate rendering -- the app is live
+                underneath the entrance the entire time it plays. */}
+            <Ambience />
+            <Intro />
+            <Cursor />
+            <RouteTransition>
             <Routes>
               {/* Outside <Layout>: the sign-in screen is full-bleed and has no
                   sidebar, because there is nothing yet to navigate to. */}
@@ -67,6 +80,7 @@ function App() {
                 }
               />
             </Routes>
+            </RouteTransition>
           </BrowserRouter>
         </DemoGate>
       </AppProvider>

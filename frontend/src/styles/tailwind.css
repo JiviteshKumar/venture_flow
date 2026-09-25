@@ -1,207 +1,219 @@
+@import "./tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────────────────
-   Base layer.
+   BASE + UTILITIES
 
-   Two things were previously wrong here and both were visible in the running
-   app:
-
-   1. `body` carried a dark radial gradient and `color: white`, while every
-      page in this app renders a light surface. The result was a dark band
-      around the application chrome and white-on-white text anywhere a page
-      did not explicitly set a colour. The app is a light-theme product; the
-      body now says so.
-
-   2. `* { transition: all 0.2s ease; }` applied a transition to every
-      property of every element on the page, including layout properties like
-      width, height and top. That animates things which should be
-      instantaneous (focus rings, dropdown open/close, scroll-linked
-      positions), fights Framer Motion's own animations, and forces the
-      compositor to watch every property on every node. Transitions now
-      belong to the components that actually want them.
+   Every value here comes from tokens.css. If something below needs a number
+   that is not a token, the token set is wrong -- fix it there, not here.
    ───────────────────────────────────────────────────────────────────────── */
 
-/* The single source of truth for colour in this app.
-   These mirror tailwind.config.js exactly. Four palettes existed before:
-   this block, Sidebar.tsx's `--sb-*` set, Layout.tsx's inline hex, and the
-   dark theme in tailwind.config.js that nothing rendered. The `--sb-*` names
-   are kept as aliases so Sidebar's stylesheet keeps working while pointing at
-   these values rather than its own copies. */
-:root {
-  --bg: #F2F2F7;
-  --surface: #FFFFFF;
-  --surface-2: #F7F8FA;
-  --border: rgba(15,23,42,0.08);
-  --border-strong: rgba(15,23,42,0.13);
-  --text-primary: #0B1120;
-  --text-secondary: #4A5568;
-  /* Measured against all three surfaces above (white, canvas, surface-2).
-     --text-faint is 2.3-2.6:1 and is DECORATIVE ONLY -- rules, dividers,
-     disabled glyphs. It must never carry text a user has to read.
-     --text-muted is 4.86:1 at worst and is the correct choice for small
-     labels and metadata. */
-  --text-faint: #94A3B8;
-  --text-muted: #5D6B7F;
-  --accent: #1D6FE8;
-  --positive: #0EA66A;
-  --caution: #C47A0A;
-  --negative: #D93025;
-  --shadow-panel: 0 1px 3px rgba(15,23,42,0.06), 0 4px 12px rgba(15,23,42,0.04);
-
-  /* Three families, matching tailwind.config.js. See index.html for why
-     each was chosen. */
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Helvetica, Arial, sans-serif;
-
-  /* ── Motion ───────────────────────────────────────────────────────────
-     Named durations and easings, so the whole app moves at one tempo rather
-     than at whatever number each component happened to type.
-
-     The easing is the important part. `ease-out` on entry means a thing
-     arrives fast and settles gently, which reads as responsive; `ease-in-out`
-     on the same entry reads as sluggish because the first third of the
-     movement is nearly stationary. `--ease-spring` overshoots very slightly
-     and is for elements that should feel physical -- a panel opening, a
-     number landing -- never for text.
-
-     Durations are short on purpose. Anything over ~400ms on a UI transition
-     stops being feedback and starts being a wait. */
-  --dur-instant: 90ms;
-  --dur-fast: 160ms;
-  --dur-base: 240ms;
-  --dur-slow: 420ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  --shadow-raised: 0 2px 6px rgba(15,23,42,0.07), 0 10px 28px rgba(15,23,42,0.09);
-  --shadow-glow: 0 0 0 1px rgba(29,111,232,0.28), 0 8px 30px rgba(29,111,232,0.16);
-
-  /* Aliases consumed by Sidebar.tsx's stylesheet. */
-  --sb-bg: var(--surface);
-  --sb-border: var(--border);
-  --sb-border-strong: var(--border-strong);
-  --sb-surface: var(--surface-2);
-  --sb-text: var(--text-primary);
-  --sb-muted: var(--text-muted);
-  --sb-secondary: var(--text-secondary);
-  --sb-blue: var(--accent);
-  --sb-green: var(--positive);
-  --sb-amber: var(--caution);
-  --sb-red: var(--negative);
-  --sb-shadow: var(--shadow-panel);
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--text-primary);
+  color: var(--text);
   font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Tabular figures everywhere by default. This app is mostly columns of
-     numbers, and proportional digits make a column shift horizontally as
-     values change -- a score ticking 68 -> 71 visibly nudges everything
-     beside it. `cv11` selects Inter's single-storey lowercase g, which reads
-     more cleanly at the small sizes used for labels. */
+  /* Tabular figures by default. This product is largely columns of numbers,
+     and proportional digits make a column shift horizontally as values change
+     -- a score ticking 68 -> 71 visibly nudges everything beside it. `cv11`
+     selects Inter's single-storey g, which reads better at label sizes. */
   font-feature-settings: "tnum" 1, "cv11" 1;
   font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+  transition: background var(--dur-base) var(--ease-out),
+              color var(--dur-base) var(--ease-out);
 }
 
-/* The display face is set optically, not mechanically: Instrument Serif has a
-   large x-height and runs tight, so it needs slightly negative tracking at
-   headline sizes to avoid looking loose. */
+/* ── Type utilities ─────────────────────────────────────────────────────── */
+
+/* Display sizes. One family doing a second job: weight carries the
+   authority a serif would have carried, and the tracking tightens as the size
+   grows because Inter's default spacing is drawn for text, not for 150px. */
+.vf-xl { font-weight: 700; font-size: var(--t-hero);    line-height: 0.92; letter-spacing: -0.045em; }
+.vf-lg { font-weight: 700; font-size: var(--t-scene);   line-height: 1.0;  letter-spacing: -0.038em; }
+.vf-md { font-weight: 600; font-size: var(--t-section); line-height: 1.1;  letter-spacing: -0.028em; }
+
 .vf-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.015em;
-  line-height: 1.12;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.14;
 }
 
-/* Keyboard users need to see where they are. The app previously relied on the
-   browser default, which several components suppressed via `outline: none`. */
+/**
+ * THE FIGURE.
+ *
+ * A stat value, whether it reads "78%", "2/5" or "Moderate". One treatment for
+ * the whole row: choosing a face per value is what made three cards read as
+ * three different instruments. Tabular figures keep a column in column as the
+ * numbers change.
+ */
+.vf-figure {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  line-height: 1;
+}
+
+/* The uppercase label above a value or section. Inter, not mono: these are
+   words, and a word in a monospaced face reads as a variable name. */
+.vf-label {
+  font-family: var(--font-sans);
+  font-size: var(--t-label);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Machine values inside dense data: table columns that must align, intervals,
+   identifiers. Same family as everything else -- what makes it legible as data
+   is the tabular figures and the slashed zero, not a second typeface. */
+.vf-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: -0.005em;
+}
+
+.vf-lead  { font-size: var(--t-lead); line-height: 1.6; color: var(--text-2); max-width: var(--measure); }
+.vf-prose { font-size: var(--t-body); line-height: 1.7; color: var(--text-2); max-width: var(--measure); }
+
+/* ── Surfaces ───────────────────────────────────────────────────────────── */
+
+.vf-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--e-1);
+}
+
+/* Anything clickable drawn as a card. One elevation change, no scale --
+   scaling a card full of text blurs the text for the length of the
+   transition. */
+.vf-card-interactive {
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+}
+.vf-card-interactive:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--e-2);
+  transform: translateY(-2px);
+}
+.vf-card-interactive:active { transform: translateY(0); }
+
+.vf-page {
+  padding: var(--s-6) var(--gutter) var(--s-8);
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+/* A panel on ink: no border, a lit edge. */
+.vf-glass {
+  background: var(--neutral-quiet);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(10px);
+}
+
+.vf-hairline {
+  height: 1px; border: 0; margin: 0;
+  background: linear-gradient(90deg, transparent, var(--line-strong) 22%, var(--line-strong) 78%, transparent);
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────── */
+
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Respect the OS-level motion preference. Framer Motion animations are
-   decorative here, and vestibular-disorder guidance is to honour this. */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+/* ── Scroll reveal ──────────────────────────────────────────────────────── */
+
+/* Resting state before the observer fires. Everything is visible with no JS
+   and under reduced motion, so a failed script never leaves a blank page. */
+.vf-reveal {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  transition: opacity 700ms var(--ease-out), transform var(--dur-scene) var(--ease-out);
+  will-change: opacity, transform;
+}
+.vf-reveal.is-in { opacity: 1; transform: none; }
+
+:root[data-motion="off"] .vf-reveal { opacity: 1; transform: none; transition: none; }
+:root[data-motion="off"] *,
+:root[data-motion="off"] *::before,
+:root[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
-/* ── Responsive layout ────────────────────────────────────────────────────
-   The app shipped with zero media queries and fixed multi-column grids, so
-   below roughly 1100px the columns crushed and the page scrolled sideways.
-   These rules collapse the fixed grids progressively. They are written
-   against the existing class names and inline grids rather than replacing the
-   page layouts, so they add responsiveness without rewriting three 900-line
-   page components.
-   ──────────────────────────────────────────────────────────────────────── */
+/* The theme change itself is animated, so switching is a dissolve rather than
+   a flash -- but only the properties that actually change colour, and only
+   when motion is allowed. */
+:root[data-motion="on"] body,
+:root[data-motion="on"] .vf-card,
+:root[data-motion="on"] [class*="-row"],
+:root[data-motion="on"] [class*="-card"] {
+  transition: background-color var(--dur-slow) var(--ease-out),
+              color var(--dur-slow) var(--ease-out),
+              border-color var(--dur-slow) var(--ease-out);
+}
 
-/* Tablet and small laptop: drop the right-hand rail below the main column. */
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 1240px) { :root { --gutter: 24px; } }
+
 @media (max-width: 1100px) {
   .an-root [style*="1fr 320px"],
   .up-root [style*="1fr 320px"],
-  .db-root [style*="1fr 320px"] {
-    grid-template-columns: 1fr !important;
-  }
+  .db-root [style*="1fr 320px"],
+  .vf-split { grid-template-columns: 1fr !important; }
 }
 
-/* Narrow: four-across stat grids become two-across. */
 @media (max-width: 900px) {
   .an-stat-grid,
+  .vf-grid-4,
   .an-root [style*="repeat(4, 1fr)"],
-  .db-root [style*="repeat(4, 1fr)"] {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
+  .db-root [style*="repeat(4, 1fr)"] { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
-/* Phone: everything is a single column, and nothing may scroll sideways. */
 @media (max-width: 640px) {
+  :root { --gutter: 18px; --t-title: 19px; }
+
+  /* .vf-grid-4 is deliberately absent: a row of four short figures reads
+     better two-up on a phone than as four full-width rows to scroll past. */
   .an-stat-grid,
+  .vf-grid-3,
+  .vf-grid-2,
   .an-root [style*="repeat(4, 1fr)"],
   .an-root [style*="repeat(3, 1fr)"],
   .an-root [style*="repeat(2, 1fr)"],
   .db-root [style*="repeat(4, 1fr)"],
   .db-root [style*="repeat(3, 1fr)"],
-  .up-root [style*="repeat(2, 1fr)"] {
-    grid-template-columns: 1fr !important;
-  }
+  .up-root [style*="repeat(2, 1fr)"] { grid-template-columns: 1fr !important; }
 
-  body {
-    overflow-x: hidden;
-  }
+  body { overflow-x: hidden; }
 
-  /* The drawer toggle is position:fixed at top-left, so without this it sits
-     on top of the first line of every page header. */
+  /* The drawer toggle is fixed at top-left. `.an-root` is deliberately absent:
+     the report renders full-bleed with no sidebar and therefore no toggle. */
   main > div > div:first-child,
-  .an-root, .db-root, .up-root {
-    padding-top: 52px;
-  }
+  .db-root, .up-root { padding-top: 52px; }
 }
 
-/* Wide tables and code blocks scroll inside their own container rather than
-   pushing the page sideways. */
-.an-root table,
-.db-root table {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
+/* Wide tables scroll inside their own container rather than pushing the page. */
+.an-root table, .db-root table {
+  display: block; max-width: 100%; overflow-x: auto;
 }

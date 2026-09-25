@@ -1,0 +1,306 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   VENTUREFLOW — THE TOKEN LAYER
+   ─────────────────────────────────────────────────────────────────────────
+
+   One file decides colour, type, space, elevation and motion. Nothing below
+   this file may invent a value.
+
+   TWO THEMES, ONE PALETTE
+
+   Dark is the default and light is a complete second set -- not an inversion.
+   The two share the accent, the semantics and every dimension; only the ground
+   and the way surfaces separate from it change. On dark, a surface lifts by
+   stepping up the ramp with a lit top edge, because a drop shadow is invisible
+   on near-black. On light, it lifts by shadow, because a lighter panel on
+   white has nothing to lift with.
+
+   Whichever is on, it is on EVERYWHERE. The abrupt edge the product used to
+   have halfway down the report -- a black scene meeting a white sheet -- came
+   from two themes running at once. `data-mode` still exists, but it now
+   changes density only: a scene breathes, a table packs.
+
+   ONE TYPEFACE
+
+   Inter carries display, interface and data. Display sizes take tight negative
+   tracking; data takes tabular figures and a slashed zero. See index.html.
+
+   ONE ACCENT
+
+   Electric blue, plus three semantics: verified, caution, critical. Every
+   tint below is derived from those four. A component that cannot say what a
+   colour MEANS does not get to use one.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-theme="dark"] {
+  /* ══ Ground ════════════════════════════════════════════════════════════
+     A navy-biased ramp rather than neutral grey: on a product that lives on
+     near-black, grey reads as dead next to the accent. */
+  --n-1000: #05080F;   /* the page */
+  --n-950:  #080D18;   /* a panel */
+  --n-900:  #0D1424;   /* a raised panel */
+  --n-850:  #121B2E;   /* an inset, a table header */
+  --n-800:  #1A2439;   /* the top of the ramp */
+
+  --n-0:    #FFFFFF;
+  --n-100:  #E8EEF9;
+  --n-300:  #C2CCE0;
+  --n-500:  #8A97AF;
+
+  /* ══ Accent: electric blue ═════════════════════════════════════════════ */
+  --a-300: #9CC0FF;
+  --a-400: #5C94FF;
+  --a-500: #2F6BFF;
+  --a-600: #1F55DB;
+
+  /* ══ Surfaces ══════════════════════════════════════════════════════════ */
+  --bg:           var(--n-1000);
+  --surface:      var(--n-950);
+  --surface-2:    var(--n-900);
+  --surface-3:    var(--n-850);
+  --surface-sunk: #03060C;
+
+  --line:        rgba(232, 238, 249, 0.09);
+  --line-strong: rgba(232, 238, 249, 0.18);
+
+  /* ══ Text ══════════════════════════════════════════════════════════════
+     Measured on --surface: --text-2 is 8.9:1, --text-3 is 5.4:1, both above
+     the 4.5:1 floor. --text-faint is 3.1:1 and is DECORATIVE ONLY: rules,
+     disabled glyphs, a figure's unit suffix. Never a sentence. */
+  --text:        #FFFFFF;
+  --text-2:      rgba(232, 238, 249, 0.74);
+  --text-3:      rgba(232, 238, 249, 0.56);
+  --text-faint:  rgba(232, 238, 249, 0.34);
+
+  /* ══ Accent and semantics ══════════════════════════════════════════════ */
+  --accent:       var(--a-400);
+  --accent-hover: var(--a-300);
+  --accent-quiet: rgba(47, 107, 255, 0.15);
+  --accent-line:  rgba(92, 148, 255, 0.36);
+
+  --verified: #34D399;
+  --caution:  #F5B544;
+  --critical: #FF7C6E;
+  --neutral:  var(--text-3);
+
+  --verified-quiet: rgba(52, 211, 153, 0.11);
+  --caution-quiet:  rgba(245, 181, 68, 0.11);
+  --critical-quiet: rgba(255, 124, 110, 0.11);
+  --neutral-quiet:  rgba(232, 238, 249, 0.05);
+
+  --verified-line: rgba(52, 211, 153, 0.30);
+  --caution-line:  rgba(245, 181, 68, 0.30);
+  --critical-line: rgba(255, 124, 110, 0.28);
+  --neutral-line:  var(--line);
+
+  /* ══ Type ══════════════════════════════════════════════════════════════ */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+  /* Kept as names so every call site does not have to change; they all point
+     at the one family now. */
+  --font-display: var(--font-sans);
+  --font-mono: var(--font-sans);
+
+  --t-hero:    clamp(52px, 10vw, 150px);
+  --t-scene:   clamp(34px, 5.6vw, 78px);
+  --t-section: clamp(25px, 3.1vw, 42px);
+  --t-title:   20px;
+  --t-lead:    15px;
+  --t-body:    14px;
+  --t-small:   13px;
+  --t-micro:   12px;
+  --t-label:   11px;
+
+  /* ══ Space ═════════════════════════════════════════════════════════════ */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 72px; --s-9: 112px;
+  --gutter: 32px;
+  --measure: 62ch;
+  --content-max: 1280px;
+
+  /* ══ Radius ════════════════════════════════════════════════════════════ */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 24px; --r-pill: 999px;
+
+  /* ══ Elevation ═════════════════════════════════════════════════════════
+     A drop shadow is invisible on near-black, so lift is carried by the
+     surface stepping up the ramp plus a lit top edge. */
+  --e-1: inset 0 1px 0 rgba(232,238,249,0.045);
+  --e-2: inset 0 1px 0 rgba(232,238,249,0.07), 0 18px 44px rgba(0,0,0,0.5);
+  --e-3: inset 0 1px 0 rgba(232,238,249,0.09), 0 34px 80px rgba(0,0,0,0.62);
+  --glow: 0 0 0 1px var(--accent-line), 0 12px 40px rgba(47,107,255,0.22);
+
+  /* ══ Motion ════════════════════════════════════════════════════════════ */
+  --dur-instant: 90ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+  --dur-scene: 900ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ══ Data visualisation ════════════════════════════════════════════════
+     One palette for every chart. Charts do not pick their own colours. */
+  --viz-1: var(--a-400);
+  --viz-2: #A78BFA;
+  --viz-3: var(--verified);
+  --viz-4: var(--caution);
+  --viz-5: var(--text-3);
+  --viz-grid: rgba(232, 238, 249, 0.07);
+  --viz-axis: rgba(232, 238, 249, 0.45);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LIGHT
+   The same product in daylight. Every name below exists in the dark set too;
+   a component reads the name and never asks which theme is on.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"] {
+  --bg:           #F4F6FB;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F9FD;
+  --surface-3:    #EDF1F8;
+  --surface-sunk: #E7ECF5;
+
+  --line:        rgba(13, 20, 36, 0.10);
+  --line-strong: rgba(13, 20, 36, 0.18);
+
+  /* Measured on --surface: --text-2 is 7.4:1, --text-3 is 4.9:1. --text-faint
+     is 3.0:1 and stays decorative: rules, disabled glyphs, a unit suffix. */
+  --text:       #0A1020;
+  --text-2:     #41506B;
+  --text-3:     #5C6B85;
+  --text-faint: #97A3B8;
+
+  --accent:       #2F6BFF;
+  --accent-hover: #1F55DB;
+  --accent-quiet: #EAF1FF;
+  --accent-line:  rgba(47, 107, 255, 0.26);
+
+  --verified: #047857;
+  --caution:  #B45309;
+  --critical: #BE2D26;
+  --neutral:  var(--text-3);
+
+  --verified-quiet: #E6F6EF;
+  --caution-quiet:  #FDF3E5;
+  --critical-quiet: #FCECEB;
+  --neutral-quiet:  #EEF1F7;
+
+  --verified-line: rgba(4, 120, 87, 0.24);
+  --caution-line:  rgba(180, 83, 9, 0.24);
+  --critical-line: rgba(190, 45, 38, 0.22);
+  --neutral-line:  var(--line);
+
+  /* On paper, lift is shadow. */
+  --e-1: 0 1px 2px rgba(13,20,36,0.05), 0 4px 14px rgba(13,20,36,0.05);
+  --e-2: 0 2px 6px rgba(13,20,36,0.07), 0 14px 32px rgba(13,20,36,0.10);
+  --e-3: 0 24px 64px rgba(13,20,36,0.18);
+  --glow: 0 0 0 1px var(--accent-line), 0 12px 34px rgba(47,107,255,0.18);
+
+  --viz-1: #2F6BFF;
+  --viz-2: #7C5CFF;
+  --viz-3: #047857;
+  --viz-4: #B45309;
+  --viz-5: #5C6B85;
+  --viz-grid: rgba(13, 20, 36, 0.08);
+  --viz-axis: #5C6B85;
+
+  /* The "ink" family is the full-bleed cinema: the report film, the intro,
+     the wipe between routes. On dark it is the page itself; in daylight it is
+     paper. It has to flip, or the report is a black slab on a white product.
+     --text-on-ink follows --text, so anything drawn on ink stays legible
+     without a second set of rules. */
+  --ink-0:       #EEF2F9;
+  --ink-1:       #FFFFFF;
+  --ink-2:       #F7F9FD;
+  --ink-surface: #FFFFFF;
+  --ink-line:        rgba(13, 20, 36, 0.11);
+  --ink-line-strong: rgba(13, 20, 36, 0.20);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DENSITY, NOT PALETTE
+
+   `data-mode` survives because a scene and a table want different rhythm --
+   a scene breathes, a table packs. Both use the ramp above, so moving between
+   them is a change of pace rather than a change of product.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+[data-mode="cinematic"]  { --gutter: clamp(20px, 5vw, 72px); }
+[data-mode="analytical"] { --gutter: clamp(18px, 3vw, 40px); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPATIBILITY ALIASES
+   The names existing components already use, pointed at the system above.
+   Each is retired as its consumers are rebuilt.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --border: var(--line);
+  --border-strong: var(--line-strong);
+  --text-primary: var(--text);
+  --text-secondary: var(--text-2);
+  --text-muted: var(--text-3);
+  --positive: var(--verified);
+  --negative: var(--critical);
+  --accent-strong: var(--accent-hover);
+  --accent-tint: var(--accent-quiet);
+  --positive-tint: var(--verified-quiet);
+  --caution-tint: var(--caution-quiet);
+  --negative-tint: var(--critical-quiet);
+  --positive-line: var(--verified-line);
+  --negative-line: var(--critical-line);
+  --accent-on-ink: var(--accent);
+  --positive-on-ink: var(--verified);
+  --caution-on-ink: var(--caution);
+  --negative-on-ink: var(--critical);
+  --text-on-ink: var(--text);
+  --text-on-ink-muted: var(--text-2);
+  --ink-0: var(--n-1000);
+  --ink-1: var(--n-950);
+  --ink-2: var(--n-900);
+  --ink-surface: var(--n-950);
+  --ink-line: var(--line);
+  --ink-line-strong: var(--line-strong);
+  --glass: var(--neutral-quiet);
+  --glass-line: var(--line);
+
+  --radius-sm: var(--r-sm);
+  --radius: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-pill: var(--r-pill);
+  --shadow-panel: var(--e-1);
+  --shadow-raised: var(--e-2);
+  --shadow-lifted: var(--e-3);
+  --shadow-glow: var(--glow);
+
+  --space-1: var(--s-1); --space-2: var(--s-2); --space-3: var(--s-3);
+  --space-4: var(--s-4); --space-5: var(--s-5); --space-6: var(--s-6);
+  --space-7: var(--s-7);
+
+  --text-display: var(--t-section);
+  --text-title: var(--t-title);
+  --text-lead: var(--t-lead);
+  --text-body: var(--t-body);
+  --text-small: var(--t-small);
+  --text-label: var(--t-label);
+  --display-xl: var(--t-hero);
+  --display-lg: var(--t-scene);
+  --display-md: var(--t-section);
+
+  --sb-bg: var(--surface);
+  --sb-border: var(--line);
+  --sb-border-strong: var(--line-strong);
+  --sb-surface: var(--surface-2);
+  --sb-text: var(--text);
+  --sb-muted: var(--text-3);
+  --sb-secondary: var(--text-2);
+  --sb-blue: var(--accent);
+  --sb-green: var(--verified);
+  --sb-amber: var(--caution);
+  --sb-red: var(--critical);
+  --sb-shadow: var(--e-1);
+}

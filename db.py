@@ -572,7 +572,19 @@ def list_reports(limit: int = 20, owner_user_id: str | None = None) -> list[dict
                    COALESCE((dr.raw_output ->> 'final_score')::float, 0) AS final_score,
                    COALESCE(dr.verdict, 'NEEDS MORE DILIGENCE') AS recommendation,
                    dr.created_at,
-                   (dr.owner_user_id IS NULL) AS shared
+                   (dr.owner_user_id IS NULL) AS shared,
+                   -- Additive, for the deal table: a list of analyses that
+                   -- cannot show risk or how much of each deck was read is a
+                   -- list of names, and the alternative is the client fetching
+                   -- every full report to build one screen. Both are read
+                   -- straight out of the stored report; nothing is computed
+                   -- here, and a report written before these existed returns
+                   -- NULL rather than a made-up default.
+                   NULLIF(dr.raw_output ->> 'risk_level', '') AS risk_level,
+                   (dr.raw_output -> 'extraction_coverage' ->> 'coverage_pct')::float AS coverage_pct,
+                   COALESCE((dr.raw_output ->> 'claims_verified')::int, 0) AS claims_verified,
+                   COALESCE((dr.raw_output ->> 'claims_supported')::int, 0) AS claims_supported,
+                   COALESCE((dr.raw_output ->> 'risk_signals_found')::int, 0) AS risk_signals_found
             FROM dd_reports dr JOIN companies c ON c.id = dr.company_id
             WHERE (%s AND dr.owner_user_id IS NULL)
                OR (%s::uuid IS NOT NULL AND dr.owner_user_id = %s::uuid)

@@ -1,13 +1,25 @@
+import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 
 /**
  * App shell.
  *
- * The colours and font stack here used to be raw literals — `#F2F2F7`,
- * `#1C1C1E`, and a `'Geist', 'Inter', …` stack naming two fonts the app never
- * loaded, so it silently fell through to the system default anyway. They now
- * reference the shared tokens in src/styles/tailwind.css, which is the same
- * set tailwind.config.js exposes.
+ * TWO SHELLS, NOT ONE
+ *
+ * The working screens -- the list of analyses and the upload form -- are
+ * tools, and tools want their navigation permanently to hand: a sidebar, a
+ * light canvas, dense controls.
+ *
+ * The report is not a tool. It is the thing the tool produced, and it is read
+ * rather than operated. Every reference this was rebuilt against (a building,
+ * a property collection, a campaign) does the same thing: the piece owns the
+ * whole viewport and the chrome gets out of the way. Keeping a 252px sidebar
+ * and a grey page behind it is what made the previous pass read as a dashboard
+ * with big type rather than as a document.
+ *
+ * So `/analysis` renders full-bleed on its own dark ground, with navigation
+ * reduced to one floating control the report itself draws. Everything else
+ * keeps the shell.
  *
  * `min-w-0` on <main> is load-bearing: a flex child defaults to
  * `min-width: auto`, which refuses to shrink below its content's intrinsic
@@ -16,12 +28,36 @@ import Sidebar from "./Sidebar";
  * scroll horizontally on narrow viewports.
  */
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  // Upload and the report are scenes; the deal table is a tool. See tokens.css
+  // for what the two modes mean and why they are not two design systems.
+  const cinematic = pathname.startsWith("/analysis") || pathname.startsWith("/upload");
+
+  if (cinematic) {
+    return (
+      <div className="h-screen overflow-hidden" data-mode="cinematic" style={{ background: "transparent" }}>
+        <main
+          id="vf-scroller"
+          className="relative h-full w-full overflow-y-auto"
+          style={{ scrollbarWidth: "none", background: "transparent" }}
+        >
+          {children}
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden bg-canvas text-ink font-sans">
+    <div
+      className="flex h-screen overflow-hidden font-sans"
+      data-mode="analytical"
+      style={{ background: "transparent", color: "var(--text)" }}
+    >
       <Sidebar />
       <main
-        className="relative min-w-0 flex-1 overflow-y-auto bg-canvas"
-        style={{ scrollbarWidth: "none" }}
+        id="vf-scroller"
+        className="relative min-w-0 flex-1 overflow-y-auto"
+        style={{ scrollbarWidth: "none", background: "transparent" }}
       >
         <div className="relative z-[1]">{children}</div>
       </main>

@@ -80,7 +80,7 @@ export default function DemoGate({ children }: { children: React.ReactNode }) {
         boxShadow: "0 10px 40px rgba(15,23,42,0.08)",
       }}>
         <div style={{
-          fontFamily: "var(--font-mono)", fontSize: 9.5, letterSpacing: "0.14em",
+          fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 600, letterSpacing: "0.07em",
           textTransform: "uppercase", color: "#5D6B7F", marginBottom: 10,
         }}>Private demo</div>
 

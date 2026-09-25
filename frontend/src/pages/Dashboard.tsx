@@ -1,896 +1,551 @@
-import { useEffect, useState } from "react";
-import { Lift, Stagger, StaggerItem } from "../components/ui/Motion";
-import PageHero from "../components/ui/PageHero";
-import {
-  XAxis, YAxis, Tooltip, ResponsiveContainer,
-  CartesianGrid, AreaChart, Area,
-} from "recharts";
-import { motion } from "framer-motion";
-import {
-  TrendingUp, TrendingDown, DollarSign, Activity, Shield,
-  Download, Zap, AlertCircle, CheckCircle2,
-  Users, Upload,
-} from "lucide-react";
-import { useApp } from "../context/AppContext";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, authHeaders, handleSignedOut, ReportSummary } from "../services/apiClient";
-import { formatDate, formatDateShort, displayDeckId } from "../utils/format";
-import { ChartTooltip } from "../components/charts/ChartTooltip";
+import { motion } from "framer-motion";
+import { ArrowUpRight, Loader2, Search, Upload } from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { api, ReportSummary } from "../services/apiClient";
+import { formatDate } from "../utils/format";
+import { useElapsedSeconds, formatElapsed } from "../hooks/useElapsed";
+import { GrowBar } from "../components/ui/Motion";
+import { Magnetic, Reveal, SplitWords } from "../components/ui/scroll";
+import { Badge, BadgeStyles, Tooltip, type Tone } from "../components/ui/Surface";
+import { ScoreDistribution } from "../components/charts/Charts";
+import {
+  Button, ButtonStyles, Card, EmptyState, Label, Skeleton, SkeletonStyles,
+} from "../components/ui/primitives";
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+/**
+ * The command centre.
+ *
+ * WHAT THIS PAGE IS
+ *
+ * The deal table: every analysis on file with the four things that decide
+ * whether it needs attention -- what it scored, what the pipeline made of its
+ * risk, how much of the deck was actually read, and what the verdict was. It
+ * is a working surface, so it is dense, sortable, searchable and keyboard
+ * navigable, and it is the one screen in this product that is a table on
+ * purpose.
+ *
+ * WHAT IT IS NOT
+ *
+ * It is not a second rendering of the current report. It used to be exactly
+ * that -- the same score, claim counts, risk level, bull/bear split and key
+ * concerns the report screen shows, drawn a few pixels away with different
+ * widgets. Two pages stating the same findings in two visual languages is
+ * worse than one page stating them once.
+ *
+ * WHY "NEEDS ATTENTION" IS NOT A MODEL
+ *
+ * The flag is a rule stated on screen, not a score: risk came back HIGH, or
+ * under half the deck reached a structured field. Both are facts already in
+ * the row. Inventing a weighted "attention score" would add a number nothing
+ * measures to a product whose argument is that it does not do that.
+ */
 
-const MiniSparkline = ({ data, color }: { data: number[]; color: string }) => {
-  const min = Math.min(...data), max = Math.max(...data);
-  const w = 52, h = 22;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / (max - min || 1)) * h;
-    return `${x},${y}`;
-  }).join(" ");
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }} aria-hidden="true">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
-      <circle cx={parseFloat(pts.split(" ").pop()!.split(",")[0])} cy={parseFloat(pts.split(" ").pop()!.split(",")[1])} r="2" fill={color} />
-    </svg>
-  );
+// ── Row helpers ──────────────────────────────────────────────────────────────
+
+const scoreTone = (score: number): Tone =>
+  score >= 70 ? "verified" : score >= 45 ? "caution" : "critical";
+
+const toneVar = (t: Tone) =>
+  t === "verified" ? "var(--verified)"
+    : t === "caution" ? "var(--caution)"
+      : t === "critical" ? "var(--critical)"
+        : "var(--text-3)";
+
+const riskTone = (level?: string | null): Tone => {
+  const r = (level || "").toUpperCase();
+  if (r === "HIGH") return "critical";
+  if (r === "MEDIUM" || r === "MODERATE") return "caution";
+  if (r === "LOW") return "verified";
+  return "neutral";
 };
 
-// ─── EMPTY STATE ─────────────────────────────────────────────────────────────
-
-const EmptyDashboard = () => {
-  const navigate = useNavigate();
-  const { status, currentStage, progressPct } = useApp();
-  const isAnalyzing = status === "uploading" || status === "analyzing";
-
-  return (
-    <div style={{
-      display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", minHeight: "auto", textAlign: "center",
-      padding: "38px 24px 8px", fontFamily: "var(--font-sans)",
-    }}>
-      {isAnalyzing ? (
-        <>
-          <motion.div
-            animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-            style={{ marginBottom: 24 }}>
-            <Zap size={36} color="#1D6FE8" />
-          </motion.div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
-            Analysis in progress…
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
-            {currentStage}
-          </div>
-          <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
-            <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
-              animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
-            {progressPct}% complete · stay on this tab
-          </div>
-        </>
-      ) : (
-        <>
-          {/* The heading and explanation that stood here -- "No analysis yet"
-              and a sentence about uploading a deck -- now live in the page hero
-              a few inches above, which said almost exactly the same words. Two
-              statements of the same nothing is worse than one. What is left is
-              the action, which the hero deliberately does not carry. */}
-          <button onClick={() => navigate("/upload")} style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#1D6FE8", color: "#fff", border: "none",
-            borderRadius: 10, padding: "11px 22px", fontFamily: "var(--font-sans)",
-            fontSize: 14, fontWeight: 600, cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(29,111,232,0.28)",
-          }}>
-            <Upload size={15} /> Upload a Deck
-          </button>
-        </>
-      )}
-    </div>
-  );
+const riskLabel = (level?: string | null) => {
+  const r = (level || "").toUpperCase();
+  if (r === "HIGH") return "High";
+  if (r === "MEDIUM" || r === "MODERATE") return "Medium";
+  if (r === "LOW") return "Low";
+  if (r === "UNKNOWN") return "Unknown";
+  return "—";
 };
 
-const PastAnalyses = () => {
-  const [reports, setReports] = useState<ReportSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { loadSavedReport } = useApp();
-  const navigate = useNavigate();
+const verdictTone = (recommendation: string): Tone => {
+  const r = recommendation.toUpperCase();
+  if (r.includes("INVEST") && !r.includes("NOT")) return "verified";
+  if (r.includes("PASS")) return "critical";
+  return "caution";
+};
 
-  useEffect(() => {
-    api.listReports().then(setReports).catch(() => setReports([])).finally(() => setLoading(false));
-  }, []);
+/** Twenty rows reading "NEEDS MORE DILIGENCE" is twenty rows of noise. */
+const verdictShort = (recommendation: string) => {
+  const r = recommendation.toUpperCase();
+  if (r.includes("NEEDS MORE DILIGENCE")) return "Diligence";
+  if (r.includes("INVEST") && !r.includes("NOT")) return "Invest";
+  if (r.includes("PASS")) return "Pass";
+  return recommendation.charAt(0) + recommendation.slice(1).toLowerCase();
+};
 
-  if (loading || !reports.length) return null;
+/** The stated rule, in one place, so the table and the filter cannot diverge. */
+const needsAttention = (r: ReportSummary) =>
+  (r.risk_level || "").toUpperCase() === "HIGH"
+  || (typeof r.coverage_pct === "number" && r.coverage_pct < 50);
+
+function ScoreMark({ score }: { score: number }) {
   return (
-    <div style={{ width: "min(620px, 100%)", marginTop: 28, textAlign: "left" }}>
-      <div style={{
-        fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)",
-        letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8,
-      }}>
-        Past analyses
+    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 5 }}>
+      <span className="vf-figure" style={{ fontSize: 22, color: toneVar(scoreTone(score)) }}>
+        {Math.round(score)}
+      </span>
+      <span style={{ fontSize: 11, color: "var(--text-faint)" }}>/100</span>
+    </span>
+  );
+}
+
+// ── In-flight run ────────────────────────────────────────────────────────────
+
+function RunningStrip() {
+  const { currentStage, progressPct, companyName, startedAt } = useApp();
+  const elapsed = useElapsedSeconds(startedAt);
+  return (
+    <Card padding={18} style={{ marginBottom: 20, borderColor: "var(--accent-line)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <motion.span
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1.1, ease: "linear" }}
+          style={{ display: "flex", color: "var(--accent)" }}
+        >
+          <Loader2 size={16} />
+        </motion.span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Analysing {companyName || "your deck"}</div>
+          <div style={{ fontSize: 12.5, color: "var(--text-3)" }}>{currentStage}</div>
+        </div>
+        <span className="vf-num" style={{ marginLeft: "auto", fontSize: 14, color: "var(--text-2)" }}>
+          {formatElapsed(elapsed)}
+        </span>
       </div>
-      <Stagger gap={0.04}>
-        {reports.map((saved) => (
-          <StaggerItem key={saved.report_id}>
-            <Lift>
-              <button
-                type="button"
-                className="db-past-row"
-                onClick={async () => {
-                  await loadSavedReport(saved.report_id);
-                  navigate("/analysis");
-                }}
-              >
-                <span className="db-past-name">
-                  {saved.company}
-                  {/* Reports that predate accounts belong to nobody and are
-                      visible to everyone. Saying so is the difference between
-                      a shared record and one the reader assumes is private. */}
-                  {saved.shared && <span className="db-past-shared">shared</span>}
-                </span>
-                <span className="db-past-meta">
-                  {Math.round(saved.final_score)}/100 · {saved.recommendation}
-                </span>
-              </button>
-            </Lift>
-          </StaggerItem>
-        ))}
-      </Stagger>
-      <style>{`
-        .db-past-row {
-          width: 100%; display: flex; align-items: center; justify-content: space-between;
-          gap: 12px; text-align: left; font-family: var(--font-sans);
-          border: 1px solid var(--border); background: var(--surface);
-          border-radius: 9px; margin-bottom: 6px; padding: 11px 13px; cursor: pointer;
-          transition: border-color var(--dur-fast) var(--ease-out),
-                      box-shadow var(--dur-base) var(--ease-out);
-        }
-        .db-past-row:hover { border-color: var(--border-strong); box-shadow: var(--shadow-raised); }
-        .db-past-name {
-          font-weight: 600; font-size: 13.5px; color: var(--text-primary);
-          display: flex; align-items: center; gap: 8px; min-width: 0;
-        }
-        .db-past-shared {
-          font-family: var(--font-mono); font-size: 8.5px; font-weight: 600;
-          letter-spacing: 0.09em; text-transform: uppercase;
-          color: var(--text-muted); background: var(--surface-2);
-          border: 1px solid var(--border); border-radius: 20px; padding: 2px 7px;
-        }
-        .db-past-meta {
-          font-family: var(--font-mono); font-size: 11.5px;
-          color: var(--text-muted); white-space: nowrap;
-        }
-      `}</style>
-    </div>
+      <GrowBar pct={progressPct} color="var(--accent)" height={4} />
+    </Card>
   );
-};
+}
 
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+// ── Page ─────────────────────────────────────────────────────────────────────
 
-type ScoreHistoryPoint = { date: string; score: number; recommendation: string };
+type SortKey = "recent" | "score" | "risk" | "company";
 
 const Dashboard = () => {
-  const { report, status, currentStage, progressPct } = useApp();
-  const [scoreHistory, setScoreHistory] = useState<ScoreHistoryPoint[]>([]);
+  const navigate = useNavigate();
+  const { report, status, loadSavedReport } = useApp();
+  const [reports, setReports] = useState<ReportSummary[] | null>(null);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("recent");
+  const [onlyAttention, setOnlyAttention] = useState(false);
+  const [opening, setOpening] = useState<string | null>(null);
 
-  // Real per-company score history (p2 on the Ship List) -- hook must run
-  // unconditionally, before the early-return below, per the Rules of Hooks.
+  const running = status === "uploading" || status === "analyzing";
+
   useEffect(() => {
-    if (!report?.company) {
-      setScoreHistory([]);
-      return;
+    let live = true;
+    api.listReports()
+      .then((rows) => live && setReports(rows))
+      .catch(() => live && setReports([]));
+    return () => { live = false; };
+  }, []);
+
+  const visible = useMemo(() => {
+    const rows = [...(reports || [])];
+    const needle = query.trim().toLowerCase();
+    const filtered = rows.filter((r) => {
+      if (onlyAttention && !needsAttention(r)) return false;
+      if (!needle) return true;
+      return r.company.toLowerCase().includes(needle)
+        || r.recommendation.toLowerCase().includes(needle);
+    });
+    const riskRank = (r?: string | null) => {
+      const v = (r || "").toUpperCase();
+      return v === "HIGH" ? 3 : v === "MEDIUM" || v === "MODERATE" ? 2 : v === "LOW" ? 1 : 0;
+    };
+    filtered.sort((a, b) => {
+      if (sort === "score") return b.final_score - a.final_score;
+      if (sort === "company") return a.company.localeCompare(b.company);
+      if (sort === "risk") return riskRank(b.risk_level) - riskRank(a.risk_level);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    return filtered;
+  }, [reports, query, sort, onlyAttention]);
+
+  /** Counts over what is on file. No modelling, no weighting -- arithmetic. */
+  const summary = useMemo(() => {
+    if (!reports?.length) return null;
+    const scores = reports.map((r) => r.final_score).sort((a, b) => a - b);
+    const median = scores.length % 2
+      ? scores[(scores.length - 1) / 2]
+      : (scores[scores.length / 2 - 1] + scores[scores.length / 2]) / 2;
+    const coverages = reports
+      .map((r) => r.coverage_pct)
+      .filter((c): c is number => typeof c === "number")
+      .sort((a, b) => a - b);
+    return {
+      count: reports.length,
+      companies: new Set(reports.map((r) => r.company.toLowerCase())).size,
+      median,
+      attention: reports.filter(needsAttention).length,
+      medianCoverage: coverages.length ? coverages[Math.floor(coverages.length / 2)] : null,
+      claimsChecked: reports.reduce((n, r) => n + (r.claims_verified ?? 0), 0),
+      claimsSupported: reports.reduce((n, r) => n + (r.claims_supported ?? 0), 0),
+      signals: reports.reduce((n, r) => n + (r.risk_signals_found ?? 0), 0),
+    };
+  }, [reports]);
+
+  const open = async (reportId: string) => {
+    setOpening(reportId);
+    try {
+      await loadSavedReport(reportId);
+      navigate("/analysis");
+    } finally {
+      setOpening(null);
     }
-    fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/companies/${encodeURIComponent(report.company)}/history`, { headers: authHeaders() })
-      .then(async (res) => ((await handleSignedOut(res)) || !res.ok ? { history: [] } : res.json()))
-      .then((data) => setScoreHistory(data.history || []))
-      .catch(() => setScoreHistory([]));
-  }, [report?.company]);
+  };
 
-  // If no report yet, show empty / analyzing state
-  if (!report) return (
-    <div className="db-root" style={{ fontFamily: "var(--font-sans)", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
-      <PageHero
-        eyebrow="Dashboard"
-        title="Nothing analysed yet"
-        subtitle="Upload a pitch deck and VentureFlow will check its key claims against live sources, score it against companies with recorded outcomes, and show you what it could not establish."
-      />
-      <EmptyDashboard />
-      <div style={{ display: "flex", justifyContent: "center", padding: "0 24px 40px" }}><PastAnalyses /></div>
-    </div>
-  );
-
-  // ── Derive live data from the real report ──────────────────────────────────
-  const score = report.final_score;
-  const riskValue = report.risk_signals_found
-    ? Math.min(100, Math.round(report.risk_signals_found * 3.5 + 10))
-    : Math.round(score * 0.7);
-
-  const riskColor = riskValue >= 70 ? "#D93025" : riskValue >= 40 ? "#C47A0A" : "#0EA66A";
-  const riskLabel = riskValue >= 70 ? "High Risk" : riskValue >= 40 ? "Moderate Risk" : "Low Risk";
-  const scoreColor = score >= 75 ? "#0EA66A" : score >= 50 ? "#C47A0A" : "#D93025";
-
-  // A `revenueM` value was computed here as
-  //     (claims_supported / claims_verified) * 2.8
-  // and labelled revenue in millions. That number is not revenue: it is a
-  // claim-verification ratio multiplied by a constant nobody can source. It
-  // was never rendered, so it misled no user, but it is exactly the kind of
-  // plausible-looking figure this product must not manufacture. Revenue is
-  // available honestly on `report.sections.financial_state` when the deck
-  // states it; anything that wants to show revenue should read that and show
-  // nothing when it is absent.
-
-  // Real history once this company has been analyzed 2+ times
-  // (GET /companies/{name}/history, backed by every persisted dd_reports
-  // row for it) -- a single point still shows the honest "first analysis"
-  // state below, same as before this was wired up.
-  const hasHistory = scoreHistory.length >= 2;
-  const trendData = scoreHistory.map((point) => ({
-    name: formatDateShort(point.date),
-    value: point.score,
-  }));
-
-  const metrics = [
-    {
-      label: "Overall Score", value: `${Math.round(score)} / 100`,
-      sub: report.recommendation, icon: TrendingUp,
-      color: scoreColor, bg: `${scoreColor}14`, border: `${scoreColor}30`, trend: null,
-    },
-    {
-      label: "Claims Verified", value: `${report.claims_supported}/${report.claims_verified}`,
-      sub: `${report.claims_refuted} refuted · ${report.claims_uncertain} uncertain`,
-      icon: CheckCircle2, color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.18)", trend: null,
-    },
-    {
-      label: "Risk Score", value: `${riskValue} / 100`,
-      sub: riskLabel, icon: Shield,
-      color: riskColor, bg: `${riskColor}12`, border: `${riskColor}28`, trend: null,
-    },
-    {
-      label: "Risk Signals", value: String(report.risk_signals_found),
-      sub: "Detected across categories", icon: AlertCircle,
-      color: "#C47A0A", bg: "rgba(196,122,10,0.08)", border: "rgba(196,122,10,0.18)", trend: null,
-    },
-  ];
-
-  const bullSignals = report.positive_factors.slice(0, 4).map(f => ({
-    label: f.length > 22 ? f.slice(0, 22) + "…" : f, value: "✓", dot: "#0EA66A", up: true as const
-  }));
-  const bearSignals = report.red_flags.slice(0, 4).map(f => ({
-    label: f.length > 22 ? f.slice(0, 22) + "…" : f, value: "⚠", dot: "#D93025", up: false as const
-  }));
-  const signals = [...bullSignals, ...bearSignals];
-
-  // Grounded in the actual counts of independently-detected positive factors
-  // vs. red flags for this report — not a rescaling of the single final score.
-  const totalConvictionSignals = report.positive_factors.length + report.red_flags.length;
-  const bullScore = totalConvictionSignals
-    ? Math.round((report.positive_factors.length / totalConvictionSignals) * 100)
-    : 50;
-  const bearScore = totalConvictionSignals
-    ? Math.round((report.red_flags.length / totalConvictionSignals) * 100)
-    : 50;
-
-  const today = formatDate(new Date());
-  const deckId = displayDeckId(report.company);
+  const allShared = Boolean(reports?.length) && reports!.every((r) => r.shared);
 
   return (
-    <>
+    <div className="db-root">
+      <ButtonStyles />
+      <SkeletonStyles />
+      <BadgeStyles />
       <style>{`
+        .db-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+        .db-search {
+          width: 100%; padding: 9px 12px 9px 34px; font: inherit; font-size: var(--t-small);
+          background: var(--surface); border: 1px solid var(--line);
+          border-radius: var(--r-sm); color: var(--text);
+          transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+        }
+        .db-search::placeholder { color: var(--text-faint); }
+        .db-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-quiet); }
 
-        :root {
-          --bg: #F0F2F5;
-          --surface: #FFFFFF;
-          --surface-2: #F7F8FA;
-          --border: rgba(15,23,42,0.08);
-          --border-strong: rgba(15,23,42,0.13);
-          --text-primary: #0B1120;
-          --text-secondary: #4A5568;
-          --text-muted: #5D6B7F;
-          --blue: #1D6FE8;
-          --green: #0EA66A;
-          --amber: #C47A0A;
-          --red: #D93025;
-          --shadow-sm: 0 1px 4px rgba(15,23,42,0.06), 0 2px 12px rgba(15,23,42,0.04);
-          --shadow-md: 0 4px 20px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.05);
-          --radius-sm: 8px;
-          --radius-md: 12px;
-          --radius-lg: 16px;
+        .db-seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px; }
+        .db-seg button {
+          font: inherit; font-size: var(--t-micro); font-weight: 500; padding: 6px 11px;
+          border: none; background: transparent; color: var(--text-3);
+          border-radius: 6px; cursor: pointer;
+          transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+        }
+        .db-seg button:hover { color: var(--text); }
+        .db-seg button[aria-pressed="true"] {
+          background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--e-1);
         }
 
-        .db-root {
-          font-family: var(--font-sans);
-          color: var(--text-primary);
-          min-height: 100vh;
-          background: var(--bg);
-          background-image:
-            radial-gradient(ellipse 80% 60% at 10% -10%, rgba(29,111,232,0.05) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 40% at 90% 100%, rgba(14,166,106,0.04) 0%, transparent 50%);
-        }
-
-        .db-header {
-          padding: 22px 32px 20px;
-          background: var(--surface);
-          border-bottom: 1px solid var(--border);
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          position: relative;
-          overflow: hidden;
-        }
-
-        /* A 2px gradient rule that shimmered left-to-right forever sat on
-           the old header. It animated permanently at the top of the page,
-           reported nothing, and is gone with the header it decorated. */
-
-        @keyframes shimmer-line {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-
-        .db-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          font-family: var(--font-mono);
-          font-size: 9.5px;
-          color: var(--green);
-          background: rgba(14,166,106,0.09);
-          border: 1px solid rgba(14,166,106,0.22);
-          padding: 4px 12px;
-          border-radius: 20px;
-          letter-spacing: 0.07em;
-          text-transform: uppercase;
-          margin-bottom: 12px;
-        }
-
-        .live-dot {
-          width: 5px; height: 5px;
-          background: var(--green);
-          border-radius: 50%;
-          animation: live-pulse 1.8s ease-in-out infinite;
-        }
-
-        @keyframes live-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(14,166,106,0.5); }
-          50% { box-shadow: 0 0 0 5px rgba(14,166,106,0); }
-        }
-
-        .db-title {
-          font-family: var(--font-display);
-          font-size: 28px;
-          font-weight: 400;
-          letter-spacing: -0.01em;
-          color: var(--text-primary);
-          margin: 0 0 5px;
-          line-height: 1;
-        }
-
-        .db-subtitle {
-          font-family: var(--font-mono);
-          font-size: 10.5px;
-          color: var(--text-muted);
-        }
-
-        .db-header-right {
-          display: flex;
-          align-items: flex-end;
-          gap: 12px;
-        }
-
-        .deck-id-box {
-          text-align: right;
-        }
-
-        .deck-id-label {
-          font-family: var(--font-mono);
-          font-size: 9px;
-          color: var(--text-muted);
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          margin-bottom: 2px;
-        }
-
-        .deck-id-val {
-          font-family: var(--font-mono);
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--blue);
-        }
-
-        .db-export-btn {
-          background: rgba(232,238,249,0.10) !important;
-          border: 1px solid rgba(232,238,249,0.20) !important;
-          color: #E8EEF9 !important;
-          display: inline-flex; align-items: center; gap: 7px;
-          font-family: var(--font-mono); font-size: 11px;
-          font-weight: 500; color: var(--text-secondary);
-          background: var(--surface); border: 1px solid var(--border);
-          padding: 8px 16px; border-radius: 8px; cursor: pointer;
-          transition: all 0.15s ease; letter-spacing: 0.02em;
-        }
-
-        .db-export-btn:hover {
-          background: var(--surface-2);
-          border-color: var(--border-strong);
-          color: var(--text-primary);
-        }
-
-        .metric-grid {
+        /* The deal table. A grid rather than <table>: every row is one button,
+           which makes the whole row a target and keeps keyboard order to one
+           stop per deal instead of one per cell. */
+        .db-table { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+        .db-head, .db-row {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
-          padding: 16px 24px 0;
+          grid-template-columns: minmax(0, 2.1fr) 96px 108px 150px 116px 28px;
+          align-items: center; gap: 14px;
+          padding: 0 18px;
         }
-
-        .metric-card {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          padding: 16px 18px;
-          box-shadow: var(--shadow-sm);
-          position: relative;
-          overflow: hidden;
-          cursor: default;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .db-head { height: 40px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+        .db-row {
+          width: 100%; height: 64px; text-align: left; font: inherit; cursor: pointer;
+          background: transparent; border: none; border-bottom: 1px solid var(--line);
+          transition: background var(--dur-fast) var(--ease-out);
         }
+        .db-row:last-child { border-bottom: none; }
+        .db-row:hover { background: var(--surface-2); }
+        .db-row:hover .db-go { color: var(--accent); transform: translateX(2px); }
+        .db-row[data-attention="true"] { box-shadow: inset 3px 0 0 var(--caution); }
+        .db-go { color: var(--text-faint); transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+        .db-company { display: block; font-size: var(--t-body); font-weight: 600; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .db-when { display: block; font-size: var(--t-micro); color: var(--text-3); margin-top: 2px; }
 
-        .metric-card:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-md);
+        /* Coverage as a bar: the eye compares lengths faster than it compares
+           two-digit percentages down a column. */
+        .db-cov { display: flex; align-items: center; gap: 9px; }
+        .db-cov-track { flex: 1; height: 4px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+        .db-cov-fill { display: block; height: 100%; border-radius: 4px; }
+        .db-cov-num { font-size: var(--t-micro); color: var(--text-3); min-width: 32px; text-align: right; }
+
+        @media (max-width: 1080px) {
+          .db-head, .db-row { grid-template-columns: minmax(0, 2fr) 88px 104px 112px 28px; }
+          .db-col-cov { display: none; }
         }
-
-        .metric-top-row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 12px;
+        @media (max-width: 760px) {
+          .db-head { display: none; }
+          .db-row { grid-template-columns: minmax(0, 1fr) auto auto; height: auto; padding: 14px 16px; gap: 12px; }
+          .db-col-risk { display: none; }
         }
-
-        .metric-icon-wrap {
-          width: 34px; height: 34px;
-          border-radius: 9px;
-          display: flex; align-items: center; justify-content: center;
-        }
-
-        .metric-trend {
-          font-family: var(--font-mono);
-          font-size: 9px; font-weight: 600;
-          padding: 3px 8px; border-radius: 20px;
-          letter-spacing: 0.06em;
-        }
-
-        .metric-label {
-          font-family: var(--font-mono);
-          font-size: 9.5px; color: var(--text-muted);
-          letter-spacing: 0.1em; text-transform: uppercase;
-          margin-bottom: 4px;
-        }
-
-        .metric-value {
-          font-family: var(--font-display);
-          font-size: 22px; font-weight: 400;
-          letter-spacing: -0.01em; line-height: 1;
-          margin-bottom: 8px;
-        }
-
-        .metric-bottom-row {
-          display: flex; align-items: center; justify-content: space-between;
-        }
-
-        .metric-sub {
-          font-family: var(--font-mono);
-          font-size: 9.5px; color: var(--text-muted); max-width: 100px;
-        }
-
-        .main-grid {
-          display: grid;
-          grid-template-columns: 1fr 280px;
-          gap: 14px;
-          padding: 14px 24px 24px;
-        }
-
-        .left-col { display: flex; flex-direction: column; gap: 14px; }
-        .right-col { display: flex; flex-direction: column; gap: 14px; }
-
-        .panel {
-          background: var(--surface);
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .panel-pad { padding: 20px 22px; }
-
-        .chart-header {
-          display: flex; align-items: flex-start;
-          justify-content: space-between; margin-bottom: 18px;
-        }
-
-        .panel-title {
-          font-size: 14px; font-weight: 600; color: var(--text-primary);
-          letter-spacing: -0.02em; margin-bottom: 2px;
-        }
-
-        .panel-sub {
-          font-family: var(--font-mono);
-          font-size: 9.5px; color: var(--text-muted);
-        }
-
-        .time-filters { display: flex; gap: 4px; }
-
-        .time-btn {
-          font-family: var(--font-mono);
-          font-size: 10px; padding: 4px 10px; border-radius: 6px;
-          border: 1px solid transparent; cursor: pointer; transition: all 0.14s ease;
-          background: transparent; color: var(--text-muted);
-        }
-
-        .time-btn:hover { background: var(--surface-2); color: var(--text-primary); }
-
-        .time-btn-active {
-          background: rgba(29,111,232,0.08);
-          border-color: rgba(29,111,232,0.22);
-          color: var(--blue); font-weight: 600;
-        }
-
-        .stats-row {
-          display: grid; grid-template-columns: repeat(4, 1fr);
-          gap: 10px; margin-top: 16px; padding-top: 14px;
-          border-top: 1px solid var(--border);
-        }
-
-        .stat-item { text-align: center; }
-
-        .stat-label {
-          font-family: var(--font-mono);
-          font-size: 9px; color: var(--text-muted);
-          text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px;
-        }
-
-        .stat-value {
-          font-family: var(--font-mono);
-          font-size: 13px; font-weight: 600; color: var(--text-primary);
-        }
-
-        .slabel {
-          font-family: var(--font-mono);
-          font-size: 9.5px; color: var(--text-muted);
-          text-transform: uppercase; letter-spacing: 0.12em;
-          margin-bottom: 12px;
-        }
-
-        .conviction-row {
-          display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;
-        }
-
-        .conviction-side {
-          border-radius: 9px; padding: 12px;
-        }
-
-        .conviction-label {
-          font-family: var(--font-mono);
-          font-size: 9px; font-weight: 600;
-          letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;
-        }
-
-        .conviction-score {
-          font-family: var(--font-display);
-          font-size: 28px; margin-bottom: 8px; line-height: 1;
-        }
-
-        .conviction-track {
-          height: 4px; border-radius: 4px; overflow: hidden;
-        }
-
-        .conviction-fill {
-          height: 100%; border-radius: 4px;
-          transition: width 1.2s cubic-bezier(0.22,1,0.36,1);
-        }
-
-        .comp-row {
-          display: flex; align-items: center; gap: 10px;
-          padding: 10px 0; border-bottom: 1px solid var(--border);
-        }
-        .comp-row:last-of-type { border-bottom: none; }
-        .comp-color-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .comp-info { flex: 1; }
-        .comp-name { font-size: 12.5px; font-weight: 500; color: var(--text-primary); letter-spacing: -0.01em; }
-        .comp-meta { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); margin-top: 1px; }
-        .comp-raise { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-primary); }
-        .comp-score-chip {
-          font-family: var(--font-mono); font-size: 11px;
-          font-weight: 700; padding: 4px 10px; border-radius: 7px;
-          min-width: 36px; text-align: center;
-        }
-
-        .gauge-section { padding: 18px 22px 14px; }
-        .gauge-value-wrap { text-align: center; margin-top: -28px; }
-        .gauge-big {
-          font-family: var(--font-display);
-          font-size: 38px; font-weight: 400;
-          color: var(--text-primary); line-height: 1; margin-bottom: 2px;
-        }
-        .gauge-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
-        .gauge-scale { display: flex; justify-content: space-between; margin-top: 6px; }
-        .gauge-scale-label { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-muted); }
-
-        .runway-widget {
-          padding: 0 22px 18px;
-          border-top: 1px solid var(--border);
-          margin-top: 14px; padding-top: 14px;
-        }
-
-        .runway-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .runway-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
-        .runway-months { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-primary); }
-        .runway-track { height: 6px; background: rgba(15,23,42,0.07); border-radius: 6px; overflow: hidden; margin-bottom: 7px; }
-        .runway-fill { height: 100%; width: 58%; background: linear-gradient(90deg, #0EA66A, #1D6FE8); border-radius: 6px; }
-        .runway-sub { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); }
-
-        .signals-section { padding: 18px 20px; }
-        .signal-row {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 8px 0; border-bottom: 1px solid var(--border);
-        }
-        .signal-row:last-child { border-bottom: none; }
-        .signal-left { display: flex; align-items: center; gap: 8px; }
-        .signal-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-        .signal-name { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-secondary); }
-        .signal-val-wrap { display: flex; align-items: center; gap: 5px; }
-        .signal-value { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text-primary); }
       `}</style>
 
-      <div className="db-root">
-        {/* HEADER */}
-        {/* The "Intelligence Report · Live" badge with its pulsing dot is
-            gone with the rest of the always-on status lights: it was lit
-            identically whether an analysis was running, finished, or had never
-            started. The company being looked at leads instead, which is the
-            thing a reader actually needs to see. */}
-        <PageHero
-          eyebrow={`Dashboard · ${deckId}`}
-          title={report.company}
-          subtitle={`Analyzed ${today}`}
-          actions={
-            <button className="db-export-btn">
-              <Download size={13} strokeWidth={2} />
-              Export Memo
-            </button>
-          }
-        />
-
-        {/* METRICS */}
-        <div className="metric-grid">
-          {metrics.map((m, i) => {
-            const Icon = m.icon;
-            return (
-              <motion.div
-                key={i}
-                className="metric-card"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="metric-top-row">
-                  <div className="metric-icon-wrap" style={{ background: m.bg, border: `1px solid ${m.border}` }}>
-                    <Icon size={15} color={m.color} strokeWidth={1.8} />
-                  </div>
-                  {m.trend && (
-                    <div className="metric-trend" style={{ color: m.color, background: m.bg, border: `1px solid ${m.border}` }}>
-                      {m.trend}
-                    </div>
-                  )}
-                </div>
-                <div className="metric-label">{m.label}</div>
-                <div className="metric-value" style={{ color: m.color }}>{m.value}</div>
-                <div className="metric-bottom-row">
-                  <span className="metric-sub">{m.sub}</span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* MAIN GRID */}
-        <div className="main-grid">
-          <div className="left-col">
-            {/* SCORE TREND CHART */}
-            <motion.div
-              className="panel panel-pad"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.36, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="chart-header">
-                <div>
-                  <div className="panel-title">Investment Score</div>
-                  <div className="panel-sub">
-                    {hasHistory
-                      ? "Derived from verified claims · composite index"
-                      : "First analysis on file for this company"}
-                  </div>
-                </div>
-              </div>
-
-              {hasHistory ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={trendData} margin={{ top: 4, right: 0, left: -8, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="arrGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#1D6FE8" stopOpacity={0.14} />
-                        <stop offset="100%" stopColor="#1D6FE8" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid stroke="rgba(15,23,42,0.05)" vertical={false} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "var(--font-mono)", fontSize: 10 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#5D6B7F", fontFamily: "var(--font-mono)", fontSize: 10 }} />
-                    <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(15,23,42,0.08)", strokeWidth: 1 }} />
-                    <Area type="monotone" dataKey="value" stroke="#1D6FE8" strokeWidth={2.5} fill="url(#arrGrad)" dot={false} isAnimationActive animationDuration={1400} animationEasing="ease-out" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{
-                  height: 220, display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center", gap: 6,
-                  border: "1px dashed rgba(15,23,42,0.12)", borderRadius: 12,
-                  background: "rgba(15,23,42,0.015)",
-                }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 40, color: scoreColor }}>
-                    {Math.round(score)}
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, color: "#5D6B7F", textAlign: "center", maxWidth: 260 }}>
-                    Today&rsquo;s score. Re-run analysis on this company later to build a real trend line here.
-                  </div>
-                </div>
-              )}
-
-              <div className="stats-row">
-                {[
-                  { label: "Verified Claims", value: `${report.claims_supported}/${report.claims_verified}`, color: "#0EA66A" },
-                  { label: "Refuted", value: String(report.claims_refuted), color: "#D93025" },
-                  { label: "Risk Signals", value: String(report.risk_signals_found), color: riskColor },
-                  { label: "Final Score", value: `${Math.round(score)}/100`, color: scoreColor },
-                ].map((s, i) => (
-                  <div key={i} className="stat-item">
-                    <div className="stat-label">{s.label}</div>
-                    <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* BULL/BEAR + KEY CONCERNS ROW */}
-            <motion.div
-              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.48, duration: 0.4 }}
-            >
-              {/* BULL BEAR CONVICTION */}
-              <div className="panel panel-pad">
-                <div className="slabel">Bull / Bear Conviction</div>
-                <div className="conviction-row">
-                  <div className="conviction-side" style={{ background: "rgba(14,166,106,0.06)", border: "1px solid rgba(14,166,106,0.15)" }}>
-                    <div className="conviction-label" style={{ color: "#0EA66A" }}>▲ Bull</div>
-                    <div className="conviction-score" style={{ color: "#0EA66A" }}>{Math.min(bullScore, 100)}</div>
-                    <div className="conviction-track" style={{ background: "rgba(14,166,106,0.12)" }}>
-                      <div className="conviction-fill" style={{ background: "#0EA66A", width: `${Math.min(bullScore, 100)}%` }} />
-                    </div>
-                  </div>
-                  <div className="conviction-side" style={{ background: "rgba(217,48,37,0.05)", border: "1px solid rgba(217,48,37,0.14)" }}>
-                    <div className="conviction-label" style={{ color: "#D93025" }}>▼ Bear</div>
-                    <div className="conviction-score" style={{ color: "#D93025" }}>{bearScore}</div>
-                    <div className="conviction-track" style={{ background: "rgba(217,48,37,0.10)" }}>
-                      <div className="conviction-fill" style={{ background: "#D93025", width: `${bearScore}%` }} />
-                    </div>
-                  </div>
-                </div>
-                <div style={{ padding: "12px", background: "rgba(29,111,232,0.04)", borderRadius: 9, border: "1px solid rgba(29,111,232,0.12)" }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>Verdict</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#0B1120", letterSpacing: "-0.02em" }}>{report.recommendation}</div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#4A5568", marginTop: 3 }}>
-                    {report.key_concerns[0] || "Verify all claims before closing"}
-                  </div>
-                </div>
-              </div>
-
-              {/* KEY CONCERNS */}
-              <div className="panel panel-pad">
-                <div className="slabel">Key Concerns</div>
-                {(report.key_concerns.length > 0 ? report.key_concerns : ["No major concerns detected"]).slice(0, 4).map((concern, i) => (
-                  <div key={i} className="comp-row">
-                    <div className="comp-color-dot" style={{ background: i === 0 ? "#D93025" : i === 1 ? "#C47A0A" : "#1D6FE8" }} />
-                    <div className="comp-info">
-                      <div className="comp-name" style={{ fontSize: 12 }}>{concern}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+      <div className="vf-page">
+        <Reveal>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap", marginBottom: 30 }}>
+            <div>
+              <Label style={{ marginBottom: 10 }}>Investment intelligence</Label>
+              <h1 className="vf-lg" style={{ margin: 0 }}>
+                <SplitWords text="VentureFlow" />
+              </h1>
+            </div>
+            <Magnetic>
+              <Button variant="primary" size="lg" icon={<Upload size={16} />} data-cursor="Upload" onClick={() => navigate("/upload")}>
+                New analysis
+              </Button>
+            </Magnetic>
           </div>
+        </Reveal>
 
-          {/* RIGHT COLUMN */}
-          <motion.div
-            className="right-col"
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.44, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {/* GAUGE */}
-            <div className="panel">
-              <div className="gauge-section">
-                <div className="slabel">Risk Assessment</div>
-                <svg width="100%" height="114" viewBox="0 0 220 114" style={{ display: "block", overflow: "visible" }} aria-hidden="true">
-                  <defs>
-                    <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#0EA66A" />
-                      <stop offset="48%" stopColor="#C47A0A" />
-                      <stop offset="100%" stopColor="#D93025" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M 22 82 A 88 88 0 0 1 198 82" fill="none" stroke="rgba(15,23,42,0.07)" strokeWidth="8" strokeLinecap="round" />
-                  <path d="M 22 82 A 88 88 0 0 1 198 82" fill="none" stroke="url(#gaugeGrad)" strokeWidth="10" strokeLinecap="round"
-                    strokeDasharray={`${(riskValue / 100) * 276} 276`}
-                    style={{ transition: "stroke-dasharray 1.4s cubic-bezier(0.22,1,0.36,1)" }} />
-                </svg>
-                <div className="gauge-value-wrap">
-                  <div className="gauge-big" style={{ color: riskColor }}>{riskValue}</div>
-                  <div className="gauge-label">{riskLabel} · out of 100</div>
-                </div>
-                <div className="gauge-scale">
-                  <span className="gauge-scale-label">Low</span>
-                  <span className="gauge-scale-label">Moderate</span>
-                  <span className="gauge-scale-label">High</span>
-                </div>
-              </div>
+        {running && <RunningStrip />}
 
-              <div className="runway-widget">
-                <div className="runway-header">
-                  <span className="runway-label">Risk Level</span>
-                  <span className="runway-months" style={{ color: riskColor }}>{report.risk_level}</span>
+        {summary && (
+          <Reveal delay={0.05}>
+            <div
+              className="vf-grid-4"
+              style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 26 }}
+            >
+              <Card padding="18px 20px">
+                <Label style={{ marginBottom: 8 }}>Analyses on file</Label>
+                <div className="vf-figure" style={{ fontSize: 30 }}>{summary.count}</div>
+                <div style={{ fontSize: 12.5, color: "var(--text-3)", marginTop: 5 }}>
+                  across {summary.companies} {summary.companies === 1 ? "company" : "companies"}
                 </div>
-                <div className="runway-track">
-                  <div className="runway-fill" style={{ width: `${riskValue}%`, background: `linear-gradient(90deg, #0EA66A, ${riskColor})` }} />
+              </Card>
+
+              <Card padding="18px 20px">
+                <Label style={{ marginBottom: 8 }}>Median score</Label>
+                <div className="vf-figure" style={{ fontSize: 30, color: toneVar(scoreTone(summary.median)) }}>
+                  {Math.round(summary.median)}
                 </div>
-                <div className="runway-sub">
-                  <span>{report.risk_signals_found} signals detected</span>
-                  <span>{report.claims_verified} claims checked</span>
+                <div style={{ fontSize: 12.5, color: "var(--text-3)", marginTop: 5 }}>
+                  the comparable population sits at 49
                 </div>
-              </div>
+              </Card>
+
+              <Card padding="18px 20px">
+                <Label style={{ marginBottom: 8 }}>Median deck read</Label>
+                <div className="vf-figure" style={{ fontSize: 30 }}>
+                  {summary.medianCoverage === null ? "—" : `${Math.round(summary.medianCoverage)}%`}
+                </div>
+                <div style={{ fontSize: 12.5, color: "var(--text-3)", marginTop: 5 }}>
+                  {summary.medianCoverage === null
+                    ? "not recorded on these reports"
+                    : "of each deck reached a structured field"}
+                </div>
+              </Card>
+
+              <Card padding="18px 20px" style={summary.attention ? { borderColor: "var(--caution-line)" } : undefined}>
+                <Label style={{ marginBottom: 8 }}>Needs attention</Label>
+                <div className="vf-figure" style={{ fontSize: 30, color: summary.attention ? "var(--caution)" : undefined }}>
+                  {summary.attention}
+                </div>
+                <div style={{ fontSize: 12.5, color: "var(--text-3)", marginTop: 5 }}>
+                  high risk, or under half the deck read
+                </div>
+              </Card>
             </div>
+          </Reveal>
+        )}
 
-            {/* SIGNALS */}
-            <div className="panel signals-section">
-              <div className="slabel">Key Signals</div>
-              {signals.length > 0 ? signals.map((s, i) => (
-                <motion.div
-                  key={i}
-                  className="signal-row"
-                  initial={{ opacity: 0, x: 6 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + i * 0.05, duration: 0.3 }}
-                >
-                  <div className="signal-left">
-                    <div className="signal-dot" style={{ background: s.dot }} />
-                    <span className="signal-name">{s.label}</span>
-                  </div>
-                  <div className="signal-val-wrap">
-                    <span className="signal-value">{s.value}</span>
-                    {s.up === true && <TrendingUp size={10} color="#0EA66A" />}
-                    {s.up === false && <TrendingDown size={10} color="#D93025" />}
-                  </div>
-                </motion.div>
-              )) : (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F", textAlign: "center", padding: "16px 0" }}>
-                  No signals detected
-                </div>
+        {summary && reports && reports.length > 2 && (
+          <Reveal delay={0.08}>
+            <Card padding="20px 22px" style={{ marginBottom: 26 }}>
+              <ScoreDistribution scores={reports.map((r) => r.final_score)} />
+            </Card>
+          </Reveal>
+        )}
+
+        {reports && reports.length > 0 && (
+          <div className="db-toolbar">
+            <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 320 }}>
+              <Search size={15} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-faint)" }} aria-hidden="true" />
+              <input
+                className="db-search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search company or verdict"
+                aria-label="Search analyses"
+              />
+            </div>
+            <div className="db-seg" role="group" aria-label="Sort deals">
+              {([["recent", "Recent"], ["score", "Score"], ["risk", "Risk"], ["company", "A–Z"]] as [SortKey, string][]).map(([key, label]) => (
+                <button key={key} aria-pressed={sort === key} onClick={() => setSort(key)}>{label}</button>
+              ))}
+            </div>
+            {summary && summary.attention > 0 && (
+              <div className="db-seg">
+                <button aria-pressed={onlyAttention} onClick={() => setOnlyAttention((v) => !v)}>
+                  Needs attention · {summary.attention}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {reports === null ? (
+          <Card padding={0}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex", alignItems: "center", gap: 16, padding: 18,
+                  borderBottom: i < 4 ? "1px solid var(--line)" : undefined,
+                }}
+              >
+                <Skeleton height={13} width={`${28 - i * 2}%`} />
+                <Skeleton height={13} width={52} style={{ marginLeft: "auto" }} />
+                <Skeleton height={13} width={64} />
+                <Skeleton height={13} width={90} />
+              </div>
+            ))}
+          </Card>
+        ) : visible.length === 0 ? (
+          <Card padding={0}>
+            <EmptyState
+              icon={<Upload size={20} />}
+              title={reports.length ? "Nothing matches" : "No analyses yet"}
+              body={
+                reports.length
+                  ? "No deal matches that filter."
+                  : "Upload a pitch deck. VentureFlow will extract its claims, check them against live sources, and say plainly what it could not establish."
+              }
+              action={
+                reports.length ? (
+                  <Button onClick={() => { setQuery(""); setOnlyAttention(false); }}>Clear filters</Button>
+                ) : (
+                  <Button variant="primary" icon={<Upload size={15} />} data-cursor="Upload" onClick={() => navigate("/upload")}>
+                    New analysis
+                  </Button>
+                )
+              }
+            />
+          </Card>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+              <Label>{visible.length} {visible.length === 1 ? "deal" : "deals"}</Label>
+              {allShared && (
+                <span style={{ fontSize: 12.5, color: "var(--text-3)" }}>
+                  These predate accounts, so they have no owner and are visible to anyone who can reach this deployment.
+                </span>
               )}
             </div>
-          </motion.div>
-        </div>
+
+            <div className="db-table">
+              <div className="db-head" aria-hidden="true">
+                <span className="vf-label">Company</span>
+                <span className="vf-label">Score</span>
+                <span className="vf-label db-col-risk">Risk</span>
+                <span className="vf-label db-col-cov">Deck read</span>
+                <span className="vf-label">Verdict</span>
+                <span />
+              </div>
+
+              {visible.map((r) => {
+                const cov = r.coverage_pct;
+                const covTone: Tone = typeof cov !== "number" ? "neutral"
+                  : cov >= 75 ? "verified" : cov >= 50 ? "caution" : "critical";
+                return (
+                  <button
+                    key={r.report_id}
+                    className="db-row"
+                    data-attention={needsAttention(r)}
+                    data-cursor="Open"
+                    onClick={() => open(r.report_id)}
+                    disabled={opening !== null}
+                    aria-busy={opening === r.report_id}
+                  >
+                    <span style={{ minWidth: 0 }}>
+                      <span className="db-company">{r.company}</span>
+                      <span className="db-when">{formatDate(r.created_at)}</span>
+                    </span>
+
+                    <ScoreMark score={r.final_score} />
+
+                    <span className="db-col-risk">
+                      <Badge tone={riskTone(r.risk_level)} size="sm" dot>
+                        {riskLabel(r.risk_level)}
+                      </Badge>
+                    </span>
+
+                    <span className="db-col-cov">
+                      {typeof cov === "number" ? (
+                        <Tooltip label={`${Math.round(cov)}% of this deck reached a structured field`}>
+                          <span className="db-cov" style={{ width: 132 }}>
+                            <span className="db-cov-track">
+                              <span
+                                className="db-cov-fill"
+                                style={{ width: `${Math.max(2, Math.min(100, cov))}%`, background: toneVar(covTone) }}
+                              />
+                            </span>
+                            <span className="db-cov-num vf-num">{Math.round(cov)}%</span>
+                          </span>
+                        </Tooltip>
+                      ) : (
+                        <span className="db-cov-num">—</span>
+                      )}
+                    </span>
+
+                    <span>
+                      <Badge tone={verdictTone(r.recommendation)} size="sm" title={r.recommendation}>
+                        {verdictShort(r.recommendation)}
+                      </Badge>
+                    </span>
+
+                    <span style={{ display: "flex", justifyContent: "flex-end" }}>
+                      {opening === r.report_id ? (
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                          style={{ display: "flex", color: "var(--accent)" }}
+                        >
+                          <Loader2 size={15} />
+                        </motion.span>
+                      ) : (
+                        <ArrowUpRight size={16} className="db-go" />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {summary && (summary.claimsChecked > 0 || summary.signals > 0) && (
+              <div
+                style={{
+                  display: "flex", gap: 28, flexWrap: "wrap", marginTop: 22,
+                  paddingTop: 18, borderTop: "1px solid var(--line)",
+                }}
+              >
+                <span style={{ fontSize: 13, color: "var(--text-3)" }}>
+                  <b className="vf-num" style={{ color: "var(--text)", fontWeight: 600 }}>{summary.claimsSupported}</b>
+                  {" of "}
+                  <b className="vf-num" style={{ color: "var(--text)", fontWeight: 600 }}>{summary.claimsChecked}</b>
+                  {" checked claims corroborated"}
+                </span>
+                <span style={{ fontSize: 13, color: "var(--text-3)" }}>
+                  <b className="vf-num" style={{ color: "var(--text)", fontWeight: 600 }}>{summary.signals}</b>
+                  {" risk signals detected across these decks"}
+                </span>
+                {report && (
+                  <button
+                    onClick={() => navigate("/analysis")}
+                    data-cursor="Open"
+                    style={{
+                      marginLeft: "auto", font: "inherit", fontSize: 13, fontWeight: 600,
+                      background: "none", border: "none", color: "var(--accent)", cursor: "pointer",
+                    }}
+                  >
+                    Back to {report.company} →
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

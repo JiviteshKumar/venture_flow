@@ -8,7 +8,13 @@
  * matter — no horizontal overflow, and a sidebar that gets out of the way —
  * so a regression fails the run instead of merely looking different.
  *
- *   node scripts/check-responsive.mjs [baseUrl]
+ *   node scripts/check-responsive.mjs [baseUrl] [sessionToken]
+ *
+ * A session token is needed because the sidebar only exists inside the signed-
+ * in layout: `/signin` renders full-bleed, without one. Run without a token
+ * and every width reports "sidebar=null", which reads as four failures when
+ * the truth is that the script never got past the login screen. Get a token by
+ * signing in and copying `vf_session_token` out of localStorage.
  */
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
@@ -16,6 +22,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const BASE = process.argv[2] || "http://localhost:5173";
+const TOKEN = process.argv[3] || "";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "screenshots");
 mkdirSync(OUT, { recursive: true });
 
@@ -30,7 +37,13 @@ const browser = await chromium.launch();
 let failures = 0;
 
 for (const { w, h, label, expect } of WIDTHS) {
-  const page = await browser.newPage({ viewport: { width: w, height: h } });
+  const context = await browser.newContext({ viewport: { width: w, height: h } });
+  if (TOKEN) {
+    await context.addInitScript((t) => {
+      try { localStorage.setItem("vf_session_token", t); } catch { /* private mode */ }
+    }, TOKEN);
+  }
+  const page = await context.newPage();
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.waitForTimeout(400);
 
@@ -55,14 +68,23 @@ for (const { w, h, label, expect } of WIDTHS) {
   });
 
   const problems = [];
+  // Without this the next four checks all fail with "got null", which says
+  // the sidebar is the wrong width when what actually happened is that the
+  // run never reached a page that has one.
+  if (m.sidebarWidth === null) {
+    problems.push(
+      "no sidebar in the DOM -- the run is on /signin. Pass a session token as "
+      + "the second argument: node scripts/check-responsive.mjs <baseUrl> <token>",
+    );
+  }
   if (m.overflowX > 1) problems.push(`horizontal overflow of ${m.overflowX}px`);
-  if (expect === "full" && m.sidebarWidth !== 252)
+  if (m.sidebarWidth !== null && expect === "full" && m.sidebarWidth !== 252)
     problems.push(`sidebar should be full width (252), got ${m.sidebarWidth}`);
-  if (expect === "rail" && m.sidebarWidth !== 68)
+  if (m.sidebarWidth !== null && expect === "rail" && m.sidebarWidth !== 68)
     problems.push(`sidebar should be an icon rail (68), got ${m.sidebarWidth}`);
-  if (expect === "drawer" && !m.sidebarOffscreen)
+  if (m.sidebarWidth !== null && expect === "drawer" && !m.sidebarOffscreen)
     problems.push("sidebar should be off-canvas but is occupying layout space");
-  if (expect === "drawer" && !m.toggleVisible)
+  if (m.sidebarWidth !== null && expect === "drawer" && !m.toggleVisible)
     problems.push("no drawer toggle button is visible");
 
   failures += problems.length;

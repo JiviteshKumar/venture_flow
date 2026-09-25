@@ -128,6 +128,9 @@ export default function SignIn() {
           background:
             radial-gradient(120% 120% at 0% 0%, #14315F 0%, #0B1120 55%, #070B14 100%);
           color: #E8EEF9;
+          /* Fixed, not themed: this panel is night in both themes. */
+          --si-on-aside:      rgba(232,238,249,0.85);
+          --si-on-aside-mute: rgba(232,238,249,0.65);
         }
         /* A slow, very low-contrast drift. It is the only looping animation in
            the app and it lives here because a sign-in screen is the one place
@@ -136,7 +139,7 @@ export default function SignIn() {
           position: absolute; inset: -30%;
           background:
             radial-gradient(40% 40% at 30% 30%, rgba(29,111,232,0.35), transparent 70%),
-            radial-gradient(35% 35% at 70% 65%, rgba(14,166,106,0.22), transparent 70%);
+            radial-gradient(35% 35% at 70% 65%, rgba(29,111,232,0.16), transparent 70%);
           filter: blur(50px);
           animation: si-drift 24s ease-in-out infinite alternate;
         }
@@ -144,14 +147,13 @@ export default function SignIn() {
           from { transform: translate3d(-3%, -2%, 0) scale(1); }
           to   { transform: translate3d(4%, 3%, 0) scale(1.08); }
         }
-        @media (prefers-reduced-motion: reduce) {
-          .si-aura { animation: none; }
-        }
+        :root[data-motion="off"] .si-aura { animation: none; }
+        
 
         .si-aside-inner { position: relative; z-index: 1; }
         .si-wordmark {
-          font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em;
-          text-transform: uppercase; color: rgba(232,238,249,0.65);
+          font-family: var(--font-sans); font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+          text-transform: uppercase; color: var(--si-on-aside-mute);
         }
         .si-headline {
           font-family: var(--font-display);
@@ -159,10 +161,10 @@ export default function SignIn() {
           line-height: 1.08; letter-spacing: -0.02em;
           margin: 22px 0 16px; color: #FFFFFF;
         }
-        .si-sub { font-size: 15px; line-height: 1.7; color: rgba(232,238,249,0.78); max-width: 42ch; }
+        .si-sub { font-size: 15px; line-height: 1.7; color: var(--si-on-aside); max-width: 42ch; }
         .si-points { position: relative; z-index: 1; display: grid; gap: 14px; margin-top: 36px; }
         .si-point { display: flex; gap: 11px; align-items: flex-start; font-size: 13.5px;
-                    line-height: 1.6; color: rgba(232,238,249,0.85); }
+                    line-height: 1.6; color: var(--si-on-aside); }
         .si-point svg { flex-shrink: 0; margin-top: 2px; color: #6FE3AC; }
 
         .si-form-wrap {
@@ -178,7 +180,7 @@ export default function SignIn() {
         .si-lede { font-size: 14px; color: var(--text-muted); margin: 0 0 26px; line-height: 1.6; }
 
         .si-label {
-          display: block; font-family: var(--font-mono); font-size: 10px;
+          display: block; font-family: var(--font-sans); font-size: 11px; font-weight: 600;
           letter-spacing: 0.11em; text-transform: uppercase; font-weight: 600;
           color: var(--text-muted); margin-bottom: 7px;
         }

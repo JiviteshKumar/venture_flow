@@ -259,6 +259,12 @@ export function MemoText({ text }: { text: string }) {
  * that did not exist.
  */
 export function memoPreview(text: string, limit = 320): { preview: string; truncated: boolean } {
+  // The memo opens with its own numbered heading ("1. EXECUTIVE SUMMARY"),
+  // which is useful in the full document and noise in a three-line preview:
+  // the card it sits in is already titled, and the heading pushed the first
+  // real sentence out of view.
+  text = text.replace(/^\s*#{0,3}\s*\d+[.)]\s*[A-Z][A-Z \-&]{3,}\s*[:.]?\s*/, "");
+
   const flat = (text || "")
     .replace(/^#{1,6}\s+/gm, "")
     .replace(/\*\*([^*]+)\*\*/g, "$1")

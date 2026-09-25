@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  Upload, LayoutDashboard, BarChart3, TrendingUp, Settings, Bell, Zap, Clock,
-  ChevronRight, Activity, Menu, X, LogOut,
+  Upload, LayoutDashboard, BarChart3, Zap, Activity, Menu, X, LogOut,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { formatElapsed, useElapsedSeconds } from "../../hooks/useElapsed";
 import { useAuth } from "../../context/AuthContext";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { motion } from "framer-motion";
+import PrefsControl from "../ui/PrefsControl";
 
 const initialsOf = (name: string) =>
   name
@@ -50,15 +50,13 @@ const Sidebar = () => {
   // Derive active deck display values from real report
   const deckName    = report?.company || companyName || null;
   const deckScore   = report ? Math.round(report.final_score) : null;
-  const deckRisk    = report?.risk_level || null;
   const deckRec     = report?.recommendation || null;
-  const scoreColor  = deckScore
-    ? (deckScore >= 75 ? "#0EA66A" : deckScore >= 50 ? "#1D6FE8" : "#D93025")
-    : "#1D6FE8";
-  const riskColor   = deckRisk === "HIGH" ? "#D93025" : deckRisk === "MEDIUM" ? "#C47A0A" : "#0EA66A";
-  const initials    = deckName
-    ? deckName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
-    : "—";
+  // Same thresholds as `scoreTone` in components/ui/primitives.tsx. The
+  // sidebar used to call 50-74 blue while every other surface called it amber,
+  // so one score wore two colours depending on which panel you looked at.
+  const scoreColor  = deckScore !== null
+    ? (deckScore >= 70 ? "var(--positive)" : deckScore >= 45 ? "var(--caution)" : "var(--negative)")
+    : "var(--accent)";
 
   return (
     <>
@@ -78,14 +76,10 @@ const Sidebar = () => {
           position: relative;
         }
 
-        .sb-root::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--sb-blue), var(--sb-green), var(--sb-amber));
-          z-index: 10;
-        }
+        /* A 2px blue-green-amber bar ran across the top of the sidebar:
+           three accent colours in a two-pixel strip, carrying no meaning, on a
+           product whose primary action is a fourth colour. The app has one
+           accent, and it is the button. */
 
         .sb-logo-area {
           padding: 22px 18px 18px;
@@ -222,8 +216,8 @@ const Sidebar = () => {
         }
 
         .sb-active-label {
-          font-family: var(--font-mono); font-size: 8.5px;
-          letter-spacing: 0.12em; text-transform: uppercase;
+          font-family: var(--font-sans); font-size: 11px; font-weight: 600;
+          letter-spacing: 0.07em; text-transform: uppercase;
           color: var(--sb-muted); margin-bottom: 9px;
           display: flex; align-items: center; gap: 5px;
         }
@@ -231,7 +225,7 @@ const Sidebar = () => {
         .sb-active-label-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sb-green); animation: sb-pulse 2s ease-in-out infinite; }
 
         .sb-active-deck-name { font-size: 13.5px; font-weight: 700; color: var(--sb-text); letter-spacing: -0.2px; margin-bottom: 2px; }
-        .sb-active-deck-meta { font-family: var(--font-mono); font-size: 9.5px; color: var(--sb-muted); margin-bottom: 11px; }
+        .sb-active-deck-meta { font-family: var(--font-sans); font-size: 12px; color: var(--sb-muted); margin-bottom: 11px; }
 
         .sb-active-score-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 
@@ -258,6 +252,17 @@ const Sidebar = () => {
 
         .sb-bottom-area { padding: 12px 16px 16px; border-top: 1px solid var(--sb-border); flex-shrink: 0; }
 
+        .sb-clear-btn {
+          display: flex; align-items: center; justify-content: center; gap: 7px;
+          width: 100%; margin-bottom: 10px; padding: 8px 10px;
+          font-family: var(--font-sans); font-size: 12.5px; font-weight: 500;
+          color: var(--sb-muted); background: var(--sb-surface);
+          border: 1px solid var(--sb-border); border-radius: 8px; cursor: pointer;
+          transition: color var(--dur-fast) var(--ease-out),
+                      border-color var(--dur-fast) var(--ease-out);
+        }
+        .sb-clear-btn:hover { color: var(--text-primary); border-color: var(--sb-border-strong); }
+
         .sb-actions-row { display: flex; gap: 6px; margin-bottom: 12px; }
 
         .sb-action-btn {
@@ -271,6 +276,7 @@ const Sidebar = () => {
 
         .sb-notif-badge { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--sb-red); border: 1.5px solid white; }
 
+        .sb-prefs-row { display: flex; justify-content: center; padding: 2px 0 8px; }
         .sb-user-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; cursor: pointer; transition: background 0.12s ease; border: 1px solid transparent; }
 
         .sb-user-row:hover { background: var(--sb-surface); border-color: var(--sb-border); }
@@ -278,7 +284,7 @@ const Sidebar = () => {
         .sb-user-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, rgba(29,111,232,0.15), rgba(14,166,106,0.15)); border: 1px solid var(--sb-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--sb-blue); flex-shrink: 0; }
 
         .sb-user-name { font-size: 12.5px; font-weight: 600; color: var(--sb-text); letter-spacing: -0.1px; }
-        .sb-user-role { font-family: var(--font-mono); font-size: 9px; color: var(--sb-muted); }
+        .sb-user-role { font-family: var(--font-sans); font-size: 11.5px; color: var(--sb-muted); }
         .sb-user-caret { margin-left: auto; color: var(--sb-muted); }
 
         /* ── Identity row ──────────────────────────────────────────────── */
@@ -291,14 +297,14 @@ const Sidebar = () => {
         .sb-user-setname:hover { text-decoration: underline; }
         .sb-user-role { display: flex; align-items: center; gap: 6px; }
         .sb-demo-badge {
-          font-family: var(--font-mono); font-size: 8.5px; font-weight: 600;
+          font-family: var(--font-sans); font-size: 12px; font-weight: 600;
           letter-spacing: 0.08em; text-transform: uppercase;
           color: var(--sb-amber); background: rgba(196,122,10,0.10);
           border: 1px solid rgba(196,122,10,0.22);
           border-radius: 4px; padding: 1px 5px;
         }
         .sb-user-role-note {
-          font-family: var(--font-mono); font-size: 9px; color: var(--text-muted);
+          font-family: var(--font-sans); font-size: 11.5px; color: var(--text-muted);
         }
         .sb-user-caret-btn {
           background: none; border: none; padding: 4px; cursor: pointer;
@@ -375,9 +381,8 @@ const Sidebar = () => {
           }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          .sb-root { transition: none; }
-        }
+        :root[data-motion="off"] .sb-root { transition: none; }
+        
       `}</style>
 
       <button
@@ -416,12 +421,8 @@ const Sidebar = () => {
             <div className="sb-logo-icon">
               <Zap size={17} color="#fff" strokeWidth={2.2} fill="#fff" />
             </div>
-            <div>
-              <div className="sb-logo-name">VentureFlow</div>
-              <div className="sb-logo-tagline">Investment AI</div>
-            </div>
+            <div className="sb-logo-name">VentureFlow</div>
           </div>
-          <span className="sb-version-chip">v2.1</span>
         </div>
 
         {/* The BULL / BEAR / LIVE pills stood here.
@@ -436,7 +437,8 @@ const Sidebar = () => {
 
         {/* NAV */}
         <div className="sb-nav-area">
-          <div className="sb-nav-label">Menu</div>
+          {/* A "MENU" label above three links: the links are self-evidently
+              the menu, and it cost a line of uppercase type on every screen. */}
           <nav>
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -474,29 +476,28 @@ const Sidebar = () => {
           {/* ANALYZING STATE */}
           {isAnalyzing && (
             <div className="sb-analyzing-card">
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: "#1D6FE8", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                  <Activity size={9} color="#1D6FE8" />
+              <div className="vf-label" style={{ color: "var(--accent)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} style={{ display: "flex" }}>
+                  <Activity size={11} color="var(--accent)" />
                 </motion.div>
                 Analyzing…
               </div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#0B1120", marginBottom: 3 }}>
-                {companyName || "Processing deck"}
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                {companyName || "Your deck"}
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", marginBottom: 3 }}>
+              <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginBottom: 10, lineHeight: 1.5 }}>
                 {currentStage}
-              </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#8A94A6", marginBottom: 10 }}>
-                {formatElapsed(elapsed)} elapsed
+                <br />
+                <span className="vf-num">{formatElapsed(elapsed)}</span> elapsed
               </div>
               <div style={{ height: 3, background: "rgba(15,23,42,0.07)", borderRadius: 3, overflow: "hidden" }}>
                 <motion.div
-                  style={{ height: "100%", background: "linear-gradient(90deg, #1D6FE8, #60A5FA)", borderRadius: 3 }}
+                  style={{ height: "100%", background: "var(--accent)", borderRadius: 3 }}
                   animate={{ width: `${progressPct}%` }}
                   transition={{ duration: 0.5 }}
                 />
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8.5, color: "#5D6B7F", marginTop: 5, textAlign: "right" }}>
+              <div className="vf-num" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, textAlign: "right" }}>
                 {progressPct}%
               </div>
             </div>
@@ -505,26 +506,20 @@ const Sidebar = () => {
           {/* ACTIVE DECK CARD */}
           {isDone && deckName && (
             <button type="button" className="sb-active-card" onClick={() => navigate("/analysis")} aria-label={`Open analysis for ${deckName}`}>
-              <div className="sb-active-label">
-                <div className="sb-active-label-dot" />
-                Active Deck
-              </div>
+              {/* This card used to state one score four times: a "52 / 100"
+                  chip, a bar filled to 52%, the line "52% investment score",
+                  and a risk chip repeating the report header -- all beside a
+                  Recent Decks entry for the same deck, showing 52 again. It is
+                  a door to the report, so it carries only enough to say which
+                  report is behind it. */}
+              <div className="sb-active-label">Open report</div>
               <div className="sb-active-deck-name">{deckName}</div>
-              <div className="sb-active-deck-meta">{deckRec || "Analyzed"}</div>
-              <div className="sb-active-score-row">
-                <span className="sb-score-chip" style={{ background: `${scoreColor}12`, color: scoreColor, border: `1px solid ${scoreColor}28` }}>
-                  {deckScore} / 100
+              <div className="sb-active-score-row" style={{ marginBottom: 0 }}>
+                <span className="sb-active-deck-meta" style={{ marginBottom: 0 }}>{deckRec || "Analysed"}</span>
+                <span className="sb-score-chip" style={{ color: scoreColor, background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                  {deckScore}
                 </span>
-                {deckRisk && (
-                  <span className="sb-risk-chip" style={{ color: riskColor, background: `${riskColor}10`, border: `1px solid ${riskColor}25` }}>
-                    {deckRisk} Risk
-                  </span>
-                )}
               </div>
-              <div className="sb-active-progress">
-                <div className="sb-active-progress-fill" style={{ width: `${deckScore}%`, background: `linear-gradient(90deg, ${scoreColor}, ${scoreColor}99)` }} />
-              </div>
-              <div className="sb-active-progress-label">{deckScore}% investment score</div>
             </button>
           )}
 
@@ -532,52 +527,19 @@ const Sidebar = () => {
           {!isAnalyzing && !isDone && (
             <button type="button" className="sb-active-card" onClick={() => navigate("/upload")} aria-label="Upload a deck to get started" style={{ cursor: "pointer", borderStyle: "dashed", background: "transparent", width: "100%", textAlign: "inherit" }}>
               <div style={{ textAlign: "center", padding: "8px 0" }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#5D6B7F", lineHeight: 1.6 }}>
-                  No active deck<br />
-                  <span style={{ color: "#1D6FE8" }}>Upload one to get started →</span>
+                <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  No deck open<br />
+                  <span style={{ color: "var(--accent)", fontWeight: 600 }}>Upload one to start →</span>
                 </div>
               </div>
             </button>
           )}
 
-          {/* RECENT DECKS */}
-          {isDone && report && (
-            <>
-              <div className="sb-section-divider" />
-              <div className="sb-section-header">
-                <div className="sb-section-title">
-                  <Clock size={9} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
-                  Recent Decks
-                </div>
-              </div>
-              <button style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                padding: "9px 10px", borderRadius: 9, cursor: "pointer",
-                background: "rgba(29,111,232,0.04)", border: "1px solid rgba(29,111,232,0.15)",
-                marginBottom: 2, textAlign: "left",
-              }} onClick={() => navigate("/analysis")}
-                type="button"
-                aria-label={`Open the most recent analysis${deckName ? `: ${deckName}` : ""}`}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8, background: "#F7F8FA",
-                  border: "1px solid rgba(15,23,42,0.08)", display: "flex",
-                  alignItems: "center", justifyContent: "center",
-                  fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, color: "#4A5568",
-                }}>{initials}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "#0B1120", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {deckName}
-                  </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F" }}>
-                    Today
-                  </div>
-                </div>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: scoreColor }}>
-                  {deckScore}
-                </span>
-              </button>
-            </>
-          )}
+          {/* A "Recent Decks" list stood here. It had exactly one entry --
+              the deck already named in the card above it -- repeating that
+              deck's name, its score, and the word "Today". A list of one, of
+              the thing directly above it. The dashboard is the list of past
+              analyses, and it is one click away. */}
 
           {/* A "Starred" section with a dashed empty box reading "Star a deck
               from the Dashboard to pin it here" stood here. Nothing in this
@@ -590,18 +552,26 @@ const Sidebar = () => {
 
         {/* BOTTOM */}
         <div className="sb-bottom-area">
-          <div className="sb-actions-row">
-            <button type="button" className="sb-action-btn" title="Notifications" aria-label="Notifications">
-              <Bell size={13} strokeWidth={1.75} />
-              <div className="sb-notif-badge" role="status" aria-label="Unread notifications" />
+          {/* Three icon buttons stood here. Notifications opened nothing and
+              carried a red unread dot that was permanently lit; Portfolio
+              trends opened nothing at all; and the third, drawn as a settings
+              gear, silently discarded the open analysis. A control that lies
+              about what it does is worse than no control, and two that do
+              nothing teach people not to trust the rest.
+
+              What is left is the one action that existed: clearing the deck in
+              hand, labelled as that, and only shown when there is one. */}
+          {(isDone || isAnalyzing) && (
+            <button
+              type="button"
+              className="sb-clear-btn"
+              onClick={reset}
+              title="Clear the deck currently open in this browser"
+            >
+              <X size={13} strokeWidth={1.9} />
+              Clear current deck
             </button>
-            <button type="button" className="sb-action-btn" title="Portfolio trends" aria-label="Portfolio trends">
-              <TrendingUp size={13} strokeWidth={1.75} />
-            </button>
-            <button type="button" className="sb-action-btn" title="Settings" aria-label="Settings — reset the current analysis" onClick={reset}>
-              <Settings size={13} strokeWidth={1.75} />
-            </button>
-          </div>
+          )}
           {/* Real identity, at last.
               This row used to read "James Dolan / Partner, VC" -- a fictional
               person presented as the signed-in user, on a tool whose entire
@@ -610,6 +580,9 @@ const Sidebar = () => {
               nobody and gated nothing, with a note that real auth was deferred.
               It is no longer deferred: this is the account, and signing out
               ends the session server-side. */}
+          <div className="sb-prefs-row">
+            <PrefsControl compact />
+          </div>
           <div className="sb-user-row">
             <div className="sb-user-avatar" aria-hidden="true">
               {user ? initialsOf(user.display_name || user.email) : (displayName ? initialsOf(displayName) : "?")}
