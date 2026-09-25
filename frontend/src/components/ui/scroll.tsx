@@ -334,11 +334,29 @@ export function Act({
     };
   }, [reduced]);
 
+  /**
+   * WHY EVERY ACT AFTER THE FIRST IS PULLED UP BY A VIEWPORT
+   *
+   * A sticky child of height 100vh inside a section of length*100vh is pinned
+   * for (length - 1) * 100vh and then slides out over the remaining 100vh.
+   * During that slide the act's progress has already reached 1, so its content
+   * has finished departing -- and the NEXT act's section has not started, so
+   * its content, centred in its own 100vh child, is still below the fold.
+   *
+   * The result was a full screen-height of scrolling with nothing on it,
+   * between every pair of scenes. Measured: eight of forty samples down the
+   * film were effectively blank.
+   *
+   * Pulling each act up by exactly one viewport makes the next act begin
+   * pinning at the instant this one unpins. The outgoing scene now slides away
+   * over the incoming one instead of over nothing, which is a crossfade rather
+   * than a gap, and costs no extra scrolling.
+   */
   return (
     <section
       id={id}
       ref={outer as never}
-      className={className}
+      className={`vf-act ${className}`.trim()}
       style={{ position: "relative", height: reduced ? "auto" : `${length * 100}vh` }}
     >
       <div
@@ -352,6 +370,19 @@ export function Act({
         {children(progress, reduced)}
       </div>
     </section>
+  );
+}
+
+/**
+ * The overlap rule for consecutive acts. Rendered once by ActStyles, which a
+ * page with acts on it mounts alongside them.
+ */
+export function ActStyles() {
+  return (
+    <style>{`
+      /* See the note in Act: this closes the blank viewport between scenes. */
+      :root[data-motion="on"] .vf-act + .vf-act { margin-top: -100vh; }
+    `}</style>
   );
 }
 

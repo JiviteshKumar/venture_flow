@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
@@ -227,6 +228,118 @@ def _evidence_block(
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Grounding the team capability scores
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# The team agent is asked for 4-6 capability areas, each scored 0-100 with "a
+# short verbatim evidence excerpt", and told to return an empty list when there
+# is no team evidence at all. That instruction is not enforcement, and the
+# difference showed up in the product: one report said "SEARCHED -- NO FOUNDERS
+# FOUND" at the bottom of the page while a radar above it scored Commercial
+# Execution at 80. Nothing in the deck said that. Nothing had to.
+#
+# This is the same class of failure `agents/founder_research.py` already guards
+# against for names, and it takes the same remedy: the model may only pick out
+# text it was handed, and a claim whose evidence is not actually in the source
+# is dropped by a string check the model does not participate in.
+#
+# The test is deliberately not an exact substring match. Models re-punctuate,
+# fix casing and drop a stray line break when quoting, and rejecting a real
+# quote over a comma would push this toward showing nothing at all -- which is
+# its own failure. So both sides are normalised to bare lower-case words and a
+# capability survives if any six-word run of its evidence appears in the
+# source. Six words of exact sequence is far past coincidence, and no amount of
+# fluent invention produces it.
+
+_WORDS = re.compile(r"[a-z0-9]+")
+
+# A quote shorter than this cannot be checked meaningfully: "strong team" will
+# appear in almost any deck by chance, so matching it proves nothing.
+_MIN_QUOTE_WORDS = 4
+_SHINGLE = 6
+
+
+def _normalised_words(text: str) -> list[str]:
+    return _WORDS.findall((text or "").lower())
+
+
+def _is_grounded(evidence: str, haystack_words: list[str]) -> bool:
+    """Whether this evidence really came from the material the agent was given."""
+    quote = _normalised_words(evidence)
+    if len(quote) < _MIN_QUOTE_WORDS:
+        return False
+    if len(quote) <= _SHINGLE:
+        # Short quote: it has to appear in full.
+        return any(
+            haystack_words[i:i + len(quote)] == quote
+            for i in range(max(0, len(haystack_words) - len(quote) + 1))
+        )
+    for start in range(len(quote) - _SHINGLE + 1):
+        run = quote[start:start + _SHINGLE]
+        if any(
+            haystack_words[i:i + _SHINGLE] == run
+            for i in range(max(0, len(haystack_words) - _SHINGLE + 1))
+        ):
+            return True
+    return False
+
+
+def ground_team_capabilities(
+    team: dict[str, Any], document: str, founder_checks: list[dict[str, Any]] | None = None
+) -> dict[str, Any]:
+    """Drop any capability score whose evidence is not in the source material.
+
+    Returns the team section with `capabilities` filtered, plus a record of
+    what was removed so the report can say so rather than quietly showing a
+    smaller radar. Never raises: a malformed specialist result loses its
+    capabilities, which is the safe direction.
+    """
+    capabilities = team.get("capabilities")
+    if not isinstance(capabilities, list) or not capabilities:
+        return team
+
+    # Everything the agent was actually shown about the team.
+    sources = [document or ""]
+    for check in founder_checks or []:
+        if not isinstance(check, dict):
+            continue
+        for key in ("evidence_summary", "name", "assessment"):
+            value = check.get(key)
+            if isinstance(value, str):
+                sources.append(value)
+    haystack = _normalised_words(" ".join(sources))
+
+    kept: list[dict[str, Any]] = []
+    dropped: list[str] = []
+    for capability in capabilities:
+        if not isinstance(capability, dict):
+            continue
+        area = str(capability.get("area") or "").strip()
+        evidence = str(capability.get("evidence") or "").strip()
+        if area and evidence and _is_grounded(evidence, haystack):
+            kept.append(capability)
+        elif area:
+            dropped.append(area)
+
+    team = dict(team)
+    team["capabilities"] = kept
+    if dropped:
+        team["capabilities_dropped"] = dropped
+        # Said in the report's own words, because a radar that silently loses
+        # half its axes looks like a smaller assessment rather than a rejected
+        # one.
+        team["capabilities_dropped_reason"] = (
+            f"{len(dropped)} capability score(s) were discarded because the evidence "
+            "quoted for them does not appear in the deck or in the founder background "
+            "checks: " + ", ".join(dropped) + "."
+        )
+        logger.warning(
+            "Dropped %d ungrounded team capabilities: %s", len(dropped), ", ".join(dropped)
+        )
+    return team
+
+
 def run_investment_agents(
     company: str,
     document: str,
@@ -282,4 +395,10 @@ def run_investment_agents(
         futures = {executor.submit(_json_agent, role, task, evidence, fallback): name for name, (role, task, fallback) in jobs.items()}
         for future in as_completed(futures):
             results[futures[future]] = future.result()
+
+    # The team agent's capability scores are checked against the material it
+    # was given before they leave this module, so no consumer has to trust
+    # them. See ground_team_capabilities.
+    if isinstance(results.get("team"), dict):
+        results["team"] = ground_team_capabilities(results["team"], document, founder_checks)
     return results

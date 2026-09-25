@@ -1519,7 +1519,9 @@ const Analysis = () => {
                           genuinely had no team slide or the agent call failed, and
                           claiming the former when the latter happened is the kind of
                           confidently-wrong empty state this tab already had once. */}
-                      The team analyst produced no capability scores for this deck.
+                      {team?.capabilities_dropped?.length
+                        ? `Every capability the team analyst scored was discarded: the evidence it quoted does not appear in the deck or in the founder background checks (${team.capabilities_dropped.join(", ")}).`
+                        : "The team analyst produced no capability scores for this deck."}
                       {founderChecks.length > 0
                         ? " Founder names were found and checked against public web evidence — see below."
                         : founderDiscovery?.attempted
@@ -1529,14 +1531,31 @@ const Analysis = () => {
                         ? " This analysis is flagged incomplete, so the agent may not have run at all."
                         : ""}
                     </p>}
+                    {/* Each chip carries the line the score was read off, because a
+                        capability score is only worth what is behind it. The server
+                        already drops any whose quote is not in the deck or in the
+                        founder checks (agents/investment_agents.ground_team_capabilities);
+                        showing the quote is how a reader checks that for themselves. */}
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F" }}>{r.subject}</span>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
+                        <div
+                          key={i}
+                          data-tip={r.evidence || undefined}
+                          style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}
+                        >
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "var(--text-2)" }}>{r.subject}</span>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "var(--verified)" : "var(--caution)" }}>{r.value}</span>
                         </div>
                       ))}
                     </div>
+
+                    {/* A radar that silently loses half its axes looks like a smaller
+                        assessment rather than a rejected one, so the report says it. */}
+                    {team?.capabilities_dropped_reason && (
+                      <p style={{ marginTop: 12, fontSize: 12.5, lineHeight: 1.65, color: "var(--caution)" }}>
+                        {team.capabilities_dropped_reason}
+                      </p>
+                    )}
                   </Panel>
 
                   <Panel accentColor="#D93025">

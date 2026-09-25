@@ -527,6 +527,14 @@ export interface AnalyzeResponse {
       confidence: number;
       overall_assessment: string;
       capabilities: Array<{ area: string; score: number; evidence: string }>;
+      /**
+       * Capability areas the server scored and then discarded, because the
+       * evidence quoted for them does not appear in the deck or in the founder
+       * background checks. See agents/investment_agents.ground_team_capabilities.
+       * Present only when something was dropped.
+       */
+      capabilities_dropped?: string[];
+      capabilities_dropped_reason?: string;
       strengths: string[];
       gaps: string[];
       questions: string[];
