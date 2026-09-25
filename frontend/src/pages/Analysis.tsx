@@ -613,6 +613,8 @@ const Analysis = () => {
 
   const marketComparables = report.sections?.market_comparables;
   const corpusComparables = (marketComparables?.available && marketComparables.comparables) || [];
+  /** Real competitors, from the public record. See agents/competitor_search.py. */
+  const namedCompetitors = report.sections?.named_competitors;
   const portfolioMatches = report.similar_companies ?? [];
   const competitors = corpusComparables.length
     ? corpusComparables.map(c => ({
@@ -943,6 +945,25 @@ const Analysis = () => {
         /* The methodology disclosures on Competitor Insights. Open they
            buried a five-row table under four hundred words; deleted they would
            have taken the caveats that stop the number being misread. */
+        .an-comp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .an-comp-chip {
+          display: flex; flex-direction: column; gap: 2px;
+          padding: 9px 12px; border-radius: 10px;
+          border: 1px solid var(--line); background: var(--surface-2);
+          max-width: 260px;
+          transition: border-color var(--dur-fast) var(--ease-out),
+                      transform var(--dur-fast) var(--ease-out);
+        }
+        .an-comp-chip:hover { border-color: var(--line-strong); }
+        :root[data-motion="on"] .an-comp-chip:hover { transform: translateY(-1px); }
+        .an-comp-chip-name { font-size: 13px; font-weight: 600; color: var(--text); }
+        .an-comp-chip-what { font-size: 11.5px; line-height: 1.5; color: var(--text-3); }
+        .an-comp-chip-src {
+          font-size: 11px; color: var(--accent); text-decoration: none;
+          margin-top: 2px; width: fit-content;
+        }
+        .an-comp-chip-src:hover { text-decoration: underline; }
+
         .an-comp-why { margin-top: 10px; }
         .an-comp-why > summary {
           cursor: pointer; list-style: none;
@@ -1746,7 +1767,53 @@ const Analysis = () => {
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                    <SLabel>Competitive Landscape</SLabel>
+                    {/* NAMED COMPETITORS, then the outcome corpus.
+                        These answer different questions and the order matters.
+                        The corpus table below is matched with a TF-IDF
+                        embedder, so its similarity is LEXICAL -- shared
+                        wording, not shared business. That is the right tool
+                        for giving the score a base rate and the wrong tool for
+                        "who does this company compete with": Canva's deck
+                        returned a surf gear store, a job board and an
+                        education startup at 55-61%. So the competitor question
+                        is answered from the public record first, and the
+                        corpus keeps its own heading for what it actually is. */}
+                    {namedCompetitors?.available && (namedCompetitors.competitors?.length ?? 0) > 0 && (
+                      <div style={{ marginBottom: 22 }}>
+                        <SLabel>Named as competitors</SLabel>
+                        <p style={{ color: "var(--text-3)", fontSize: 12, lineHeight: 1.6, margin: "6px 0 10px" }}>
+                          {namedCompetitors.note}
+                        </p>
+                        <div className="an-comp-chips">
+                          {namedCompetitors.competitors!.map((c) => (
+                            <div className="an-comp-chip" key={c.name}>
+                              <span className="an-comp-chip-name">{c.name}</span>
+                              {c.what_it_does && (
+                                <span className="an-comp-chip-what">{c.what_it_does}</span>
+                              )}
+                              {(c.sources?.length ?? 0) > 0 && (
+                                <a
+                                  className="an-comp-chip-src"
+                                  href={c.sources![0]}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  data-cursor="Visit"
+                                >
+                                  {c.sources!.length} source{c.sources!.length === 1 ? "" : "s"}
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {namedCompetitors && !namedCompetitors.available && (
+                      <p style={{ color: "var(--text-3)", fontSize: 12.5, lineHeight: 1.65, margin: "0 0 18px" }}>
+                        {namedCompetitors.reason}
+                      </p>
+                    )}
+
+                    <SLabel>Companies with a recorded outcome</SLabel>
                     {/*
                       The population scope is stated ABOVE the table, not in an
                       11px footnote below it.
