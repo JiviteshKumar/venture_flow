@@ -5,7 +5,7 @@ import {
   ArrowLeft, ArrowRight, Check, Clock, FileText, Loader2, X,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { formatBytes } from "../utils/format";
+import { companyNameFromFilename, formatBytes } from "../utils/format";
 import { formatElapsed, useElapsedSeconds } from "../hooks/useElapsed";
 import OutOfScopeDialog from "../components/common/OutOfScopeDialog";
 import { GrowBar } from "../components/ui/Motion";
@@ -151,7 +151,7 @@ const UploadDeck = () => {
     setFileSize(formatBytes(f.size));
     setFileObj(f);
     setFoundersTouched(false);
-    const derived = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+    const derived = companyNameFromFilename(f.name);
     if (!companyInput) setCompanyInput(derived);
     if (status === "done" || status === "ready") reset();
     // Parse immediately, so the readout can show what is in the deck before
