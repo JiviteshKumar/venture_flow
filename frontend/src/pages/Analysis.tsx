@@ -14,7 +14,7 @@ import type { DeckPage } from "../components/analysis/DeckSculpture";
 import AskDrawer from "../components/analysis/AskDrawer";
 import EvidenceGraph from "../components/analysis/EvidenceGraph";
 import ScoreLedger from "../components/analysis/ScoreLedger";
-import { CapabilityRadar, ClaimBreakdown } from "../components/charts/Charts";
+import { ClaimBreakdown, FounderRadar } from "../components/charts/Charts";
 import { Reveal, Tilt } from "../components/ui/scroll";
 import ReliabilityStrip from "../components/analysis/ReliabilityStrip";
 import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
@@ -940,6 +940,26 @@ const Analysis = () => {
         /* A chapter: a number, a title, and the thing itself. The numbers are
            the reader's position in the document, which a stack of identical
            cards never tells them. */
+        /* The methodology disclosures on Competitor Insights. Open they
+           buried a five-row table under four hundred words; deleted they would
+           have taken the caveats that stop the number being misread. */
+        .an-comp-why { margin-top: 10px; }
+        .an-comp-why > summary {
+          cursor: pointer; list-style: none;
+          font-family: var(--font-sans); font-size: 11.5px; font-weight: 600;
+          color: var(--text-3); letter-spacing: 0.02em;
+          padding: 4px 0;
+          transition: color var(--dur-fast) var(--ease-out);
+        }
+        .an-comp-why > summary::-webkit-details-marker { display: none; }
+        .an-comp-why > summary::before { content: "▸ "; display: inline-block; transition: transform var(--dur-fast) var(--ease-out); }
+        .an-comp-why[open] > summary::before { content: "▾ "; }
+        .an-comp-why > summary:hover { color: var(--text); }
+        .an-comp-why > p {
+          color: var(--text-3); font-size: 11.5px; line-height: 1.65;
+          margin: 6px 0 0;
+        }
+
         .an-chapter { display: flex; flex-direction: column; gap: 26px; }
         .an-chapter-body { display: flex; flex-direction: column; gap: 26px; }
         /* The hint sits under the title inside its own reveal wrapper, so the
@@ -1508,12 +1528,28 @@ const Analysis = () => {
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 250px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                    <SLabel>Team Capability Radar</SLabel>
-                    {teamRadarData.length > 0 ? (
-                      <CapabilityRadar
-                        capabilities={teamRadarData.map((d) => ({ area: d.subject, score: d.value }))}
-                      />
-                    ) : <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7 }}>
+                    {/* The founder radar, not the team one.
+                        This panel used to hold a Team Capability Radar scoring
+                        Technical Depth, Commercial Execution and the like --
+                        judgements about people this pipeline has never met, sat
+                        directly above a section that often said no founder could
+                        be established at all. It was the most confident thing on
+                        a page with nothing to be confident about. What replaces
+                        it plots how well each NAME is established, every axis a
+                        recorded fact about the evidence. Capability scores that
+                        survive grounding are still listed as chips below. */}
+                    {/* No SLabel: the chart frame carries its own label and
+                        caption, and two "Founder evidence" headings stacked. */}
+                    <FounderRadar
+                      founders={founderChecks.map((f) => ({
+                        name: f.name || "",
+                        assessment: f.assessment,
+                        confidence: f.confidence,
+                        sources: f.sources,
+                        origin: f.origin,
+                      }))}
+                    />
+                    {teamRadarData.length === 0 && <p style={{ color: "var(--text-2)", fontSize: 13, lineHeight: 1.7, marginTop: 14 }}>
                       {/* Do not assert *why* the scores are missing. The team analyst
                           returns the same empty `capabilities` list whether the deck
                           genuinely had no team slide or the agent call failed, and
@@ -1756,9 +1792,23 @@ const Analysis = () => {
                         border: "1px solid rgba(234,179,8,0.35)",
                         borderRadius: 6, padding: "8px 10px", margin: "8px 0 12px",
                       }}>
+                        {/* WHY THIS IS COLLAPSED AND NOT CUT
+                            Four paragraphs of methodology used to sit open above
+                            a five-row table. Every one of them is true and two of
+                            them stop a specific misreading, so deleting them would
+                            trade honesty for tidiness. Collapsed, the table is
+                            readable at a glance and the reasoning is one click away
+                            for the reader who is weighing the number rather than
+                            skimming it. */}
                         <p style={{ color: "#EAB308", fontSize: 12, fontWeight: 600, margin: 0 }}>
                           Two populations, searched separately
                         </p>
+                        <p style={{ color: "var(--text-2)", fontSize: 11.5, lineHeight: 1.6, margin: "4px 0 0" }}>
+                          These are the nearest matches by wording, not by business
+                          relevance. Read the names, not the number.
+                        </p>
+                        <details className="an-comp-why">
+                          <summary>How this list was built</summary>
                         {/*
                           This banner used to read "Y Combinator companies only
                           -- no non-YC startups are represented". That was true
@@ -1799,6 +1849,7 @@ const Analysis = () => {
                               .join(" ")}
                           </p>
                         )}
+                        </details>
                       </div>
                     )}
 
@@ -1876,10 +1927,17 @@ const Analysis = () => {
                           ))}
                         </tbody>
                       </table>
-                      <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, marginTop: 12 }}>
-                        Source: {comparablesSource}
-                        {marketComparables?.caveat && corpusComparables.length ? ` — ${marketComparables.caveat}` : ""}
-                      </p>
+                      {/* Roughly four hundred words of corpus provenance. It
+                          belongs in the report -- somebody weighing these rows
+                          needs to know what "similarity" measures here -- and it
+                          does not belong open, under a five-row table. */}
+                      <details className="an-comp-why">
+                        <summary>Where this corpus comes from</summary>
+                        <p>
+                          {comparablesSource}
+                          {marketComparables?.caveat && corpusComparables.length ? ` — ${marketComparables.caveat}` : ""}
+                        </p>
+                      </details>
                       {corpusComparables.length > 0 && portfolioMatches.length > 0 && (
                         <p style={{ color: "#64748B", fontSize: 12, marginTop: 8 }}>
                           Also matched in your own history: {portfolioMatches.map(m => m.name).join(", ")}.
