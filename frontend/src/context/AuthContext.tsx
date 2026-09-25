@@ -27,10 +27,25 @@ import { api, parseApiError, sessionToken, type AuthUser } from "../services/api
  * sign in, the other tells them the deployment cannot have accounts at all.
  */
 
-export type AuthStatus = "loading" | "signed-in" | "signed-out";
+/**
+ * "unreachable" is the state this used to be missing, and its absence was a
+ * bug with teeth: every failure of `/auth/me` -- a 429 from the rate limiter,
+ * a 500, a dropped database connection, a timeout on a sleeping host -- was
+ * recorded as "signed-out", and RequireAuth duly redirected to the sign-in
+ * screen. A user with a perfectly valid session was thrown out of the report
+ * they were reading because one request lost a race. The token was kept, so
+ * reloading fixed it, which is exactly what makes the bug hard to report.
+ *
+ * Now: no token means signed-out, a rejected token means signed-out, and a
+ * request that never got an answer means unreachable -- which keeps the user
+ * where they are and retries.
+ */
+export type AuthStatus = "loading" | "signed-in" | "signed-out" | "unreachable";
 
 interface AuthContextValue {
   status: AuthStatus;
+  /** Re-run the session check, for the retry on the unreachable hold. */
+  retry: () => void;
   user: AuthUser | null;
   accountsEnabled: boolean;
   emailNote: string;
@@ -70,17 +85,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPasswordMinLength(who.password_min_length || 10);
       setStatus(who.user ? "signed-in" : "signed-out");
     } catch {
-      // An unreachable backend is not a signed-in state. It is also not a
-      // reason to wipe a stored token: the session may be perfectly valid and
-      // the API merely down, so the token stays and this retries on reload.
+      // The request did not come back. That is not the same as being signed
+      // out, and it must not be rendered as one: the token stays, the user
+      // stays where they are, and this retries.
       setUser(null);
-      setStatus("signed-out");
+      setStatus(sessionToken.get() ? "unreachable" : "signed-out");
     }
   }, []);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Two automatic retries, then the hold asks the reader to try. A backend
+  // that has gone to sleep answers within a minute; one that is genuinely down
+  // should stop being polled rather than be hammered by every open tab.
+  useEffect(() => {
+    if (status !== "unreachable") return;
+    const timer = window.setTimeout(() => { void refresh(); }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [status, refresh]);
 
   // The server rejected this session -- expired, revoked, or the production
   // sign-in gate. Clear local state so RequireAuth sends the user to sign in,
@@ -93,6 +117,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener("vf:signin-required", onSignedOut);
     return () => window.removeEventListener("vf:signin-required", onSignedOut);
   }, []);
+
+  const retry = useCallback(() => { void refresh(); }, [refresh]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
@@ -131,9 +157,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(() => ({
     status, user, accountsEnabled, emailNote, passwordMinLength,
-    signIn, signUp, signOut,
+    retry, signIn, signUp, signOut,
   }), [status, user, accountsEnabled, emailNote, passwordMinLength,
-       signIn, signUp, signOut]);
+       retry, signIn, signUp, signOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

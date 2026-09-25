@@ -24,10 +24,15 @@ import { useAuth } from "../../context/AuthContext";
  * 010 and `db.list_reports`).
  */
 export default function RequireAuth({ children }: { children: ReactNode }) {
-  const { status, accountsEnabled } = useAuth();
+  const { status, accountsEnabled, retry } = useAuth();
   const location = useLocation();
 
   if (status === "loading") return <SessionCheckHold />;
+
+  // The session check did not come back. Sending the reader to a sign-in form
+  // here would be a lie -- their session is very likely fine and the server
+  // is not answering -- and it would lose the page they were on.
+  if (status === "unreachable") return <UnreachableHold onRetry={retry} />;
 
   if (!accountsEnabled) return <>{children}</>;
 
@@ -97,6 +102,49 @@ function SessionCheckHold() {
           immediate.
         </div>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * Shown when `/auth/me` could not be reached at all.
+ *
+ * It says which of the two possible things happened, because they call for
+ * different reactions: a sleeping free-tier host fixes itself in under a
+ * minute, and a backend that is down does not. Retrying is one button rather
+ * than a page reload, so the reader keeps their place.
+ */
+function UnreachableHold({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div
+      style={{ minHeight: "60vh", display: "grid", placeItems: "center", padding: 24 }}
+      role="status"
+    >
+      <div style={{ maxWidth: 440, textAlign: "center" }}>
+        <div
+          className="vf-md"
+          style={{ marginBottom: 10, color: "var(--text-primary)" }}
+        >
+          Cannot reach the server
+        </div>
+        <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--text-muted)", margin: "0 0 18px" }}>
+          Your session is still stored on this device &mdash; this is the server not
+          answering, not a sign-out. It retries automatically every few seconds.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          style={{
+            font: "inherit", fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+            padding: "9px 18px", borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border-strong)", background: "var(--surface)",
+            color: "var(--text-primary)",
+          }}
+        >
+          Try now
+        </button>
+      </div>
     </div>
   );
 }

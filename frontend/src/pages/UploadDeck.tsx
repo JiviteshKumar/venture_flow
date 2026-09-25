@@ -1,166 +1,64 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Upload, FileText, X, Zap, BarChart2, Users, Shield,
-  TrendingUp, CheckCircle, ArrowRight, Clock, TrendingDown,
-  Search, Globe, AlertTriangle, Database, ChevronRight,
-  Activity, Eye, Layers, Target
+  ArrowLeft, ArrowRight, Check, Clock, FileText, Loader2, X,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { formatBytes } from "../utils/format";
 import { formatElapsed, useElapsedSeconds } from "../hooks/useElapsed";
 import OutOfScopeDialog from "../components/common/OutOfScopeDialog";
-import { formatBytes } from "../utils/format";
+import { GrowBar } from "../components/ui/Motion";
+import { Magnetic, Reveal, SplitWords } from "../components/ui/scroll";
+import { Badge, BadgeStyles } from "../components/ui/Surface";
+import IntakePortal, { type IntakeState } from "../components/upload/IntakePortal";
+import DeckSculpture, { type DeckPage } from "../components/analysis/DeckSculpture";
+import AnalysisTheatre from "../components/analysis/AnalysisTheatre";
 
-// ─── DATA ────────────────────────────────────────────────────────────────────
+/**
+ * Submission, as the first scene rather than a form.
+ *
+ * THE SHAPE OF IT
+ *
+ * One statement, one target, and then a readout of what was actually found in
+ * the file. The aperture is empty until a deck exists; the moment one is
+ * parsed it is replaced by that deck's own pages in space, and the numbers
+ * beside it are counts taken from the extractor's output -- pages, claims,
+ * founders, financial signals, characters of text, and which reader produced
+ * them.
+ *
+ * WHAT IS NOT HERE
+ *
+ * No invented ingestion metrics. A reference version of this screen counts
+ * "142 entities" and "11 market signals"; this extractor produces neither, so
+ * neither is shown. Every figure below is one the pipeline genuinely returns,
+ * and a field the deck did not state renders as an em dash rather than a zero
+ * -- a deck that did not mention revenue and a company with no revenue are
+ * different findings.
+ */
 
 // Kept in step with document_extractor.SUPPORTED_FORMATS on the backend. The
 // upload used to be PDF-only, which forced founders to export their deck
 // before they could use the product at all.
-const ACCEPTED_EXTENSIONS = [".pdf", ".pptx", ".docx", ".txt", ".md"];
+const ACCEPTED = [".pdf", ".pptx", ".docx", ".txt", ".md"];
+const MAX_BYTES = 10 * 1024 * 1024;
 
-const analysisFeatures = [
-  {
-    icon: TrendingUp, label: "Market Validation",
-    desc: "TAM/SAM/SOM sizing & growth signals",
-    color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.18)",
-  },
-  {
-    icon: Users, label: "Founder Analysis",
-    desc: "Team capability & experience mapping",
-    color: "#1D6FE8", bg: "rgba(29,111,232,0.08)", border: "rgba(29,111,232,0.18)",
-  },
-  {
-    icon: BarChart2, label: "Competitive Intel",
-    desc: "Landscape threats & differentiation",
-    color: "#C47A0A", bg: "rgba(196,122,10,0.08)", border: "rgba(196,122,10,0.18)",
-  },
-  {
-    icon: Shield, label: "Risk Assessment",
-    desc: "Multi-factor risk scoring 0–100",
-    color: "#D93025", bg: "rgba(217,48,37,0.07)", border: "rgba(217,48,37,0.16)",
-  },
+/**
+ * The pipeline's own steps, in the order it reports them.
+ *
+ * These strings are matched against the stage the backend writes to the job
+ * row (see ventureflow_agent._stage), which is why they are phrased as the
+ * backend phrases them rather than as marketing copy.
+ */
+const STAGES = [
+  "Reading the document",
+  "Verifying claims against live web search",
+  "Detecting risk signals in the deck",
+  "Checking founder backgrounds",
+  "Running market, team, bull and bear agents",
+  "Retrieving evidence from prior reports",
+  "Writing the investment memo",
 ];
-
-const analysisSteps = [
-  { label: "Parsing document structure", pct: 16, icon: Layers },
-  { label: "Extracting market signals", pct: 32, icon: Globe },
-  { label: "Running Bull/Bear agents", pct: 50, icon: Activity },
-  { label: "Fact-checking claims", pct: 65, icon: Search },
-  { label: "Evaluating team profile", pct: 78, icon: Users },
-  { label: "Running risk models", pct: 90, icon: AlertTriangle },
-  { label: "Generating report", pct: 100, icon: Database },
-];
-
-const howItWorksSteps = [
-  {
-    number: "01", icon: Upload, title: "Upload Deck",
-    // "charts, tables, and embedded data" was false. document_extractor reads
-    // a PDF's TEXT LAYER and nothing else -- there is no chart reader, no table
-    // parser, and no OCR. The proof is in this project's own corpus: six
-    // well-known decks (Dropbox, LinkedIn, YouTube, Facebook, WeWork, BuzzFeed)
-    // are valid, human-legible PDFs that extract to exactly ZERO characters,
-    // because every page is a slide image. A parser that read charts would
-    // return something for those.
-    desc: "Drop your deck as a PDF, PowerPoint or Word file. The text layer is read directly; slides that are only images are read with OCR, and the report says when it did.",
-    color: "#1D6FE8", bg: "rgba(29,111,232,0.07)",
-  },
-  {
-    number: "02", icon: Activity, title: "Dual-Agent Scan",
-    desc: "Bull and Bear agents stress-test the deck's case — market size, revenue projections, competitive moats.",
-    color: "#0EA66A", bg: "rgba(14,166,106,0.07)",
-  },
-  {
-    number: "03", icon: Globe, title: "Live Fact-Check",
-    // Previously claimed "Crunchbase, PitchBook signals". Neither is used:
-    // market_data.py holds both as documented stubs that return
-    // {available: false} because there is no budget for either contract.
-    // Claiming a paid data source this product does not have, to an audience
-    // of investors who would check, is exactly the sort of thing that
-    // destroys the credibility the rest of this system is built on.
-    // "SEC EDGAR filings" was removed from this line because it was false.
-    // A grep of the entire backend finds no code that queries sec.gov, no CIK
-    // lookup, and no EDGAR client -- the only source claim verification
-    // actually queries is web search (agents/web_search.py, which tries
-    // DuckDuckGo then Wikipedia, plus Brave and Tavily when a key is set).
-    // The claim survived an earlier cleanup that removed a neighbouring
-    // Crunchbase/PitchBook fabrication from this same string, which is a good
-    // reminder that removing one false claim from a sentence does not
-    // validate the rest of it.
-    desc: "The deck's most checkable claims — up to five — are checked against live web search, with the verdict and the evidence shown for each.",
-    color: "#C47A0A", bg: "rgba(196,122,10,0.07)",
-  },
-  {
-    number: "04", icon: Target, title: "Investment Report",
-    desc: "Structured memo with conviction score, red flags, comps, and suggested due diligence questions.",
-    color: "#9B59B6", bg: "rgba(155,89,182,0.07)",
-  },
-];
-
-const miniPreviewCards = [
-  {
-    label: "Bull Case", icon: TrendingUp, color: "#0EA66A",
-    bg: "rgba(14,166,106,0.06)", border: "rgba(14,166,106,0.18)",
-    tag: "BULL", tagBg: "rgba(14,166,106,0.12)", tagColor: "#0EA66A",
-    // Illustrative preview copy, but it previously asserted a "proprietary data
-    // moat confirmed" -- a conclusion this pipeline cannot reach, shown to a
-    // user before they have uploaded anything. Softened to what a bull agent
-    // genuinely produces: evidence-grounded findings, not confirmations.
-    snippet: "Traction figures quoted from the deck. Market framing supported by two verified claims.",
-    score: 74,
-  },
-  {
-    label: "Bear Case", icon: TrendingDown, color: "#D93025",
-    bg: "rgba(217,48,37,0.05)", border: "rgba(217,48,37,0.16)",
-    tag: "BEAR", tagBg: "rgba(217,48,37,0.1)", tagColor: "#D93025",
-    snippet: "Risk signals detected. Burn rate and concentration risks flagged.",
-    score: 38,
-  },
-  {
-    label: "Fact Check", icon: Search, color: "#1D6FE8",
-    bg: "rgba(29,111,232,0.05)", border: "rgba(29,111,232,0.16)",
-    tag: "VERIFIED", tagBg: "rgba(29,111,232,0.1)", tagColor: "#1D6FE8",
-    snippet: "Web-verified across 15+ sources per claim. Groq AI cross-checked.",
-    score: 86,
-  },
-];
-
-// The DeckIllustration SVG stood here: a mock browser window containing a
-// rising line chart with invented data points, an animated scanning bar, and
-// BULL/BEAR badges. It was decoration for a marketing panel that has been
-// removed, and it was a chart of numbers that came from nowhere in a product
-// whose argument is that it does not put invented numbers on screen.
-
-
-// ─── MINI PREVIEW CARD ────────────────────────────────────────────────────────
-
-const MiniPreviewCard = ({ card, delay }: { card: typeof miniPreviewCards[0]; delay: number }) => {
-  const Icon = card.icon;
-  return (
-    <motion.div className="mpv-card" style={{ background: card.bg, border: `1px solid ${card.border}` }}
-      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-      <div className="mpv-header">
-        <div className="mpv-icon-wrap" style={{ background: `rgba(${card.color === "#0EA66A" ? "14,166,106" : card.color === "#D93025" ? "217,48,37" : "29,111,232"},0.12)` }}>
-          <Icon size={12} color={card.color} strokeWidth={2} />
-        </div>
-        <span className="mpv-label">{card.label}</span>
-        <span className="mpv-tag" style={{ background: card.tagBg, color: card.tagColor }}>{card.tag}</span>
-      </div>
-      <p className="mpv-snippet">{card.snippet}</p>
-      <div className="mpv-score-row">
-        <div className="mpv-score-track">
-          <motion.div className="mpv-score-fill" style={{ background: card.color }}
-            initial={{ width: 0 }} animate={{ width: `${card.score}%` }}
-            transition={{ delay: delay + 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }} />
-        </div>
-        <span className="mpv-score-val" style={{ color: card.color }}>{card.score}</span>
-      </div>
-    </motion.div>
-  );
-};
-
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
 
 const UploadDeck = () => {
   const navigate = useNavigate();
@@ -168,7 +66,11 @@ const UploadDeck = () => {
     status, currentStage, progressPct, prepareUpload, runAnalysis,
     uploadResult, report, error, outOfScope, dismissOutOfScope, reset, startedAt,
   } = useApp();
-  const elapsed = useElapsedSeconds(status === "uploading" || status === "analyzing" ? startedAt : null);
+
+  const isAnalyzing = status === "uploading" || status === "analyzing";
+  const isParsed = status === "ready" && uploadResult !== null;
+  const isDone = status === "done" && report !== null;
+  const elapsed = useElapsedSeconds(isAnalyzing ? startedAt : null);
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
@@ -176,1114 +78,483 @@ const UploadDeck = () => {
   const [fileError, setFileError] = useState<string | null>(null);
   const [companyInput, setCompanyInput] = useState("");
   // Founder names, comma-separated. Pre-filled from what the extractor found
-  // in the deck and editable before submitting, because these names are sent
-  // to a live web search and a public-background assessment -- a name the
-  // extractor got wrong becomes a background check on a stranger.
+  // and editable before submitting, because these names go to a live web
+  // search and a public-background assessment -- a name the extractor got
+  // wrong becomes a background check on a stranger.
   const [foundersInput, setFoundersInput] = useState("");
   const [foundersTouched, setFoundersTouched] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Derive UI state from global context
-  const isAnalyzing = status === "uploading" || status === "analyzing";
-  const isParsed = status === "ready" && uploadResult !== null;
-  const showPreview = status === "done" && report !== null;
   const detectedFounders = uploadResult?.detected_founders ?? [];
+  const parsing = status === "uploading" && !isAnalyzing;
 
-  // Map global progressPct to a step index for the animated steps list
-  const analysisStep = Math.min(
-    Math.floor((progressPct / 100) * analysisSteps.length),
-    analysisSteps.length - 1
-  );
-
-  // A setInterval advancing a carousel dot every 1.2 seconds used to live
-  // here. The carousel is gone; the timer was still running, re-rendering this
-  // page four times a minute forever to move an element that no longer exists.
-
-  // Prefill from extraction, but never over the top of something the user
-  // typed -- their correction is the whole reason this field is editable.
   useEffect(() => {
     if (foundersTouched) return;
-    const names = (uploadResult?.detected_founders ?? []).map(f => f.name).filter(Boolean);
+    const names = (uploadResult?.detected_founders ?? []).map((f) => f.name).filter(Boolean);
     setFoundersInput(names.join(", "));
   }, [uploadResult, foundersTouched]);
 
-  const formatSize = (bytes: number) => {
-    return formatBytes(bytes);
-  };
+  // ── What the extractor actually found ─────────────────────────────────────
+
+  /** The deck's own pages. Every one is "read" here: at this point the
+   *  extractor has produced text for them, and which ones reached a structured
+   *  FIELD is a question the report answers, not the upload. */
+  const pages: DeckPage[] = (uploadResult?.deck_slides ?? []).map((_, i) => ({
+    slide: i + 1,
+    read: true,
+  }));
+
+  const financialSignals = uploadResult
+    ? [uploadResult.revenue, uploadResult.burn_rate, uploadResult.runway_months]
+      .filter((v) => v !== null && v !== undefined).length
+    : 0;
+
+  const readout = uploadResult
+    ? [
+      { label: "Pages", value: String(uploadResult.page_count || pages.length || 0), hint: "" },
+      { label: "Claims found", value: String(uploadResult.detected_claims?.length ?? 0), hint: "candidates for verification" },
+      { label: "Founders named", value: String(detectedFounders.length), hint: detectedFounders.length ? "from the team slide" : "no team slide found" },
+      { label: "Financial signals", value: `${financialSignals} of 3`, hint: "revenue, burn, runway" },
+      {
+        label: "Text recovered",
+        value: uploadResult.extracted_text
+          ? `${(Math.round(uploadResult.extracted_text.length / 100) / 10).toFixed(1)}k`
+          : "0",
+        hint: "characters",
+      },
+      {
+        label: "Read by",
+        value: uploadResult.text_source === "ocr" ? "OCR"
+          : uploadResult.text_source === "hybrid" ? "Text + OCR" : "Text layer",
+        hint: uploadResult.document_format ?? "",
+      },
+    ]
+    : [];
+
+  const intake: IntakeState = parsing ? "reading" : dragging ? "armed" : "idle";
+
+  // ── File handling ─────────────────────────────────────────────────────────
 
   const storeFile = (f: File) => {
     const extension = f.name.slice(f.name.lastIndexOf(".")).toLowerCase();
-    if (!ACCEPTED_EXTENSIONS.includes(extension)) {
-      setFileError(`Unsupported file type. Accepted formats: ${ACCEPTED_EXTENSIONS.join(", ")}.`);
+    if (!ACCEPTED.includes(extension)) {
+      setFileError(`That file type is not supported. Use ${ACCEPTED.join(", ")}.`);
       return;
     }
-    if (f.size > 10 * 1024 * 1024) {
-      setFileError("File is too large. Maximum size is 10 MB.");
+    if (f.size > MAX_BYTES) {
+      setFileError(`That file is ${formatBytes(f.size)}. The limit is 10 MB.`);
       return;
     }
     setFileError(null);
     setFileName(f.name);
-    setFileSize(formatSize(f.size));
+    setFileSize(formatBytes(f.size));
     setFileObj(f);
     setFoundersTouched(false);
-    // Auto-fill company name from filename if empty
-    const derivedName = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
-    if (!companyInput) {
-      setCompanyInput(derivedName);
-    }
+    const derived = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+    if (!companyInput) setCompanyInput(derived);
     if (status === "done" || status === "ready") reset();
-    // Parse immediately so the form can show what was found in the deck --
-    // in particular the founders -- before the analysis is committed to.
-    void prepareUpload(f, companyInput || derivedName || "Unknown Company");
+    // Parse immediately, so the readout can show what is in the deck before
+    // the analysis is committed to.
+    void prepareUpload(f, companyInput || derived || "Unknown Company");
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) storeFile(e.target.files[0]);
+  const clearFile = () => {
+    setFileName(null); setFileSize(null); setFileObj(null); setFileError(null);
+    reset();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files?.length) storeFile(e.dataTransfer.files[0]);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = () => setIsDragging(false);
-
-  const handleAnalyze = async () => {
+  const run = async () => {
     if (!fileObj || isAnalyzing) return;
-    const founders = foundersInput
-      .split(",")
-      .map(name => name.trim())
-      .filter(Boolean)
-      .slice(0, 5);
+    const founders = foundersInput.split(",").map((n) => n.trim()).filter(Boolean).slice(0, 5);
     await runAnalysis(fileObj, companyInput || fileName || "Unknown Company", founders);
   };
 
-  const currentStep = analysisSteps[analysisStep];
-  const StepIcon = currentStep?.icon ?? Layers;
-
-  // Use live stage label from context when analyzing, fallback to step label
-  const stageLabelDisplay = isAnalyzing
-    ? (currentStage || currentStep?.label || "Processing…")
-    : "";
+  /** Which real stage the backend last reported. -1 until one arrives. */
+  const stageIndex = STAGES.findIndex((s) =>
+    currentStage.toLowerCase().includes(s.slice(0, 16).toLowerCase()));
 
   return (
-    <>
+    <div className="up-root">
+      <BadgeStyles />
       <style>{`
+        .up-root { min-height: 100%; background: var(--bg); color: var(--text); }
 
-        :root {
-          --bg: #F0F2F5;
-          --surface: #FFFFFF;
-          --surface-2: #F7F8FA;
-          --border: rgba(15,23,42,0.08);
-          --border-strong: rgba(15,23,42,0.14);
-          --text-primary: #0B1120;
-          --text-secondary: #4A5568;
-          --text-muted: #5D6B7F;
-          --blue: #1D6FE8;
-          --green: #0EA66A;
-          --amber: #C47A0A;
-          --red: #D93025;
-          --purple: #9B59B6;
-          --shadow-sm: 0 1px 2px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.05);
-          --shadow-md: 0 4px 20px rgba(15,23,42,0.09), 0 1px 4px rgba(15,23,42,0.05);
-          --shadow-lg: 0 16px 48px rgba(15,23,42,0.13), 0 4px 16px rgba(15,23,42,0.07);
-          --radius: 14px;
+        .up-bar {
+          position: sticky; top: 0; z-index: 20;
+          display: flex; align-items: center; gap: 14px;
+          padding: 16px clamp(20px, 5vw, 72px);
+          background: linear-gradient(180deg, var(--bg) 62%, transparent);
         }
+        .up-back {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 8px 15px; border-radius: var(--r-pill); cursor: pointer;
+          font: inherit; font-size: var(--t-micro); font-weight: 600;
+          color: var(--text-2); background: var(--neutral-quiet);
+          border: 1px solid var(--line);
+          transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+        }
+        .up-back:hover { color: var(--text); border-color: var(--line-strong); }
 
-        * { box-sizing: border-box; }
+        .up-stage { max-width: 1180px; margin: 0 auto; padding: clamp(16px, 4vh, 40px) clamp(20px, 5vw, 72px) 120px; }
 
-        .up-root {
-          font-family: var(--font-sans);
-          color: var(--text-primary);
-          min-height: 100vh;
-          background: var(--bg);
+        .up-headline {
+          font-family: var(--font-display); font-size: clamp(40px, 6.4vw, 96px);
+          line-height: 0.96; letter-spacing: -0.035em; margin: 0; color: var(--text);
         }
+        .up-sub { font-size: clamp(15px, 1.3vw, 19px); line-height: 1.6; color: var(--text-2); margin: 22px 0 0; max-width: 52ch; }
 
-        .up-hero {
-          /* No negative margins. The .up-root wrapper has no padding of its
-             own, so pulling the hero outwards dragged it over the sidebar on
-             the left and above the viewport at the top. It sits flush, exactly
-             where the old header did. */
-          position: relative; overflow: hidden;
-          padding: 40px 32px 34px;
-          background: radial-gradient(120% 150% at 0% 0%, #16355F 0%, #0B1120 55%, #070B14 100%);
-          color: #E8EEF9;
+        /* The target. One large object, not a dashed rectangle inside a card. */
+        .up-target {
+          position: relative; margin-top: clamp(28px, 5vh, 56px);
+          border-radius: var(--r-xl);
+          border: 1px solid var(--line);
+          background: linear-gradient(180deg, rgba(143,182,255,0.045), transparent 70%);
+          display: grid; place-items: end center; text-align: center;
+          min-height: 420px; padding: 40px 24px 42px; cursor: pointer; overflow: hidden;
+          transition: border-color var(--dur-base) var(--ease-out),
+                      background var(--dur-base) var(--ease-out),
+                      transform var(--dur-base) var(--ease-out);
         }
-        .up-hero-aura {
-          position: absolute; inset: -40% -20%;
-          background:
-            radial-gradient(38% 38% at 24% 30%, rgba(29,111,232,0.30), transparent 70%),
-            radial-gradient(30% 30% at 74% 62%, rgba(14,166,106,0.18), transparent 70%);
-          filter: blur(60px); pointer-events: none;
-          animation: up-drift 26s ease-in-out infinite alternate;
+        .up-target:hover { border-color: var(--accent-line); }
+        .up-target[data-drag="true"] {
+          border-color: var(--accent);
+          background: linear-gradient(180deg, var(--accent-quiet), transparent 70%);
+          transform: scale(1.004);
         }
-        @keyframes up-drift {
-          from { transform: translate3d(-2%, -1%, 0) scale(1); }
-          to   { transform: translate3d(3%, 2%, 0) scale(1.07); }
+        .up-target[data-filled="true"] { cursor: default; }
+        .up-target-inner { position: relative; z-index: 2; }
+        .up-target-title { font-size: clamp(19px, 2vw, 26px); font-weight: 600; letter-spacing: -0.02em; }
+        .up-target-hint { font-size: var(--t-small); color: var(--text-3); margin-top: 9px; }
+
+        /* The readout: the deck's own numbers, beside the deck itself. */
+        .up-readout {
+          display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1px; background: var(--line);
+          border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
         }
-        @media (prefers-reduced-motion: reduce) { .up-hero-aura { animation: none; } }
-        .up-hero-inner { position: relative; z-index: 1; max-width: 780px; }
-        .up-hero .up-eyebrow {
-          display: flex; align-items: center; gap: 8px;
-          font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.18em;
-          text-transform: uppercase; color: rgba(232,238,249,0.55); margin-bottom: 14px;
+        .up-cell { background: var(--surface); padding: 18px 20px; }
+        .up-cell-v { font-family: var(--font-display); font-size: 30px; line-height: 1; letter-spacing: -0.02em; }
+        .up-cell-h { font-size: var(--t-micro); color: var(--text-3); margin-top: 6px; min-height: 1em; }
+
+        .up-field { display: block; margin-bottom: 18px; }
+        .up-input {
+          width: 100%; padding: 12px 14px; font: inherit; font-size: var(--t-body);
+          background: var(--surface); color: var(--text);
+          border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+          transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
         }
-        .up-hero .up-eyebrow-dot {
-          width: 5px; height: 5px; border-radius: 50%; background: #3DDC97;
+        .up-input::placeholder { color: var(--text-faint); }
+        .up-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-quiet); }
+        .up-help { font-size: var(--t-micro); color: var(--text-3); margin-top: 8px; line-height: 1.55; }
+
+        .up-run {
+          width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+          padding: 17px 26px; border-radius: var(--r-pill); cursor: pointer;
+          font: inherit; font-size: 15px; font-weight: 600;
+          background: var(--accent); color: #fff; border: none;
+          box-shadow: 0 10px 30px rgba(47,107,255,0.28);
+          transition: background var(--dur-fast) var(--ease-out),
+                      transform var(--dur-fast) var(--ease-out),
+                      box-shadow var(--dur-base) var(--ease-out);
         }
-        .up-hero .up-title {
-          font-family: var(--font-display);
-          font-size: clamp(36px, 4.2vw, 56px); line-height: 1.04;
-          letter-spacing: -0.022em; color: #FFFFFF; margin: 0 0 12px;
-        }
-        .up-hero .up-subtitle {
-          font-family: var(--font-sans);
-          font-size: 14.5px; line-height: 1.7; margin: 0;
-          color: rgba(232,238,249,0.72); max-width: 54ch;
-        }
+        .up-run:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+        .up-run:disabled { background: var(--neutral-quiet); color: var(--text-3); box-shadow: none; cursor: not-allowed; }
+
+        .up-step { display: flex; align-items: center; gap: 11px; padding: 9px 0; font-size: var(--t-small); color: var(--text-faint); }
+        .up-step[data-state="done"] { color: var(--text-2); }
+        .up-step[data-state="active"] { color: var(--text); font-weight: 600; }
+        .up-step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--surface-3); flex-shrink: 0; }
+        .up-step[data-state="done"] .up-step-dot { background: var(--verified); }
+        .up-step[data-state="active"] .up-step-dot { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-quiet); }
+
+        .up-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr); gap: clamp(24px, 4vw, 56px); align-items: start; }
         @media (max-width: 900px) {
-          .up-hero { padding: 28px 20px 24px; }
+          .up-split { grid-template-columns: 1fr; }
+          .up-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-
-        .up-header {
-          padding: 22px 32px 20px;
-          background: var(--surface);
-          border-bottom: 1px solid var(--border);
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-
-        .up-header::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, var(--blue), var(--green), var(--amber), var(--blue));
-          background-size: 300% 100%;
-          animation: hdr-flow 5s linear infinite;
-        }
-
-        @keyframes hdr-flow {
-          0% { background-position: 300% 0; }
-          100% { background-position: -300% 0; }
-        }
-
-        .up-eyebrow {
-          font-family: var(--font-mono);
-          font-size: 9.5px;
-          color: var(--text-muted);
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          margin-bottom: 8px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .up-eyebrow-dot {
-          width: 5px; height: 5px;
-          border-radius: 50%;
-          background: var(--blue);
-          animation: pulse-dot 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-dot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.8); }
-        }
-
-        .up-title {
-          font-family: var(--font-display);
-          font-size: 28px;
-          font-weight: 400;
-          letter-spacing: -0.01em;
-          color: var(--text-primary);
-          margin: 0 0 4px;
-          line-height: 1;
-        }
-
-        .up-subtitle {
-          font-family: var(--font-mono);
-          font-size: 10.5px;
-          color: var(--text-muted);
-        }
-
-        .up-header-badges {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-
-        .up-hbadge {
-          font-family: var(--font-mono);
-          font-size: 10px;
-          font-weight: 500;
-          padding: 5px 11px;
-          border-radius: 20px;
-          letter-spacing: 0.06em;
-        }
-
-        .up-content {
-          display: grid;
-          grid-template-columns: 1fr 300px;
-          gap: 14px;
-          padding: 16px;
-        }
-
-        .up-left-col { display: flex; flex-direction: column; gap: 14px; }
-        .up-right-col { display: flex; flex-direction: column; gap: 12px; }
-
-        .up-card {
-          background: var(--surface);
-          border-radius: var(--radius);
-          border: 1px solid var(--border);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .up-card-pad { padding: 26px 28px; }
-
-        .up-card-title {
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--text-primary);
-          letter-spacing: -0.02em;
-          margin-bottom: 2px;
-        }
-
-        .up-card-sub {
-          font-family: var(--font-mono);
-          font-size: 10.5px;
-          color: var(--text-muted);
-          margin-bottom: 20px;
-        }
-
-        .up-illus-strip {
-          background: linear-gradient(135deg, rgba(29,111,232,0.03) 0%, rgba(14,166,106,0.03) 100%);
-          border-radius: var(--radius);
-          border: 1px solid var(--border);
-          padding: 20px 24px 16px;
-          box-shadow: var(--shadow-sm);
-          display: grid;
-          grid-template-columns: 320px 1fr;
-          gap: 28px;
-          align-items: center;
-        }
-
-        .up-illus-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-family: var(--font-mono);
-          font-size: 9px;
-          font-weight: 600;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: var(--blue);
-          background: rgba(29,111,232,0.08);
-          border: 1px solid rgba(29,111,232,0.2);
-          padding: 4px 10px;
-          border-radius: 20px;
-          margin-bottom: 14px;
-        }
-
-        .up-illus-heading {
-          font-family: var(--font-display);
-          font-size: 22px;
-          font-weight: 400;
-          color: var(--text-primary);
-          letter-spacing: -0.02em;
-          line-height: 1.2;
-          margin-bottom: 10px;
-        }
-
-        .up-illus-heading em { font-style: italic; color: var(--blue); }
-
-        .up-illus-body {
-          font-size: 13px;
-          color: var(--text-secondary);
-          line-height: 1.65;
-          margin-bottom: 16px;
-        }
-
-        .up-agent-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .up-agent-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          font-family: var(--font-mono);
-          font-size: 10px;
-          font-weight: 500;
-          padding: 5px 12px;
-          border-radius: 20px;
-        }
-
-        .up-pill-bull { background: rgba(14,166,106,0.08); border: 1px solid rgba(14,166,106,0.22); color: #0EA66A; }
-        .up-pill-bear { background: rgba(217,48,37,0.07); border: 1px solid rgba(217,48,37,0.2); color: #D93025; }
-        .up-pill-fact { background: rgba(29,111,232,0.07); border: 1px solid rgba(29,111,232,0.2); color: #1D6FE8; }
-        .up-pill-dot { width: 5px; height: 5px; border-radius: 50%; }
-
-        .up-dropzone {
-          border-radius: 12px;
-          padding: 44px 32px 38px;
-          cursor: pointer;
-          text-align: center;
-          transition: all 0.2s ease;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .up-dz-idle { border: 1.5px dashed rgba(15,23,42,0.18); background: var(--surface-2); }
-        .up-dz-idle:hover { border-color: var(--blue); background: rgba(29,111,232,0.025); }
-        .up-dz-dragging { border: 1.5px dashed var(--blue); background: rgba(29,111,232,0.04); transform: scale(1.01); }
-        .up-dz-filled { border: 1.5px solid rgba(14,166,106,0.4); background: rgba(14,166,106,0.025); }
-
-        .up-icon-wrap {
-          width: 52px; height: 52px;
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 16px;
-          transition: transform 0.2s ease;
-        }
-
-        .up-dropzone:hover .up-icon-wrap { transform: scale(1.08) translateY(-2px); }
-        .up-dz-idle .up-icon-wrap, .up-dz-dragging .up-icon-wrap {
-          background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-        }
-        .up-dz-filled .up-icon-wrap { background: rgba(14,166,106,0.1); border: 1px solid rgba(14,166,106,0.22); }
-
-        .up-dz-main-text { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -0.02em; }
-
-        .up-dz-hint { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); line-height: 1.6; }
-
-        .up-file-info {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          margin: 12px auto 0;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          padding: 8px 14px;
-          font-family: var(--font-mono);
-          font-size: 11px;
-          color: var(--text-secondary);
-          max-width: 280px;
-          overflow: hidden;
-        }
-
-        .up-file-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-        .up-file-size { color: var(--text-muted); flex-shrink: 0; font-size: 10px; }
-
-        .up-remove-btn {
-          display: inline-flex; align-items: center; gap: 5px;
-          font-family: var(--font-mono); font-size: 10px;
-          color: var(--text-muted); background: none; border: none;
-          cursor: pointer; margin-top: 10px; transition: color 0.14s ease; padding: 0;
-        }
-        .up-remove-btn:hover { color: var(--red); }
-
-        /* Company name input */
-        .up-company-input {
-          width: 100%;
-          margin-bottom: 16px;
-          padding: 10px 14px;
-          border-radius: 9px;
-          border: 1px solid var(--border);
-          background: var(--surface-2);
-          font-family: var(--font-sans);
-          font-size: 13.5px;
-          color: var(--text-primary);
-          outline: none;
-          transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-        .up-company-input:focus {
-          border-color: var(--blue);
-          box-shadow: 0 0 0 3px rgba(29,111,232,0.1);
-        }
-        .up-company-label {
-          font-family: var(--font-mono);
-          font-size: 9.5px;
-          color: var(--text-muted);
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          display: block;
-          margin-bottom: 6px;
-        }
-
-        /* Error box */
-        .up-error-box {
-          margin-top: 12px;
-          padding: 12px 14px;
-          border-radius: 9px;
-          background: rgba(217,48,37,0.06);
-          border: 1px solid rgba(217,48,37,0.2);
-          font-family: var(--font-mono);
-          font-size: 11px;
-          color: var(--red);
-          line-height: 1.5;
-        }
-
-        .up-analyze-btn {
-          width: 100%; margin-top: 16px; padding: 14px;
-          border-radius: 10px; font-family: var(--font-sans);
-          font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;
-          cursor: pointer; transition: all 0.2s ease;
-          display: flex; align-items: center; justify-content: center;
-          gap: 8px; position: relative; overflow: hidden;
-        }
-
-        .up-btn-active {
-          background: var(--blue); border: 1px solid transparent; color: #fff;
-          box-shadow: 0 2px 8px rgba(29,111,232,0.3), 0 1px 3px rgba(29,111,232,0.2);
-        }
-        .up-btn-active:hover { background: #1660D0; transform: translateY(-1px); }
-        .up-btn-active:active { transform: translateY(0); }
-        .up-btn-disabled { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); cursor: not-allowed; }
-
-        .up-processing-wrap {
-          margin-top: 16px; background: rgba(15,23,42,0.02);
-          border: 1px solid var(--border); border-radius: 12px;
-          padding: 16px 18px; overflow: hidden;
-        }
-
-        .up-proc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
-
-        .up-proc-icon-anim {
-          width: 28px; height: 28px; border-radius: 8px;
-          background: rgba(29,111,232,0.08); border: 1px solid rgba(29,111,232,0.18);
-          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-
-        .up-proc-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); flex: 1; }
-        .up-proc-pct { font-family: var(--font-mono); font-size: 11px; color: var(--blue); font-weight: 600; }
-
-        .up-proc-track { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
-
-        .up-proc-fill {
-          height: 100%;
-          background: linear-gradient(90deg, var(--blue), #60A5FA);
-          border-radius: 4px;
-          transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .up-proc-steps { display: flex; flex-direction: column; gap: 6px; }
-
-        .up-proc-step {
-          display: flex; align-items: center; gap: 8px;
-          font-family: var(--font-mono); font-size: 9.5px; transition: all 0.3s ease;
-        }
-
-        .up-proc-step-done { color: var(--green); }
-        .up-proc-step-active { color: var(--blue); font-weight: 500; }
-        .up-proc-step-pending { color: var(--text-muted); }
-
-        .up-proc-step-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-
-        .up-eta {
-          display: flex; align-items: center; gap: 5px;
-          font-family: var(--font-mono); font-size: 10px;
-          color: var(--text-muted); margin-top: 12px; justify-content: center;
-        }
-
-        .up-preview-section {}
-
-        .up-preview-heading {
-          display: flex; align-items: center; gap: 8px;
-          font-size: 13px; font-weight: 600; color: var(--text-primary);
-          margin-bottom: 12px; letter-spacing: -0.01em;
-        }
-
-        .up-preview-heading-badge {
-          font-family: var(--font-mono); font-size: 8.5px;
-          font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-          background: rgba(14,166,106,0.1); color: var(--green);
-          border: 1px solid rgba(14,166,106,0.22); padding: 2px 8px; border-radius: 10px;
-        }
-
-        .up-preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-        .mpv-card { border-radius: 10px; padding: 12px 13px; }
-        .mpv-header { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
-        .mpv-icon-wrap { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .mpv-label { font-size: 11px; font-weight: 600; color: var(--text-primary); flex: 1; letter-spacing: -0.01em; }
-        .mpv-tag { font-family: var(--font-mono); font-size: 8px; font-weight: 600; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 6px; }
-        .mpv-snippet { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 10px; }
-        .mpv-score-row { display: flex; align-items: center; gap: 8px; }
-        .mpv-score-track { flex: 1; height: 3px; background: rgba(15,23,42,0.07); border-radius: 4px; overflow: hidden; }
-        .mpv-score-fill { height: 100%; border-radius: 4px; }
-        .mpv-score-val { font-family: var(--font-mono); font-size: 10px; font-weight: 600; min-width: 22px; text-align: right; }
-
-        .up-how-section {
-          background: var(--surface); border-radius: var(--radius);
-          border: 1px solid var(--border); padding: 26px 28px; box-shadow: var(--shadow-sm);
-        }
-
-        .up-how-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
-        .up-how-title { font-family: var(--font-display); font-size: 20px; font-weight: 400; color: var(--text-primary); letter-spacing: -0.02em; margin: 0; }
-        .up-how-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 3px; }
-        .up-how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-
-        .up-how-step {
-          position: relative; padding: 16px; border-radius: 11px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: default;
-        }
-        .up-how-step:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .up-how-step:not(:last-child)::after {
-          content: ''; position: absolute; right: -8px; top: 28px;
-          width: 14px; height: 1px; background: var(--border-strong); z-index: 1;
-        }
-
-        .up-how-num { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 10px; }
-        .up-how-icon-box { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-        .up-how-step-title { font-size: 13px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; margin-bottom: 6px; }
-        .up-how-step-desc { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); line-height: 1.6; }
-
-        .up-section-label { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; margin-bottom: 14px; }
-
-        .up-feature-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 9px; transition: background 0.15s ease; cursor: default; margin-bottom: 2px; }
-        .up-feature-row:hover { background: var(--surface-2); }
-        .up-feature-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s ease; }
-        .up-feature-row:hover .up-feature-icon { transform: scale(1.08); }
-        .up-feature-name { font-size: 12.5px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; margin-bottom: 2px; }
-        .up-feature-desc { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); line-height: 1.5; }
-
-        .up-format-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 7px; transition: background 0.14s ease; }
-        .up-format-row:hover { background: var(--surface-2); }
-        .up-format-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
-        .up-format-check { width: 20px; height: 20px; background: rgba(14,166,106,0.1); border: 1px solid rgba(14,166,106,0.22); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
-        .up-divider { height: 1px; background: var(--border); margin: 10px 0; }
-        .up-maxsize-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; }
-        .up-maxsize-label { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
-        .up-maxsize-val { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); font-weight: 500; }
-
-        .up-hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 5px; }
-
-        .up-scan-dots { display: flex; align-items: center; gap: 5px; justify-content: center; margin-top: 10px; }
-        .up-scan-dot { width: 5px; height: 5px; border-radius: 50%; transition: background 0.3s ease, transform 0.3s ease; }
       `}</style>
 
-      <div className="up-root">
-        {/* ── HEADER ──
-            A dark band, matching the analysis report and the sign-in screen,
-            so the three screens read as one product rather than three.
-
-            The "Bull Agent Active / Bear Agent Active / Fact-Check Live"
-            badges that sat on the right are gone. They were lit permanently and
-            identically whether an analysis was running, finished, or had never
-            been started -- the same decorative always-on chips that were
-            removed from the sidebar, duplicated here. A status light that is
-            always green reports nothing. */}
-        <header className="up-hero">
-          <div className="up-hero-aura" aria-hidden="true" />
-          <div className="up-hero-inner">
-            <div className="up-eyebrow">
-              <div className="up-eyebrow-dot" />
-              VentureFlow · New submission
-            </div>
-            <h1 className="up-title">Upload a deck</h1>
-            <p className="up-subtitle">
-              Key claims checked against live sources, and anything the tool
-              could not establish said plainly. Usually 5–10 minutes.
-            </p>
-          </div>
-        </header>
-
-        <div className="up-content">
-          {/* ── LEFT COLUMN ── */}
-          <div className="up-left-col">
-
-            {/* A marketing panel stood here: a stock "Instant VC-grade deal
-                intelligence" headline, a rotating dot carousel, three more
-                agent pills, and a decorative line-chart illustration -- above
-                the upload form, in the prime position on the page.
-
-                Two reasons it is gone. It sold the product to somebody who has
-                already signed in and navigated to the upload screen, pushing
-                the one thing they came to do further down. And the illustration
-                was a chart with invented data in it, in a product whose whole
-                argument is that it does not put invented numbers on screen.
-                Decorative or not, a fake chart is the wrong furniture here.
-
-                What it actually said now lives in the hero above, in one
-                sentence, without the artwork. */}
-
-            {/* UPLOAD CARD */}
-            <motion.div className="up-card up-card-pad"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-              <div className="up-card-title">Pitch Deck</div>
-              <div className="up-card-sub">Drop your file below or click to browse</div>
-
-              {/* Company name input */}
-              <label className="up-company-label" htmlFor="vf-company-name">Company name</label>
-              <input
-                id="vf-company-name"
-                className="up-company-input"
-                type="text"
-                placeholder="e.g. NovaMed AI, CarbonCycle…"
-                value={companyInput}
-                onChange={e => setCompanyInput(e.target.value)}
-                disabled={isAnalyzing}
-              />
-
-              <div
-                className={`up-dropzone ${isDragging ? "up-dz-dragging" : fileName ? "up-dz-filled" : "up-dz-idle"}`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => !isAnalyzing && inputRef.current?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    if (!isAnalyzing) inputRef.current?.click();
-                  }
-                }}
-                role="button"
-                tabIndex={isAnalyzing ? -1 : 0}
-                aria-label="Choose a pitch deck file, or drop one here"
-                aria-disabled={isAnalyzing}
-              >
-                <input ref={inputRef} type="file" style={{ display: "none" }}
-                  accept={ACCEPTED_EXTENSIONS.join(",")} onChange={handleFileChange} />
-
-                <AnimatePresence mode="wait">
-                  {!fileName ? (
-                    <motion.div key="empty"
-                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
-                      <div className="up-icon-wrap">
-                        <Upload size={21} color={isDragging ? "#1D6FE8" : "#5D6B7F"} strokeWidth={1.6} />
-                      </div>
-                      <div className="up-dz-main-text">{isDragging ? "Release to upload" : "Drop your deck here"}</div>
-                      <div className="up-dz-hint">or click to browse<br />PDF · PPTX · DOCX · TXT · MD · up to 10 MB</div>
-                    </motion.div>
-                  ) : (
-                    <motion.div key="selected"
-                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
-                      <div className="up-icon-wrap">
-                        <FileText size={21} color="#0EA66A" strokeWidth={1.6} />
-                      </div>
-                      <div className="up-dz-main-text" style={{ color: "#0EA66A" }}>File ready</div>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
-                        <div className="up-file-info">
-                          <FileText size={12} color="#5D6B7F" />
-                          <span className="up-file-name">{fileName}</span>
-                          {fileSize && <span className="up-file-size">{fileSize}</span>}
-                        </div>
-                      </div>
-                      {!isAnalyzing && (
-                        <div>
-                          <button className="up-remove-btn"
-                            onClick={e => { e.stopPropagation(); setFileName(null); setFileSize(null); setFileObj(null); reset(); }}>
-                            <X size={10} /> remove file
-                          </button>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* HOW THE DECK WAS READ.
-                  An image-only deck used to be refused outright ("VentureFlow
-                  has no OCR"). It is now read by an offline OCR engine, which
-                  means the analysis below can be built on text recognised out
-                  of pixels rather than read from the file.
-                  That distinction has to reach the reader. OCR misreads digits
-                  more often than it misreads words, and a revenue figure
-                  recognised from a chart is not the same evidence as one read
-                  from a text layer -- presenting them identically would hide
-                  the single thing a reader would want to know about it. */}
-              {isParsed && uploadResult?.text_source && uploadResult.text_source !== "text_layer" && (
-                <div style={{
-                  marginTop: 14,
-                  background: "rgba(29,111,232,0.06)",
-                  border: "1px solid rgba(29,111,232,0.22)",
-                  borderRadius: 8,
-                  padding: "10px 12px",
-                }}>
-                  <div style={{
-                    fontFamily: "var(--font-mono)", fontSize: 9.5,
-                    letterSpacing: "0.09em", textTransform: "uppercase",
-                    fontWeight: 600, color: "var(--accent)", marginBottom: 5,
-                  }}>
-                    {uploadResult.text_source === "ocr"
-                      ? "Read by OCR — no text layer"
-                      : "Partly read by OCR"}
-                  </div>
-                  <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#5D6B7F", margin: 0 }}>
-                    {uploadResult.text_source === "ocr"
-                      ? "Every page of this deck is a picture with no embedded text, so the words below were recognised from the page images."
-                      : "This deck's text layer was very thin, so the slides were also read as images to recover what it left out."}
-                    {typeof uploadResult.ocr?.pages_read === "number" && (
-                      <> {uploadResult.ocr.pages_read} of {uploadResult.ocr.pages_total} page(s) were read
-                      {typeof uploadResult.ocr.chars === "number" ? `, giving ${uploadResult.ocr.chars.toLocaleString()} characters` : ""}.</>
-                    )}
-                    {" "}Treat any figure below as read from a picture: OCR misreads
-                    digits and punctuation more often than it misreads words.
-                  </p>
-                  {uploadResult.ocr?.truncated && uploadResult.ocr.truncation_note && (
-                    <p style={{
-                      fontSize: 11.5, lineHeight: 1.6, margin: "6px 0 0",
-                      color: "var(--caution)", fontWeight: 500,
-                    }}>
-                      {uploadResult.ocr.truncation_note}
-                    </p>
-                  )}
-                  {uploadResult.ocr?.engine && (
-                    <p style={{
-                      fontFamily: "var(--font-mono)", fontSize: 9.5,
-                      color: "#94A3B8", margin: "6px 0 0",
-                    }}>
-                      {uploadResult.ocr.engine}
-                      {typeof uploadResult.ocr.seconds === "number" ? ` · ${uploadResult.ocr.seconds}s` : ""}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* FOUNDERS — the input path the Founder Analysis tab never had.
-                  Pre-filled from the deck, editable, and explicit about being
-                  empty rather than silently producing an all-zero radar. */}
-              {(isParsed || isAnalyzing || detectedFounders.length > 0) && (
-                <div style={{ marginTop: 14 }}>
-                  <label className="up-company-label" htmlFor="founders">
-                    Founders {detectedFounders.length > 0 && (
-                      <span style={{ color: "#0EA66A", fontWeight: 500 }}>
-                        · {detectedFounders.length} found in deck
-                      </span>
-                    )}
-                  </label>
-                  <input
-                    id="founders"
-                    className="up-company-input"
-                    placeholder="Comma-separated, e.g. Ada Lovelace, Grace Hopper"
-                    value={foundersInput}
-                    onChange={e => { setFoundersTouched(true); setFoundersInput(e.target.value); }}
-                    disabled={isAnalyzing}
-                  />
-                  <div style={{ fontSize: 11, color: "#5D6B7F", marginTop: 6, lineHeight: 1.5 }}>
-                    {detectedFounders.length > 0
-                      ? "Read from the deck's team slide. Correct or add names before analysing — each one is checked against public web evidence."
-                      : "No team slide was found in this deck. Add founder names to enable the background check, or leave blank to skip it."}
-                  </div>
-                  {detectedFounders.length > 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                      {detectedFounders.map((f, i) => (
-                        <span key={i} title={f.background || ""} style={{
-                          fontFamily: "var(--font-mono)", fontSize: 10,
-                          padding: "3px 8px", borderRadius: 6,
-                          background: "var(--surface-2)", border: "1px solid var(--border)",
-                          color: "var(--text-secondary)",
-                        }}>
-                          {f.name}{f.role ? ` · ${f.role}` : ""}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Error display */}
-              <AnimatePresence>
-                {(fileError || (error && !outOfScope)) && (
-                  <motion.div className="up-error-box"
-                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}>
-                    ⚠ {fileError || error}
-                    <br />
-                    <span style={{ fontSize: 9, opacity: 0.7 }}>Check that the backend is reachable and that Neon is configured.</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ANALYZE BUTTON */}
-              <motion.button
-                className={`up-analyze-btn ${fileName && !isAnalyzing ? "up-btn-active" : "up-btn-disabled"}`}
-                onClick={handleAnalyze}
-                disabled={!fileName || isAnalyzing}
-                whileTap={fileName && !isAnalyzing ? { scale: 0.99 } : {}}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                      <Zap size={15} />
-                    </motion.div>
-                    {stageLabelDisplay || "Running agents…"}
-                  </>
-                ) : (
-                  <>
-                    <Zap size={15} />
-                    {fileName ? "Run AI Analysis" : "Upload a Deck First"}
-                    {fileName && <ArrowRight size={14} style={{ marginLeft: "2px" }} />}
-                  </>
-                )}
-              </motion.button>
-
-              {/* ANIMATED PROCESSING */}
-              <AnimatePresence>
-                {isAnalyzing && (
-                  <motion.div className="up-processing-wrap"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.28 }}>
-
-                    <div className="up-proc-header">
-                      <motion.div className="up-proc-icon-anim"
-                        animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.2 }}>
-                        <StepIcon size={13} color="#1D6FE8" strokeWidth={1.75} />
-                      </motion.div>
-                      <span className="up-proc-label">{stageLabelDisplay}</span>
-                      <span className="up-proc-pct">{progressPct}%</span>
-                    </div>
-
-                    <div className="up-proc-track">
-                      <div className="up-proc-fill" style={{ width: `${progressPct}%` }} />
-                    </div>
-
-                    <div className="up-proc-steps">
-                      {analysisSteps.map((s, i) => {
-                        const S = s.icon;
-                        const status = i < analysisStep ? "done" : i === analysisStep ? "active" : "pending";
-                        return (
-                          <div key={i} className={`up-proc-step up-proc-step-${status}`}>
-                            <div className="up-proc-step-dot" style={{
-                              background: status === "done" ? "#0EA66A" : status === "active" ? "#1D6FE8" : "rgba(15,23,42,0.12)"
-                            }} />
-                            {s.label}
-                            {status === "done" && <CheckCircle size={9} color="#0EA66A" style={{ marginLeft: "auto" }} />}
-                            {status === "active" && (
-                              <motion.div style={{ marginLeft: "auto" }}
-                                animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1 }}>
-                                <Activity size={9} color="#1D6FE8" />
-                              </motion.div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="up-eta">
-                      <Clock size={10} />
-                      {formatElapsed(elapsed)} elapsed · usually 5–10 minutes · Do not close this tab
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* MINI PREVIEW CARDS (post-analysis) */}
-              <AnimatePresence>
-                {showPreview && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    style={{ marginTop: 18 }}>
-                    {/* This block previously read "Analysis Complete" with a
-                        "Preview" badge, above three cards showing scores of
-                        74, 38 and 86 in the same visual language the real
-                        report uses. Nothing had been analysed -- the numbers
-                        are invented sample copy -- and "Preview" is ambiguous
-                        enough to be read as "preview of your results". A user
-                        could reasonably believe they were looking at findings
-                        about the deck they were about to upload. */}
-                    <div className="up-preview-heading">
-                      <Eye size={14} color="#5D6B7F" />
-                      Example of what you get
-                      <span className="up-preview-heading-badge">
-                        Sample figures — not your deck
-                      </span>
-                    </div>
-                    <div className="up-preview-grid">
-                      {miniPreviewCards.map((card, i) => (
-                        <MiniPreviewCard key={i} card={card} delay={i * 0.1} />
-                      ))}
-                    </div>
-                    <div style={{ marginTop: 12, textAlign: "center" }}>
-                      <motion.button
-                        style={{
-                          background: "var(--blue)", color: "#fff", border: "none",
-                          borderRadius: 9, padding: "10px 22px", fontSize: 13,
-                          fontWeight: 600, cursor: "pointer", display: "inline-flex",
-                          alignItems: "center", gap: 7, fontFamily: "var(--font-sans)",
-                          letterSpacing: "-0.01em", boxShadow: "0 2px 8px rgba(29,111,232,0.28)"
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => navigate("/analysis")}>
-                        View Full Report <ChevronRight size={14} />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {fileName && !isAnalyzing && !showPreview && (
-                <p className="up-hint">
-                  <CheckCircle size={11} color="#0EA66A" />
-                  Analysis usually takes 5–10 minutes
-                </p>
-              )}
-            </motion.div>
-
-            {/* ── HOW IT WORKS ── */}
-            <motion.div className="up-how-section"
-              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.22, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-              <div className="up-how-header">
-                <div>
-                  <h2 className="up-how-title">How it works</h2>
-                  <p className="up-how-sub">From upload to investment memo in about 5–10 minutes</p>
-                </div>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9.5, color: "var(--text-muted)", letterSpacing: "0.1em" }}>4 STEPS</span>
-              </div>
-
-              <div className="up-how-steps">
-                {howItWorksSteps.map((step, i) => {
-                  const Icon = step.icon;
-                  return (
-                    <motion.div key={i} className="up-how-step"
-                      style={{ background: step.bg, border: "1px solid rgba(15,23,42,0.06)" }}
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.28 + i * 0.08, duration: 0.38 }}>
-                      <div className="up-how-num">{step.number}</div>
-                      <div className="up-how-icon-box" style={{
-                        background: `rgba(${step.color === "#1D6FE8" ? "29,111,232" : step.color === "#0EA66A" ? "14,166,106" : step.color === "#C47A0A" ? "196,122,10" : "155,89,182"},0.12)`
-                      }}>
-                        <Icon size={17} color={step.color} strokeWidth={1.75} />
-                      </div>
-                      <div className="up-how-step-title">{step.title}</div>
-                      <div className="up-how-step-desc">{step.desc}</div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </div>
-
-          {/* ── RIGHT COLUMN ── */}
-          <motion.div className="up-right-col"
-            initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.14, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-
-            <div className="up-card" style={{ padding: "20px" }}>
-              <div className="up-section-label">What We Analyze</div>
-              {analysisFeatures.map((f, i) => {
-                const Icon = f.icon;
-                return (
-                  <motion.div key={i} className="up-feature-row"
-                    initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 + i * 0.07, duration: 0.35 }}>
-                    <div className="up-feature-icon" style={{ background: f.bg, border: `1px solid ${f.border}` }}>
-                      <Icon size={13} color={f.color} strokeWidth={1.75} />
-                    </div>
-                    <div>
-                      <div className="up-feature-name">{f.label}</div>
-                      <div className="up-feature-desc">{f.desc}</div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-
-            <div className="up-card" style={{ padding: "18px 20px" }}>
-              <div className="up-section-label">Supported Formats</div>
-              {[
-                { fmt: "PDF", desc: "Recommended" },
-                { fmt: "PPTX", desc: "PowerPoint" },
-                { fmt: "DOCX", desc: "Word" },
-                { fmt: "TXT", desc: "Plain text" },
-                { fmt: "MD", desc: "Markdown" },
-              ].map(f => (
-                <div key={f.fmt} className="up-format-row">
-                  <div>
-                    <span className="up-format-name">.{f.fmt.toLowerCase()}</span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "9.5px", color: "#C0CADA", marginLeft: "8px" }}>{f.desc}</span>
-                  </div>
-                  <div className="up-format-check">
-                    <CheckCircle size={11} color="#0EA66A" strokeWidth={2.5} />
-                  </div>
-                </div>
-              ))}
-              <div className="up-divider" />
-              <div className="up-maxsize-row">
-                <span className="up-maxsize-label">Max file size</span>
-                <span className="up-maxsize-val">10 MB</span>
-              </div>
-            </div>
-
-            <motion.div className="up-card" style={{ padding: "18px 20px" }}
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
-              <div className="up-section-label">Data Sources</div>
-              {[
-                // Keep this list honest -- it is a claim about what the
-                // backend actually calls. "Groq Llama 3.3 70B" was wrong: Groq
-                // decommissioned that model and groq_client.py now uses
-                // openai/gpt-oss-120b. If the MODEL constant changes again,
-                // change this too.
-                // "SEC EDGAR filings" was removed: no code in this repository
-                // queries sec.gov. Every entry below corresponds to a call the
-                // backend genuinely makes -- Neon via db.py, the search chain
-                // via agents/web_search.py, the score model via
-                // ml/venturescore.py, and Groq via groq_client.py.
-                //
-                // Web search was listed as "DuckDuckGo" alone, which was true
-                // and is no longer: a single throttled provider used to take
-                // the whole product's evidence gathering down with it, so there
-                // is now a failover chain. Two of its providers need no API key
-                // and are always active; Brave and Tavily join it only when a
-                // key is configured, which is why they are not named here.
-                { name: "Neon report database", icon: Database, color: "#1D6FE8" },
-                { name: "Web search: DuckDuckGo → Wikipedia", icon: Globe, color: "#0EA66A" },
-                { name: "Wikidata company outcomes", icon: Layers, color: "#0EA66A" },
-                { name: "VentureFlow Score model", icon: Target, color: "#7C3AED" },
-                { name: "Groq gpt-oss-120b", icon: Activity, color: "#C47A0A" },
-              ].map((src, i) => {
-                const Icon = src.icon;
-                return (
-                  <div key={i} className="up-feature-row" style={{ padding: "8px 10px" }}>
-                    <div className="up-feature-icon" style={{
-                      width: 26, height: 26, borderRadius: 7,
-                      background: `rgba(${src.color === "#1D6FE8" ? "29,111,232" : src.color === "#0EA66A" ? "14,166,106" : src.color === "#D93025" ? "217,48,37" : "196,122,10"},0.08)`,
-                      border: `1px solid rgba(${src.color === "#1D6FE8" ? "29,111,232" : src.color === "#0EA66A" ? "14,166,106" : src.color === "#D93025" ? "217,48,37" : "196,122,10"},0.18)`
-                    }}>
-                      <Icon size={12} color={src.color} strokeWidth={1.75} />
-                    </div>
-                    <span className="up-feature-name" style={{ fontSize: 12 }}>{src.name}</span>
-                  </div>
-                );
-              })}
-            </motion.div>
-          </motion.div>
-        </div>
+      <div className="up-bar">
+        <button className="up-back" onClick={() => navigate("/")} data-cursor="Back">
+          <ArrowLeft size={14} /> All analyses
+        </button>
       </div>
 
-      {/* Rendered last so it sits above the page without needing a portal. It
-          is not a retryable fault, so it is a dialog rather than the red error
-          box above -- see OutOfScopeDialog for why. */}
-      <AnimatePresence>
-        {outOfScope && (
-          <OutOfScopeDialog
-            scopeCheck={outOfScope}
-            companyName={companyInput.trim() || undefined}
-            onDismiss={dismissOutOfScope}
-          />
+      <div className="up-stage">
+        <Reveal>
+          <h1 className="up-headline">
+            <SplitWords text="Give us a company." />
+            <br />
+            <span style={{ color: "var(--text-3)" }}>
+              <SplitWords text="We'll investigate it." delay={0.16} />
+            </span>
+          </h1>
+        </Reveal>
+        <Reveal delay={0.24}>
+          <p className="up-sub">
+            Upload a pitch deck. VentureFlow extracts its claims, checks them against
+            live sources, and challenges the assumptions underneath &mdash; then says
+            plainly what it could not establish.
+          </p>
+        </Reveal>
+
+        <Reveal delay={0.3}>
+          <div
+            className="up-target"
+            data-drag={dragging}
+            data-filled={Boolean(fileName)}
+            data-cursor={fileName ? undefined : "Drop"}
+            onDrop={(e) => {
+              e.preventDefault(); setDragging(false);
+              if (e.dataTransfer.files?.length) storeFile(e.dataTransfer.files[0]);
+            }}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onClick={() => !isAnalyzing && !fileName && inputRef.current?.click()}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === " ") && !isAnalyzing && !fileName) {
+                e.preventDefault(); inputRef.current?.click();
+              }
+            }}
+            role="button"
+            tabIndex={isAnalyzing || fileName ? -1 : 0}
+            aria-label="Choose a pitch deck, or drop one here"
+          >
+            <input
+              ref={inputRef} type="file" style={{ display: "none" }}
+              accept={ACCEPTED.join(",")}
+              onChange={(e) => e.target.files?.length && storeFile(e.target.files[0])}
+            />
+
+            {/* An empty aperture until there is a deck; then the deck itself. */}
+            {pages.length > 0
+              ? <DeckSculpture pages={pages} progress={0} align="center" />
+              : <IntakePortal state={intake} height={420} />}
+
+            <div className="up-target-inner">
+              <AnimatePresence mode="wait" initial={false}>
+                {!fileName ? (
+                  <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <div className="up-target-title">
+                      {dragging ? "Release to begin" : "Drop a pitch deck here"}
+                    </div>
+                    <div className="up-target-hint">
+                      PDF, PPTX, DOCX, TXT or MD &middot; up to 10 MB &middot; or click to browse
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="filled" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 12, padding: "10px 16px", borderRadius: "var(--r-pill)", background: "var(--neutral-quiet)", border: "1px solid var(--line)" }}>
+                      <FileText size={15} color={isParsed ? "var(--verified)" : "var(--accent)"} />
+                      <span style={{ fontSize: 13.5, fontWeight: 600 }}>{fileName}</span>
+                      <span className="vf-num" style={{ fontSize: 12, color: "var(--text-3)" }}>{fileSize}</span>
+                      {parsing && (
+                        <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} style={{ display: "flex", color: "var(--accent)" }}>
+                          <Loader2 size={13} />
+                        </motion.span>
+                      )}
+                      {!isAnalyzing && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); clearFile(); }}
+                          aria-label="Remove file"
+                          style={{ display: "flex", background: "none", border: "none", color: "var(--text-3)", cursor: "pointer", padding: 0 }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="up-target-hint">
+                      {parsing ? "Reading the document…" : isParsed ? "Read. Check the details before we start." : ""}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </Reveal>
+
+        {(fileError || (error && !outOfScope)) && (
+          <div
+            role="alert"
+            style={{
+              marginTop: 16, padding: "13px 16px", borderRadius: "var(--r-md)",
+              background: "var(--critical-quiet)", border: "1px solid var(--critical-line)",
+              color: "var(--text)", fontSize: 13.5,
+            }}
+          >
+            {fileError || error}
+          </div>
         )}
-      </AnimatePresence>
-    </>
+
+        <AnimatePresence>
+          {isParsed && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+              style={{ marginTop: 44 }}
+            >
+              <div className="up-split">
+                <div>
+                  <div className="vf-label" style={{ marginBottom: 14 }}>Deck ingestion</div>
+                  <div className="up-readout">
+                    {readout.map((r) => (
+                      <div className="up-cell" key={r.label}>
+                        <div className="vf-label" style={{ marginBottom: 10 }}>{r.label}</div>
+                        <div className="up-cell-v">{r.value}</div>
+                        <div className="up-cell-h">{r.hint}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {uploadResult?.text_source && uploadResult.text_source !== "text_layer" && (
+                    <p style={{ marginTop: 16, fontSize: 13, lineHeight: 1.65, color: "var(--text-2)" }}>
+                      <Badge tone="accent" size="sm">Read by OCR</Badge>{" "}
+                      {uploadResult.text_source === "ocr"
+                        ? "This deck has no text layer, so every page was recognised from its image."
+                        : "This deck's text layer was thin, so the pages were also read as images."}
+                      {" "}Treat any figure as read from a picture: OCR misreads digits more
+                      often than it misreads words.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <div className="vf-label" style={{ marginBottom: 14 }}>Before we start</div>
+
+                  <label className="up-field">
+                    <span className="vf-label" style={{ display: "block", marginBottom: 8 }}>Company name</span>
+                    <input
+                      className="up-input"
+                      value={companyInput}
+                      onChange={(e) => setCompanyInput(e.target.value)}
+                      placeholder="e.g. NovaMed AI"
+                      disabled={isAnalyzing}
+                    />
+                  </label>
+
+                  <label className="up-field">
+                    <span className="vf-label" style={{ display: "block", marginBottom: 8 }}>
+                      Founders
+                      {detectedFounders.length > 0 && (
+                        <span style={{ color: "var(--verified)", marginLeft: 8, textTransform: "none", letterSpacing: 0 }}>
+                          {detectedFounders.length} found in the deck
+                        </span>
+                      )}
+                    </span>
+                    <input
+                      className="up-input"
+                      value={foundersInput}
+                      onChange={(e) => { setFoundersTouched(true); setFoundersInput(e.target.value); }}
+                      placeholder="Comma-separated, e.g. Ada Lovelace, Grace Hopper"
+                      disabled={isAnalyzing}
+                    />
+                    <span className="up-help">
+                      {detectedFounders.length > 0
+                        ? "Read from the deck's team slide. Each name is searched against public evidence, so correct them before running."
+                        : "No team slide was found. Add names to enable the background check, or leave this empty to skip it."}
+                    </span>
+                  </label>
+
+                  <Magnetic>
+                    <button className="up-run" onClick={run} disabled={isAnalyzing || parsing} data-cursor="Run">
+                      Begin investigation <ArrowRight size={17} />
+                    </button>
+                  </Magnetic>
+                  <p className="up-help" style={{ textAlign: "center" }}>
+                    Five to ten minutes. You can leave this tab and come back.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {isAnalyzing && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              style={{ marginTop: 44 }}
+            >
+              <div className="vf-label" style={{ marginBottom: 6 }}>Investigating</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap", marginBottom: 6 }}>
+                <div className="vf-md">{companyInput || fileName}</div>
+                <span style={{ fontSize: 13.5, color: "var(--text-3)" }}>{currentStage}</span>
+                <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-3)" }}>
+                  <Clock size={13} />
+                  <span className="vf-num">{formatElapsed(elapsed)}</span> elapsed
+                </span>
+              </div>
+              <GrowBar pct={progressPct} color="var(--accent)" height={3} />
+
+              {/* The specialists, driven by the backend's own stage string. */}
+              <AnalysisTheatre
+                company={companyInput || fileName || "This deck"}
+                stage={currentStage}
+                height={520}
+              />
+
+              {/* The same sequence in reading order, for anyone who wants the
+                  list rather than the picture. */}
+              <details style={{ marginTop: 4 }}>
+                <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--text-3)" }}>
+                  Steps, in order
+                </summary>
+                <div style={{ marginTop: 10, maxWidth: 560 }}>
+                  {STAGES.map((s, i) => (
+                    <div
+                      key={s}
+                      className="up-step"
+                      data-state={stageIndex < 0 ? "" : i < stageIndex ? "done" : i === stageIndex ? "active" : ""}
+                    >
+                      <span className="up-step-dot" />
+                      {s}
+                      {stageIndex > i && <Check size={13} color="var(--verified)" style={{ marginLeft: "auto" }} />}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {isDone && (
+          <div
+            style={{
+              marginTop: 44, display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap",
+              padding: "22px 24px", borderRadius: "var(--r-lg)",
+              border: "1px solid var(--verified-line)", background: "var(--verified-quiet)",
+            }}
+          >
+            <Check size={20} color="var(--verified)" />
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{report?.company} is analysed</div>
+              <div style={{ fontSize: 13, color: "var(--text-3)" }}>
+                Scored {Math.round(report!.final_score)}/100 &middot; {report!.recommendation}
+              </div>
+            </div>
+            <Magnetic>
+              <button
+                className="up-run"
+                style={{ width: "auto", marginLeft: "auto" }}
+                onClick={() => navigate("/analysis")}
+                data-cursor="Open"
+              >
+                Open the report <ArrowRight size={16} />
+              </button>
+            </Magnetic>
+          </div>
+        )}
+      </div>
+
+      {outOfScope && (
+        <OutOfScopeDialog
+          scopeCheck={outOfScope}
+          companyName={companyInput}
+          onDismiss={() => { dismissOutOfScope(); clearFile(); }}
+        />
+      )}
+    </div>
   );
 };
 

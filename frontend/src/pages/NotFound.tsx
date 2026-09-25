@@ -22,7 +22,7 @@ const NotFound = () => {
       <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
         Page not found
       </div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 320 }}>
+      <div style={{ fontSize: 13.5, color: "var(--text-muted)", marginBottom: 24, maxWidth: 340, lineHeight: 1.6 }}>
         There's nothing at this address. Head back to the dashboard to keep working.
       </div>
       <button onClick={() => navigate("/")} style={{

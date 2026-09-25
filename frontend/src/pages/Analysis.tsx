@@ -1,22 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis,
   PolarRadiusAxis, Radar, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
-import { CheckCircle, AlertTriangle, ChevronDown, ChevronUp, Download, ExternalLink, Upload, Zap } from "lucide-react";
+import { CheckCircle, AlertTriangle, ChevronDown, ChevronUp, Download, ExternalLink, Globe, Shield, Upload, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authHeaders, handleSignedOut } from "../services/apiClient";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import VentureScorePanel from "../components/analysis/VentureScorePanel";
-import VerdictHero from "../components/analysis/VerdictHero";
+import ReportFilm from "../components/analysis/ReportFilm";
+import type { DeckPage } from "../components/analysis/DeckSculpture";
+import AskDrawer from "../components/analysis/AskDrawer";
+import EvidenceGraph from "../components/analysis/EvidenceGraph";
+import ScoreLedger from "../components/analysis/ScoreLedger";
+import { CapabilityRadar, ClaimBreakdown } from "../components/charts/Charts";
+import { Reveal, Tilt } from "../components/ui/scroll";
+import ReliabilityStrip from "../components/analysis/ReliabilityStrip";
 import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
 import { Panel, SLabel, ScoreBadge } from "../components/ui/Panel";
-import { Reveal } from "../components/ui/Motion";
 import { MemoText, memoPreview } from "../components/ui/MemoText";
+import InsightCard, { InsightCardStyles } from "../components/ui/InsightCard";
+import { Button, ButtonStyles, Chip, Disclosure, EmptyState } from "../components/ui/primitives";
+import PrefsControl from "../components/ui/PrefsControl";
 
-const tabs = ["Summary", "Market Validation", "Founder Analysis", "Competitor Insights"];
+const tabs = ["Summary", "Evidence", "Market Validation", "Founder Analysis", "Competitor Insights"];
 
 type ChatMessage = {
   role: "bot" | "user";
@@ -76,18 +84,19 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
   const suggestions = ["What is the ARR?", "Who are the founders?", "What is the runway?", "Key risks?"];
 
   return (
-    <div style={{
-      background: "#fff", border: "1px solid rgba(15,23,42,0.08)",
-      borderRadius: 14, display: "flex", flexDirection: "column", height: 480,
-      boxShadow: "0 1px 4px rgba(15,23,42,0.06)",
-    }}>
-      <div style={{
-        padding: "12px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)",
-        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
-        color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
-      }}>
-        Document Chat
-        {!sessionId && <span style={{ color: "#5D6B7F", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
+    <div
+      className="vf-card"
+      style={{ display: "flex", flexDirection: "column", maxHeight: 520 }}
+    >
+      <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+          Ask this deck
+        </div>
+        <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>
+          {sessionId
+            ? "Answered from the deck's own text only."
+            : "Available once an analysis has run."}
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -125,12 +134,9 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
       {messages.length === 1 && (
         <div style={{ padding: "0 14px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
           {suggestions.map(s => (
-            <button key={s} onClick={() => send(s)} disabled={!sessionId} style={{
-              background: "transparent", border: "1px solid rgba(15,23,42,0.1)",
-              borderRadius: 20, padding: "4px 10px", fontSize: 10.5,
-              fontFamily: "var(--font-mono)", color: "#64748B",
-              cursor: sessionId ? "pointer" : "not-allowed", transition: "all 0.15s ease",
-            }}>{s}</button>
+            <button key={s} onClick={() => send(s)} disabled={!sessionId} className="an-chat-suggestion">
+              {s}
+            </button>
           ))}
         </div>
       )}
@@ -142,18 +148,12 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
           value={input} onChange={e => setInput(e.target.value)}
           placeholder={sessionId ? "Ask about this deck…" : "Run analysis first"}
           disabled={!sessionId || loading}
-          style={{
-            flex: 1, background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)",
-            borderRadius: 8, padding: "8px 12px", fontSize: 12.5,
-            fontFamily: "var(--font-sans)", color: "#0B1120", outline: "none",
-          }}
+          className="an-chat-input"
+        
         />
-        <button type="submit" disabled={!sessionId || loading || !input.trim()} style={{
-          background: "#1D6FE8", border: "none", borderRadius: 8,
-          padding: "8px 14px", fontSize: 12, fontWeight: 600,
-          color: "#fff", cursor: "pointer",
-          opacity: (!sessionId || loading || !input.trim()) ? 0.4 : 1,
-        }}>Send</button>
+        <button type="submit" disabled={!sessionId || loading || !input.trim()} className="an-chat-send">
+          Send
+        </button>
       </form>
     </div>
   );
@@ -202,47 +202,45 @@ function CommentsPanel({ reportId }: { reportId: string | null }) {
   };
 
   return (
-    <div style={{
-      background: "#fff", border: "1px solid rgba(15,23,42,0.08)",
-      borderRadius: 14, marginTop: 14, boxShadow: "0 1px 4px rgba(15,23,42,0.06)",
-    }}>
-      <div style={{
-        padding: "12px 16px", borderBottom: "1px solid rgba(15,23,42,0.08)",
-        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
-        color: "#0B1120", letterSpacing: "0.06em", textTransform: "uppercase",
-      }}>
-        Notes {!reportId && <span style={{ color: "#5D6B7F", fontWeight: 400, marginLeft: 8, fontSize: 9 }}>(run analysis first)</span>}
-      </div>
-      <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
-        {comments.length === 0 && <div style={{ fontSize: 12, color: "#5D6B7F", fontFamily: "var(--font-sans)" }}>No notes yet.</div>}
+    <div style={{ marginTop: 14 }}>
+      <Disclosure
+        summary="Notes for the deal team"
+        defaultOpen={comments.length > 0}
+        meta={comments.length > 0 ? <Chip size="sm" mono>{comments.length}</Chip> : undefined}
+      >
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 220, overflowY: "auto" }}>
+        {comments.length === 0 && (
+          <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            {reportId ? "Nothing noted yet. Anyone with access to this report can read what you add." : "Available once an analysis has run."}
+          </div>
+        )}
         {comments.map((c) => (
-          <div key={c.id} style={{ fontSize: 12.5, fontFamily: "var(--font-sans)", color: "#374151" }}>
-            <span style={{ fontWeight: 600, color: "#0B1120" }}>{c.author_name}</span>
-            <span style={{ color: "#5D6B7F", fontSize: 10.5, marginLeft: 6 }}>{formatDateTime(c.created_at)}</span>
+          <div key={c.id} style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+            <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.author_name}</span>
+            <span style={{ color: "var(--text-muted)", fontSize: 12, marginLeft: 6 }}>{formatDateTime(c.created_at)}</span>
             <div style={{ marginTop: 2 }}>{c.body}</div>
           </div>
         ))}
       </div>
-      <form onSubmit={submit} style={{ padding: "10px 14px", borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", flexDirection: "column", gap: 6 }}>
+      <form onSubmit={submit} style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 7 }}>
         <input
+          className="an-chat-input"
           value={authorName} onChange={(e) => setAuthorName(e.target.value)}
           placeholder="Your name (optional)" disabled={!reportId}
-          style={{ background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "6px 10px", fontSize: 12, fontFamily: "var(--font-sans)", outline: "none" }}
         />
         <div style={{ display: "flex", gap: 8 }}>
           <input
+            className="an-chat-input"
             value={body} onChange={(e) => setBody(e.target.value)}
-            placeholder={reportId ? "Add a note for the deal team…" : "Run analysis first"}
+            placeholder={reportId ? "Add a note" : "Run analysis first"}
             disabled={!reportId || posting}
-            style={{ flex: 1, background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, fontFamily: "var(--font-sans)", outline: "none" }}
           />
-          <button type="submit" disabled={!reportId || posting || !body.trim()} style={{
-            background: "#1D6FE8", border: "none", borderRadius: 8, padding: "8px 14px",
-            fontSize: 12, fontWeight: 600, color: "#fff", cursor: "pointer",
-            opacity: (!reportId || posting || !body.trim()) ? 0.4 : 1,
-          }}>Post</button>
+          <button type="submit" disabled={!reportId || posting || !body.trim()} className="an-chat-send">
+            Post
+          </button>
         </div>
       </form>
+      </Disclosure>
     </div>
   );
 }
@@ -268,43 +266,73 @@ function EmptyAnalysis() {
           <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
             Agents are running…
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 16 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, color: "#5D6B7F", marginBottom: 16 }}>
             {currentStage}
           </div>
           <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
             <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F", marginTop: 8 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F", marginTop: 8 }}>
             {progressPct}% complete
           </div>
         </>
       ) : (
         <>
-          <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.18)",
-            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20,
-          }}>
-            <Upload size={28} color="#1D6FE8" strokeWidth={1.5} />
-          </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
-            No analysis yet
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", marginBottom: 24, maxWidth: 300 }}>
-            Upload and analyse a pitch deck to see the full report here.
-          </div>
-          <button onClick={() => navigate("/upload")} style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#1D6FE8", color: "#fff", border: "none",
-            borderRadius: 10, padding: "11px 22px", fontFamily: "var(--font-sans)",
-            fontSize: 14, fontWeight: 600, cursor: "pointer",
-          }}>
-            <Upload size={15} /> Upload a Deck
-          </button>
+          <ButtonStyles />
+          {/* Two ways out, not one. This screen is reached by clicking
+              "Analysis" in the sidebar with nothing loaded, and for someone
+              with twenty saved reports the useful action is usually opening
+              one of them rather than running a new deck. */}
+          <EmptyState
+            icon={<Upload size={20} />}
+            title="No report open"
+            body="Open one of your saved analyses, or upload a new deck to run one."
+            action={
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                <Button variant="primary" icon={<Upload size={15} />} onClick={() => navigate("/upload")}>
+                  Upload a deck
+                </Button>
+                <Button onClick={() => navigate("/")}>Browse saved analyses</Button>
+              </div>
+            }
+          />
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * One chapter of the report.
+ *
+ * The summary used to be eight white cards of identical weight stacked in a
+ * column -- the reader had no way to tell where they were, what mattered, or
+ * how much was left. A number, a title and a line of orientation cost very
+ * little and turn a stack into a document.
+ */
+function Chapter({
+  index,
+  title,
+  hint,
+  children,
+}: {
+  index: string;
+  title: string;
+  hint?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Reveal as="section" className="an-chapter">
+      <div className="an-chapter-head">
+        <span className="an-chapter-index">{index}</span>
+        <div style={{ minWidth: 0 }}>
+          <h2 className="an-chapter-title">{title}</h2>
+          {hint && <p className="an-chapter-hint">{hint}</p>}
+        </div>
+      </div>
+      {children}
+    </Reveal>
   );
 }
 
@@ -326,10 +354,35 @@ const Analysis = () => {
   // between pages, because what actually mattered was the report going away
   // underneath a mounted Analysis page.
   const [activeTab, setActiveTab] = useState("Summary");
+  const [tabDirection, setTabDirection] = useState<"fwd" | "back">("fwd");
+  const selectTab = (next: string) => {
+    setTabDirection(tabs.indexOf(next) >= tabs.indexOf(activeTab) ? "fwd" : "back");
+    setActiveTab(next);
+  };
+  /**
+   * Whether the opening chapter has scrolled away.
+   *
+   * A zero-height sentinel below the hero rather than a scroll listener on the
+   * report: the browser reports the crossing itself, so nothing measures
+   * layout on every frame of a long scroll.
+   */
+  const heroSentinel = useRef<HTMLDivElement>(null);
+  const [heroGone, setHeroGone] = useState(false);
   const [ddOpen, setDdOpen] = useState(false);
   const [memoExpanded, setMemoExpanded] = useState(false);
 
   const [pdfExporting, setPdfExporting] = useState(false);
+
+  useEffect(() => {
+    const sentinel = heroSentinel.current;
+    if (!sentinel || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroGone(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
   const { report, sessionId } = useApp();
   const navigate = useNavigate();
 
@@ -345,9 +398,31 @@ const Analysis = () => {
   // ── Derive display values from real report ────────────────────────────────
   const score = report.final_score;
   const scoreColor = score >= 75 ? "#0EA66A" : score >= 50 ? "#C47A0A" : "#D93025";
-  const riskValue = Math.min(100, Math.round(report.risk_signals_found * 3.5 + 10));
-  const riskLabel = riskValue >= 70 ? "High" : riskValue >= 40 ? "Moderate" : "Low";
-  const riskColor = riskValue >= 70 ? "#D93025" : riskValue >= 40 ? "#C47A0A" : "#0EA66A";
+  /**
+   * The risk level the pipeline returned -- not a number derived from it.
+   *
+   * This used to be `min(100, risk_signals_found * 3.5 + 10)`, bucketed into
+   * High/Moderate/Low. Nothing measures that: the multiplier and the offset
+   * are invented, and the result disagreed with the report's own
+   * `risk_level` on screen. A deck whose pipeline returned UNKNOWN showed
+   * "UNKNOWN risk" in the header and "Low" in the card six inches below it,
+   * because the header read the field and the card read the formula.
+   *
+   * An absent level now reads as unknown, which is what it is.
+   */
+  const riskRaw = (report.risk_level || "").toUpperCase();
+  const riskLabel = riskRaw === "HIGH" ? "High"
+    : riskRaw === "MEDIUM" || riskRaw === "MODERATE" ? "Moderate"
+      : riskRaw === "LOW" ? "Low"
+        : "Unknown";
+  const riskTone = riskLabel === "High" ? "negative" as const
+    : riskLabel === "Moderate" ? "caution" as const
+      : riskLabel === "Low" ? "positive" as const
+        : "neutral" as const;
+  const riskColor = riskLabel === "High" ? "var(--negative)"
+    : riskLabel === "Moderate" ? "var(--caution)"
+      : riskLabel === "Low" ? "var(--positive)"
+        : "var(--text-muted)";
 
   const today = formatDate(new Date());
   const deckId = displayDeckId(report.company);
@@ -401,6 +476,8 @@ const Analysis = () => {
     coverage?.verdict === "HIGH" ? "#0EA66A"
       : coverage?.verdict === "PARTIAL" ? "#C47A0A"
         : "#D93025";
+  const marketConfidencePct = Math.round((market?.confidence ?? 0) * 100);
+
   const extractionProvenance =
     report.extraction_provenance ?? report.sections?.extraction_provenance;
 
@@ -449,6 +526,28 @@ const Analysis = () => {
    * public company are different kinds of evidence and presenting them as one
    * undifferentiated list of peers would misrepresent both.
    */
+  /**
+   * The deck's pages, as the extractor counted them.
+   *
+   * `content_slides` is the total it considered; `unrepresented_slides` are the
+   * ones nothing structured came out of. Everything else is treated as read.
+   * When coverage is unavailable -- older stored reports -- there are no pages,
+   * and the scenes that depend on them do not render rather than guessing at a
+   * page count.
+   */
+  const deckPages: DeckPage[] = (() => {
+    const cov = report.extraction_coverage ?? report.sections?.extraction_coverage;
+    const total = cov?.available ? cov.content_slides ?? 0 : 0;
+    if (!total) return [];
+    const dark = new Map(
+      (cov?.unrepresented_slides ?? []).map((u) => [u.slide, u.heading] as const),
+    );
+    return Array.from({ length: Math.min(total, 60) }, (_, i) => {
+      const slide = i + 1;
+      return { slide, heading: dark.get(slide), read: !dark.has(slide) };
+    });
+  })();
+
   const marketComparables = report.sections?.market_comparables;
   const corpusComparables = (marketComparables?.available && marketComparables.comparables) || [];
   const portfolioMatches = report.similar_companies ?? [];
@@ -586,12 +685,12 @@ const Analysis = () => {
         .an-root { font-family: var(--font-sans); color: var(--text-primary); min-height: 100vh; background: var(--bg); }
 
         /* ── VentureFlow Score panel ─────────────────────────────────── */
-        .vs-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; }
+        .vs-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 26px 28px; margin-bottom: 0; }
         .vs-card-muted { background: var(--surface-2); }
         .vs-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-        .vs-eyebrow { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-secondary); margin: 0; font-weight: 600; }
+        .vs-eyebrow { font-family: var(--font-sans); font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin: 0; font-weight: 600; }
         .vs-sub { font-size: 11.5px; color: var(--text-secondary); margin: 4px 0 0; }
-        .vs-conf { font-family: var(--font-mono); font-size: 9.5px; font-weight: 600; padding: 5px 11px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+        .vs-conf { font-family: var(--font-sans); font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
         .vs-score-row { display: flex; align-items: baseline; gap: 18px; margin: 16px 0 6px; flex-wrap: wrap; }
         .vs-score-main { display: flex; align-items: baseline; gap: 3px; }
         .vs-score { font-size: 46px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -605,7 +704,7 @@ const Analysis = () => {
         .vs-track-range { position: absolute; top: 0; bottom: 0; background: rgba(29,111,232,0.16); border-radius: 4px; }
         .vs-track-base { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text-secondary); opacity: 0.5; }
         .vs-track-point { position: absolute; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
-        .vs-track-labels { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; color: var(--text-secondary); margin-top: 6px; }
+        .vs-track-labels { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); margin-top: 6px; }
         .vs-breakdown { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
         .vs-bd-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 13px; font-size: 12.5px; border-bottom: 1px solid var(--border); }
         .vs-bd-row:last-child { border-bottom: none; }
@@ -615,7 +714,7 @@ const Analysis = () => {
         .vs-bd-total span { color: var(--text-primary); font-weight: 600; }
         .vs-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .vs-stat { background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; display: flex; flex-direction: column; gap: 4px; }
-        .vs-stat-k { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); }
+        .vs-stat-k { font-family: var(--font-sans); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; color: var(--text-muted); }
         .vs-stat-v { font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
         .vs-warn { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.5; color: #8A2018; background: rgba(217,48,37,0.06); border: 1px solid rgba(217,48,37,0.18); border-radius: 9px; padding: 10px 12px; margin: 14px 0 0; }
         .vs-unavailable { display: flex; align-items: flex-start; gap: 9px; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary); }
@@ -627,7 +726,7 @@ const Analysis = () => {
         .vs-details summary:focus-visible { outline: 2px solid var(--accent, #1D6FE8); outline-offset: 3px; border-radius: 4px; }
         .vs-dl { margin: 11px 0 0; display: flex; flex-direction: column; gap: 8px; }
         .vs-dl > div { display: grid; grid-template-columns: 148px 1fr; gap: 12px; font-size: 12px; }
-        .vs-dl dt { font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); padding-top: 2px; }
+        .vs-dl dt { font-family: var(--font-sans); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; color: var(--text-muted); padding-top: 2px; }
         .vs-dl dd { margin: 0; line-height: 1.55; }
         .vs-caveat { font-size: 11.5px; line-height: 1.6; color: var(--text-secondary); margin: 12px 0 0; padding-top: 10px; border-top: 1px dashed var(--border); }
         .vs-meaning { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: rgba(15,23,42,0.03); border: 1px solid var(--border); font-size: 13px; line-height: 1.55; color: var(--text-primary); }
@@ -651,13 +750,13 @@ const Analysis = () => {
 
         .an-meta-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
-        .an-eyebrow { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+        .an-eyebrow { font-family: var(--font-sans); font-size: 11px; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; }
 
         .an-id-badge { font-family: var(--font-mono); font-size: 9.5px; color: var(--blue); letter-spacing: 0.06em; padding: 3px 10px; background: rgba(29,111,232,0.08); border: 1px solid rgba(29,111,232,0.2); border-radius: 20px; font-weight: 500; }
 
         .an-title { font-family: var(--font-display); font-size: 30px; font-weight: 400; letter-spacing: -0.01em; color: var(--text-primary); margin: 0 0 5px; line-height: 1; }
 
-        .an-subtitle { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); margin-bottom: 20px; }
+        .an-subtitle { font-family: var(--font-sans); font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
 
         .an-header-actions { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
 
@@ -665,10 +764,53 @@ const Analysis = () => {
 
         .an-export-btn:hover { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
 
-        .an-confidence-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 9.5px; color: var(--green); background: rgba(14,166,106,0.08); border: 1px solid rgba(14,166,106,0.22); padding: 6px 12px; border-radius: 20px; font-weight: 500; }
+        .an-confidence-chip { font-family: var(--font-sans); font-size: 11.5px; color: var(--positive); background: var(--positive-tint); border: 1px solid var(--positive-line); padding: 5px 12px; border-radius: 20px; font-weight: 600; }
 
-        .an-tabbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; }
-        .an-tabs { display: flex; gap: 2px; }
+        /* The tabs follow the reader down the document. Without this, moving
+           from the memo to the claims table meant scrolling back to the top of
+           a very long page to find the control that does it. */
+        .an-tabbar {
+          position: sticky; top: 0; z-index: 30;
+          border-radius: 32px 32px 0 0;
+          background: color-mix(in srgb, var(--surface-1) 82%, transparent);
+          backdrop-filter: blur(16px) saturate(140%);
+          border-bottom: 1px solid var(--border);
+          padding: 0 var(--gutter);
+          display: flex; align-items: center; gap: 24px;
+          transition: box-shadow var(--dur-base) var(--ease-out);
+        }
+        .an-tabbar[data-stuck="true"] { box-shadow: var(--shadow-2); }
+
+        /* The report's identity, for when the chapter that carried it has
+           scrolled away. It is the only place the score is repeated, and it
+           only exists while the hero is off screen. */
+        .an-mini {
+          display: flex; align-items: center; gap: 10px;
+          opacity: 0; transform: translateY(4px); pointer-events: none;
+          transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+          white-space: nowrap;
+        }
+        .an-tabbar[data-stuck="true"] .an-mini { opacity: 1; transform: none; }
+        .an-mini-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+        .an-mini-score {
+          font-family: var(--font-display); font-size: 19px; line-height: 1;
+        }
+        @media (max-width: 720px) { .an-mini { display: none; } }
+
+        .an-bar-btn {
+          display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0;
+          padding: 7px 13px; border-radius: 999px; cursor: pointer;
+          font-family: var(--font-sans); font-size: 12.5px; font-weight: 600;
+          color: var(--text-secondary); background: var(--surface-2);
+          border: 1px solid var(--border);
+          transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+        }
+        .an-bar-btn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--border-strong); }
+        .an-bar-btn:disabled { opacity: 0.6; cursor: progress; }
+        @media (max-width: 860px) { .an-bar-btn-label { display: none; } }
+
+        .an-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+        .an-tabs::-webkit-scrollbar { display: none; }
 
         .an-tab { position: relative; font-family: var(--font-sans); font-size: 13.5px; font-weight: 500; padding: 15px 20px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out); white-space: nowrap; letter-spacing: -0.01em; }
         .an-tab-underline { position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2.5px; border-radius: 3px 3px 0 0; background: var(--blue); }
@@ -676,18 +818,97 @@ const Analysis = () => {
         .an-tab:hover { color: var(--text-secondary); }
         .an-tab-active { color: var(--blue); font-weight: 600; }
 
-        .an-body { padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px; }
+        /* One measure, centred. The report used to run edge-to-edge in a
+           column that was whatever was left after a 320px rail, so the line
+           length changed with the window rather than with the content. */
+        /* The documents, rising over the film.
+           The rounded top edge and the shadow above it are the seam between
+           the two halves of the product: everything above is the system
+           speaking, everything below is the evidence, and the reader should
+           feel the change of register before they read a word of it. */
+        .an-stage {
+          position: relative; z-index: 5;
+          background: linear-gradient(180deg, var(--surface) 0%, transparent 460px);
+          color: var(--text);
+          border-radius: 32px 32px 0 0;
+          margin-top: -32px;
+        }
+        .an-stage::before {
+          content: ''; display: block; height: 1px;
+          background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+          border-radius: 32px 32px 0 0;
+        }
+        .an-body {
+          max-width: 1060px; margin: 0 auto;
+          padding: 64px var(--gutter) 120px;
+          display: flex; flex-direction: column; gap: 92px;
+        }
 
-        .vf-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); border-left-width: 3px; transition: box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+        /* A chapter: a number, a title, and the thing itself. The numbers are
+           the reader's position in the document, which a stack of identical
+           cards never tells them. */
+        .an-chapter { display: flex; flex-direction: column; gap: 26px; }
+        .an-chapter-head { display: flex; align-items: baseline; gap: 14px; }
+        .an-chapter-index {
+          font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em;
+          color: var(--text-faint); padding-top: 6px;
+        }
+        .an-chapter-title {
+          font-family: var(--font-display); font-size: var(--display-md);
+          letter-spacing: -0.02em; line-height: 1.05; margin: 0;
+          color: var(--text-primary);
+        }
+        .an-chapter-hint {
+          font-size: 14px; color: var(--text-muted); margin: 6px 0 0;
+          max-width: 62ch; line-height: 1.6;
+        }
 
-        .vf-panel:hover { box-shadow: var(--shadow-raised); transform: translateY(-2px); border-color: var(--border-strong); }
+        @media (max-width: 720px) {
+          .an-body { padding: 36px var(--gutter) 80px; gap: 60px; }
+        }
+
+        .vf-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 26px 28px; border-left-width: 3px; transition: border-color var(--dur-base) var(--ease-out); }
+
+        .vf-panel:hover { border-color: var(--border-strong); }
         .vf-panel-neutral { border-left-color: var(--border) !important; }
 
-        .vf-slabel { font-family: var(--font-mono); font-size: 9.5px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; margin-bottom: 14px; }
+        /* Inter, not mono: these are words. Matches .vf-label in
+           styles/tailwind.css, which every other screen uses. */
+        .vf-slabel { font-family: var(--font-sans); font-size: 11px; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; margin-bottom: 14px; }
 
-        .an-case-item { display: flex; gap: 11px; align-items: flex-start; margin-bottom: 8px; padding: 11px 13px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); transition: border-color 0.15s ease, background 0.15s ease; cursor: default; }
+        .an-chat-suggestion {
+          background: var(--surface); border: 1px solid var(--border-strong);
+          border-radius: 20px; padding: 5px 11px; font-size: 12.5px;
+          font-family: var(--font-sans); color: var(--text-secondary); cursor: pointer;
+          transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+        }
+        .an-chat-suggestion:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .an-chat-suggestion:disabled { cursor: not-allowed; opacity: 0.55; }
 
-        .an-case-item:hover { border-color: var(--border-strong); background: #F3F5F8; }
+        .an-chat-input {
+          flex: 1; min-width: 0; background: var(--surface-2);
+          border: 1px solid var(--border-strong); border-radius: 8px;
+          padding: 9px 12px; font-size: 13.5px; font-family: var(--font-sans);
+          color: var(--text-primary); outline: none;
+          transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+        }
+        .an-chat-input:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(29,111,232,0.12); }
+
+        .an-chat-send {
+          background: var(--accent); border: none; border-radius: 8px;
+          padding: 9px 15px; font-size: 13px; font-weight: 600; color: #fff;
+          font-family: var(--font-sans); cursor: pointer;
+          transition: background var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+        }
+        .an-chat-send:hover:not(:disabled) { background: var(--accent-strong); }
+        .an-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* A row, not a box. These sat as bordered, tinted cards inside an
+           already-bordered panel, so a single bull point rendered as a box
+           inside a box inside a card. */
+        .an-case-item { display: flex; gap: 11px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: default; }
+
+        .an-case-item:last-child { border-bottom: none; padding-bottom: 0; }
 
         .an-case-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; flex: 1; }
 
@@ -697,7 +918,7 @@ const Analysis = () => {
 
         .an-verdict-headline { font-family: var(--font-display); font-size: 20px; color: var(--text-primary); letter-spacing: -0.02em; margin-bottom: 8px; line-height: 1.2; }
 
-        .verdict-tag { font-family: var(--font-mono); font-size: 9.5px; padding: 5px 12px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 500; cursor: default; transition: transform 0.15s ease; }
+        .verdict-tag { font-family: var(--font-sans); font-size: 11.5px; padding: 4px 12px; border-radius: 20px; letter-spacing: 0.02em; font-weight: 600; cursor: default; transition: transform 0.15s ease; }
 
         .verdict-tag:hover { transform: translateY(-1px); }
 
@@ -723,7 +944,7 @@ const Analysis = () => {
 
         .claims-table { width: 100%; border-collapse: collapse; }
 
-        .claims-th { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); }
+        .claims-th { font-family: var(--font-sans); font-size: 11px; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; text-align: left; padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); }
 
         .claims-tr { border-bottom: 1px solid rgba(15,23,42,0.05); transition: background 0.12s ease; }
 
@@ -732,21 +953,21 @@ const Analysis = () => {
 
         .claims-td { font-size: 12.5px; padding: 9px 12px 9px 0; color: var(--text-secondary); }
 
-        .match-chip { font-family: var(--font-mono); font-size: 9px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+        .match-chip { font-family: var(--font-sans); font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
 
         .an-founder-avatar { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--text-secondary); flex-shrink: 0; transition: transform 0.2s ease; }
 
         .vf-panel:hover .an-founder-avatar { transform: scale(1.06); }
 
         .an-founder-name { font-size: 13.5px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
-        .an-founder-role { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+        .an-founder-role { font-family: var(--font-sans); font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
         .an-founder-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 12px; }
 
-        .an-risk-pill { font-family: var(--font-mono); font-size: 9.5px; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.07em; font-weight: 500; }
+        .an-risk-pill { font-family: var(--font-sans); font-size: 11.5px; padding: 4px 11px; border-radius: 20px; letter-spacing: 0.02em; font-weight: 600; }
 
         .an-comp-table { width: 100%; border-collapse: collapse; }
 
-        .an-comp-th { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; text-align: left; padding: 0 12px 12px 0; border-bottom: 1px solid var(--border); font-weight: 500; }
+        .an-comp-th { font-family: var(--font-sans); font-size: 11px; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; text-align: left; padding: 0 12px 12px 0; border-bottom: 1px solid var(--border); font-weight: 600; }
 
         .an-comp-tr { border-bottom: 1px solid rgba(15,23,42,0.05); transition: background 0.12s ease; cursor: default; }
 
@@ -758,24 +979,36 @@ const Analysis = () => {
 
         .an-threat-row:hover { background: var(--surface-2); }
 
-        .tab-content-enter { animation: tab-fade-in 0.28s ease forwards; }
+        .tab-content-enter { animation: tab-slide-in 0.42s var(--ease-out) both; }
+        .tab-content-enter[data-dir="back"] { animation-name: tab-slide-in-back; }
+        @keyframes tab-slide-in {
+          from { opacity: 0; transform: translate3d(26px, 0, 0); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes tab-slide-in-back {
+          from { opacity: 0; transform: translate3d(-26px, 0, 0); }
+          to { opacity: 1; transform: none; }
+        }
+        :root[data-motion="off"] .tab-content-enter, :root[data-motion="off"] .tab-content-enter[data-dir="back"] { animation: none; }
+        
 
         @keyframes tab-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
         [data-tip] { position: relative; cursor: default; }
-        [data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: rgba(11,17,32,0.92); color: #F0F2F5; padding: 5px 10px; border-radius: 6px; font-family: var(--font-mono); font-size: 9.5px; white-space: nowrap; pointer-events: none; z-index: 200; }
+        [data-tip]:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%); background: rgba(11,17,32,0.94); color: #F0F2F5; padding: 6px 11px; border-radius: 7px; font-family: var(--font-sans); font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 200; }
         [data-tip]:hover::before { content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: rgba(11,17,32,0.92); z-index: 200; pointer-events: none; }
       `}</style>
 
       <div className="an-root">
+        <InsightCardStyles />
         {/* THE VERDICT, FIRST.
             This was a pale header whose only statement of the result was a
             12px chip in the corner reading "48/100 overall score" -- the same
             size and weight as the Export button beside it. The answer a reader
             opens the report for now leads the page, at full size, with its
             interval and base rate attached so the number is never quoted
-            alone. See VerdictHero for the reasoning. */}
-        <VerdictHero
+            alone. See ReportFilm for the reasoning. */}
+        <ReportFilm
           company={report.company}
           deckId={deckId}
           analyzedOn={today}
@@ -793,9 +1026,30 @@ const Analysis = () => {
           modelAvailable={Boolean(vs?.available && typeof vs.venture_score === "number")}
           bandKey={report.sections?.score_context?.available ? report.sections.score_context.band : undefined}
           bandLabel={report.sections?.score_context?.band_label}
-          measures={report.sections?.score_context?.measures}
           provisional={report.score_status === "provisional"}
-          provisionalNote={report.score_status_note ?? ""}
+          pages={deckPages}
+          coveragePct={coverage?.available ? coverage.coverage_pct : undefined}
+          readPages={coverage?.available ? coverage.represented_slides : undefined}
+          totalPages={coverage?.available ? coverage.content_slides : undefined}
+          /* The field in the closing scene is this report's own comparables --
+             see Constellation for why it is the data rather than an ornament. */
+          comparables={corpusComparables.map((c) => ({
+            name: c.name,
+            similarity: c.similarity,
+            outcome: c.outcome,
+            population: c.population,
+          }))}
+          bull={bullItems.map((b) => b.text)}
+          bear={bearItems.map((b) => b.text)}
+          /* "No signal found" and "the agent never ran" are different
+             statements, and the scene says whichever one is true. */
+          bullRan={!specialistDegraded("bull")}
+          bearRan={!specialistDegraded("bear")}
+          claims={claimsDetails.slice(0, 5).map((c) => ({
+            claim: c.claim,
+            verdict: c.verdict,
+            confidence: c.confidence,
+          }))}
           onExport={exportReportPdf}
           exporting={pdfExporting}
         />
@@ -803,7 +1057,16 @@ const Analysis = () => {
         {/* Tabs sit on their own light bar below the dark band, so the break
             between "the verdict" and "the evidence" is architectural rather
             than another border. */}
-        <div className="an-tabbar">
+        <div ref={heroSentinel} aria-hidden="true" />
+        <div className="an-tabbar" data-stuck={heroGone}>
+          <button className="an-bar-btn" onClick={() => navigate("/")} title="Back to all analyses">
+            <Upload size={13} style={{ transform: "rotate(-90deg)" }} />
+            <span className="an-bar-btn-label">All analyses</span>
+          </button>
+          <div className="an-mini" aria-hidden={!heroGone}>
+            <span className="an-mini-name">{report.company}</span>
+            <span className="an-mini-score" style={{ color: scoreColor }}>{Math.round(score)}</span>
+          </div>
           <div className="an-tabs" role="tablist">
             {tabs.map((t) => (
               <button
@@ -811,7 +1074,7 @@ const Analysis = () => {
                 role="tab"
                 aria-selected={activeTab === t}
                 className={`an-tab${activeTab === t ? " an-tab-active" : ""}`}
-                onClick={() => setActiveTab(t)}
+                onClick={() => selectTab(t)}
               >
                 {t}
                 {/* One element that slides between tabs, rather than a border
@@ -826,175 +1089,149 @@ const Analysis = () => {
               </button>
             ))}
           </div>
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <PrefsControl compact />
+          <button
+            className="an-bar-btn"
+            data-cursor="Export"
+            onClick={exportReportPdf}
+            disabled={pdfExporting}
+          >
+            <Download size={13} />
+            <span className="an-bar-btn-label">{pdfExporting ? "Exporting…" : "Export PDF"}</span>
+          </button>
+          </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 0 }}>
+        <div className="an-stage" data-mode="analytical">
           <div className="an-body">
-            {/* Two different situations that used to share one alarming
-                message. A pipeline failure and "this company is too early for
-                anyone to have written about it" call for very different
-                reactions from an investor, so they say different things. */}
-            {report.incomplete_analysis && (
-              <div role="alert" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F5C2C2", borderRadius: 10, background: "#FFF5F5", color: "#9B1C1C", fontSize: 13 }}>
-                Analysis is incomplete: key verification or specialist-agent results were unavailable. The score is capped and should not be used as an investment recommendation.
-              </div>
-            )}
-            {/* Verification did not run. A different sentence entirely from
-                "we searched and found nothing", and the one the reader needs
-                when the cause is our provider rather than the company. */}
-            {report.claims_verification_degraded && (
-              <div role="alert" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F0D9A8", borderRadius: 10, background: "#FFFBF0", color: "#7A5514", fontSize: 13, lineHeight: 1.55 }}>
-                <strong>Claim verification did not run for this report.</strong> The
-                language model was unavailable while this deck was analysed, so the
-                claims below were never checked against public sources. This says
-                nothing about the company — nothing was established either way, and
-                the score has not been reduced for it. Re-run the analysis to verify
-                them.
-              </div>
-            )}
-            {/* Milder than the banner above, and deliberately worded so it
-                cannot be misread as a finding: the checks ran, but on a
-                narrower evidence base than usual. */}
-            {report.evidence_search_degraded && !report.claims_verification_degraded && (
-              <div role="status" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #CFE0F5", borderRadius: 10, background: "#F5F9FF", color: "#1F4E8C", fontSize: 13, lineHeight: 1.55 }}>
-                <strong>Claims were checked against a narrower set of sources.</strong> The
-                general web index was rate-limited during this analysis, so the
-                fallback providers supplied the evidence. The verdicts below are
-                real and count towards the score, but an unconfirmed claim here is
-                more likely to mean we could not reach the right page than that the
-                claim is wrong. Re-running later will search the open web again.
-              </div>
-            )}
-            {!report.incomplete_analysis && report.claims_unverified && !report.claims_verification_degraded && (
-              <div role="status" style={{ marginBottom: 14, padding: "12px 14px", border: "1px solid #F0D9A8", borderRadius: 10, background: "#FFFBF0", color: "#7A5514", fontSize: 13, lineHeight: 1.55 }}>
-                <strong>No deck claim could be independently corroborated.</strong> Every checked claim was
-                searched, but public sources had nothing specific enough to confirm or contradict
-                it — normal for a company this early, and not a sign the analysis failed. The score
-                already reflects this, and an INVEST verdict is withheld until at least two claims
-                verify. Treat the numbers below as founder-reported.
-              </div>
-            )}
+            {/* Everything qualifying this report, in one collapsed panel.
+                Six stacked full-width warnings stood here and in the top of
+                the Summary tab; ReliabilityStrip holds all six texts, intact,
+                behind their own headlines. */}
+            <Chapter
+              index="01"
+              title="How much we could read"
+              hint="Everything below rests on this."
+            >
+            <ReliabilityStrip
+              coverage={coverage}
+              provenance={extractionProvenance}
+              incompleteAnalysis={report.incomplete_analysis}
+              verificationDegraded={report.claims_verification_degraded}
+              evidenceSearchDegraded={report.evidence_search_degraded}
+              claimsUnverified={report.claims_unverified}
+            />
+            </Chapter>
 
             {/* ── SUMMARY ── */}
             {activeTab === "Summary" && (
-              <div className="tab-content-enter">
-                {/* Extraction coverage sits ABOVE the score, deliberately.
-                    It qualifies everything below it: if most of the deck never
-                    reached a structured field, then the claims table, the
-                    evidence penalty and the score derived from them are all
-                    measurements of a partial reading. A reader who sees the
-                    score first and the caveat later has already formed a view.
-                    See extraction_coverage.py for why "we found nothing" and
-                    "there was nothing to find" had to stop looking identical. */}
-                {coverage?.available && (
-                  <div style={{
-                    border: `1px solid ${coverageTone}33`, background: `${coverageTone}0D`,
-                    borderRadius: 10, padding: "12px 14px", marginBottom: 12,
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <SLabel>Extraction Coverage</SLabel>
-                      <span style={{
-                        fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 700,
-                        color: coverageTone,
-                      }}>{coverage.coverage_pct}%</span>
-                      <span style={{
-                        fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
-                        letterSpacing: "0.08em", color: coverageTone,
-                        border: `1px solid ${coverageTone}33`, background: `${coverageTone}12`,
-                        borderRadius: 5, padding: "2px 7px",
-                      }}>{coverage.verdict}</span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F" }}>
-                        {coverage.represented_slides} of {coverage.content_slides} content slides reached a structured field
-                      </span>
-                    </div>
-                    <p style={{ fontSize: 12.5, color: "#4A5568", lineHeight: 1.65, margin: "8px 0 0" }}>
-                      {coverage.interpretation}
-                    </p>
-                    {(coverage.unrepresented_slides ?? []).length > 0 && (
-                      <div style={{ marginTop: 10, borderTop: "1px solid var(--border)", paddingTop: 8 }}>
-                        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
-                          Slides not represented below
-                        </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                          {coverage.unrepresented_slides!.slice(0, 12).map((s: { slide: number; heading: string }, i: number) => (
-                            <span key={i} title={s.heading} style={{
-                              fontFamily: "var(--font-mono)", fontSize: 9.5, color: "#64748B",
-                              border: "1px solid var(--border)", borderRadius: 5, padding: "2px 6px",
-                              background: "var(--surface-2)",
-                            }}>{s.slide}. {s.heading.slice(0, 24)}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Which extraction path produced this report. A silent
-                    fallback to regex is the defect this whole pass exists to
-                    make impossible; the reader of the claims table is the
-                    person who needs to know it fired. */}
-                {extractionProvenance?.is_fallback && (
-                  <div style={{
-                    border: "1px solid rgba(217,48,37,0.28)", background: "rgba(217,48,37,0.06)",
-                    borderRadius: 10, padding: "12px 14px", marginBottom: 12,
-                  }}>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#D93025", letterSpacing: "0.12em", fontWeight: 600, textTransform: "uppercase", marginBottom: 6 }}>
-                      ⚠ Degraded extraction — {extractionProvenance.method}
-                    </div>
-                    <p style={{ fontSize: 12.5, color: "#4A5568", lineHeight: 1.65, margin: 0 }}>
-                      {extractionProvenance.warning}
-                    </p>
-                  </div>
-                )}
-
+              <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
                 {/* The trained model's score leads the summary. It is the one
                     number on this page that came from a fitted, calibrated
                     model rather than from an LLM or a hand-tuned formula, so
                     it sits above the derived stat cards rather than among
                     them. */}
-                <Reveal>
-                  <VentureScorePanel
+                <Chapter
+                  index="02"
+                  title="The score"
+                  hint="From a trained model, not the language model."
+                >
+                  <ScoreLedger
                     data={report.sections?.venture_score}
-                    context={report.sections?.score_context}
-                    reportedScore={Math.round(score)}
-                    incompleteAnalysis={report.incomplete_analysis}
+                    reportedScore={score}
                   />
-                </Reveal>
+                </Chapter>
 
-                <div className="an-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
-                  {[
-                    { label: "Market Evidence", value: `${Math.round((market?.confidence ?? 0) * 100)}%`, color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)", tip: "Evidence confidence from the market agent" },
-                    {
-                      label: "Claims Verified",
-                      // "0/5" reads as a finding. When verification never ran,
-                      // there is no ratio to report.
-                      value: report.claims_verification_degraded
+                {/* Three figures, each with the working behind it.
+                    These were three flat cards whose explanation lived in a
+                    CSS `data-tip` hover tooltip -- unreachable on a touch
+                    screen, unreadable to a screen reader, and (because the
+                    tooltip fired on load) occasionally left stranded over the
+                    card below. The explanation is now the back of the card. */}
+                <Chapter
+                  index="03"
+                  title="What the run established"
+                  hint="Press a card for its working."
+                >
+                <div className="an-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+                  <Tilt max={5}>
+                  <InsightCard
+                    label="Market evidence"
+                    icon={<Globe size={14} />}
+                    tone={marketConfidencePct >= 60 ? "positive" : marketConfidencePct > 0 ? "caution" : "neutral"}
+                    value={`${marketConfidencePct}%`}
+                    verdict={
+                      marketConfidencePct > 0
+                        ? "Confidence the market agent placed in its own evidence."
+                        : "The market agent found nothing it could stand behind."
+                    }
+                  >
+                    This is the market specialist's confidence in the evidence it
+                    gathered for this deck&rsquo;s market claims &mdash; not a rating of
+                    the market itself. A low figure means the supporting material was
+                    thin or could not be reached, which is a statement about the
+                    search, not about the opportunity.
+                  </InsightCard>
+                  </Tilt>
+
+                  <Tilt max={5}>
+                  <InsightCard
+                    label="Claims verified"
+                    icon={<CheckCircle size={14} />}
+                    tone={report.claims_verification_degraded ? "neutral" : report.claims_supported > 0 ? "accent" : "caution"}
+                    value={
+                      /* "0/5" reads as a finding. When verification never ran,
+                         there is no ratio to report. */
+                      report.claims_verification_degraded
                         ? "Not run"
-                        : `${report.claims_supported}/${report.claims_verified}`,
-                      color: report.claims_verification_degraded ? "#5D6B7F" : "#1D6FE8",
-                      bg: report.claims_verification_degraded ? "rgba(93,107,127,0.08)" : "rgba(29,111,232,0.08)",
-                      border: report.claims_verification_degraded ? "rgba(93,107,127,0.2)" : "rgba(29,111,232,0.2)",
-                      tip: report.claims_verification_degraded
-                        ? "The language model was unavailable, so claims were not checked"
-                        : "Web-verified claims",
-                    },
-                    { label: "Risk Level", value: riskLabel, color: riskColor, bg: `${riskColor}14`, border: `${riskColor}30`, tip: "Blended risk assessment" },
-                  ].map((s, i) => (
-                    <motion.div key={i} className="score-card" data-tip={s.tip}
-                      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.07, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                      <SLabel>{s.label}</SLabel>
-                      <ScoreBadge value={s.value} color={s.color} bg={s.bg} border={s.border} />
-                    </motion.div>
-                  ))}
-                </div>
+                        : `${report.claims_supported}/${report.claims_verified}`
+                    }
+                    verdict={
+                      report.claims_verification_degraded
+                        ? "The language model was unavailable during this run."
+                        : "Deck claims corroborated by a public source."
+                    }
+                  >
+                    {report.claims_verification_degraded
+                      ? "No claim was checked, so nothing here counts for or against the company. Re-running the analysis will check them."
+                      : "The deck's most checkable claims are searched against live sources; each verdict on the Market Validation tab carries the evidence and the source URL it came from. Claims that could not be settled are reported as unsettled rather than counted as failures."}
+                  </InsightCard>
+                  </Tilt>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <Panel accentColor="#0EA66A">
-                    <SLabel color="#0EA66A">▲ Bull Case</SLabel>
+                  <Tilt max={5}>
+                  <InsightCard
+                    label="Risk level"
+                    icon={<Shield size={14} />}
+                    tone={riskTone}
+                    value={riskLabel}
+                    verdict={
+                      riskLabel === "Unknown"
+                        ? "The pipeline returned no risk level for this deck."
+                        : `${report.risk_signals_found} risk signal${report.risk_signals_found === 1 ? "" : "s"} detected in this deck.`
+                    }
+                  >
+                    A blend of keyword and financial screening, a trained
+                    disclosure model, and the language model&rsquo;s reading of the
+                    deck. The trained part scores 0.997 AUC on SEC filings but
+                    0.778 on pitch-deck wording, so treat this as a prompt for
+                    diligence rather than a measurement.
+                  </InsightCard>
+                  </Tilt>
+                </div>
+                </Chapter>
+
+                <Chapter
+                  index="04"
+                  title="The case, both ways"
+                  hint="Two specialists, opposite sides."
+                >
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }} className="vf-grid-2">
+                  <Panel accentColor="var(--positive)">
+                    <SLabel color="var(--positive)">Bull case</SLabel>
                     {bullItems.length > 0 ? bullItems.map((item, i) => (
                       <div key={i} className="an-case-item" data-tip={item.tip}>
-                        <CheckCircle size={14} color="#0EA66A" style={{ marginTop: "2px", flexShrink: 0 }} strokeWidth={2.2} />
+                        <CheckCircle size={14} color="var(--positive)" style={{ marginTop: "2px", flexShrink: 0 }} strokeWidth={2.2} />
                         <span className="an-case-text">{item.text}</span>
                       </div>
                     )) : (
@@ -1006,11 +1243,11 @@ const Analysis = () => {
                     )}
                   </Panel>
 
-                  <Panel accentColor="#C47A0A">
-                    <SLabel color="#C47A0A">▼ Bear Case</SLabel>
+                  <Panel accentColor="var(--caution)">
+                    <SLabel color="var(--caution)">Bear case</SLabel>
                     {bearItems.length > 0 ? bearItems.map((item, i) => (
                       <div key={i} className="an-case-item" data-tip={item.tip}>
-                        <AlertTriangle size={14} color="#C47A0A" style={{ marginTop: "2px", flexShrink: 0 }} strokeWidth={2.2} />
+                        <AlertTriangle size={14} color="var(--caution)" style={{ marginTop: "2px", flexShrink: 0 }} strokeWidth={2.2} />
                         <span className="an-case-text">{item.text}</span>
                       </div>
                     )) : (
@@ -1023,9 +1260,20 @@ const Analysis = () => {
                   </Panel>
                 </div>
 
-                <Panel className="vf-panel-neutral" accentColor="#1D6FE8">
-                  <SLabel>AI Investment Verdict</SLabel>
-                  <div className="an-verdict-headline">{report.recommendation}</div>
+                </Chapter>
+
+                <Chapter
+                  index="05"
+                  title="The memo"
+                  hint="Written over a score it did not compute."
+                >
+                <Panel className="vf-panel-neutral" accentColor="var(--accent)">
+                  {/* This card was headed "AI Investment Verdict" above a
+                      serif restatement of the recommendation -- the fourth
+                      time the same two words appear on this screen, after the
+                      header chip, the header band and the sidebar. What the
+                      card actually holds is the written memo. */}
+                  <SLabel>Investment memo</SLabel>
                   {/* The memo used to be shown as `.slice(0, 400) + "…"`, cut
                       mid-word, with the full text rendered nowhere else on the
                       page — so the product's main written output was readable
@@ -1059,24 +1307,19 @@ const Analysis = () => {
                       </button>
                     )}
                   </div>
-                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "16px" }}>
-                    {[
-                      { label: report.recommendation, color: scoreColor, bg: `${scoreColor}14`, border: `${scoreColor}30` },
-                      { label: `${report.claims_supported} CLAIMS VERIFIED`, color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)" },
-                      { label: `${riskLabel.toUpperCase()} RISK`, color: riskColor, bg: `${riskColor}12`, border: `${riskColor}28` },
-                    ].map((b, i) => (
-                      <span key={i} className="verdict-tag" style={{ color: b.color, background: b.bg, border: `1px solid ${b.border}` }}>
-                        {b.label}
-                      </span>
-                    ))}
-                  </div>
+                  {/* A row of three chips stood here -- the recommendation,
+                      the verified-claim count and the risk level -- directly
+                      under a heading that already states the recommendation,
+                      on a page whose header states it too and whose three
+                      cards above state the other two. Five statements of the
+                      same three facts within one screen. */}
 
                   <div className="dd-accordion">
                     <button className="dd-accordion-trigger" onClick={() => setDdOpen(o => !o)}>
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 13 }}>📋</span>
                         Suggested Due Diligence Questions
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#1D6FE8", background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.2)", padding: "2px 7px", borderRadius: 20 }}>
+                        <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#1D6FE8", background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.2)", padding: "2px 7px", borderRadius: 20 }}>
                           {ddQuestions.length} questions
                         </span>
                       </span>
@@ -1100,12 +1343,38 @@ const Analysis = () => {
                     </AnimatePresence>
                   </div>
                 </Panel>
+                </Chapter>
+              </div>
+            )}
+
+            {/* ── EVIDENCE ── */}
+            {activeTab === "Evidence" && (
+              <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
+                <Chapter
+                  index="E"
+                  title="Every claim, and why"
+                  hint="Select one to trace its verdict back to source."
+                >
+                  {!report.claims_verification_degraded && claimsDetails.length > 0 && (
+                    <div style={{ marginBottom: 22 }}>
+                      <ClaimBreakdown
+                        supported={claimsDetails.filter((c) => c.verdict === "SUPPORTS").length}
+                        refuted={claimsDetails.filter((c) => c.verdict === "REFUTES").length}
+                        unsettled={claimsDetails.filter((c) => c.verdict === "NOT_ENOUGH_INFO").length}
+                      />
+                    </div>
+                  )}
+                  <EvidenceGraph
+                    claims={claimsDetails}
+                    degraded={Boolean(report.claims_verification_degraded)}
+                  />
+                </Chapter>
               </div>
             )}
 
             {/* ── MARKET VALIDATION ── */}
             {activeTab === "Market Validation" && (
-              <div className="tab-content-enter">
+              <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
                 <Panel className="vf-panel-neutral" accentColor="var(--border)">
                   <SLabel>Market Validation — Evidence-Grounded</SLabel>
                   <p style={{ fontSize: "13.5px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
@@ -1124,53 +1393,14 @@ const Analysis = () => {
                   )) : <div className="an-case-text" style={{ color: "#5D6B7F" }}>Insufficient market evidence in the submitted deck.</div>}
                 </Panel>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: "12px" }}>
-                  <Panel className="vf-panel-neutral" accentColor="var(--border)">
-                    <SLabel>Claim Verification Table</SLabel>
-                    {claimsTableData.length > 0 ? (
-                      <table className="claims-table">
-                        <thead>
-                          <tr>
-                            {["Claim", "Founder Said", "AI Estimate", "Status"].map(h => (
-                              <th key={h} className="claims-th">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {claimsTableData.map((row, i) => {
-                            const matchConfig: Record<string, { color: string; bg: string; border: string; label: string }> = {
-                              verified: { color: "#0EA66A", bg: "rgba(14,166,106,0.08)", border: "rgba(14,166,106,0.2)", label: "Verified" },
-                              close: { color: "#1D6FE8", bg: "rgba(29,111,232,0.08)", border: "rgba(29,111,232,0.2)", label: "Close" },
-                              flagged: { color: "#D93025", bg: "rgba(217,48,37,0.07)", border: "rgba(217,48,37,0.16)", label: "Flagged" },
-                            };
-                            const mc = matchConfig[row.match];
-                            return (
-                              <tr key={i} className="claims-tr">
-                                <td className="claims-td" style={{ fontWeight: 600, color: "#0B1120" }}>{row.claim}</td>
-                                <td className="claims-td">{row.founder}</td>
-                                <td className="claims-td">{row.aiEstimate}</td>
-                                <td className="claims-td">
-                                  <span className="match-chip" style={{ color: mc.color, background: mc.bg, border: `1px solid ${mc.border}` }}>{mc.label}</span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#5D6B7F", padding: "16px 0" }}>
-                        No claim verification data available.
-                      </div>
-                    )}
-                  </Panel>
-
-                  <Panel accentColor="#C47A0A">
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚡ AI Signal</div>
+                <div>
+                  <Panel accentColor="var(--caution)">
+                    <SLabel color="var(--caution)">What to check next</SLabel>
                     <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
                       {market?.recommendation || "Validate market size, buyer demand, and competition with primary evidence."}
                     </p>
                     <div style={{ padding: "12px", background: "rgba(196,122,10,0.06)", borderRadius: "8px", border: "1px solid rgba(196,122,10,0.15)" }}>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
                       <div style={{ fontSize: "12.5px", color: "#0B1120", fontWeight: "600" }}>{market?.gaps?.[0] || "None identified."}</div>
                     </div>
                   </Panel>
@@ -1180,18 +1410,15 @@ const Analysis = () => {
 
             {/* ── FOUNDER ANALYSIS ── */}
             {activeTab === "Founder Analysis" && (
-              <div className="tab-content-enter">
+              <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 250px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     <SLabel>Team Capability Radar</SLabel>
-                    {teamRadarData.length > 0 ? <ResponsiveContainer width="100%" height={280}>
-                      <RadarChart data={teamRadarData}>
-                        <PolarGrid stroke="rgba(15,23,42,0.07)" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: "#64748B", fontFamily: "var(--font-mono)", fontSize: 10 }} />
-                        <PolarRadiusAxis tick={false} axisLine={false} domain={[0, 100]} />
-                        <Radar dataKey="value" stroke="#1D6FE8" fill="#1D6FE8" fillOpacity={0.09} strokeWidth={2.5} dot={{ fill: "#1D6FE8", r: 4, strokeWidth: 0 } as any} />
-                      </RadarChart>
-                    </ResponsiveContainer> : <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7 }}>
+                    {teamRadarData.length > 0 ? (
+                      <CapabilityRadar
+                        capabilities={teamRadarData.map((d) => ({ area: d.subject, score: d.value }))}
+                      />
+                    ) : <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7 }}>
                       {/* Do not assert *why* the scores are missing. The team analyst
                           returns the same empty `capabilities` list whether the deck
                           genuinely had no team slide or the agent call failed, and
@@ -1210,7 +1437,7 @@ const Analysis = () => {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                       {teamRadarData.map((r, i) => (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 8px", background: "var(--surface-2)", borderRadius: 6, border: "1px solid var(--border)" }}>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#5D6B7F" }}>{r.subject}</span>
+                          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F" }}>{r.subject}</span>
                           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: r.value >= 70 ? "#0EA66A" : "#C47A0A" }}>{r.value}</span>
                         </div>
                       ))}
@@ -1218,12 +1445,12 @@ const Analysis = () => {
                   </Panel>
 
                   <Panel accentColor="#D93025">
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#D93025", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#D93025", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
                     <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 16px" }}>
                       {team?.gaps?.[0] || "Insufficient team evidence. Verify founder credentials independently."}
                     </p>
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "14px", marginBottom: 14 }}>
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
                       <div style={{ fontSize: "13.5px", color: "#0B1120", fontWeight: "700", letterSpacing: "-0.01em" }}>
                         {team?.questions?.[0] || (report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding")}
                       </div>
@@ -1255,7 +1482,7 @@ const Analysis = () => {
                                   ? "This name was printed in the uploaded deck."
                                   : "The deck named no founders. This name was found by searching public sources and appears verbatim in the cited pages."}
                                   style={{
-                                    fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
+                                    fontFamily: "var(--font-sans)", fontSize: 11.5, fontWeight: 600,
                                     letterSpacing: "0.06em",
                                     color: check.origin === "deck" ? "#1D6FE8" : "#7A5AF8",
                                     border: `1px solid ${check.origin === "deck" ? "#1D6FE8" : "#7A5AF8"}33`,
@@ -1266,11 +1493,11 @@ const Analysis = () => {
                                 </span>
                               )}
                               <span style={{
-                                fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
+                                fontFamily: "var(--font-sans)", fontSize: 11.5, fontWeight: 600,
                                 letterSpacing: "0.08em", color: tone, border: `1px solid ${tone}33`,
                                 background: `${tone}12`, borderRadius: 5, padding: "2px 7px",
                               }}>{check.assessment}</span>
-                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#5D6B7F" }}>
+                              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F" }}>
                                 confidence {Math.round((check.confidence ?? 0) * 100)}%
                               </span>
                             </div>
@@ -1279,7 +1506,7 @@ const Analysis = () => {
                               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                                 {(check.sources ?? []).slice(0, 4).map((url, j) => (
                                   <a key={j} href={url} target="_blank" rel="noreferrer" style={{
-                                    fontFamily: "var(--font-mono)", fontSize: 9.5,
+                                    fontFamily: "var(--font-sans)", fontSize: 11.5,
                                     color: "#1D6FE8", textDecoration: "none",
                                     border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
                                   }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
@@ -1310,7 +1537,7 @@ const Analysis = () => {
                               extraction path. */}
                           <div style={{
                             display: "inline-block", marginBottom: 8,
-                            fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
+                            fontFamily: "var(--font-sans)", fontSize: 11.5, fontWeight: 600,
                             letterSpacing: "0.08em", textTransform: "uppercase",
                             borderRadius: 5, padding: "3px 8px",
                             color: founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
@@ -1347,7 +1574,7 @@ const Analysis = () => {
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
                               {founderDiscovery.sources_consulted!.slice(0, 6).map((url, j) => (
                                 <a key={j} href={url} target="_blank" rel="noreferrer" style={{
-                                  fontFamily: "var(--font-mono)", fontSize: 9.5,
+                                  fontFamily: "var(--font-sans)", fontSize: 11.5,
                                   color: "#1D6FE8", textDecoration: "none",
                                   border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
                                 }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
@@ -1369,7 +1596,7 @@ const Analysis = () => {
 
             {/* ── COMPETITOR INSIGHTS ── */}
             {activeTab === "Competitor Insights" && (
-              <div className="tab-content-enter" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div className="tab-content-enter" data-dir={tabDirection} key={activeTab} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     <SLabel>Competitive Landscape</SLabel>
@@ -1559,7 +1786,7 @@ const Analysis = () => {
                         percentages. */}
 
                     <Panel accentColor="#C47A0A">
-                      <div style={{ fontFamily: "var(--font-mono)", fontSize: "9px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
                       <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 10px" }}>
                         {score >= 65 ? "Competitive position appears defensible. Validate specific differentiation claims." : "High competitive pressure detected. Requires clear differentiation strategy."}
                       </p>
@@ -1571,12 +1798,13 @@ const Analysis = () => {
             )}
           </div>
 
-          {/* CHAT PANEL - always visible on analysis page */}
-          <div style={{ borderLeft: "1px solid rgba(15,23,42,0.08)", padding: "16px", background: "#F7F8FA" }}>
-            <ChatPanel sessionId={sessionId} />
-            <CommentsPanel reportId={report.report_id ?? null} />
-          </div>
         </div>
+
+        {/* Docked rather than pinned beside the report -- see AskDrawer. */}
+        <AskDrawer
+          chat={<ChatPanel sessionId={sessionId} />}
+          notes={<CommentsPanel reportId={report.report_id ?? null} />}
+        />
       </div>
     </>
   );

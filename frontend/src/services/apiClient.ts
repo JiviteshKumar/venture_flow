@@ -886,6 +886,20 @@ export interface ReportSummary {
   recommendation: string;
   created_at: string;
   /**
+   * Added for the deal table, and nullable on purpose.
+   *
+   * These come straight out of the stored report (db.list_reports reads them
+   * from `raw_output`), so a report written before a field existed returns
+   * null rather than a plausible default. The table renders an em dash for
+   * those: "we did not record this" and "this was low" are different findings,
+   * and a zero in a risk column would be read as the second.
+   */
+  risk_level?: string | null;
+  coverage_pct?: number | null;
+  claims_verified?: number | null;
+  claims_supported?: number | null;
+  risk_signals_found?: number | null;
+  /**
    * True when this report has no owner.
    *
    * Reports written before accounts existed carry `owner_user_id IS NULL`, and

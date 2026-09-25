@@ -24,29 +24,30 @@ export default {
     extend: {
       colors: {
         // Surfaces
-        canvas: "#F2F2F7",      // app background (was inline in Layout.tsx)
+        canvas: "#F4F5F8",      // app background; mirrors --bg
         surface: "#FFFFFF",     // panels, sidebar
         "surface-2": "#F7F8FA", // insets, secondary rows
+        "surface-3": "#EFF1F5", // deeper inset
 
         // Lines
         border: "rgba(15,23,42,0.08)",
-        "border-strong": "rgba(15,23,42,0.13)",
+        "border-strong": "rgba(15,23,42,0.14)",
 
         // Text hierarchy
         ink: "#0B1120",         // primary
-        "ink-secondary": "#4A5568",
+        "ink-secondary": "#46536B",
         // #94A3B8 on #FFFFFF is 2.8:1 -- below WCAG AA for body text. Kept as
         // `muted` for large/decorative type only; `muted-accessible` is the
         // 4.6:1 value to use for anything a user has to read. See the a11y
         // notes in the handoff.
         muted: "#94A3B8",
-        "muted-accessible": "#64748B",
+        "muted-accessible": "#5D6B7F",
 
         // Semantic accents
         brand: "#1D6FE8",
-        positive: "#0EA66A",
-        caution: "#C47A0A",
-        negative: "#D93025",
+        positive: "#0E9A64",
+        caution: "#B87407",
+        negative: "#CE2C20",
       },
       fontFamily: {
         // See index.html for why each face was chosen. Inter carries body and
