@@ -268,8 +268,7 @@ export function SplitWords({
 /**
  * A pinned act.
  *
- * The section is `length` viewport-heights tall; its contents stick to the top
- * of the viewport for that whole distance, and receive a 0-to-1 progress value
+ * A scene, one screen tall, whose contents receive a 0-to-1 arrival value
  * as the reader travels through it. That is the mechanic every reference site
  * is built on: the page stops, the content changes, the page resumes. It is
  * what makes a scroll read as a sequence of scenes rather than as a long page.
@@ -280,7 +279,7 @@ export function SplitWords({
  */
 export function Act({
   children,
-  length = 2,
+  length: _length = 2,
   className = "",
   id,
 }: {
@@ -297,7 +296,13 @@ export function Act({
    * screen, and every reader with that OS setting saw nothing at all.
    */
   children: (progress: number, reduced: boolean) => ReactNode;
-  /** Height of the act in viewport heights. 1 = no travel, 3 = a long scene. */
+  /**
+   * Retained so callers do not have to change, and no longer used.
+   *
+   * It set the section's height in viewport heights, which only meant
+   * anything while the scene was pinned and the scroll through that height
+   * was what scrubbed it. Scenes are one screen each now.
+   */
   length?: number;
   className?: string;
   id?: string;
@@ -315,10 +320,15 @@ export function Act({
     const measure = () => {
       frame = 0;
       const rect = el.getBoundingClientRect();
-      // Distance travelled through the act, where 0 is "the act has just
-      // reached the top of the viewport" and 1 is "its last screen is leaving".
-      const travel = Math.max(1, rect.height - window.innerHeight);
-      setProgress(Math.max(0, Math.min(1, -rect.top / travel)));
+      /**
+       * How far this scene has ARRIVED, 0 to 1.
+       *
+       * 0 when its top edge is at the bottom of the viewport, 1 once its top
+       * edge reaches the top. After that it simply scrolls away like any other
+       * part of the page, which is why nothing here needs a departure value.
+       */
+      const travel = Math.max(1, window.innerHeight);
+      setProgress(Math.max(0, Math.min(1, 1 - rect.top / travel)));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(measure); };
 
@@ -335,55 +345,58 @@ export function Act({
   }, [reduced]);
 
   /**
-   * WHY EVERY ACT AFTER THE FIRST IS PULLED UP BY A VIEWPORT
+   * WHY THIS IS NO LONGER PINNED
    *
-   * A sticky child of height 100vh inside a section of length*100vh is pinned
-   * for (length - 1) * 100vh and then slides out over the remaining 100vh.
-   * During that slide the act's progress has already reached 1, so its content
-   * has finished departing -- and the NEXT act's section has not started, so
-   * its content, centred in its own 100vh child, is still below the fold.
+   * It used to be a sticky 100vh child inside a section of length*100vh: the
+   * scene held still while the page scrolled past it, and its contents were
+   * scrubbed by that scroll. Two faults, and the second was caused by fixing
+   * the first.
    *
-   * The result was a full screen-height of scrolling with nothing on it,
-   * between every pair of scenes. Measured: eight of forty samples down the
-   * film were effectively blank.
+   * The sticky child is pinned for (length - 1) * 100vh and then slides out
+   * over the remaining 100vh. During that slide the act's progress has already
+   * reached 1, so its content had finished departing -- and the next scene's
+   * content, centred in its own 100vh child, was still below the fold. That
+   * was a full screen of nothing between every pair of scenes, eight times
+   * down the film.
    *
-   * Pulling each act up by exactly one viewport makes the next act begin
-   * pinning at the instant this one unpins. The outgoing scene now slides away
-   * over the incoming one instead of over nothing, which is a crossfade rather
-   * than a gap, and costs no extra scrolling.
+   * Pulling each section up by a viewport closed the gap and produced
+   * something worse: two scenes on screen at once, superimposed, with the
+   * bull/bear columns printing through the claims headline. A reader cannot
+   * unpick that, and a diligence report is the last place to ask them to.
+   *
+   * So the pinning is gone. Each scene is one screen tall, they stack, and
+   * they scroll past the way a page does -- one at a time, always readable,
+   * with no gap to fall into and nothing to overlap. `progress` now measures
+   * arrival rather than scrub, so the staging still plays as a scene comes up;
+   * it simply leaves by scrolling, like everything else.
    */
   return (
     <section
       id={id}
       ref={outer as never}
       className={`vf-act ${className}`.trim()}
-      style={{ position: "relative", height: reduced ? "auto" : `${length * 100}vh` }}
+      style={{
+        position: "relative",
+        minHeight: reduced ? "auto" : "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
     >
-      <div
-        style={{
-          position: reduced ? "relative" : "sticky",
-          top: 0,
-          height: reduced ? "auto" : "100vh",
-          overflow: "hidden",
-        }}
-      >
-        {children(progress, reduced)}
-      </div>
+      {children(progress, reduced)}
     </section>
   );
 }
 
 /**
- * The overlap rule for consecutive acts. Rendered once by ActStyles, which a
- * page with acts on it mounts alongside them.
+ * Kept as a no-op export so pages that mount it do not have to change.
+ *
+ * It used to carry `.vf-act + .vf-act { margin-top: -100vh }`, the overlap
+ * that put two scenes on screen at once. Acts no longer overlap and need no
+ * rule of their own.
  */
 export function ActStyles() {
-  return (
-    <style>{`
-      /* See the note in Act: this closes the blank viewport between scenes. */
-      :root[data-motion="on"] .vf-act + .vf-act { margin-top: -100vh; }
-    `}</style>
-  );
+  return null;
 }
 
 /** Maps a sub-range of an act's progress to 0-1, for staging beats within it. */

@@ -323,7 +323,10 @@ export default function ReportFilm({
         {(p, reduced) => {
           // Nothing departs when motion is suppressed: there is no scroll
           // scrub to bring the next scene in, so leaving is just vanishing.
-          const leave = reduced ? 0 : beat(p, 0.86, 1);
+          // Nothing departs. The scene used to be pinned, so it had to fade
+          // itself out to make way; now it simply scrolls off like any other
+          // part of the page, and animating that as well read as a flicker.
+          const leave = 0;
           return (
             <div className="film-scene">
               {/* The deck sculpture used to hang here: a stack of translucent
