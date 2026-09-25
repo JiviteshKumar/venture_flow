@@ -2,85 +2,114 @@ import { useEffect, useRef } from "react";
 import { motionOn, subscribePrefs, getPrefs } from "../../lib/prefs";
 
 /**
- * The room the product sits in.
+ * The light behind the product.
  *
- * One fixed canvas behind every screen, carrying four things:
+ * WHAT IT IS NOW, AND WHAT IT WAS
  *
- *   a lattice   a perspective grid receding to a horizon, which gives the page
- *               a floor and therefore a sense of depth
- *   a drift     motes at three depths, parallaxed against the pointer so the
- *               space reacts to where the reader is looking
- *   a pool      a soft light that follows the pointer; motes near it lean
- *               toward it and link to each other, so the cursor is something
- *               the room can feel rather than an overlay on top of it
- *   a wake      scrolling tilts the lattice and stretches the motes in the
- *               direction of travel, then settles -- so moving through the
- *               document feels like moving, not like repainting
+ * This used to draw a perspective lattice and a hundred and twenty drifting
+ * motes. Two things were wrong with that. It was busy -- a grid reads as graph
+ * paper, and specks read as dust -- and on the light theme it was tuned so far
+ * down (a 0.075 stroke multiplied by a 0.62 master alpha, so 0.046 against a
+ * near-white page) that it painted nothing a person could see. Motion nobody
+ * can see is not restraint, it is a bug.
  *
- * WHY ONE LAYER FOR THE WHOLE APP
+ * What replaces it is four very large, very soft pools of colour drifting on
+ * slow independent paths. No edges, no repeating structure, nothing to count
+ * or focus on: the page looks lit rather than decorated, which is the thing a
+ * background can do without competing with the text on top of it.
  *
- * Every screen shared a flat background before this, and each scene had to
- * invent its own atmosphere. A single persistent layer means the dashboard,
- * the upload and the report are demonstrably the same place: navigating
- * between them moves the camera rather than swapping the set.
+ * HOW IT STAYS SOFT AND CHEAP AT THE SAME TIME
  *
- * THEME
+ * The pools are drawn into a buffer a fifth of the viewport's size and scaled
+ * up. Upscaling is a blur -- a free one, done by the compositor -- so there is
+ * no filter to run and the per-frame cost is four gradients over roughly
+ * 380x190 pixels regardless of how large the window is.
  *
- * The room is lit differently in each theme, and it is not a colour swap. On
- * dark it ADDS light (`screen`); on light it REMOVES it (`multiply`), because
- * a pale wash over a white page is invisible and a grey one is grime. Each
- * theme therefore gets its own palette and its own blend mode, and the layer
- * re-lights itself when the preference changes rather than on reload.
+ * WHAT IT RESPONDS TO
  *
- * WHAT KEEPS IT CHEAP
+ *   the pointer   the pools lean away from it and a fifth pool follows it, so
+ *                 the light moves with the reader rather than past them
+ *   the scroll    a signed, decaying velocity pushes the pools against the
+ *                 direction of travel, so the page has parallax depth and
+ *                 settles when the reader stops
  *
- *   - one canvas, one rAF loop, no per-element animation
- *   - the loop stops entirely when the tab is hidden
- *   - motes are floats in a typed array, not objects
- *   - links are only tested among motes already near the pointer
+ * WHAT IT REFUSES TO DO
+ *
  *   - it never intercepts a pointer event: `pointer-events: none`
- *   - with motion off it draws a single static frame and stops
+ *   - the loop stops entirely when the tab is hidden
+ *   - with motion off it paints one frame and stops, so the page is still lit
+ *     but nothing moves
  */
 
-const MOTES = 120;
+type Pool = {
+  /** Hue, as "r,g,b". */
+  c: string;
+  /** Centre of its drift, in viewport fractions. */
+  x: number;
+  y: number;
+  /** How far it wanders from that centre. */
+  ax: number;
+  ay: number;
+  /**
+   * Radians per frame on each axis, deliberately incommensurate so the
+   * arrangement never visibly repeats.
+   *
+   * These are calibrated to a period, not picked by feel. At ~60fps a value
+   * of 0.0031 is one cycle every 34 seconds; the first draft used 0.00042,
+   * which is one cycle every FOUR AND A HALF MINUTES. The loop was running
+   * the whole time and a pixel measured 1.4 seconds apart was bit-identical,
+   * so the layer was static in every way a person could detect. Slow is the
+   * point; stopped is a bug. Keep every period between roughly 20 and 45
+   * seconds.
+   */
+  sx: number;
+  sy: number;
+  /** Radius as a fraction of the viewport's larger side. */
+  r: number;
+  /** Peak opacity at the centre of the pool. */
+  a: number;
+};
 
 type Palette = {
-  blend: "screen" | "multiply";
-  grid: string;
-  band: string;
-  bandEdge: string;
-  moteNear: string;
-  moteFar: string;
-  link: string;          // "r,g,b"
-  pool: string;          // "r,g,b"
-  alpha: number;         // master opacity: light needs a far lighter touch
+  pools: Pool[];
+  /** The pointer's own pool. */
+  cursor: string;
+  cursorA: number;
 };
 
+/**
+ * Two palettes rather than one with an opacity dial.
+ *
+ * On near-black, colour has to be added and can be relatively saturated. On
+ * near-white the same colour at the same weight is a stain, so the light set
+ * is both paler and wider -- larger, weaker pools, which reads as daylight
+ * through a window rather than as ink spilled on the page.
+ */
 const PALETTES: Record<"dark" | "light", Palette> = {
   dark: {
-    blend: "screen",
-    grid: "rgba(92,148,255,0.055)",
-    band: "rgba(47,107,255,0.05)",
-    bandEdge: "rgba(5,8,15,0)",
-    moteNear: "#9CC0FF",
-    moteFar: "#E8EEF9",
-    link: "154,190,255",
-    pool: "120,170,255",
-    alpha: 1,
+    cursor: "120,170,255",
+    cursorA: 0.10,
+    pools: [
+      { c: "47,107,255",  x: 0.22, y: 0.28, ax: 0.15, ay: 0.11, sx: 0.00310, sy: 0.00227, r: 0.62, a: 0.30 },
+      { c: "124,92,255",  x: 0.78, y: 0.22, ax: 0.13, ay: 0.14, sx: 0.00212, sy: 0.00345, r: 0.55, a: 0.24 },
+      { c: "20,150,190",  x: 0.68, y: 0.80, ax: 0.16, ay: 0.10, sx: 0.00271, sy: 0.00183, r: 0.58, a: 0.20 },
+      { c: "60,60,160",   x: 0.16, y: 0.82, ax: 0.12, ay: 0.13, sx: 0.00168, sy: 0.00287, r: 0.50, a: 0.22 },
+    ],
   },
   light: {
-    // The same figure on white, drawn in ink rather than in light.
-    blend: "multiply",
-    grid: "rgba(47,107,255,0.075)",
-    band: "rgba(47,107,255,0.045)",
-    bandEdge: "rgba(255,255,255,0)",
-    moteNear: "#2F6BFF",
-    moteFar: "#8194B5",
-    link: "47,107,255",
-    pool: "47,107,255",
-    alpha: 0.62,
+    cursor: "47,107,255",
+    cursorA: 0.07,
+    pools: [
+      { c: "47,107,255",  x: 0.20, y: 0.26, ax: 0.15, ay: 0.11, sx: 0.00310, sy: 0.00227, r: 0.74, a: 0.15 },
+      { c: "124,92,255",  x: 0.80, y: 0.20, ax: 0.13, ay: 0.14, sx: 0.00212, sy: 0.00345, r: 0.66, a: 0.12 },
+      { c: "26,160,200",  x: 0.70, y: 0.82, ax: 0.16, ay: 0.10, sx: 0.00271, sy: 0.00183, r: 0.70, a: 0.10 },
+      { c: "120,140,255", x: 0.14, y: 0.84, ax: 0.12, ay: 0.13, sx: 0.00168, sy: 0.00287, r: 0.62, a: 0.11 },
+    ],
   },
 };
+
+/** The buffer is this fraction of the viewport on each axis. */
+const SCALE = 0.2;
 
 export default function Ambience() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -91,41 +120,37 @@ export default function Ambience() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    let reduced = !motionOn();
+    let moving = motionOn();
     let paint = PALETTES[getPrefs().theme];
-    canvas.style.mixBlendMode = paint.blend;
 
-    let w = 0, h = 0, dpr = 1;
+    // The small buffer everything is actually drawn into.
+    const buffer = document.createElement("canvas");
+    const bctx = buffer.getContext("2d", { alpha: true });
+    if (!bctx) return;
+
+    let w = 0, h = 0, bw = 0, bh = 0;
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = window.innerWidth;
       h = window.innerHeight;
-      canvas.width = Math.max(1, w * dpr);
-      canvas.height = Math.max(1, h * dpr);
+      // Deliberately NOT devicePixelRatio: the image is upscaled from a fifth
+      // of this and has no detail to preserve, so a retina backing store would
+      // be four times the work for a blur nobody can resolve.
+      canvas.width = Math.max(1, w);
+      canvas.height = Math.max(1, h);
       canvas.style.width = w + "px";
       canvas.style.height = h + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bw = Math.max(1, Math.round(w * SCALE));
+      bh = Math.max(1, Math.round(h * SCALE));
+      buffer.width = bw;
+      buffer.height = bh;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
     };
     resize();
     window.addEventListener("resize", resize);
 
-    // Deterministic placement: the same room every visit rather than a
-    // different one per reload.
-    const mote = new Float32Array(MOTES * 4);   // x, y, depth, size
-    for (let i = 0; i < MOTES; i++) {
-      const t = i / MOTES;
-      mote[i * 4 + 0] = ((i * 0.6180339887) % 1);
-      mote[i * 4 + 1] = ((i * 0.3819660113) % 1);
-      mote[i * 4 + 2] = 0.25 + ((i * 0.2360679775) % 1) * 0.75;
-      mote[i * 4 + 3] = 0.5 + (t * 7 % 1) * 1.4;
-    }
-    // Scratch space for the pointer's neighbourhood, reused every frame so the
-    // link pass allocates nothing.
-    const nearX = new Float32Array(MOTES);
-    const nearY = new Float32Array(MOTES);
-
-    let pointerX = 0.5, pointerY = 0.5;
-    let px = 0.5, py = 0.5;
+    let pointerX = 0.5, pointerY = 0.4;
+    let px = 0.5, py = 0.4;
     let pointerSeen = false;
     const onPointer = (e: PointerEvent) => {
       pointerX = e.clientX / window.innerWidth;
@@ -135,19 +160,18 @@ export default function Ambience() {
     window.addEventListener("pointermove", onPointer, { passive: true });
 
     /**
-     * Scroll wake.
+     * Scroll drift.
      *
-     * `velocity` is signed and decays: scrolling down pushes it positive,
-     * scrolling up negative, and it returns to zero when the reader stops. The
-     * lattice tilts by it and the motes stretch along it, so the direction of
-     * travel is visible rather than merely the fact of it.
+     * Signed and decaying: down pushes it positive, up negative, and it
+     * returns to zero when the reader stops. The pools move against it, which
+     * is parallax -- the light is further away than the page.
      */
     let lastScroll = 0;
     let velocity = 0;
     const readScroll = () => {
       const el = document.getElementById("vf-scroller");
       const top = el ? el.scrollTop : window.scrollY;
-      velocity += (top - lastScroll) * 0.06;
+      velocity += (top - lastScroll) * 0.05;
       lastScroll = top;
     };
     const attachScroll = () => {
@@ -156,7 +180,7 @@ export default function Ambience() {
       return () => (el ?? window).removeEventListener("scroll", readScroll);
     };
     // The scroller belongs to whichever route is mounted, so it is re-attached
-    // when the route changes rather than captured once at mount.
+    // rather than captured once.
     let detachScroll = attachScroll();
     const reattach = window.setInterval(() => {
       detachScroll();
@@ -166,162 +190,75 @@ export default function Ambience() {
     let raf = 0;
     let t = 0;
 
+    /** One soft pool, in buffer coordinates. */
+    const pool = (x: number, y: number, r: number, colour: string, alpha: number) => {
+      const g = bctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, "rgba(" + colour + "," + alpha + ")");
+      // Three stops rather than two: a linear ramp to zero has a visible edge
+      // where it lands, and the whole point of this layer is that it has none.
+      g.addColorStop(0.45, "rgba(" + colour + "," + alpha * 0.42 + ")");
+      g.addColorStop(1, "rgba(" + colour + ",0)");
+      bctx.fillStyle = g;
+      bctx.fillRect(x - r, y - r, r * 2, r * 2);
+    };
+
     const draw = () => {
       t += 1;
-      px += (pointerX - px) * 0.035;
-      py += (pointerY - py) * 0.035;
-      velocity *= 0.90;
-      const wake = Math.max(-26, Math.min(26, velocity));
-      const pxAbs = px * w;
-      const pyAbs = py * h;
+      px += (pointerX - px) * 0.03;
+      py += (pointerY - py) * 0.03;
+      velocity *= 0.92;
+      const wake = Math.max(-40, Math.min(40, velocity)) * SCALE;
 
-      ctx.clearRect(0, 0, w, h);
-      ctx.globalAlpha = paint.alpha;
+      bctx.clearRect(0, 0, bw, bh);
+      // Additive, so where two pools overlap the light gets brighter rather
+      // than one simply covering the other.
+      bctx.globalCompositeOperation = "lighter";
 
-      // -- The floor ------------------------------------------------------
-      // A grid in one-point perspective. The horizon rises and falls with the
-      // pointer and leans with the wake.
-      const horizon = h * (0.52 + (py - 0.5) * 0.06) + wake * 0.6;
-      const vanish = w * (0.5 + (px - 0.5) * 0.18);
-
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = paint.grid;
-      ctx.beginPath();
-      for (let i = -10; i <= 10; i++) {
-        const x = vanish + i * (w * 0.14);
-        ctx.moveTo(vanish + i * 8, horizon);
-        ctx.lineTo(x, h + 40);
+      const reach = Math.max(bw, bh);
+      for (const p of paint.pools) {
+        const x = (p.x + Math.sin(t * p.sx) * p.ax + (px - 0.5) * -0.06) * bw;
+        const y = (p.y + Math.cos(t * p.sy) * p.ay + (py - 0.5) * -0.05) * bh - wake;
+        pool(x, y, reach * p.r, p.c, p.a);
       }
-      // Depth lines: spacing grows with distance below the horizon, which is
-      // what makes it read as a receding plane rather than as a fan.
-      for (let i = 1; i <= 14; i++) {
-        const k = i / 14;
-        const y = horizon + Math.pow(k, 2.1) * (h - horizon + 60);
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-      }
-      ctx.stroke();
 
-      // A soft band along the horizon, so the grid fades into the room rather
-      // than stopping at a line.
-      const band = ctx.createLinearGradient(0, horizon - h * 0.22, 0, horizon + h * 0.1);
-      band.addColorStop(0, paint.bandEdge);
-      band.addColorStop(0.72, paint.band);
-      band.addColorStop(1, paint.bandEdge);
-      ctx.fillStyle = band;
-      ctx.fillRect(0, horizon - h * 0.22, w, h * 0.32);
-
-      // -- The pool -------------------------------------------------------
-      // A light the pointer carries. It exists so the cursor is part of the
-      // room rather than a thing floating over it, and it appears only once a
-      // pointer has actually moved, so a touch reader never sees a stray glow.
-      const radius = Math.min(w, h) * 0.34;
+      // The pointer's own pool, so the light acknowledges where the reader is.
       if (pointerSeen) {
-        const pool = ctx.createRadialGradient(pxAbs, pyAbs, 0, pxAbs, pyAbs, radius);
-        pool.addColorStop(0, "rgba(" + paint.pool + ",0.10)");
-        pool.addColorStop(0.55, "rgba(" + paint.pool + ",0.035)");
-        pool.addColorStop(1, "rgba(" + paint.pool + ",0)");
-        ctx.fillStyle = pool;
-        ctx.fillRect(pxAbs - radius, pyAbs - radius, radius * 2, radius * 2);
+        pool(px * bw, py * bh, reach * 0.34, paint.cursor, paint.cursorA);
       }
 
-      // -- The drift ------------------------------------------------------
-      const reach = Math.min(w, h) * 0.22;         // how far the pointer pulls
-      let near = 0;
+      bctx.globalCompositeOperation = "source-over";
 
-      for (let i = 0; i < MOTES; i++) {
-        const depth = mote[i * 4 + 2];
-        const parallax = (depth - 0.5) * 2;
-        const driftY = ((mote[i * 4 + 1] + t * 0.00012 * depth) % 1);
-        let x = mote[i * 4 + 0] * w + (px - 0.5) * -70 * parallax;
-        let y = driftY * h + wake * parallax * 1.6;
-        const r = mote[i * 4 + 3] * depth;
+      // Upscale. This is the blur.
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(buffer, 0, 0, bw, bh, 0, 0, w, h);
 
-        // Attraction. Motes near the pointer lean toward it -- more the nearer
-        // they are to the camera, so the pull reads as depth rather than as a
-        // flat magnet.
-        let pull = 0;
-        if (pointerSeen) {
-          const dx = pxAbs - x;
-          const dy = pyAbs - y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < reach) {
-            pull = 1 - dist / reach;
-            const lean = pull * pull * 26 * depth;
-            x += (dx / (dist || 1)) * lean;
-            y += (dy / (dist || 1)) * lean;
-            nearX[near] = x; nearY[near] = y; near++;
-          }
-        }
-
-        ctx.globalAlpha = (0.05 + depth * 0.22 + pull * 0.35) * paint.alpha;
-        ctx.fillStyle = depth > 0.82 ? paint.moteNear : paint.moteFar;
-
-        if (Math.abs(wake) > 3) {
-          // Stretched into a streak along the direction of travel.
-          ctx.beginPath();
-          ctx.ellipse(x, y, r, r + Math.abs(wake) * 0.5 * depth, 0, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.beginPath();
-          ctx.arc(x, y, r + pull * 1.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // -- The links ------------------------------------------------------
-      // Only among the motes already inside the pointer's reach, and only the
-      // short edges: a full pass over every pair would be both slower and a
-      // cobweb.
-      if (near > 1) {
-        const limit = reach * 0.42;
-        ctx.lineWidth = 0.7;
-        ctx.strokeStyle = "rgb(" + paint.link + ")";
-        for (let a = 0; a < near; a++) {
-          for (let b = a + 1; b < near; b++) {
-            const dx = nearX[a] - nearX[b];
-            const dy = nearY[a] - nearY[b];
-            const d = Math.hypot(dx, dy);
-            if (d > limit) continue;
-            ctx.globalAlpha = (1 - d / limit) * 0.18 * paint.alpha;
-            ctx.beginPath();
-            ctx.moveTo(nearX[a], nearY[a]);
-            ctx.lineTo(nearX[b], nearY[b]);
-            ctx.stroke();
-          }
-        }
-      }
-
-      ctx.globalAlpha = 1;
       raf = requestAnimationFrame(draw);
     };
 
     const start = () => {
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      if (reduced) {
-        // One frame, then stop: the room still has depth, it just holds still.
+      if (moving) {
+        raf = requestAnimationFrame(draw);
+      } else {
+        // One frame: the page keeps its light, it just holds still.
         draw();
         cancelAnimationFrame(raf);
         raf = 0;
-      } else {
-        raf = requestAnimationFrame(draw);
       }
     };
     start();
 
-    // Theme and motion can both change while the room is on screen.
     const unsubscribe = subscribePrefs((s) => {
       paint = PALETTES[s.theme];
-      canvas.style.mixBlendMode = paint.blend;
-      reduced = !s.motionOn;
+      moving = s.motionOn;
       start();
     });
 
-    // A hidden tab should not be rendering a room nobody is in.
+    // A hidden tab should not be lighting a room nobody is in.
     const onVisibility = () => {
       if (document.hidden) {
         if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      } else if (!raf && !reduced) {
+      } else if (!raf && moving) {
         raf = requestAnimationFrame(draw);
       }
     };

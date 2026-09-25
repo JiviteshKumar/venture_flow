@@ -46,9 +46,14 @@ import { motionOn, subscribePrefs } from "../../lib/prefs";
  *
  * It also never swallows a click: every layer is `pointer-events: none`.
  *
- * Blend mode rather than a colour: `difference` inverts whatever is under it,
- * so the cursor is legible on the dark theme, on the light theme, on a photo
- * and on a white modal without any of them being asked about.
+ * COLOUR
+ *
+ * It was drawn with `mix-blend-mode: difference`, which inverts whatever is
+ * under it. That is legible everywhere without being told anything about the
+ * backdrop, and it looks like nothing else in the product: a grey smear whose
+ * colour is decided by whatever it happens to be passing over. It now uses the
+ * theme's own accent and text tokens, so it belongs to the page it is on and
+ * changes with the light.
  */
 
 type Mode = "idle" | "action" | "text";
@@ -241,15 +246,15 @@ export default function Cursor() {
         .vf-cur-dot[data-on="true"], .vf-cur-ring[data-on="true"] { opacity: 1; }
 
         .vf-cur-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          background: #fff;
-          mix-blend-mode: difference;
+          width: 5px; height: 5px; border-radius: 50%;
+          background: var(--accent);
+          box-shadow: 0 0 0 1px color-mix(in srgb, var(--bg) 70%, transparent);
         }
 
         .vf-cur-ring {
-          width: 34px; height: 34px; border-radius: 50%;
-          border: 1px solid rgba(255,255,255,0.75);
-          mix-blend-mode: difference;
+          width: 30px; height: 30px; border-radius: 50%;
+          border: 1.25px solid color-mix(in srgb, var(--accent) 55%, transparent);
+          background: color-mix(in srgb, var(--accent) 6%, transparent);
           display: grid; place-items: center;
           /* No transform here: the frame loop owns it. Only the shape
              transitions, or the lean would fight the easing. */
@@ -259,36 +264,38 @@ export default function Cursor() {
         }
         /* Pressed: the ring tightens onto the dot. The release is what fires
            the echo, so the two read as one gesture. */
-        .vf-cur-ring.is-down { width: 22px; height: 22px; background: rgba(255,255,255,0.35); }
+        .vf-cur-ring.is-down {
+          width: 20px; height: 20px;
+          background: color-mix(in srgb, var(--accent) 26%, transparent);
+          border-color: var(--accent);
+        }
 
         .vf-cur-ring[data-cursor-mode="action"] {
-          width: 52px; height: 52px;
-          background: rgba(255,255,255,0.12);
-          border-color: rgba(255,255,255,0.9);
+          width: 48px; height: 48px;
+          background: color-mix(in srgb, var(--accent) 14%, transparent);
+          border-color: color-mix(in srgb, var(--accent) 85%, transparent);
+          box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--bg) 75%, transparent);
         }
-        /* The labelled pill leaves the difference blend behind.
-           difference is the right answer for a shape -- it is legible on any
-           backdrop without being told what the backdrop is -- and the wrong
-           one for a word, because the inversion runs through the letterforms
-           and the label ends up fighting whatever text it is sitting over. A
-           labelled cursor is therefore a solid chip in the theme's own
-           colours: the text colour as its ground, the page as its ink. */
+        /* Carrying a word, the ring becomes a solid accent chip. An outlined
+           one would leave the label sitting on whatever text is underneath. */
         .vf-cur-ring[data-cursor-mode="action"][data-labelled="true"] {
           width: auto; height: auto; min-width: 0;
           padding: 9px 15px; border-radius: 999px;
-          mix-blend-mode: normal;
-          background: var(--text);
+          background: var(--accent);
           border-color: transparent;
-          box-shadow: var(--e-2);
+          /* A halo in the page's own colour. Without it the chip vanishes the
+             moment it is over a control painted in the same accent -- which is
+             every primary button in the product. */
+          box-shadow: 0 0 0 2.5px var(--bg), var(--e-2);
         }
         .vf-cur-ring[data-cursor-mode="text"] {
-          width: 2px; height: 26px; border-radius: 1px;
-          background: #fff; border-color: transparent;
+          width: 2px; height: 24px; border-radius: 1px;
+          background: var(--accent); border-color: transparent;
         }
 
         .vf-cur-label {
           font-family: var(--font-sans); font-size: 11px; font-weight: 600;
-          letter-spacing: 0.1em; text-transform: uppercase; color: var(--bg);
+          letter-spacing: 0.1em; text-transform: uppercase; color: #fff;
           white-space: nowrap;
         }
 
@@ -297,8 +304,7 @@ export default function Cursor() {
           position: absolute;
           width: 22px; height: 22px; margin: -11px 0 0 -11px;
           border-radius: 50%;
-          border: 1.5px solid rgba(255,255,255,0.8);
-          mix-blend-mode: difference;
+          border: 1.5px solid var(--accent);
           animation: vf-cur-echo 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @keyframes vf-cur-echo {

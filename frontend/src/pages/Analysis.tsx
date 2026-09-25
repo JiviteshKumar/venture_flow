@@ -23,6 +23,7 @@ import { MemoText, memoPreview } from "../components/ui/MemoText";
 import InsightCard, { InsightCardStyles } from "../components/ui/InsightCard";
 import { Button, ButtonStyles, Chip, Disclosure, EmptyState } from "../components/ui/primitives";
 import PrefsControl from "../components/ui/PrefsControl";
+import SourceList, { type SourceRef } from "../components/analysis/SourceList";
 
 const tabs = ["Summary", "Evidence", "Market Validation", "Founder Analysis", "Competitor Insights"];
 
@@ -445,6 +446,43 @@ const Analysis = () => {
     "What is the current enterprise sales pipeline depth and average contract value?",
     "Can you provide documentation to support all verified claims?",
   ];
+
+  /**
+   * Every page the run opened, with what it was checking at the time.
+   *
+   * Three agents record sources and none of them were being shown. They are
+   * merged here rather than in the component so the component stays a
+   * presenter: it takes a flat list and knows nothing about report shape.
+   *
+   * Not a hook: this sits after the component's early returns, where a hook
+   * would change the hook order between renders. It is a short loop over a
+   * few arrays, and SourceList memoises the grouping that actually costs
+   * something.
+   */
+  const sourceRefs: SourceRef[] = (() => {
+    const refs: SourceRef[] = [];
+    for (const d of claimsDetails) {
+      for (const url of d.sources ?? []) {
+        refs.push({ url, context: `Checked: ${d.claim}` });
+      }
+    }
+    // The founder work records sources in two places, and they answer
+    // different questions: `sources` is where the background evidence came
+    // from, `discovery_sources` is where the NAME came from when the deck
+    // disclosed none. Both were opened, so both are listed, labelled apart.
+    for (const f of report.sections?.founder_verification ?? []) {
+      for (const url of f.sources ?? []) {
+        refs.push({ url, context: `Background check${f.name ? `: ${f.name}` : ""}` });
+      }
+      for (const url of f.discovery_sources ?? []) {
+        refs.push({ url, context: `Searched to identify a founder${f.name ? `: ${f.name}` : ""}` });
+      }
+    }
+    for (const url of report.sections?.founder_discovery?.sources_consulted ?? []) {
+      refs.push({ url, context: "Searched for the company's founders" });
+    }
+    return refs;
+  })();
 
   // Bull & Bear from real report
   const bullItems = (bullCase?.signals ?? report.positive_factors.map(f => ({ finding: f, evidence: "Risk analysis" }))).slice(0, 3).map(item => ({ text: item.finding, tip: item.evidence }));
@@ -1221,45 +1259,28 @@ const Analysis = () => {
                 </div>
                 </Chapter>
 
+                {/* Bull and bear are staged in the film above, full-bleed,
+                    one side entering from each edge. Repeating them here as
+                    two panels said the same thing a second time with less
+                    force -- so this chapter now carries what the report was
+                    actually missing: the pages the run opened, and a way to
+                    go and read them. */}
                 <Chapter
                   index="04"
-                  title="The case, both ways"
-                  hint="Two specialists, opposite sides."
+                  title="Where this was checked"
+                  hint="Every page the run opened."
                 >
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }} className="vf-grid-2">
-                  <Panel accentColor="var(--positive)">
-                    <SLabel color="var(--positive)">Bull case</SLabel>
-                    {bullItems.length > 0 ? bullItems.map((item, i) => (
-                      <div key={i} className="an-case-item" data-tip={item.tip}>
-                        <CheckCircle size={14} color="var(--positive)" style={{ marginTop: "2px", flexShrink: 0 }} strokeWidth={2.2} />
-                        <span className="an-case-text">{item.text}</span>
-                      </div>
-                    )) : (
-                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>
-                        {specialistDegraded("bull")
-                          ? "The bull-case agent did not run — the language model was unavailable. Nothing was established either way."
-                          : "No positive signals identified."}
-                      </span></div>
-                    )}
+                {sourceRefs.length > 0 ? (
+                  <SourceList sources={sourceRefs} />
+                ) : (
+                  <Panel className="vf-panel-neutral">
+                    <p className="an-case-text" style={{ color: "var(--text-3)", margin: 0 }}>
+                      No source was recorded for this run. Web verification either did
+                      not run or returned nothing; the reliability notes above say
+                      which.
+                    </p>
                   </Panel>
-
-                  <Panel accentColor="var(--caution)">
-                    <SLabel color="var(--caution)">Bear case</SLabel>
-                    {bearItems.length > 0 ? bearItems.map((item, i) => (
-                      <div key={i} className="an-case-item" data-tip={item.tip}>
-                        <AlertTriangle size={14} color="var(--caution)" style={{ marginTop: "2px", flexShrink: 0 }} strokeWidth={2.2} />
-                        <span className="an-case-text">{item.text}</span>
-                      </div>
-                    )) : (
-                      <div className="an-case-item"><span className="an-case-text" style={{ color: "#5D6B7F" }}>
-                        {specialistDegraded("bear")
-                          ? "The bear-case agent did not run — the language model was unavailable. Nothing was established either way."
-                          : "No red flags identified."}
-                      </span></div>
-                    )}
-                  </Panel>
-                </div>
-
+                )}
                 </Chapter>
 
                 <Chapter
