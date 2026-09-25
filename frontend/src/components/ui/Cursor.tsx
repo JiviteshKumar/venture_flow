@@ -281,7 +281,7 @@ export default function Cursor() {
         .vf-cur-ring[data-cursor-mode="action"][data-labelled="true"] {
           width: auto; height: auto; min-width: 0;
           padding: 9px 15px; border-radius: 999px;
-          background: var(--accent);
+          background: var(--accent-solid);
           border-color: transparent;
           /* A halo in the page's own colour. Without it the chip vanishes the
              moment it is over a control painted in the same accent -- which is
@@ -295,7 +295,7 @@ export default function Cursor() {
 
         .vf-cur-label {
           font-family: var(--font-sans); font-size: 11px; font-weight: 600;
-          letter-spacing: 0.1em; text-transform: uppercase; color: #fff;
+          letter-spacing: 0.1em; text-transform: uppercase; color: var(--on-accent);
           white-space: nowrap;
         }
 

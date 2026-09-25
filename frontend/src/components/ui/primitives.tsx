@@ -257,7 +257,7 @@ export function ButtonStyles() {
       .vf-btn { border: 1px solid transparent; }
       .vf-btn:disabled { opacity: 0.55; }
       .vf-btn-primary {
-        background: var(--accent); color: #fff;
+        background: var(--accent-solid); color: var(--on-accent);
         box-shadow: 0 1px 2px rgba(15,23,42,0.10), 0 6px 18px rgba(29,111,232,0.22);
       }
       .vf-btn-primary:hover:not(:disabled) { background: var(--accent-strong); transform: translateY(-1px); }

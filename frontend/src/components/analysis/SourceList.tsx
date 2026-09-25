@@ -122,8 +122,11 @@ export default function SourceList({ sources }: { sources: SourceRef[] }) {
           font-family: var(--font-sans); font-size: 13.5px; font-weight: 600;
         }
         .src-favicon {
-          width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0;
-          background: var(--surface-3);
+          width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+          display: grid; place-items: center;
+          background: var(--surface-3); border: 1px solid var(--line);
+          font-family: var(--font-sans); font-size: 10px; font-weight: 700;
+          letter-spacing: 0.02em; color: var(--text-3);
         }
         .src-n {
           margin-left: auto; font-family: var(--font-sans); font-size: 12px;
@@ -175,17 +178,16 @@ export default function SourceList({ sources }: { sources: SourceRef[] }) {
               data-cursor={expanded ? "Close" : "Open"}
               onClick={() => setOpen(expanded ? null : h.host)}
             >
-              {/* Google's favicon service rather than fetching the site itself:
-                  one request, cached, and it fails to a blank square instead of
-                  to a broken-image glyph. */}
-              <img
-                className="src-favicon"
-                src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h.host)}&sz=32`}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
-              />
+              {/* A monogram, not a favicon.
+                  This asked Google's favicon service for each host's icon,
+                  which meant every site the run consulted was announced to a
+                  third party as soon as a reader opened the report -- the list
+                  of companies someone is diligencing is exactly the sort of
+                  thing that should not leave the page. It also 404'd for any
+                  host without an icon, filling the console. Two letters off
+                  the hostname carry the same "which site is this" signal at no
+                  privacy cost and no request. */}
+              <span className="src-favicon" aria-hidden="true">{h.host.slice(0, 2).toUpperCase()}</span>
               {h.host}
               <span className="src-n">{h.refs.length}</span>
               <ChevronDown className="src-caret" size={15} />

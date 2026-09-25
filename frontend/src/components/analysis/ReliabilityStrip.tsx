@@ -148,11 +148,18 @@ export default function ReliabilityStrip({
    * why this happens here rather than in the generator. The "WARNING:" prefix
    * goes because the meter beside it is already red and already says LOW.
    * Every other word is the server's.
+   *
+   * Removing the prefix left the sentence starting lower-case -- "most of this
+   * deck's slides..." -- so the first letter is raised. That is a typographic
+   * repair of this component's own edit, not a rewording of the server's.
    */
-  const interpretation = (coverage?.interpretation ?? "")
-    .replace(/^WARNING:\s*/, "")
-    .replace(/\s*The unrepresented slides are listed above\.\s*$/, "")
-    .trim();
+  const interpretation = (() => {
+    const text = (coverage?.interpretation ?? "")
+      .replace(/^WARNING:\s*/, "")
+      .replace(/\s*The unrepresented slides are listed above\.\s*$/, "")
+      .trim();
+    return text ? text[0].toUpperCase() + text.slice(1) : text;
+  })();
 
   const pct = coverage?.coverage_pct ?? 0;
   const tone: Tone =
