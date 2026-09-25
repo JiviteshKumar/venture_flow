@@ -97,7 +97,7 @@ function ScoreMark({ score }: { score: number }) {
       <span className="vf-figure" style={{ fontSize: 22, color: toneVar(scoreTone(score)) }}>
         {Math.round(score)}
       </span>
-      <span style={{ fontSize: 11, color: "var(--text-faint)" }}>/100</span>
+      <span style={{ fontSize: 11, color: "var(--text-3)" }}>/100</span>
     </span>
   );
 }
@@ -223,7 +223,7 @@ const Dashboard = () => {
           border-radius: var(--r-sm); color: var(--text);
           transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
         }
-        .db-search::placeholder { color: var(--text-faint); }
+        .db-search::placeholder { color: var(--text-3); }
         .db-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-quiet); }
 
         .db-seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px; }
@@ -258,7 +258,7 @@ const Dashboard = () => {
         .db-row:hover { background: var(--surface-2); }
         .db-row:hover .db-go { color: var(--accent); transform: translateX(2px); }
         .db-row[data-attention="true"] { box-shadow: inset 3px 0 0 var(--caution); }
-        .db-go { color: var(--text-faint); transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+        .db-go { color: var(--text-3); transition: color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
         .db-company { display: block; font-size: var(--t-body); font-weight: 600; letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .db-when { display: block; font-size: var(--t-micro); color: var(--text-3); margin-top: 2px; }
 
@@ -359,7 +359,7 @@ const Dashboard = () => {
         {reports && reports.length > 0 && (
           <div className="db-toolbar">
             <div style={{ position: "relative", flex: "1 1 240px", maxWidth: 320 }}>
-              <Search size={15} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-faint)" }} aria-hidden="true" />
+              <Search size={15} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)" }} aria-hidden="true" />
               <input
                 className="db-search"
                 value={query}

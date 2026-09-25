@@ -264,7 +264,7 @@ function EmptyAnalysis() {
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} style={{ marginBottom: 24 }}>
             <Zap size={36} color="#1D6FE8" />
           </motion.div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "#0B1120" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "var(--text)" }}>
             Agents are running…
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, color: "#5D6B7F", marginBottom: 16 }}>
@@ -323,17 +323,42 @@ function Chapter({
   hint?: ReactNode;
   children: ReactNode;
 }) {
+  /**
+   * Staged, not all at once.
+   *
+   * The whole chapter used to be one Reveal: heading, hint and content faded
+   * up together as a single block, which reads as a panel being switched on
+   * rather than as a page being written. Each part now has its own observer
+   * and its own delay, so scrolling into a chapter plays the order a reader
+   * takes it in anyway -- number, title, subtitle, then the thing itself.
+   *
+   * Four observers per chapter rather than one. They are cheap, they
+   * disconnect the moment they fire, and none of them is doing layout work.
+   */
   return (
-    <Reveal as="section" className="an-chapter">
+    <section className="an-chapter">
       <div className="an-chapter-head">
-        <span className="an-chapter-index">{index}</span>
+        <Reveal as="div" y={12} className="an-chapter-index-cell">
+          <span className="an-chapter-index">{index}</span>
+        </Reveal>
         <div style={{ minWidth: 0 }}>
-          <h2 className="an-chapter-title">{title}</h2>
-          {hint && <p className="an-chapter-hint">{hint}</p>}
+          <Reveal as="div" delay={0.07} y={24}>
+            <h2 className="an-chapter-title">{title}</h2>
+          </Reveal>
+          {hint && (
+            <Reveal as="div" delay={0.15} y={16}>
+              <p className="an-chapter-hint">{hint}</p>
+            </Reveal>
+          )}
         </div>
       </div>
-      {children}
-    </Reveal>
+      {/* Kept a column with the chapter's own gap: some chapters pass several
+          children, and wrapping them in a plain div would collapse the spacing
+          the section used to provide. */}
+      <Reveal as="div" delay={0.22} y={28} className="an-chapter-body">
+        {children}
+      </Reveal>
+    </section>
   );
 }
 
@@ -390,7 +415,7 @@ const Analysis = () => {
   // If no report, show empty/loading
   if (!report) {
     return (
-      <div className="an-root" style={{ fontFamily: "var(--font-sans)", color: "#0B1120", minHeight: "100vh", background: "#F0F2F5" }}>
+      <div className="an-root" style={{ fontFamily: "var(--font-sans)", color: "var(--text)", minHeight: "100vh", background: "var(--bg)" }}>
         <EmptyAnalysis />
       </div>
     );
@@ -702,25 +727,38 @@ const Analysis = () => {
     <>
       <style>{`
 
-        :root {
-          --bg: #F0F2F5;
-          --surface: #FFFFFF;
-          --surface-2: #F7F8FA;
-          --border: rgba(15,23,42,0.08);
-          --border-strong: rgba(15,23,42,0.13);
-          --text-primary: #0B1120;
-          --text-secondary: #4A5568;
-          --text-muted: #5D6B7F;
-          --blue: #1D6FE8;
-          --green: #0EA66A;
-          --amber: #C47A0A;
-          --red: #D93025;
-          --shadow-sm: 0 1px 4px rgba(15,23,42,0.06), 0 2px 12px rgba(15,23,42,0.04);
-          --shadow-md: 0 4px 20px rgba(15,23,42,0.08), 0 1px 4px rgba(15,23,42,0.05);
-          --radius: 14px;
+        /* WHAT USED TO BE HERE, AND WHY IT HAD TO GO
+           A :root block redefining --bg, --surface, --border,
+           --text-primary and the rest as literal light-theme colours. It was
+           written before the theme system existed and it beat that system on
+           source order -- an injected style element lands after the stylesheet,
+           and :root versus :root is decided by whichever came last. So on the
+           DARK theme this page quietly forced --text-primary to #0B1120 and
+           painted near-black text on a near-black page: the sticky bar's
+           company name measured 1.06:1 against its backdrop, which is to say
+           it was not there.
+
+           Every name in that block already exists in styles/tokens.css and
+           flips with the theme. What remains below is only the handful this
+           page uses that the token system spells differently, mapped rather
+           than restated, and scoped to .an-root so it cannot leak out. */
+        .an-root {
+          --blue:   var(--accent);
+          --green:  var(--verified);
+          --amber:  var(--caution);
+          --red:    var(--critical);
+          --shadow-sm: var(--e-1);
+          --shadow-md: var(--e-2);
         }
 
-        .an-root { font-family: var(--font-sans); color: var(--text-primary); min-height: 100vh; background: var(--bg); }
+                /* No ground of its own.
+           This painted an opaque --bg across the whole report, which sits
+           above the fixed ambience layer and hid it completely -- so the one
+           screen a reader spends the most time scrolling was the one with no
+           background motion at all. The body already carries --bg; letting it
+           show through means the report is lit by the same room as every other
+           page, which is the entire point of having one. */
+        .an-root { font-family: var(--font-sans); color: var(--text-primary); min-height: 100vh; background: transparent; }
 
         /* ── VentureFlow Score panel ─────────────────────────────────── */
         .vs-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 26px 28px; margin-bottom: 0; }
@@ -832,6 +870,7 @@ const Analysis = () => {
         .an-mini-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
         .an-mini-score {
           font-family: var(--font-display); font-size: 19px; line-height: 1;
+          font-weight: 700;
         }
         @media (max-width: 720px) { .an-mini { display: none; } }
 
@@ -850,11 +889,11 @@ const Analysis = () => {
         .an-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
         .an-tabs::-webkit-scrollbar { display: none; }
 
-        .an-tab { position: relative; font-family: var(--font-sans); font-size: 13.5px; font-weight: 500; padding: 15px 20px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; transition: color var(--dur-fast) var(--ease-out); white-space: nowrap; letter-spacing: -0.01em; }
+        .an-tab { position: relative; font-family: var(--font-sans); font-size: 13.5px; font-weight: 500; padding: 15px 20px; border: none; background: transparent; color: var(--text-2); cursor: pointer; transition: color var(--dur-fast) var(--ease-out); white-space: nowrap; letter-spacing: -0.01em; }
         .an-tab-underline { position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2.5px; border-radius: 3px 3px 0 0; background: var(--blue); }
 
         .an-tab:hover { color: var(--text-secondary); }
-        .an-tab-active { color: var(--blue); font-weight: 600; }
+        .an-tab-active { color: var(--accent-hover); font-weight: 600; }
 
         /* One measure, centred. The report used to run edge-to-edge in a
            column that was whatever was left after a 320px rail, so the line
@@ -876,20 +915,55 @@ const Analysis = () => {
           background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
           border-radius: 32px 32px 0 0;
         }
+        /* THE VERTICAL RHYTHM
+           One value, used by every stack on this page, so the distance between
+           two chapters is the same wherever they happen to sit in the tree.
+           It was not: .an-body declared a 92px gap and had exactly TWO
+           children -- one chapter, and a wrapper holding all the others. The
+           gap applied once, and every chapter inside the wrapper stacked with
+           no space at all, which is why a heading landed hard against the card
+           above it. Anything that stacks chapters reads this. */
+        .an-root { --rhythm: clamp(56px, 6.4vw, 92px); }
+
         .an-body {
           max-width: 1060px; margin: 0 auto;
           padding: 64px var(--gutter) 120px;
-          display: flex; flex-direction: column; gap: 92px;
+          display: flex; flex-direction: column; gap: var(--rhythm);
+        }
+
+        /* The wrapper the tabs swap. A stack in its own right, so it keeps the
+           rhythm instead of collapsing it. */
+        .tab-content-enter {
+          display: flex; flex-direction: column; gap: var(--rhythm);
         }
 
         /* A chapter: a number, a title, and the thing itself. The numbers are
            the reader's position in the document, which a stack of identical
            cards never tells them. */
         .an-chapter { display: flex; flex-direction: column; gap: 26px; }
-        .an-chapter-head { display: flex; align-items: baseline; gap: 14px; }
+        .an-chapter-body { display: flex; flex-direction: column; gap: 26px; }
+        /* The hint sits under the title inside its own reveal wrapper, so the
+           margin that used to separate them moves to the wrapper. */
+        .an-chapter-head .vf-reveal + .vf-reveal { margin-top: 6px; }
+        /* The number hangs in the margin rather than pushing the title in.
+           It was a flex sibling, so every chapter title started 34px to the
+           right of the card beneath it and nothing on the page lined up with
+           anything else. Pulled left by exactly its own width plus the gap,
+           the title now sits flush with its content. */
+        .an-chapter-head {
+          display: flex; align-items: baseline; gap: 14px;
+          margin-left: calc(-1 * (var(--index-w) + 14px));
+        }
+        .an-chapter { --index-w: 20px; }
+        .an-chapter-index-cell { width: var(--index-w); flex-shrink: 0; text-align: right; }
+        /* Below the width where there is a margin to hang in, it goes back
+           inline -- a number half off the screen is worse than an indent. */
+        @media (max-width: 1180px) {
+          .an-chapter-head { margin-left: 0; }
+        }
         .an-chapter-index {
           font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em;
-          color: var(--text-faint); padding-top: 6px;
+          color: var(--text-3); padding-top: 6px;
         }
         .an-chapter-title {
           font-family: var(--font-display); font-size: var(--display-md);
@@ -897,12 +971,12 @@ const Analysis = () => {
           color: var(--text-primary);
         }
         .an-chapter-hint {
-          font-size: 14px; color: var(--text-muted); margin: 6px 0 0;
+          font-size: 14px; color: var(--text-muted); margin: 0;
           max-width: 62ch; line-height: 1.6;
         }
 
         @media (max-width: 720px) {
-          .an-body { padding: 36px var(--gutter) 80px; gap: 60px; }
+          .an-body { padding: 36px var(--gutter) 80px; }
         }
 
         .vf-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 26px 28px; border-left-width: 3px; transition: border-color var(--dur-base) var(--ease-out); }
@@ -1340,7 +1414,7 @@ const Analysis = () => {
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 13 }}>📋</span>
                         Suggested Due Diligence Questions
-                        <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#1D6FE8", background: "rgba(29,111,232,0.08)", border: "1px solid rgba(29,111,232,0.2)", padding: "2px 7px", borderRadius: 20 }}>
+                        <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 600, color: "var(--accent-hover)", background: "var(--accent-quiet)", border: "1px solid var(--accent-line)", padding: "2px 8px", borderRadius: 20 }}>
                           {ddQuestions.length} questions
                         </span>
                       </span>
@@ -1422,7 +1496,7 @@ const Analysis = () => {
                     </p>
                     <div style={{ padding: "12px", background: "rgba(196,122,10,0.06)", borderRadius: "8px", border: "1px solid rgba(196,122,10,0.15)" }}>
                       <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
-                      <div style={{ fontSize: "12.5px", color: "#0B1120", fontWeight: "600" }}>{market?.gaps?.[0] || "None identified."}</div>
+                      <div style={{ fontSize: "12.5px", color: "var(--text)", fontWeight: "600" }}>{market?.gaps?.[0] || "None identified."}</div>
                     </div>
                   </Panel>
                 </div>
@@ -1472,7 +1546,7 @@ const Analysis = () => {
                     </p>
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "14px", marginBottom: 14 }}>
                       <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
-                      <div style={{ fontSize: "13.5px", color: "#0B1120", fontWeight: "700", letterSpacing: "-0.01em" }}>
+                      <div style={{ fontSize: "13.5px", color: "var(--text)", fontWeight: "700", letterSpacing: "-0.01em" }}>
                         {team?.questions?.[0] || (report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding")}
                       </div>
                     </div>

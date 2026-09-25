@@ -43,7 +43,7 @@ export default function RouteTransition({ children }: { children: ReactNode }) {
     setLabel(TITLES[pathname] ?? "");
     setSweeping(true);
     if (timer.current) window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setSweeping(false), 860);
+    timer.current = window.setTimeout(() => setSweeping(false), 1500);
     return () => { if (timer.current) window.clearTimeout(timer.current); };
   }, [pathname]);
 
@@ -57,11 +57,18 @@ export default function RouteTransition({ children }: { children: ReactNode }) {
           background: var(--ink-0);
           transform: translate3d(0, 100%, 0);
         }
-        .vf-wipe[data-on="true"] { animation: vf-wipe-through 860ms cubic-bezier(0.76, 0, 0.24, 1); }
+        /* 1500ms, with the panel held still across the middle third.
+           At 860ms the hold was 16% of the run -- about 140ms -- so the panel
+           arrived and left in one movement and the destination's name flashed
+           past unread. The covered stretch is now ~420ms: long enough to read
+           one word, short enough that nobody is waiting on it. Navigation is
+           never delayed by any of this; React has already swapped the route
+           behind the panel. */
+        .vf-wipe[data-on="true"] { animation: vf-wipe-through 1500ms cubic-bezier(0.76, 0, 0.24, 1); }
         @keyframes vf-wipe-through {
           0%   { transform: translate3d(0, 100%, 0); }
-          42%  { transform: translate3d(0, 0, 0); }
-          58%  { transform: translate3d(0, 0, 0); }
+          34%  { transform: translate3d(0, 0, 0); }
+          62%  { transform: translate3d(0, 0, 0); }
           100% { transform: translate3d(0, -100%, 0); }
         }
 
@@ -71,11 +78,11 @@ export default function RouteTransition({ children }: { children: ReactNode }) {
           letter-spacing: -0.03em; color: var(--text-on-ink);
           opacity: 0;
         }
-        .vf-wipe[data-on="true"] .vf-wipe-label { animation: vf-wipe-label 860ms ease-out; }
+        .vf-wipe[data-on="true"] .vf-wipe-label { animation: vf-wipe-label 1500ms ease-out; }
         @keyframes vf-wipe-label {
-          0%, 20% { opacity: 0; transform: translate3d(0, 16px, 0); }
-          42%, 58% { opacity: 1; transform: none; }
-          100% { opacity: 0; transform: translate3d(0, -16px, 0); }
+          0%, 16%  { opacity: 0; transform: translate3d(0, 18px, 0); }
+          34%, 62% { opacity: 1; transform: none; }
+          100%     { opacity: 0; transform: translate3d(0, -18px, 0); }
         }
       `}</style>
 

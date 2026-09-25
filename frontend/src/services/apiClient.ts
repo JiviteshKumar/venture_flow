@@ -331,6 +331,16 @@ export interface OcrSummary {
 
 export interface UploadResponse {
   session_id: string;
+  /**
+   * What the server decided the company is called, after company_name.clean.
+   *
+   * Authoritative. The form pre-fills its company field from the filename and
+   * had no way to know the server then cleaned it, so `14_mysql.pdf` showed
+   * "14 mysql", the reader left it -- it looked considered -- and THAT string
+   * was what the analysis ran on. Adopting this value means what the reader
+   * sees is what the run will use.
+   */
+  company_name?: string;
   extracted_text: string;
   detected_claims: string[];
   company_description: string;

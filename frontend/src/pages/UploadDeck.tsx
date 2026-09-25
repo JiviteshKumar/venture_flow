@@ -5,7 +5,7 @@ import {
   ArrowLeft, ArrowRight, Check, Clock, FileText, Loader2, X,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
-import { companyNameFromFilename, formatBytes } from "../utils/format";
+import { formatBytes } from "../utils/format";
 import { formatElapsed, useElapsedSeconds } from "../hooks/useElapsed";
 import OutOfScopeDialog from "../components/common/OutOfScopeDialog";
 import { GrowBar } from "../components/ui/Motion";
@@ -77,6 +77,9 @@ const UploadDeck = () => {
   const [fileObj, setFileObj] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [companyInput, setCompanyInput] = useState("");
+  // Set the moment the reader edits the company field. Their answer is final;
+  // the server's cleaned name only ever replaces our own placeholder.
+  const [companyTouched, setCompanyTouched] = useState(false);
   // Founder names, comma-separated. Pre-filled from what the extractor found
   // and editable before submitting, because these names go to a live web
   // search and a public-background assessment -- a name the extractor got
@@ -94,6 +97,23 @@ const UploadDeck = () => {
     const names = (uploadResult?.detected_founders ?? []).map((f) => f.name).filter(Boolean);
     setFoundersInput(names.join(", "));
   }, [uploadResult, foundersTouched]);
+
+  /**
+   * Adopt the name the server settled on.
+   *
+   * The field is pre-filled from the filename the instant a file is chosen, so
+   * there is something to look at while the upload runs. That placeholder is a
+   * flattened filename -- `14_mysql.pdf` becomes "14 mysql" -- and it used to
+   * be what the analysis ran on, because it reads like a considered answer and
+   * nobody edits it. The server cleans the real filename, which still has the
+   * marks that identify it as one, and now says what it decided. That answer
+   * wins over the placeholder, and loses to anything the reader typed.
+   */
+  useEffect(() => {
+    if (companyTouched) return;
+    const settled = uploadResult?.company_name?.trim();
+    if (settled) setCompanyInput(settled);
+  }, [uploadResult, companyTouched]);
 
   // ── What the extractor actually found ─────────────────────────────────────
 
@@ -151,7 +171,19 @@ const UploadDeck = () => {
     setFileSize(formatBytes(f.size));
     setFileObj(f);
     setFoundersTouched(false);
-    const derived = companyNameFromFilename(f.name);
+    setCompanyTouched(false);
+    // Deliberately naive, and deliberately NOT cleaned here.
+    //
+    // A cleaner on this side was tried and was worse than none: it stripped
+    // the leading number from "500 Startups" and from "3 Arrows Capital",
+    // because from the client there is no way to tell a file ordinal from a
+    // company whose name begins with a digit. The server can tell, it already
+    // does it carefully (company_name.py), and it compares against the real
+    // filename -- which still carries the underscores and the extension that
+    // this derivation throws away. So this value is a placeholder for the
+    // seconds before the upload responds, and `company_name` off that response
+    // replaces it.
+    const derived = f.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
     if (!companyInput) setCompanyInput(derived);
     if (status === "done" || status === "ready") reset();
     // Parse immediately, so the readout can show what is in the deck before
@@ -427,7 +459,7 @@ const UploadDeck = () => {
                     <input
                       className="up-input"
                       value={companyInput}
-                      onChange={(e) => setCompanyInput(e.target.value)}
+                      onChange={(e) => { setCompanyTouched(true); setCompanyInput(e.target.value); }}
                       placeholder="e.g. NovaMed AI"
                       disabled={isAnalyzing}
                     />

@@ -75,6 +75,13 @@
   /* ══ Accent and semantics ══════════════════════════════════════════════ */
   --accent:       var(--a-400);
   --accent-hover: var(--a-300);
+  /* The fill under white text on a solid control.
+     --accent is tuned for TEXT and hairlines on a near-black page, so it is
+     light (#5C94FF); white on it measures 2.94:1, which fails. The filled
+     button needs a darker blue, and it is the same blue in both themes -- a
+     primary button should not change colour when the lights do. */
+  --accent-solid: var(--a-500);
+  --on-accent:    #FFFFFF;
   --accent-quiet: rgba(47, 107, 255, 0.15);
   --accent-line:  rgba(92, 148, 255, 0.36);
 
@@ -176,6 +183,8 @@
 
   --accent:       #2F6BFF;
   --accent-hover: #1F55DB;
+  --accent-solid: #2F6BFF;
+  --on-accent:    #FFFFFF;
   --accent-quiet: #EAF1FF;
   --accent-line:  rgba(47, 107, 255, 0.26);
 

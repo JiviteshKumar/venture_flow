@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowLeft, Download, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import DeckSculpture, { type DeckPage } from "./DeckSculpture";
+import { type DeckPage } from "./DeckSculpture";
 import Constellation, { type ComparablePoint } from "./Constellation";
 import { Act, beat, easeOut, Reveal, SplitWords } from "../ui/scroll";
 
@@ -111,11 +111,13 @@ export default function ReportFilm({
   return (
     <div className="film">
       <style>{`
-        .film { position: relative; background: var(--ink-0); color: var(--text-on-ink); }
+        .film { position: relative; background: transparent; color: var(--text-on-ink); }
 
         .film-scene {
           position: relative; height: 100vh; width: 100%;
-          background: var(--ink-0);
+          /* Transparent, like .film: the acts are lit by the room behind the
+             whole product rather than each painting its own flat ground. */
+          background: transparent;
           display: flex; flex-direction: column; justify-content: center;
           padding: 0 clamp(20px, 5vw, 92px);
           overflow: hidden;
@@ -323,13 +325,14 @@ export default function ReportFilm({
           const leave = reduced ? 0 : beat(p, 0.55, 1);
           return (
             <div className="film-scene">
-              {pages.length > 0 && (
-                <DeckSculpture
-                  pages={pages}
-                  progress={reduced ? 0 : p}
-                  className="film-sculpture"
-                />
-              )}
+              {/* The deck sculpture used to hang here: a stack of translucent
+                  blue sheets, one per page, fanned in perspective. It was
+                  honest -- lit sheets were pages the extractor read -- but on
+                  the opening frame it read as decoration competing with the
+                  company's name, and the same fact is already stated in words
+                  two lines below ("6 of 6 pages read") and drawn page by page
+                  in the coverage act. Removed rather than restyled: the hero
+                  has one job, which is to say whose report this is. */}
               <div
                 className="film-inner"
                 style={{

@@ -773,6 +773,19 @@ class DetectedFounder(BaseModel):
 
 class PDFExtractResponse(BaseModel):
     session_id: str
+    # What this upload decided the company is called, after company_name.clean.
+    #
+    # The form pre-fills its company field from the filename and had no way to
+    # know that the server then cleaned it. So a deck saved as `14_mysql.pdf`
+    # showed "14 mysql" in the field, the reader left it alone because it
+    # looked like a considered answer, and THAT string -- not the cleaned one
+    # -- was what the analysis request carried. The cleaner never got a second
+    # look at it, because by then it no longer resembled a filename.
+    #
+    # Returning the decision closes that gap: the form adopts this value, so
+    # what the reader sees is what the run will use, and they can still correct
+    # it before submitting.
+    company_name: str = ""
     extracted_text: str
     detected_claims: list[str]
     company_description: str
@@ -1472,6 +1485,7 @@ async def _extract_uploaded_document(
         store_document(session_id, text, company_name)
         return PDFExtractResponse(
             session_id=session_id,
+            company_name=company_name,
             extracted_text=text[:5000],
             detected_claims=info.get("claims", [])[:MAX_CLAIMS],
             company_description=info.get("description", ""),

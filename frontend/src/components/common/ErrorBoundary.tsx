@@ -18,6 +18,11 @@ type State = { hasError: boolean; error: Error | null; componentStack: string };
  * copy button, so a crash can be reported precisely instead of described as
  * "it broke when I clicked around".
  */
+/* Every colour below is a var() with a literal fallback. The var keeps this
+   screen in whichever theme is on -- it used to be light-theme literals, so
+   on dark the heading measured 1.06:1 against the page and the one screen a
+   reader actually needs to read was blank. The fallback keeps it legible if
+   the stylesheet is part of what broke. */
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null, componentStack: "" };
 
@@ -50,39 +55,39 @@ export default class ErrorBoundary extends Component<Props, State> {
     return (
       <main
         role="alert"
-        style={{ maxWidth: 760, margin: "8vh auto", padding: 24, fontFamily: "system-ui", color: "#0B1120" }}
+        style={{ maxWidth: 760, margin: "8vh auto", padding: 24, fontFamily: "var(--font-sans, system-ui)", color: "var(--text, #0B1120)" }}
       >
         <h1 style={{ fontSize: 22, margin: "0 0 6px" }}>Something went wrong</h1>
-        <p style={{ margin: "0 0 4px", color: "#667085" }}>
+        <p style={{ margin: "0 0 4px", color: "var(--text-2, #667085)" }}>
           VentureFlow could not render this page. The error is below — reloading usually recovers,
           but the details are what make it fixable.
         </p>
-        <p style={{ margin: "0 0 16px", fontFamily: "ui-monospace, monospace", fontSize: 13, color: "#B42318" }}>
+        <p style={{ margin: "0 0 16px", fontFamily: "ui-monospace, monospace", fontSize: 13, color: "var(--critical, #B42318)" }}>
           {this.state.error?.name}: {this.state.error?.message}
         </p>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <button
             onClick={() => window.location.reload()}
-            style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #D0D5DD", background: "#1D6FE8", color: "#fff", cursor: "pointer" }}
+            style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid transparent", background: "var(--accent-solid, #2F6BFF)", color: "var(--on-accent, #fff)", cursor: "pointer" }}
           >
             Reload VentureFlow
           </button>
           <button
             onClick={() => void navigator.clipboard?.writeText(this.details())}
-            style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid #D0D5DD", background: "#fff", cursor: "pointer" }}
+            style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--line-strong, #D0D5DD)", background: "var(--surface, #fff)", color: "var(--text, #0B1120)", cursor: "pointer" }}
           >
             Copy error details
           </button>
         </div>
 
         <details>
-          <summary style={{ cursor: "pointer", fontSize: 13, color: "#667085" }}>
+          <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--text-2, #667085)" }}>
             Technical details
           </summary>
           <pre
             style={{
-              marginTop: 10, padding: 12, background: "#F2F4F7", border: "1px solid #E4E7EC",
+              marginTop: 10, padding: 12, background: "var(--surface-2, #F2F4F7)", border: "1px solid var(--line, #E4E7EC)",
               borderRadius: 8, fontSize: 11.5, lineHeight: 1.5, overflowX: "auto", whiteSpace: "pre-wrap",
             }}
           >
