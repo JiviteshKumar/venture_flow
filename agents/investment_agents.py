@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import observability
+from grounding import is_grounded, normalised_words
 from groq_client import note_provider_failure, MODEL, get_client, pace_for, settle_usage
 
 logger = logging.getLogger(__name__)
@@ -244,46 +244,9 @@ def _evidence_block(
 # text it was handed, and a claim whose evidence is not actually in the source
 # is dropped by a string check the model does not participate in.
 #
-# The test is deliberately not an exact substring match. Models re-punctuate,
-# fix casing and drop a stray line break when quoting, and rejecting a real
-# quote over a comma would push this toward showing nothing at all -- which is
-# its own failure. So both sides are normalised to bare lower-case words and a
-# capability survives if any six-word run of its evidence appears in the
-# source. Six words of exact sequence is far past coincidence, and no amount of
-# fluent invention produces it.
-
-_WORDS = re.compile(r"[a-z0-9]+")
-
-# A quote shorter than this cannot be checked meaningfully: "strong team" will
-# appear in almost any deck by chance, so matching it proves nothing.
-_MIN_QUOTE_WORDS = 4
-_SHINGLE = 6
-
-
-def _normalised_words(text: str) -> list[str]:
-    return _WORDS.findall((text or "").lower())
-
-
-def _is_grounded(evidence: str, haystack_words: list[str]) -> bool:
-    """Whether this evidence really came from the material the agent was given."""
-    quote = _normalised_words(evidence)
-    if len(quote) < _MIN_QUOTE_WORDS:
-        return False
-    if len(quote) <= _SHINGLE:
-        # Short quote: it has to appear in full.
-        return any(
-            haystack_words[i:i + len(quote)] == quote
-            for i in range(max(0, len(haystack_words) - len(quote) + 1))
-        )
-    for start in range(len(quote) - _SHINGLE + 1):
-        run = quote[start:start + _SHINGLE]
-        if any(
-            haystack_words[i:i + _SHINGLE] == run
-            for i in range(max(0, len(haystack_words) - _SHINGLE + 1))
-        ):
-            return True
-    return False
-
+# The comparison itself lives in `grounding.py`, because the slide sweep in
+# structured_extractor.py needs exactly the same rule and a safety check with
+# two implementations is a safety check with one bug in it.
 
 def ground_team_capabilities(
     team: dict[str, Any], document: str, founder_checks: list[dict[str, Any]] | None = None
@@ -308,7 +271,7 @@ def ground_team_capabilities(
             value = check.get(key)
             if isinstance(value, str):
                 sources.append(value)
-    haystack = _normalised_words(" ".join(sources))
+    haystack = normalised_words(" ".join(sources))
 
     kept: list[dict[str, Any]] = []
     dropped: list[str] = []
@@ -317,7 +280,7 @@ def ground_team_capabilities(
             continue
         area = str(capability.get("area") or "").strip()
         evidence = str(capability.get("evidence") or "").strip()
-        if area and evidence and _is_grounded(evidence, haystack):
+        if area and evidence and is_grounded(evidence, haystack):
             kept.append(capability)
         elif area:
             dropped.append(area)
@@ -358,10 +321,12 @@ def run_investment_agents(
         ),
         "team": (
             "founder and team diligence analyst",
-            "Assess team capabilities, hiring gaps and execution evidence. Use both the deck text and the FOUNDER BACKGROUND CHECKS section, which is independent web evidence about the named founders. "
+            "Assess founder and team capability. You have two sources and they are NOT interchangeable: the deck text, which the founders wrote about themselves, and the FOUNDER BACKGROUND CHECKS section, which is independent web evidence about the named founders. "
+            "MOST DECKS HAVE NO TEAM SLIDE. When the deck says nothing about the team, score from the background checks instead of returning nothing -- a founder's prior companies, roles and domain history in that section are real evidence about capability, and they are the ONLY evidence for most of the decks you will see. "
             "Return JSON with keys confidence, confidence_basis, overall_assessment, capabilities (area/score/evidence), strengths, gaps, questions. "
-            "`capabilities` must hold 4-6 named capability areas scored 0-100 (for example Technical Depth, Domain Experience, Commercial Execution, Prior Startup Experience, Team Completeness), each with a short verbatim evidence excerpt. "
-            "Return capabilities as an empty list ONLY when there is genuinely no team evidence of any kind -- a scored area with nothing behind it is worse than an absent one.",
+            "`capabilities` must hold 4-6 named capability areas scored 0-100 (for example Technical Depth, Domain Experience, Commercial Execution, Prior Startup Experience, Team Completeness), each with a short verbatim evidence excerpt COPIED from the deck or from the background checks. "
+            "The excerpt is checked against both sources word for word after you answer, and an area whose excerpt is not found there is discarded -- so quote, never paraphrase, and never score an area you cannot quote for. "
+            "Return capabilities as an empty list ONLY when neither source says anything about these people.",
             {"confidence": 0, "confidence_basis": "No specialist output was produced.", "overall_assessment": "Insufficient team information", "capabilities": [], "strengths": [], "gaps": ["Deck does not provide enough team evidence."], "questions": ["Provide founder biographies and relevant operating experience."]},
         ),
         "bull_case": (

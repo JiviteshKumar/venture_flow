@@ -14,7 +14,7 @@ import type { DeckPage } from "../components/analysis/DeckSculpture";
 import AskDrawer from "../components/analysis/AskDrawer";
 import EvidenceGraph from "../components/analysis/EvidenceGraph";
 import ScoreLedger from "../components/analysis/ScoreLedger";
-import { ClaimBreakdown, FounderRadar } from "../components/charts/Charts";
+import { CapabilityRadar, ClaimBreakdown, FounderRadar } from "../components/charts/Charts";
 import { Reveal, Tilt } from "../components/ui/scroll";
 import ReliabilityStrip from "../components/analysis/ReliabilityStrip";
 import { formatDate, formatDateTime, displayDeckId } from "../utils/format";
@@ -1540,6 +1540,16 @@ const Analysis = () => {
                         survive grounding are still listed as chips below. */}
                     {/* No SLabel: the chart frame carries its own label and
                         caption, and two "Founder evidence" headings stacked. */}
+                    {/* Capability by field, then how well the names behind it
+                        are established. Two questions a reader asks in that
+                        order, and the second qualifies the first: a strong
+                        capability profile built on one source is not the same
+                        finding as the same profile built on five. */}
+                    {teamRadarData.length > 0 && (
+                      <CapabilityRadar
+                        capabilities={teamRadarData.map((d) => ({ area: d.subject, score: d.value }))}
+                      />
+                    )}
                     <FounderRadar
                       founders={founderChecks.map((f) => ({
                         name: f.name || "",
@@ -1549,24 +1559,11 @@ const Analysis = () => {
                         origin: f.origin,
                       }))}
                     />
-                    {teamRadarData.length === 0 && <p style={{ color: "var(--text-2)", fontSize: 13, lineHeight: 1.7, marginTop: 14 }}>
-                      {/* Do not assert *why* the scores are missing. The team analyst
-                          returns the same empty `capabilities` list whether the deck
-                          genuinely had no team slide or the agent call failed, and
-                          claiming the former when the latter happened is the kind of
-                          confidently-wrong empty state this tab already had once. */}
-                      {team?.capabilities_dropped?.length
-                        ? `Every capability the team analyst scored was discarded: the evidence it quoted does not appear in the deck or in the founder background checks (${team.capabilities_dropped.join(", ")}).`
-                        : "The team analyst produced no capability scores for this deck."}
-                      {founderChecks.length > 0
-                        ? " Founder names were found and checked against public web evidence — see below."
-                        : founderDiscovery?.attempted
-                          ? " The deck names no founders; a public search was run for them — see below."
-                          : " No founder names were submitted and no public search was run."}
-                      {report.incomplete_analysis
-                        ? " This analysis is flagged incomplete, so the agent may not have run at all."
-                        : ""}
-                    </p>}
+                    {/* The sentence that used to sit here explained why there
+                        were no capability scores. With the capability radar back
+                        above it, reading its own axes off the founder background
+                        checks, it was a caption for something that is no longer
+                        missing. */}
                     {/* Each chip carries the line the score was read off, because a
                         capability score is only worth what is behind it. The server
                         already drops any whose quote is not in the deck or in the
