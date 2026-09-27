@@ -84,26 +84,34 @@ type Palette = {
  * near-white the same colour at the same weight is a stain, so the light set
  * is both paler and wider -- larger, weaker pools, which reads as daylight
  * through a window rather than as ink spilled on the page.
+ *
+ * WHY THE DARK SET IS WEAKER THAN IT WAS
+ *
+ * The first version ran the pools at 0.20-0.30 and turned the page a saturated
+ * navy-violet. It looked like something, and it competed: a report is read on
+ * this, and figures in red and green sat on a ground that was already doing
+ * colour of its own. These are roughly half that weight. The room should be
+ * felt at the edges of a page and never noticed in the middle of a sentence.
  */
 const PALETTES: Record<"dark" | "light", Palette> = {
   dark: {
     cursor: "120,170,255",
-    cursorA: 0.10,
+    cursorA: 0.055,
     pools: [
-      { c: "47,107,255",  x: 0.22, y: 0.28, ax: 0.15, ay: 0.11, sx: 0.00310, sy: 0.00227, r: 0.62, a: 0.30 },
-      { c: "124,92,255",  x: 0.78, y: 0.22, ax: 0.13, ay: 0.14, sx: 0.00212, sy: 0.00345, r: 0.55, a: 0.24 },
-      { c: "20,150,190",  x: 0.68, y: 0.80, ax: 0.16, ay: 0.10, sx: 0.00271, sy: 0.00183, r: 0.58, a: 0.20 },
-      { c: "60,60,160",   x: 0.16, y: 0.82, ax: 0.12, ay: 0.13, sx: 0.00168, sy: 0.00287, r: 0.50, a: 0.22 },
+      { c: "47,107,255",  x: 0.22, y: 0.28, ax: 0.15, ay: 0.11, sx: 0.00310, sy: 0.00227, r: 0.70, a: 0.145 },
+      { c: "124,92,255",  x: 0.78, y: 0.22, ax: 0.13, ay: 0.14, sx: 0.00212, sy: 0.00345, r: 0.62, a: 0.105 },
+      { c: "20,150,190",  x: 0.68, y: 0.80, ax: 0.16, ay: 0.10, sx: 0.00271, sy: 0.00183, r: 0.66, a: 0.095 },
+      { c: "60,60,160",   x: 0.16, y: 0.82, ax: 0.12, ay: 0.13, sx: 0.00168, sy: 0.00287, r: 0.58, a: 0.10 },
     ],
   },
   light: {
     cursor: "47,107,255",
-    cursorA: 0.07,
+    cursorA: 0.045,
     pools: [
-      { c: "47,107,255",  x: 0.20, y: 0.26, ax: 0.15, ay: 0.11, sx: 0.00310, sy: 0.00227, r: 0.74, a: 0.15 },
-      { c: "124,92,255",  x: 0.80, y: 0.20, ax: 0.13, ay: 0.14, sx: 0.00212, sy: 0.00345, r: 0.66, a: 0.12 },
-      { c: "26,160,200",  x: 0.70, y: 0.82, ax: 0.16, ay: 0.10, sx: 0.00271, sy: 0.00183, r: 0.70, a: 0.10 },
-      { c: "120,140,255", x: 0.14, y: 0.84, ax: 0.12, ay: 0.13, sx: 0.00168, sy: 0.00287, r: 0.62, a: 0.11 },
+      { c: "47,107,255",  x: 0.20, y: 0.26, ax: 0.15, ay: 0.11, sx: 0.00310, sy: 0.00227, r: 0.80, a: 0.105 },
+      { c: "124,92,255",  x: 0.80, y: 0.20, ax: 0.13, ay: 0.14, sx: 0.00212, sy: 0.00345, r: 0.72, a: 0.085 },
+      { c: "26,160,200",  x: 0.70, y: 0.82, ax: 0.16, ay: 0.10, sx: 0.00271, sy: 0.00183, r: 0.76, a: 0.072 },
+      { c: "120,140,255", x: 0.14, y: 0.84, ax: 0.12, ay: 0.13, sx: 0.00168, sy: 0.00287, r: 0.68, a: 0.078 },
     ],
   },
 };

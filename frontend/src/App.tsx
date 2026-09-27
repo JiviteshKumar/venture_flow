@@ -8,7 +8,6 @@ import DemoGate from "./components/common/DemoGate";
 import Ambience from "./components/ui/Ambience";
 import Cursor from "./components/ui/Cursor";
 import Intro from "./components/ui/Intro";
-import RouteTransition from "./components/ui/RouteTransition";
 import RequireAuth from "./components/common/RequireAuth";
 
 /**
@@ -58,7 +57,6 @@ function App() {
             <Ambience />
             <Intro />
             <Cursor />
-            <RouteTransition>
             <Routes>
               {/* Outside <Layout>: the sign-in screen is full-bleed and has no
                   sidebar, because there is nothing yet to navigate to. */}
@@ -80,7 +78,6 @@ function App() {
                 }
               />
             </Routes>
-            </RouteTransition>
           </BrowserRouter>
         </DemoGate>
       </AppProvider>

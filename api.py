@@ -72,7 +72,7 @@ import extraction_coverage
 import ocr_extractor
 import pdf_extractor
 import tech_scope
-from structured_extractor import extract_structured
+from structured_extractor import extract_structured, sweep_unrepresented_slides
 from ventureflow_agent import run_due_diligence
 
 load_dotenv()
@@ -1480,6 +1480,43 @@ async def _extract_uploaded_document(
                     for index, slide in enumerate(slides)
                 ]
         coverage = extraction_coverage.compute(text, info, slides or None)
+
+        # A second, narrower pass over the slides that produced nothing.
+        #
+        # The first extraction reads the whole deck and is told to cover all of
+        # it. It largely does, and then ranks by how checkable each claim is and
+        # returns the best -- correct for a claims table, and the reason whole
+        # slides go unrepresented. On Buffer's deck the first pass returned ten
+        # good claims and left the integrations slide and the competitive
+        # landscape slide untouched, both of which name real, checkable things.
+        #
+        # Raising the cap does not help: the model is ranking, not truncating.
+        # Asking again about only those slides changes the question from "what
+        # are the best claims in this deck" to "what does THIS slide assert".
+        # Every recovered claim is checked word for word against the slide it
+        # was attributed to, so the extra coverage is earned rather than
+        # asserted -- see structured_extractor.sweep_unrepresented_slides.
+        unrepresented = [
+            entry.get("slide")
+            for entry in (coverage.get("unrepresented_slides") or [])
+            if isinstance(entry, dict) and isinstance(entry.get("slide"), int)
+        ]
+        if unrepresented and slides:
+            texts = [slides[n - 1] for n in unrepresented if 0 < n <= len(slides)]
+            numbers = [n for n in unrepresented if 0 < n <= len(slides)]
+            try:
+                recovered = await run_in_threadpool(
+                    sweep_unrepresented_slides, texts, numbers, info.get("claims") or []
+                )
+            except Exception:
+                logger.warning("Slide sweep failed", exc_info=True)
+                recovered = []
+            if recovered:
+                info["claims"] = (info.get("claims") or []) + recovered
+                info["claims"] = info["claims"][:MAX_CLAIMS]
+                # Re-measure: the number the reader sees must describe the
+                # extraction they are actually being shown.
+                coverage = extraction_coverage.compute(text, info, slides or None)
 
         session_id = str(uuid.uuid4())
         store_document(session_id, text, company_name)

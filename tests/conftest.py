@@ -424,3 +424,62 @@ def disable_claim_cache():
     claim_cache.ENABLED = False
     yield
     claim_cache.ENABLED = original
+
+
+# ── A test that reloads `api` must not leave it reloaded ───────────────────
+#
+# Seventh instance of the pattern this file documents, and the first one this
+# file's own advice caught: running the suite in randomised order, as the
+# docstring says to, turned up
+# test_production_mode.py::test_the_401_reaches_the_browser_with_cors failing
+# in the suite and passing alone.
+#
+# The mechanism. `api` reads its CORS configuration at MODULE SCOPE --
+#
+#     origins = [... for value in os.getenv("ALLOWED_ORIGINS", DEFAULT_DEV_ORIGINS)...]
+#     app.add_middleware(CORSMiddleware, allow_origins=origins, ...)
+#
+# -- so the allowed origins are baked into the middleware stack when the module
+# is imported. Three files reload `api` with a different ALLOWED_ORIGINS to
+# test deployment configurations, and `api` is a singleton every other test
+# file shares. test_demo_gate.py and test_config_check.py each restore it;
+# test_cors_on_error_responses.py did not, so whatever ran after it had the
+# production origin baked in and `http://localhost:5173` rejected.
+#
+# Fixing that one file would close this instance and leave the class open. The
+# guard belongs here, where the docstring says it belongs: nothing has to
+# remember to ask for it, and a file added next year inherits it.
+#
+# HOW THE DETECTION WORKS
+#
+# Not by a stamp on the module. `importlib.reload` re-executes the module body
+# over the EXISTING module dict rather than clearing it, so an attribute this
+# file writes survives a reload and cannot signal one -- measured, after
+# assuming otherwise and watching the guard do nothing.
+#
+# What a reload does replace is the objects the body constructs. `app` is built
+# by `FastAPI(...)` at module scope, so a reload yields a new one, and its
+# identity is an exact signal: same object, nothing happened; different object,
+# the module was re-executed and the middleware stack with it. One `id()`
+# comparison per test, and the expensive reload only when something moved.
+#
+# WHY IT MUST TEAR DOWN AFTER monkeypatch
+#
+# The restore has to re-import with the ORIGINAL environment, and it is
+# monkeypatch that puts the environment back. Fixtures finalise in reverse
+# order of setup, and pytest sets autouse fixtures up before the test's own
+# non-autouse ones -- so this being autouse and not requesting monkeypatch is
+# what puts its teardown last. Requesting monkeypatch here would invert that
+# and restore `api` from the still-patched environment, which is the bug.
+
+
+@pytest.fixture(autouse=True)
+def restore_api_after_a_reload():
+    import importlib
+
+    import api
+
+    before = id(api.app)
+    yield
+    if id(api.app) != before:
+        importlib.reload(api)

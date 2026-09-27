@@ -1035,6 +1035,38 @@ def run_due_diligence(
         market_comparables = {"available": False, "reason": "Comparable-company lookup raised an unexpected error."}
     report["sections"]["market_comparables"] = market_comparables
 
+    # ── Who this company actually competes with ──────────────────
+    #
+    # The table above is matched with a TF-IDF embedder, so its similarity is
+    # LEXICAL -- shared wording, not shared business. That is the right tool
+    # for what it is used for, which is finding companies with a recorded
+    # outcome so the score has a base rate. It is the wrong tool for the
+    # question the tab's name asks: Canva's deck returned a surf gear store,
+    # a job-board and an education startup at 55-61%, and none of them is a
+    # design tool.
+    #
+    # So the competitor question gets its own answer, from the public record
+    # rather than from the corpus. Both are shown, because they answer
+    # different things and neither replaces the other.
+    #
+    # Additive and non-blocking, like everything else in this section: a
+    # failure here returns `available: False` with a reason and the report
+    # renders without it.
+    try:
+        from agents.competitor_search import find_competitors
+        named_competitors = find_competitors(
+            company_name,
+            description=company_description or "",
+            sector=sector or "",
+        )
+    except Exception:
+        logger.exception("Competitor search unavailable")
+        named_competitors = {
+            "available": False,
+            "reason": "Competitor search raised an unexpected error.",
+        }
+    report["sections"]["named_competitors"] = named_competitors
+
     # ── 3. RAG Retrieval ───────────────────────────────────────
     _stage("Retrieving evidence from prior reports")
     query = f"{company_name} {company_description[:200]} financial performance"

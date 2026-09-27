@@ -6,11 +6,18 @@ import { motionOn } from "../../lib/prefs";
  *
  * WHAT HAPPENS
  *
- *   0.0s  black. A hairline draws across the middle of the screen.
- *   0.3s  the wordmark rises through the line, letter group by letter group.
- *   0.6s  a counter runs 0 to 100 in the corner while the line fills.
- *   1.9s  the black splits into two panels that slide apart, revealing the app
- *         already rendered and settled underneath.
+ *   0.0s  black. A hairline draws outward from the centre.
+ *   0.2s  the wordmark rises through it, one LETTER at a time.
+ *   0.3s  a counter runs 000 to 100 in the corner, and the same progress fills
+ *         the hairline -- the line and the number are one measurement shown
+ *         twice, not two decorations that happen to be on screen together.
+ *   1.9s  the black splits into two panels that part from that line, revealing
+ *         the app already rendered and settled underneath.
+ *
+ * It was two word-chunks rising through a static rule and a counter in the
+ * corner that meant nothing. Per-letter is finer and reads as typesetting
+ * rather than as two blocks moving; tying the rule to the counter is what
+ * turns a decorative line into the thing the number is counting.
  *
  * WHY IT IS ALLOWED TO EXIST
  *
@@ -143,8 +150,10 @@ export default function Intro() {
         .vf-intro-mark span {
           display: inline-block;
           transform: translate3d(0, 105%, 0);
-          animation: vf-intro-rise 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          animation: vf-intro-rise 820ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+        /* "Flow" sits back a step, so the wordmark keeps its two halves. */
+        .vf-intro-mark span[data-dim="true"] { color: var(--accent); }
         @keyframes vf-intro-rise { to { transform: none; } }
 
         /* The line the wordmark rises through, drawing outward from centre. */
@@ -153,8 +162,15 @@ export default function Intro() {
           width: min(78vw, 1100px); height: 1px;
           transform: translate(-50%, -50%) scaleX(0);
           transform-origin: center;
-          background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-on-ink) 50%, transparent), transparent);
-          animation: vf-intro-draw 1500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-on-ink) 26%, transparent), transparent);
+          animation: vf-intro-draw 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        /* The counter, drawn along the rule. Same number, second reading. */
+        .vf-intro-rule-fill {
+          position: absolute; inset: 0;
+          transform-origin: center;
+          background: linear-gradient(90deg, transparent, var(--accent), transparent);
+          will-change: transform;
         }
         @keyframes vf-intro-draw { to { transform: translate(-50%, -50%) scaleX(1); } }
 
@@ -179,10 +195,20 @@ export default function Intro() {
       <div className="vf-intro-panel bottom" />
 
       <div className="vf-intro-stage">
-        <div className="vf-intro-rule" />
+        <div className="vf-intro-rule">
+            <i className="vf-intro-rule-fill" style={{ transform: `scaleX(${count / 100})` }} />
+          </div>
+        {/* One span per letter. The two halves keep their own colour so the
+            wordmark still reads as VentureFlow rather than as eleven glyphs. */}
         <div className="vf-intro-mark">
-          {["Venture", "Flow"].map((part, i) => (
-            <span key={part} style={{ animationDelay: `${300 + i * 110}ms` }}>{part}</span>
+          {"VentureFlow".split("").map((letter, i) => (
+            <span
+              key={`${letter}-${i}`}
+              data-dim={i >= 7}
+              style={{ animationDelay: `${200 + i * 45}ms` }}
+            >
+              {letter}
+            </span>
           ))}
         </div>
         <div className="vf-intro-sub">Diligence that shows its working</div>

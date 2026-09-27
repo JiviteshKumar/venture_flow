@@ -24,6 +24,8 @@ from pydantic import BaseModel, Field, ValidationError
 import pdf_extractor as _regex_extractor
 from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage
 
+from grounding import is_grounded, normalised_words
+
 logger = logging.getLogger(__name__)
 
 
@@ -199,3 +201,124 @@ def _regex_fallback(text: str, company: str = "") -> dict[str, Any]:
         "domain": metadata.domain,
         "metadata_evidence": metadata.evidence,
     }
+
+
+#: How slides are laid out for the sweep prompt below.
+SLIDE_SEP = "\n\n"
+SLIDE_HEAD = "--- Slide {number} ---\n"
+
+_SWEEP_PROMPT = """These slides from a pitch deck contributed nothing to the structured extraction.
+Each one has text on it, so each one probably asserts something checkable that the first pass ranked out.
+
+For EACH slide below, return the single most specific, checkable assertion it makes.
+
+Return ONLY a JSON object:
+{"claims": [{"slide": <slide number>, "claim": "<the assertion, copied from that slide's text>"}]}
+
+Rules:
+- Copy the wording from the slide. Do not paraphrase and do not summarise: every
+  claim you return is checked word for word against that slide's text afterwards
+  and dropped if it is not there.
+- A claim is any specific, checkable assertion: a number, a named competitor, a
+  named integration or partner, a stated business model, a market size, a growth
+  rate, a launch, a concrete product capability.
+- Omit a slide entirely if it asserts nothing checkable. Section dividers,
+  contact details, thank-you slides and pure taglines have nothing to return, and
+  an invented claim is far worse than a missing one.
+- Never introduce a fact that is not on the slide you took it from.
+
+SLIDES:
+"""
+
+
+def sweep_unrepresented_slides(
+    slides: list[str],
+    slide_numbers: list[int],
+    existing_claims: list[str],
+    max_slides: int = 8,
+) -> list[str]:
+    """A second, narrower pass over slides the first extraction did not touch.
+
+    WHY A SECOND PASS RATHER THAN A BIGGER FIRST ONE
+
+    The first pass reads the whole deck at once and is told to cover all of it.
+    It largely does -- and then ranks by how checkable each claim is and returns
+    the best fourteen, which is the right behaviour for a claims table and the
+    wrong behaviour for coverage. On Buffer's deck it returned ten good claims
+    and left the integrations slide and the competitive-landscape slide
+    unrepresented, both of which name real, checkable things.
+
+    Raising the cap does not fix that: the model is ranking, not truncating.
+    Asking again, with only the slides that produced nothing, changes the
+    question from "what are the best claims in this deck" to "what does THIS
+    slide assert", which is the question whose answer was missing.
+
+    WHAT KEEPS IT HONEST
+
+    Every returned claim is checked word for word against the text of the slide
+    it was attributed to (see `grounding.py`) and dropped if it is not there. A
+    second pass is a second opportunity to invent, and the guard is what makes
+    the extra coverage worth having rather than merely larger.
+
+    Bounded: at most `max_slides` slides, one call, and any failure returns
+    nothing at all rather than half an answer. Never raises.
+    """
+    pairs = [
+        (number, (text or "").strip())
+        for number, text in zip(slide_numbers, slides)
+        if (text or "").strip()
+    ][:max_slides]
+    if not pairs:
+        return []
+
+    body = SLIDE_SEP.join(
+        SLIDE_HEAD.format(number=number) + text[:900] for number, text in pairs
+    )
+    prompt = f"{_SWEEP_PROMPT}{body[:6000]}"
+    seen = {c.strip().lower() for c in existing_claims if isinstance(c, str)}
+
+    try:
+        pace_for(len(prompt), 700)
+        response = get_client().chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": (
+                    "You copy checkable assertions out of pitch-deck slides. "
+                    "Output valid JSON only. Never write a sentence that is not on the slide."
+                )},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.0,
+            max_tokens=700,
+            response_format={"type": "json_object"},
+        )
+        settle_usage(response, len(prompt), 700)
+        payload = json.loads(response.choices[0].message.content or "{}")
+    except Exception as exc:                      # provider, JSON, anything
+        logger.warning("Slide sweep did not run: %s", exc)
+        return []
+
+    by_number = {number: normalised_words(text) for number, text in pairs}
+    recovered: list[str] = []
+    for item in payload.get("claims") or []:
+        if not isinstance(item, dict):
+            continue
+        claim = str(item.get("claim") or "").strip()
+        try:
+            number = int(item.get("slide"))
+        except (TypeError, ValueError):
+            continue
+        if not claim or number not in by_number:
+            continue
+        if claim.lower() in seen:
+            continue
+        if not is_grounded(claim, by_number[number]):
+            logger.info("Slide sweep dropped an ungrounded claim for slide %s: %r", number, claim[:80])
+            continue
+        seen.add(claim.lower())
+        recovered.append(claim)
+
+    if recovered:
+        logger.info("Slide sweep recovered %d claim(s) from %d unrepresented slide(s)",
+                    len(recovered), len(pairs))
+    return recovered

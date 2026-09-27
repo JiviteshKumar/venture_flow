@@ -21,11 +21,28 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
+# How many comparable companies a report is measured against.
+#
+# This was 5, against a corpus of 5,603 companies with a recorded outcome. Five
+# rows is too few to read an outcome mix off -- one shutdown in five is 20% and
+# one in four is 25%, and neither number means anything at that sample size --
+# and it made the report look as though the corpus were tiny.
+#
+# Measured on a real query before changing it: at 15 the similarity band is
+# 0.66 to 0.54, against 0.66 to 0.58 at five, and the split across the two
+# populations stays even (8 YC, 7 market-wide). So the extra rows are drawn
+# from the same neighbourhood rather than padded with whatever came next.
+#
+# Not higher: by 25 the tail reaches 0.52, where "nearest available" stops
+# being a useful description of the row.
+COMPARABLE_COUNT = 15
+
+
 class MarketDataProvider(ABC):
     name: str
 
     @abstractmethod
-    def comparables(self, description: str, top_k: int = 5) -> dict[str, Any]:
+    def comparables(self, description: str, top_k: int = COMPARABLE_COUNT) -> dict[str, Any]:
         """Must return {available, comparables: [...], source, caveat} --
         the same shape regardless of provider, so callers never need to
         branch on which one is active."""
@@ -38,7 +55,7 @@ class FreeDataProvider(MarketDataProvider):
 
     name = "free_yc_dataset"
 
-    def comparables(self, description: str, top_k: int = 5) -> dict[str, Any]:
+    def comparables(self, description: str, top_k: int = COMPARABLE_COUNT) -> dict[str, Any]:
         from comparables import find_comparables
 
         return find_comparables(description, top_k=top_k)
@@ -54,7 +71,7 @@ class CrunchbaseProvider(MarketDataProvider):
 
     name = "crunchbase"
 
-    def comparables(self, description: str, top_k: int = 5) -> dict[str, Any]:
+    def comparables(self, description: str, top_k: int = COMPARABLE_COUNT) -> dict[str, Any]:
         return {"available": False, "reason": "Crunchbase integration not implemented -- no API key/budget configured."}
 
 
@@ -65,7 +82,7 @@ class PitchBookProvider(MarketDataProvider):
 
     name = "pitchbook"
 
-    def comparables(self, description: str, top_k: int = 5) -> dict[str, Any]:
+    def comparables(self, description: str, top_k: int = COMPARABLE_COUNT) -> dict[str, Any]:
         return {"available": False, "reason": "PitchBook integration not implemented -- no API key/budget configured."}
 
 
