@@ -153,7 +153,17 @@ export default function IntakePortal({
       // loading animation".
       if (mode !== "idle") {
         const period = mode === "reading" ? 1600 : 2600;
-        const p = ((time % period) / period);
+        // Ping-pong, not sawtooth.
+        //
+        // This was `(time % period) / period` -- a ramp that reaches the bottom
+        // and JUMPS back to the top. A scanning line that teleports reads as a
+        // stall and a restart rather than as a scan, which is exactly what it
+        // looked like. Folding the ramp makes it travel down and back up, so
+        // the sweep never discontinues; the ends are eased so it decelerates
+        // into each turn instead of bouncing off it.
+        const raw = (time % (period * 2)) / (period * 2);   // 0..1 over a round trip
+        const fold = raw < 0.5 ? raw * 2 : (1 - raw) * 2;   // 0..1..0
+        const p = fold * fold * (3 - 2 * fold);             // smoothstep at both ends
         const y = cy - half * 0.62 + p * half * 1.24;
         const grad = ctx.createLinearGradient(cx - half, y, cx + half, y);
         grad.addColorStop(0, `rgba(${ink.accent},0)`);

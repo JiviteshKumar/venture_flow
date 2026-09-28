@@ -174,7 +174,11 @@ export default function DeckSculpture({
       // then opens; a linear scrub feels like dragging, not like motion.
       const open = p * p;
 
-      if (!reduced) spin += 0.0032;
+      // A full turn took about half a minute, which is continuous on a
+      // measurement and indistinguishable from stopped to someone glancing at
+      // it for three seconds. Roughly twice as fast: still unhurried, and
+      // visibly moving within a glance.
+      if (!reduced) spin += 0.0062;
       tiltX += (pointer.y - tiltX) * 0.05;
       tiltY += (pointer.x - tiltY) * 0.05;
 

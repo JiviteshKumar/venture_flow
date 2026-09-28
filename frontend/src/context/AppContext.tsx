@@ -12,6 +12,7 @@ import {
   parseApiError,
   ScopeCheck,
   UploadResponse,
+  type ActivityEntry,
 } from "../services/apiClient";
 
 // ─── STATE SHAPE ─────────────────────────────────────────────────────────────
@@ -28,6 +29,8 @@ interface AppState {
   // Status
   status: AnalysisStatus;
   currentStage: string;        // human-readable progress label
+  /** What the pipeline has been fetching, newest last. Live only; see live_activity.py. */
+  activity: ActivityEntry[];
   progressPct: number;         // 0–100
 
   // Data
@@ -81,6 +84,7 @@ interface AppContextValue extends AppState {
 const INITIAL: AppState = {
   status: "idle",
   currentStage: "",
+  activity: [],
   progressPct: 0,
   startedAt: null,
   uploadResult: null,
@@ -292,6 +296,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             // useful, and more honest, than an invented percentage.
             currentStage: elapsed > 20 ? `${label} (${Math.floor(elapsed)}s elapsed)` : label,
             progressPct: queued ? 10 : progressForStage(jobStatus.stage),
+            // Every entry is a network call the server actually made. Replaced
+            // wholesale rather than appended: the server already keeps the
+            // ordered window, and merging two ordered lists on the client is a
+            // way to invent an order neither of them had.
+            activity: jobStatus.activity ?? [],
           }));
           await new Promise((resolve) => setTimeout(resolve, 3_000));
           elapsed += 3;

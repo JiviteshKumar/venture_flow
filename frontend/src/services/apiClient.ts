@@ -957,6 +957,30 @@ export interface AnalysisJob {
    * Null for queued jobs and for jobs created before stage tracking existed.
    */
   stage?: string | null;
+  /**
+   * What the pipeline has actually been doing between those seven stage
+   * labels: the searches it ran and the pages it read, as it did them.
+   *
+   * In memory on the server and never persisted, so it is empty for a job this
+   * process did not run and for one already finished and evicted. That is
+   * correct rather than a gap: it is a live feed, not a record, and the
+   * report's own Sources chapter is where the durable answer lives.
+   */
+  activity?: ActivityEntry[];
+}
+
+/** One real network call the pipeline made. See live_activity.py. */
+export interface ActivityEntry {
+  /** Seconds since the epoch, from the server. */
+  at: number;
+  /** "search" or "fetch". */
+  kind: string;
+  /** A query, or what the fetch was for. */
+  detail: string;
+  url?: string;
+  host?: string;
+  /** Whether the page actually loaded. Absent for searches. */
+  ok?: boolean;
 }
 
 // ─── API CALLS ──────────────────────────────────────────────────────────────

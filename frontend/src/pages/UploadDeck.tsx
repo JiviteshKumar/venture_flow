@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { formatBytes } from "../utils/format";
+import LiveFeed from "../components/analysis/LiveFeed";
 import { formatElapsed, useElapsedSeconds } from "../hooks/useElapsed";
 import OutOfScopeDialog from "../components/common/OutOfScopeDialog";
 import { GrowBar } from "../components/ui/Motion";
@@ -65,6 +66,7 @@ const UploadDeck = () => {
   const {
     status, currentStage, progressPct, prepareUpload, runAnalysis,
     uploadResult, report, error, outOfScope, dismissOutOfScope, reset, startedAt,
+    activity,
   } = useApp();
 
   const isAnalyzing = status === "uploading" || status === "analyzing";
@@ -544,6 +546,15 @@ const UploadDeck = () => {
                       {stageIndex > i && <Check size={13} color="var(--verified)" style={{ marginLeft: "auto" }} />}
                     </div>
                   ))}
+
+                  {/* The seven labels say which phase this is. The feed below
+                      says what it is doing inside that phase -- the searches it
+                      ran and the pages it opened, as it ran and opened them.
+                      Between two labels the run is otherwise silent for
+                      minutes, which is the stretch a reader cannot tell from a
+                      hang. Every row is a real network call; none is generated
+                      to keep the panel moving. */}
+                  <LiveFeed entries={activity} />
                 </div>
               </details>
             </motion.div>
