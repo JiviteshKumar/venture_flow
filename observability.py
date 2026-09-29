@@ -195,6 +195,16 @@ def job_context(job_id: str | None = None, company: str | None = None):
         _company.reset(company_token)
 
 
+def current_job_id() -> str | None:
+    """The job this work belongs to, or None outside an analysis.
+
+    Exposed so other modules can scope per-job state to the same identity the
+    logs use, rather than inventing a second notion of "which run is this".
+    `live_activity` keys its feed off it.
+    """
+    return _job_id.get()
+
+
 def track_degradation(
     event: str,
     *,

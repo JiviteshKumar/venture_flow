@@ -77,6 +77,7 @@ from ventureflow_agent import run_due_diligence
 
 load_dotenv()
 import observability
+import live_activity
 
 # Structured logging BEFORE anything else logs, so no line escapes in plain
 # text. Replaces logging.basicConfig, which produced unqueryable stdout -- the
@@ -744,6 +745,13 @@ class AnalysisJobResponse(BaseModel):
     # The pipeline step currently executing, for honest progress reporting.
     # None for jobs that predate stage tracking, and for queued jobs.
     stage: str | None = None
+    # What the pipeline has actually been doing between those seven labels:
+    # the searches it ran and the pages it read, as it ran and read them. In
+    # memory and never persisted, so it is empty for a job this process did not
+    # run and for one that has already finished and been evicted -- which is
+    # correct, because it is a live feed rather than a record. See
+    # live_activity.py.
+    activity: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ChatRequest(BaseModel):
@@ -2103,7 +2111,11 @@ async def analysis_status(job_id: str):
             logger.exception("Orphan reclamation during status poll failed")
 
     report = DiligenceResponse(**job["result"]) if job["status"] == "complete" and job.get("result") else None
-    return AnalysisJobResponse(job_id=job["job_id"], status=job["status"], report=report, error=job.get("error_message"), stage=job.get("stage"))
+    return AnalysisJobResponse(
+        job_id=job["job_id"], status=job["status"], report=report,
+        error=job.get("error_message"), stage=job.get("stage"),
+        activity=live_activity.recent(job_id),
+    )
 
 
 @app.get("/observability")

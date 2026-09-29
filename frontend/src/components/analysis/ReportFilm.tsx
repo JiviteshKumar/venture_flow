@@ -298,6 +298,19 @@ export default function ReportFilm({
         .film-spin { animation: film-rot 0.9s linear infinite; }
         @keyframes film-rot { to { transform: rotate(360deg) } }
 
+        /* The comparables, drawn behind the words that explain them.
+           At desktop the text sits in the left column and the points cluster
+           centre-right, so they share the frame without touching. On a phone
+           the text runs full width and the points landed ON it -- green and red
+           dots printing through a sentence about green and red dots. The
+           backdrop stays (every point is a real company) and steps back far
+           enough for the sentence to win. */
+        .film-constellation { position: absolute; inset: 0; opacity: 0.9; }
+
+        @media (max-width: 900px) {
+          .film-constellation { opacity: 0.3; }
+        }
+
         @media (max-width: 720px) {
           .film-meta { gap: 18px; font-size: 12.5px; }
           .film-bar { padding: 12px 18px; }
@@ -655,7 +668,7 @@ export default function ReportFilm({
             const told = easeOut(beat(p, 0.02, 0.24));
             return (
               <div className="film-scene">
-                <div style={{ position: "absolute", inset: 0, opacity: 0.9 }}>
+                <div className="film-constellation">
                   <Constellation points={comparables} company={company} height={900} />
                 </div>
                 <div className="film-inner" style={{ opacity: told }}>

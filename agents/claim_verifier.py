@@ -19,6 +19,8 @@ import observability
 from agents.evidence_filter import filter_sources
 from groq_client import MODEL, get_client, note_provider_failure, pace_for, settle_usage, describe_provider_failure
 
+import live_activity
+
 logger = logging.getLogger(__name__)
 
 def search_web(query: str, max_results: int = 8, raise_on_error: bool = False) -> list:
@@ -43,6 +45,8 @@ def search_web(query: str, max_results: int = 8, raise_on_error: bool = False) -
     WHICH provider answered should use `search_web_with_provenance` below.
     """
     from agents.web_search import AllProvidersFailed, search, search_or_raise
+
+    live_activity.record("search", query)
 
     if raise_on_error:
         try:
@@ -70,6 +74,10 @@ def search_web_with_provenance(query: str, max_results: int = 8) -> dict:
     return search(query, max_results)
 
 def fetch_page_text(url: str, max_chars: int = 3000) -> str:
+    # Reported to the live feed so the reader can watch the pipeline read.
+    # Recorded whether it succeeds or not: "we tried this page and it would not
+    # load" is as true as a success, and a feed that only shows wins implies a
+    # tidier run than actually happened. See live_activity.
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         resp = requests.get(url, timeout=6, headers=headers)
@@ -77,8 +85,11 @@ def fetch_page_text(url: str, max_chars: int = 3000) -> str:
         for tag in soup(["script", "style", "nav",
                          "footer", "header", "aside"]):
             tag.decompose()
-        return soup.get_text(separator=" ", strip=True)[:max_chars]
+        text = soup.get_text(separator=" ", strip=True)[:max_chars]
+        live_activity.record("fetch", "Read", url=url, ok=bool(text))
+        return text
     except Exception:
+        live_activity.record("fetch", "Could not load", url=url, ok=False)
         return ""
 
 # Capitalised tokens that are never the subject of a claim. Without this the

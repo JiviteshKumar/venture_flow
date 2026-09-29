@@ -283,17 +283,33 @@ const Sidebar = () => {
 
         .sb-user-avatar { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(135deg, rgba(29,111,232,0.15), rgba(14,166,106,0.15)); border: 1px solid var(--sb-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--sb-blue); flex-shrink: 0; }
 
-        .sb-user-name { font-size: 12.5px; font-weight: 600; color: var(--sb-text); letter-spacing: -0.1px; }
-        .sb-user-role { font-family: var(--font-sans); font-size: 11.5px; color: var(--sb-muted); }
+        /* An email is as long as it is, and this column is 252px wide minus an
+           avatar, a sign-out button and two gaps. "founder@ventureflow.test"
+           overflowed its box and printed underneath the icon. A flex child
+           will not shrink below its content unless it is told it may, which is
+           what min-width: 0 does; the ellipsis is what it does instead. */
+        .sb-user-name {
+          font-size: 12.5px; font-weight: 600; color: var(--sb-text); letter-spacing: -0.1px;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .sb-user-role { font-family: var(--font-sans); font-size: 11.5px; color: var(--sb-muted); min-width: 0; }
         .sb-user-caret { margin-left: auto; color: var(--sb-muted); }
 
         /* ── Identity row ──────────────────────────────────────────────── */
-        .sb-user-copy { min-width: 0; flex: 1; }
+        .sb-user-copy { min-width: 0; flex: 1; overflow: hidden; }
+        /* Sign in, for a reader who has none. Zero padding made it a 40x19
+           target -- under the 24px floor on the one control that gets someone
+           into the product. Padded out and pulled back by the same amount, so
+           the text still lines up with the rows above it. */
         .sb-user-setname {
-          background: none; border: none; padding: 0; cursor: pointer;
+          background: none; border: none; cursor: pointer;
+          padding: 5px 8px; margin: -5px -8px;
           font-family: var(--font-sans); font-size: 12px; font-weight: 600;
           color: var(--sb-blue); text-align: left;
+          border-radius: 6px;
+          transition: background var(--dur-fast) var(--ease-out);
         }
+        .sb-user-setname:hover { background: var(--sb-surface); }
         .sb-user-setname:hover { text-decoration: underline; }
         .sb-user-role { display: flex; align-items: center; gap: 6px; }
         .sb-demo-badge {
@@ -305,11 +321,23 @@ const Sidebar = () => {
         }
         .sb-user-role-note {
           font-family: var(--font-sans); font-size: 11.5px; color: var(--text-muted);
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
         }
+        /* A 13px icon with 4px of padding was a 21x21 hit area -- under the
+           24px floor, and this is sign-out, which nobody wants to miss and hit
+           twice. The icon keeps its size; the target grows around it. */
         .sb-user-caret-btn {
-          background: none; border: none; padding: 4px; cursor: pointer;
-          display: flex; align-items: center; color: var(--text-muted);
+          background: none; border: none; padding: 0; cursor: pointer;
+          display: grid; place-items: center;
+          min-width: 28px; min-height: 28px;
+          /* Without this the button is a flex item that shrinks, so a long
+             address pushes it narrower and then straight through it. */
+          flex-shrink: 0;
+          border-radius: 7px;
+          color: var(--text-muted);
+          transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
         }
+        .sb-user-caret-btn:hover { background: var(--sb-surface); color: var(--text); }
 
         /* ── Responsive ────────────────────────────────────────────────────
            The sidebar was pinned to 252px at every width, so on a phone it

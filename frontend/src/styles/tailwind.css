@@ -176,7 +176,33 @@ body {
 
 @media (max-width: 1240px) { :root { --gutter: 24px; } }
 
+/* A main column with a narrow aside.
+   Declared once, here, rather than as an inline grid on each use. The rule
+   below used to collapse these by matching the inline style STRING --
+   `[style*="1fr 320px"]` -- which worked for the one that existed when it was
+   written and silently missed the two added later at 250px and 256px. Those
+   two overflowed a phone by 429px and 33px: the aside cannot shrink and the
+   main column will not go below its content, so the row simply grew past the
+   screen. A class cannot drift out of a rule the way a matched string can. */
+.vf-aside {
+  display: grid;
+  grid-template-columns: 1fr 256px;
+  gap: 12px;
+  align-items: start;
+}
+
+/* min-width: 0 is load-bearing, not tidying.
+   A grid item defaults to min-width: auto, which refuses to shrink below its
+   content's min-content width. The comparables table's min-content is about
+   460px, so the column would not go below that however narrow the screen got
+   -- and the overflow:auto wrapper inside it never got the chance to scroll,
+   because its parent had already grown to fit. Collapsing the grid to one
+   column fixed most of the overflow and left this 163px, which looked like a
+   second bug and was the same one. */
+.vf-aside > * { min-width: 0; }
+
 @media (max-width: 1100px) {
+  .vf-aside,
   .an-root [style*="1fr 320px"],
   .up-root [style*="1fr 320px"],
   .db-root [style*="1fr 320px"],

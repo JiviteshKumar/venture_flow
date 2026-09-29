@@ -215,6 +215,42 @@ export default function AnalysisTheatre({
 
         .th-node-label { font-size: var(--t-small); font-weight: 600; letter-spacing: -0.005em; }
         .th-node-icon { display: flex; flex-shrink: 0; }
+        /* MOTION THAT MEANS SOMETHING
+           The diagram held still except for one spinner, so a run that takes
+           minutes looked frozen. Three things move now, and each is tied to
+           real state rather than added to fill the time:
+
+             the orbits   turn slowly and in opposite directions, so the
+                          picture is alive while the pipeline is working and
+                          stops dead when it finishes
+             the links    carry a travelling dash from the agent toward the
+                          centre while that agent is ACTIVE -- evidence
+                          arriving, not a loading bar
+             the chips    drift a little on their own phase, so nine of them
+                          do not pulse in lockstep like a progress bar */
+        .th-orbit-a { transform-origin: center; animation: th-orbit 64s linear infinite; }
+        .th-orbit-b { transform-origin: center; animation: th-orbit 92s linear infinite reverse; }
+        @keyframes th-orbit { to { transform: rotate(360deg); } }
+        .th-ring[data-finished="true"] .th-orbit-a,
+        .th-ring[data-finished="true"] .th-orbit-b { animation-play-state: paused; }
+
+        /* A dash travelling in along an active connector. strokeDasharray is
+           set inline from the line's own length so the dash reads the same on
+           a short link and a long one. */
+        .th-line[data-state="active"] { animation: th-flow 1.5s linear infinite; }
+        @keyframes th-flow { to { stroke-dashoffset: -24; } }
+
+        .th-node[data-state="active"] { animation: th-float 3.4s var(--ease-in-out) infinite; }
+        @keyframes th-float {
+          0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+          50%      { transform: translate(-50%, -50%) translateY(-3px); }
+        }
+
+        :root[data-motion="off"] .th-orbit-a,
+        :root[data-motion="off"] .th-orbit-b,
+        :root[data-motion="off"] .th-line[data-state="active"],
+        :root[data-motion="off"] .th-node[data-state="active"] { animation: none; }
+
         .th-spin { animation: th-spin 1.1s linear infinite; }
         @keyframes th-spin { to { transform: rotate(360deg); } }
 
@@ -237,9 +273,9 @@ export default function AnalysisTheatre({
       `}</style>
 
       {/* Geometry: the orbits, and a connector for every agent. */}
-      <svg className="th-ring" viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true">
-        <ellipse cx={cx} cy={cy} rx={rx0} ry={ry0} fill="none" stroke="var(--line)" strokeWidth="1" />
-        <ellipse cx={cx} cy={cy} rx={rx1} ry={ry1} fill="none" stroke="var(--line)" strokeWidth="1" strokeDasharray="3 6" />
+      <svg className="th-ring" data-finished={finished} viewBox={`0 0 ${size.w} ${size.h}`} aria-hidden="true">
+        <ellipse className="th-orbit-a" cx={cx} cy={cy} rx={rx0} ry={ry0} fill="none" stroke="var(--line)" strokeWidth="1" />
+        <ellipse className="th-orbit-b" cx={cx} cy={cy} rx={rx1} ry={ry1} fill="none" stroke="var(--line)" strokeWidth="1" strokeDasharray="3 6" />
         {activeCount > 0 && (
           <circle className="th-pulse" cx={cx} cy={cy} r={rx0 * 0.62} fill="none" stroke="var(--accent)" strokeWidth="1" />
         )}
@@ -252,8 +288,10 @@ export default function AnalysisTheatre({
               key={a.id}
               className="th-line"
               data-on={on}
+              data-state={state}
               x1={cx} y1={cy} x2={p.x} y2={p.y}
               pathLength={1}
+              strokeDasharray={state === "active" ? "5 7" : undefined}
               stroke={state === "active" ? "var(--accent)" : state === "done" ? "var(--verified)" : "var(--line)"}
               strokeWidth={state === "active" ? 1.6 : 1}
               opacity={state === "idle" ? 0.5 : state === "done" ? 0.45 : 1}
@@ -285,7 +323,7 @@ export default function AnalysisTheatre({
               key={a.id}
               className="th-node"
               data-state={state}
-              style={{ left: p.x, top: p.y }}
+              style={{ left: p.x, top: p.y, animationDelay: `${(a.id.charCodeAt(0) % 7) * 180}ms` }}
               title={a.role}
             >
               <span className="th-node-icon" style={{ color: STATE_COLOUR[state] }}>

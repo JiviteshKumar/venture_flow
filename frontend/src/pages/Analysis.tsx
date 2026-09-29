@@ -104,7 +104,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
         {messages.map((m, i) => (
           <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "88%" }}>
             <div style={{
-              background: m.role === "user" ? "#1D6FE8" : "#F7F8FA",
+              background: m.role === "user" ? "var(--accent)" : "#F7F8FA",
               border: m.role === "bot" ? "1px solid rgba(15,23,42,0.08)" : "none",
               borderRadius: m.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
               padding: "9px 13px", fontSize: 12.5,
@@ -123,7 +123,7 @@ function ChatPanel({ sessionId }: { sessionId: string | null }) {
             }}>
               <div style={{ display: "flex", gap: 4 }}>
                 {[0,1,2].map(i => (
-                  <motion.div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#CBD5E1" }}
+                  <motion.div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--text-2)" }}
                     animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }} />
                 ))}
               </div>
@@ -262,19 +262,19 @@ function EmptyAnalysis() {
       {isAnalyzing ? (
         <>
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} style={{ marginBottom: 24 }}>
-            <Zap size={36} color="#1D6FE8" />
+            <Zap size={36} color="var(--accent)" />
           </motion.div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 22, marginBottom: 8, color: "var(--text)" }}>
             Agents are running…
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, color: "#5D6B7F", marginBottom: 16 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12.5, color: "var(--text-3)", marginBottom: 16 }}>
             {currentStage}
           </div>
           <div style={{ width: 240, height: 4, background: "rgba(15,23,42,0.07)", borderRadius: 4, overflow: "hidden" }}>
-            <motion.div style={{ height: "100%", background: "#1D6FE8", borderRadius: 4 }}
+            <motion.div style={{ height: "100%", background: "var(--accent)", borderRadius: 4 }}
               animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F", marginTop: 8 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "var(--text-3)", marginTop: 8 }}>
             {progressPct}% complete
           </div>
         </>
@@ -423,7 +423,7 @@ const Analysis = () => {
 
   // ── Derive display values from real report ────────────────────────────────
   const score = report.final_score;
-  const scoreColor = score >= 75 ? "#0EA66A" : score >= 50 ? "#C47A0A" : "#D93025";
+  const scoreColor = score >= 75 ? "var(--verified)" : score >= 50 ? "var(--caution)" : "var(--critical)";
   /**
    * The risk level the pipeline returned -- not a number derived from it.
    *
@@ -536,9 +536,9 @@ const Analysis = () => {
   // absent entirely -- reports written before this existed must still render.
   const coverage = report.extraction_coverage ?? report.sections?.extraction_coverage;
   const coverageTone =
-    coverage?.verdict === "HIGH" ? "#0EA66A"
-      : coverage?.verdict === "PARTIAL" ? "#C47A0A"
-        : "#D93025";
+    coverage?.verdict === "HIGH" ? "var(--verified)"
+      : coverage?.verdict === "PARTIAL" ? "var(--caution)"
+        : "var(--critical)";
   const marketConfidencePct = Math.round((market?.confidence ?? 0) * 100);
 
   const extractionProvenance =
@@ -1118,7 +1118,19 @@ const Analysis = () => {
 
         .an-risk-pill { font-family: var(--font-sans); font-size: 11.5px; padding: 4px 11px; border-radius: 20px; letter-spacing: 0.02em; font-weight: 600; }
 
-        .an-comp-table { width: 100%; border-collapse: collapse; }
+        /* Six columns do not fit a phone, and a table cannot be made to.
+           overflow-x:auto on the TABLE itself did nothing -- a table still
+           lays out at its intrinsic width and pushes its parent, which is how
+           this tab overflowed a 375px screen by 161px. The scrolling has to
+           happen on a block wrapper, with the table keeping a width that stays
+           readable inside it. */
+        .an-comp-scroll {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          margin: 0 -2px;
+          padding: 0 2px;
+        }
+        .an-comp-table { width: 100%; border-collapse: collapse; min-width: 460px; }
 
         .an-comp-th { font-family: var(--font-sans); font-size: 11px; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; text-align: left; padding: 0 12px 12px 0; border-bottom: 1px solid var(--border); font-weight: 600; }
 
@@ -1513,30 +1525,30 @@ const Analysis = () => {
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
                 <Panel className="vf-panel-neutral" accentColor="var(--border)">
                   <SLabel>Market Validation — Evidence-Grounded</SLabel>
-                  <p style={{ fontSize: "13.5px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
+                  <p style={{ fontSize: "13.5px", color: "var(--text-2)", lineHeight: 1.7, margin: "0 0 14px" }}>
                     {market?.market_definition || "No market assessment was returned for this report."}
                   </p>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-                    <span className="verdict-tag" style={{ color: "#0EA66A", background: "rgba(14,166,106,0.08)", border: "1px solid rgba(14,166,106,0.2)" }}>
+                    <span className="verdict-tag" style={{ color: "var(--verified)", background: "rgba(14,166,106,0.08)", border: "1px solid rgba(14,166,106,0.2)" }}>
                       {Math.round((market?.confidence ?? 0) * 100)}% EVIDENCE CONFIDENCE
                     </span>
                   </div>
                   {(market?.signals ?? []).length > 0 ? market!.signals.map((signal, i) => (
                     <div key={i} className="an-case-item" data-tip={signal.evidence}>
-                      <CheckCircle size={14} color="#0EA66A" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <CheckCircle size={14} color="var(--verified)" style={{ marginTop: 2, flexShrink: 0 }} />
                       <span className="an-case-text">{signal.finding}</span>
                     </div>
-                  )) : <div className="an-case-text" style={{ color: "#5D6B7F" }}>Insufficient market evidence in the submitted deck.</div>}
+                  )) : <div className="an-case-text" style={{ color: "var(--text-3)" }}>Insufficient market evidence in the submitted deck.</div>}
                 </Panel>
 
                 <div>
                   <Panel accentColor="var(--caution)">
                     <SLabel color="var(--caution)">What to check next</SLabel>
-                    <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 14px" }}>
+                    <p style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.7, margin: "0 0 14px" }}>
                       {market?.recommendation || "Validate market size, buyer demand, and competition with primary evidence."}
                     </p>
                     <div style={{ padding: "12px", background: "rgba(196,122,10,0.06)", borderRadius: "8px", border: "1px solid rgba(196,122,10,0.15)" }}>
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#C47A0A", marginBottom: "4px" }}>EVIDENCE GAPS</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "var(--caution)", marginBottom: "4px" }}>EVIDENCE GAPS</div>
                       <div style={{ fontSize: "12.5px", color: "var(--text)", fontWeight: "600" }}>{market?.gaps?.[0] || "None identified."}</div>
                     </div>
                   </Panel>
@@ -1547,7 +1559,7 @@ const Analysis = () => {
             {/* ── FOUNDER ANALYSIS ── */}
             {activeTab === "Founder Analysis" && (
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 250px", gap: "12px" }}>
+                <div className="vf-aside">
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     {/* The founder radar, not the team one.
                         This panel used to hold a Team Capability Radar scoring
@@ -1612,13 +1624,13 @@ const Analysis = () => {
                     )}
                   </Panel>
 
-                  <Panel accentColor="#D93025">
-                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#D93025", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
-                    <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 16px" }}>
+                  <Panel accentColor="var(--critical)">
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "var(--critical)", letterSpacing: "0.12em", marginBottom: "12px", fontWeight: "600", textTransform: "uppercase" }}>⚠ Gap Identified</div>
+                    <p style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.7, margin: "0 0 16px" }}>
                       {team?.gaps?.[0] || "Insufficient team evidence. Verify founder credentials independently."}
                     </p>
                     <div style={{ borderTop: "1px solid var(--border)", paddingTop: "14px", marginBottom: 14 }}>
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#5D6B7F", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "var(--text-3)", letterSpacing: "0.12em", marginBottom: "8px", textTransform: "uppercase" }}>Recommendation</div>
                       <div style={{ fontSize: "13.5px", color: "var(--text)", fontWeight: "700", letterSpacing: "-0.01em" }}>
                         {team?.questions?.[0] || (report.recommendation === "INVEST" ? "Proceed with reference checks" : "Verify team credentials before proceeding")}
                       </div>
@@ -1634,8 +1646,8 @@ const Analysis = () => {
                   {founderChecks.length ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {founderChecks.map((check, i) => {
-                        const tone = check.assessment === "CONSISTENT" ? "#0EA66A"
-                          : check.assessment === "CONTRADICTS" ? "#D93025" : "#C47A0A";
+                        const tone = check.assessment === "CONSISTENT" ? "var(--verified)"
+                          : check.assessment === "CONTRADICTS" ? "var(--critical)" : "var(--caution)";
                         return (
                           <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "12px 14px", background: "var(--surface-2)" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
@@ -1652,9 +1664,9 @@ const Analysis = () => {
                                   style={{
                                     fontFamily: "var(--font-sans)", fontSize: 11.5, fontWeight: 600,
                                     letterSpacing: "0.06em",
-                                    color: check.origin === "deck" ? "#1D6FE8" : "#7A5AF8",
-                                    border: `1px solid ${check.origin === "deck" ? "#1D6FE8" : "#7A5AF8"}33`,
-                                    background: `${check.origin === "deck" ? "#1D6FE8" : "#7A5AF8"}12`,
+                                    color: check.origin === "deck" ? "var(--accent)" : "#7A5AF8",
+                                    border: `1px solid ${check.origin === "deck" ? "var(--accent)" : "#7A5AF8"}33`,
+                                    background: `${check.origin === "deck" ? "var(--accent)" : "#7A5AF8"}12`,
                                     borderRadius: 5, padding: "2px 7px", textTransform: "uppercase",
                                   }}>
                                   {check.origin === "deck" ? "From deck" : "Found by search"}
@@ -1665,7 +1677,7 @@ const Analysis = () => {
                                 letterSpacing: "0.08em", color: tone, border: `1px solid ${tone}33`,
                                 background: `${tone}12`, borderRadius: 5, padding: "2px 7px",
                               }}>{check.assessment}</span>
-                              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "#5D6B7F" }}>
+                              <span style={{ fontFamily: "var(--font-sans)", fontSize: 11.5, color: "var(--text-3)" }}>
                                 confidence {Math.round((check.confidence ?? 0) * 100)}%
                               </span>
                             </div>
@@ -1675,7 +1687,7 @@ const Analysis = () => {
                                 {(check.sources ?? []).slice(0, 4).map((url, j) => (
                                   <a key={j} href={url} target="_blank" rel="noreferrer" style={{
                                     fontFamily: "var(--font-sans)", fontSize: 11.5,
-                                    color: "#1D6FE8", textDecoration: "none",
+                                    color: "var(--accent)", textDecoration: "none",
                                     border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
                                   }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
                                 ))}
@@ -1708,12 +1720,12 @@ const Analysis = () => {
                             fontFamily: "var(--font-sans)", fontSize: 11.5, fontWeight: 600,
                             letterSpacing: "0.08em", textTransform: "uppercase",
                             borderRadius: 5, padding: "3px 8px",
-                            color: founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
-                              : founderDiscovery.searched === false ? "#64748B" : "#C47A0A",
-                            border: `1px solid ${founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
-                              : founderDiscovery.searched === false ? "#64748B" : "#C47A0A"}33`,
-                            background: `${founderDiscovery.search_failed || founderDiscovery.degraded ? "#D93025"
-                              : founderDiscovery.searched === false ? "#64748B" : "#C47A0A"}12`,
+                            color: founderDiscovery.search_failed || founderDiscovery.degraded ? "var(--critical)"
+                              : founderDiscovery.searched === false ? "var(--text-3)" : "var(--caution)",
+                            border: `1px solid ${founderDiscovery.search_failed || founderDiscovery.degraded ? "var(--critical)"
+                              : founderDiscovery.searched === false ? "var(--text-3)" : "var(--caution)"}33`,
+                            background: `${founderDiscovery.search_failed || founderDiscovery.degraded ? "var(--critical)"
+                              : founderDiscovery.searched === false ? "var(--text-3)" : "var(--caution)"}12`,
                           }}>
                             {founderDiscovery.search_failed
                               ? "⚠ Search failed — nothing established"
@@ -1723,7 +1735,7 @@ const Analysis = () => {
                                   ? "Search not attempted"
                                   : "Searched — no founders found"}
                           </div>
-                          <p style={{ color: "#4A5568", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+                          <p style={{ color: "var(--text-2)", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
                             {founderDiscovery.searched === false || founderDiscovery.degraded
                               ? ""
                               : "This deck does not name its founders, so VentureFlow searched public sources for them. "}
@@ -1732,7 +1744,7 @@ const Analysis = () => {
                               : founderDiscovery.reason || "No founder name could be established."}
                           </p>
                           {(founderDiscovery.rejected_ungrounded ?? []).length > 0 && (
-                            <p style={{ color: "#5D6B7F", fontSize: 12, lineHeight: 1.7, margin: "8px 0 0" }}>
+                            <p style={{ color: "var(--text-3)", fontSize: 12, lineHeight: 1.7, margin: "8px 0 0" }}>
                               {founderDiscovery.rejected_ungrounded!.length} candidate name(s) were
                               proposed but did not appear in any retrieved source, and were rejected
                               rather than reported as findings.
@@ -1743,7 +1755,7 @@ const Analysis = () => {
                               {founderDiscovery.sources_consulted!.slice(0, 6).map((url, j) => (
                                 <a key={j} href={url} target="_blank" rel="noreferrer" style={{
                                   fontFamily: "var(--font-sans)", fontSize: 11.5,
-                                  color: "#1D6FE8", textDecoration: "none",
+                                  color: "var(--accent)", textDecoration: "none",
                                   border: "1px solid rgba(29,111,232,0.2)", borderRadius: 5, padding: "2px 6px",
                                 }}>{(() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return "source"; } })()}</a>
                               ))}
@@ -1751,7 +1763,7 @@ const Analysis = () => {
                           )}
                         </>
                       ) : (
-                        <p style={{ color: "#5D6B7F", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 13, lineHeight: 1.7, margin: 0 }}>
                           No founder names were submitted and no public search was run for this
                           analysis.
                         </p>
@@ -1765,7 +1777,7 @@ const Analysis = () => {
             {/* ── COMPETITOR INSIGHTS ── */}
             {activeTab === "Competitor Insights" && (
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 256px", gap: "12px" }}>
+                <div className="vf-aside">
                   <Panel className="vf-panel-neutral" accentColor="var(--border)">
                     {/* NAMED COMPETITORS, then the outcome corpus.
                         These answer different questions and the order matters.
@@ -1837,10 +1849,10 @@ const Analysis = () => {
                         border: "1px solid rgba(148,163,184,0.35)",
                         borderRadius: 6, padding: "8px 10px", margin: "8px 0 12px",
                       }}>
-                        <p style={{ color: "#5D6B7F", fontSize: 12, fontWeight: 600, margin: 0 }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 12, fontWeight: 600, margin: 0 }}>
                           Y Combinator companies only — this report predates the wider corpus
                         </p>
-                        <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
                           It was produced when comparables were drawn from Y Combinator
                           alumni alone, so no non-YC company could have appeared in the
                           table below. Re-running the analysis searches the wider corpus.
@@ -1879,7 +1891,7 @@ const Analysis = () => {
                           when the corpus was one accelerator's portfolio and is
                           false now, so it says what is actually searched.
                         */}
-                        <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 11, lineHeight: 1.6, margin: "4px 0 0" }}>
                           Matched against{" "}
                           {typeof marketComparables?.population_total === "number"
                             ? `${marketComparables.population_total.toLocaleString()} companies`
@@ -1897,7 +1909,7 @@ const Analysis = () => {
                           opposite reading: cosine similarity on this TF-IDF
                           embedder is LEXICAL.
                         */}
-                        <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
                           The similarity percentage measures shared wording, not
                           business relevance — an unrelated company can score
                           higher than a relevant one. And the two populations are
@@ -1906,7 +1918,7 @@ const Analysis = () => {
                           Read the names, not the number.
                         </p>
                         {Object.entries(populations).some(([, v]) => v?.note) && (
-                          <p style={{ color: "#5D6B7F", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
+                          <p style={{ color: "var(--text-3)", fontSize: 11, lineHeight: 1.6, margin: "6px 0 0" }}>
                             {Object.entries(populations)
                               .filter(([, v]) => v?.note)
                               .map(([key, v]) => `${v.label ?? key}: ${v.note}`)
@@ -1929,10 +1941,10 @@ const Analysis = () => {
                         border: "1px solid rgba(148,163,184,0.3)",
                         borderRadius: 6, padding: "12px 14px", margin: "8px 0 12px",
                       }}>
-                        <p style={{ color: "#CBD5E1", fontSize: 13, fontWeight: 600, margin: 0 }}>
+                        <p style={{ color: "var(--text-2)", fontSize: 13, fontWeight: 600, margin: 0 }}>
                           No close comparables found
                         </p>
-                        <p style={{ color: "#5D6B7F", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 12, lineHeight: 1.6, margin: "6px 0 0" }}>
                           The nearest company in either corpus scored{" "}
                           {typeof marketComparables.best_similarity === "number"
                             ? `${Math.round(marketComparables.best_similarity * 100)}%`
@@ -1948,6 +1960,7 @@ const Analysis = () => {
                       </div>
                     )}
                     {competitors.length ? <>
+                      <div className="an-comp-scroll">
                       <table className="an-comp-table">
                         <thead>
                           <tr>
@@ -1979,18 +1992,19 @@ const Analysis = () => {
                                 ) : competitor.name}
                               </td>
                               {isTwoPopulationReport && (
-                                <td className="an-comp-td" style={{ color: "#5D6B7F", fontSize: 11 }}>
+                                <td className="an-comp-td" style={{ color: "var(--text-3)", fontSize: 11 }}>
                                   {competitor.population || "—"}
                                 </td>
                               )}
                               <td className="an-comp-td">{competitor.domain || "—"}</td>
                               <td className="an-comp-td">{competitor.sector || "—"}</td>
-                              <td className="an-comp-td" style={{ color: competitor.outcome === "Shut down" ? "#D93025" : competitor.outcome ? "#0EA66A" : "#5D6B7F" }}>{competitor.outcome || "—"}</td>
+                              <td className="an-comp-td" style={{ color: competitor.outcome === "Shut down" ? "var(--critical)" : competitor.outcome ? "var(--verified)" : "var(--text-3)" }}>{competitor.outcome || "—"}</td>
                               <td className="an-comp-td">{typeof competitor.similarity === "number" ? `${Math.round(competitor.similarity * 100)}%` : "—"}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                      </div>
                       {/* Roughly four hundred words of corpus provenance. It
                           belongs in the report -- somebody weighing these rows
                           needs to know what "similarity" measures here -- and it
@@ -2003,11 +2017,11 @@ const Analysis = () => {
                         </p>
                       </details>
                       {corpusComparables.length > 0 && portfolioMatches.length > 0 && (
-                        <p style={{ color: "#64748B", fontSize: 12, marginTop: 8 }}>
+                        <p style={{ color: "var(--text-3)", fontSize: 12, marginTop: 8 }}>
                           Also matched in your own history: {portfolioMatches.map(m => m.name).join(", ")}.
                         </p>
                       )}
-                    </> : <p style={{ color: "#64748B", fontSize: 13, margin: "16px 0" }}>
+                    </> : <p style={{ color: "var(--text-3)", fontSize: 13, margin: "16px 0" }}>
                       {marketComparables && !marketComparables.available
                         ? `Comparable-company search was unavailable: ${marketComparables.reason ?? "no reason recorded"}.`
                         : "No comparable companies were found for this analysis."}
@@ -2021,9 +2035,9 @@ const Analysis = () => {
                         Removed rather than back-filled with plausible-looking
                         percentages. */}
 
-                    <Panel accentColor="#C47A0A">
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "#C47A0A", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
-                      <p style={{ fontSize: "13px", color: "#4A5568", lineHeight: 1.7, margin: "0 0 10px" }}>
+                    <Panel accentColor="var(--caution)">
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: "11.5px", color: "var(--caution)", letterSpacing: "0.12em", marginBottom: "10px", fontWeight: "600", textTransform: "uppercase" }}>⚡ Recommendation</div>
+                      <p style={{ fontSize: "13px", color: "var(--text-2)", lineHeight: 1.7, margin: "0 0 10px" }}>
                         {score >= 65 ? "Competitive position appears defensible. Validate specific differentiation claims." : "High competitive pressure detected. Requires clear differentiation strategy."}
                       </p>
                     </Panel>
