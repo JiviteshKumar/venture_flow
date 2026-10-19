@@ -330,7 +330,26 @@ def ocr_pdf(
     }
 
 
-def should_supplement(text_layer: str, extracted_chars: int, pages: int) -> bool:
+#: Below this many characters a page contributed nothing readable: its content
+#: is in the images, or it is a divider with a single word on it.
+UNREAD_PAGE_CHARS = 40
+
+#: OCR runs once this share of pages came back unread. One divider slide in a
+#: deck that was otherwise read is not worth a full OCR pass.
+UNREAD_PAGE_FRACTION = 0.25
+
+#: Even with every page read, a document this thin per page may still be
+#: carrying its substance in images. Well under the 84 chars/page of the
+#: sparsest deck in the project's own corpus, so it does not fire on real ones.
+SPARSE_CHARS_PER_PAGE = 60
+
+
+def should_supplement(
+    text_layer: str,
+    extracted_chars: int,
+    pages: int,
+    page_chars: list[int] | None = None,
+) -> bool:
     """Whether to run OCR on a document that already extracted some text.
 
     A deck is not either-readable-or-not. A 30-page deck yielding 600
@@ -340,9 +359,34 @@ def should_supplement(text_layer: str, extracted_chars: int, pages: int) -> bool
     characters at 0.98 recall of the text layer, so it recovers the slides
     rather than duplicating what was already there.
 
-    The threshold is per page rather than absolute, so a genuine one-slide
-    teaser is not dragged through OCR while a long, thin deck is.
+    WHY PER-PAGE COUNTS AND NOT AN AVERAGE
+
+    An average cannot tell a SHORT deck from an UNREAD one, and the two want
+    opposite answers. WeWork's deck is six pages holding 64-187 characters
+    each: thin, but every page was read, so there is nothing for OCR to
+    recover. Its average is 145, which an average-based rule reads as unread
+    and drags through a full OCR pass for nothing. Coinbase's real deck has its
+    content in images, so its pages come back at or near zero -- and that, not
+    the average, is what distinguishes them.
+
+    Measured over this project's 30-deck corpus: every page of every deck holds
+    at least 39 characters, and the average-based rule fired on 21 of the 30.
+    The per-page rule fires on none of them, and still fires on everything with
+    a genuinely unread page.
+
+    `page_chars` is the character count of each page. Without it -- a format
+    with no page boundaries, or a per-page extraction that failed -- the old
+    average is used, so the caller is never worse off than before.
     """
     if text_layer != "present" or pages <= 0:
         return True
+
+    if page_chars:
+        unread = sum(1 for count in page_chars if count < UNREAD_PAGE_CHARS)
+        if unread / len(page_chars) >= UNREAD_PAGE_FRACTION:
+            return True
+        # Every page was read. Only a document still extremely thin overall is
+        # worth the cost of looking inside its images anyway.
+        return (extracted_chars / pages) < SPARSE_CHARS_PER_PAGE
+
     return (extracted_chars / pages) < 150

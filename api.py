@@ -1377,9 +1377,31 @@ async def _extract_uploaded_document(
         ocr_result: dict[str, Any] = {}
         is_pdf = (document.get("format") or "").lower() == "pdf"
 
+        # Per-page text, extracted once and used twice: it decides whether OCR
+        # is worth running at all (immediately below) and measures extraction
+        # coverage further down. Reading it before the OCR decision is the
+        # whole point -- an average cannot tell a short deck from an unread
+        # one, and OCR is expensive enough that the difference matters.
+        slides: list[str] = []
+        if is_pdf:
+            try:
+                slides = await run_in_threadpool(
+                    pdf_extractor.extract_pages_from_pdf, file_bytes
+                )
+            except Exception:
+                logger.warning("Per-page extraction failed", exc_info=True)
+
         needs_ocr = is_pdf and ocr_extractor.should_supplement(
-            layer or "none", len(stripped), int(document.get("page_count") or 0)
+            layer or "none",
+            len(stripped),
+            int(document.get("page_count") or 0),
+            page_chars=[len((slide or "").strip()) for slide in slides] or None,
         )
+        if is_pdf and not needs_ocr:
+            logger.info(
+                "OCR skipped for %r: all %d pages carry text",
+                company_name, len(slides),
+            )
         if needs_ocr and ocr_extractor.is_available():
             ocr_result = await run_in_threadpool(ocr_extractor.ocr_pdf, file_bytes)
             if ocr_result.get("available"):
@@ -1462,15 +1484,9 @@ async def _extract_uploaded_document(
         # Measure how much of the deck actually reached a structured field,
         # here at the upload step, so "insufficient data" downstream can never
         # be confused with "we dropped it". PDFs give real slide boundaries;
-        # other formats fall back to line-level coverage.
-        slides: list[str] = []
-        if is_pdf:
-            try:
-                slides = await run_in_threadpool(
-                    pdf_extractor.extract_pages_from_pdf, file_bytes
-                )
-            except Exception:
-                logger.warning("Per-page extraction failed", exc_info=True)
+        # other formats fall back to line-level coverage. `slides` was read
+        # above, before the OCR decision that needed it.
+        #
         # On an image-only deck the text layer yields empty pages, so coverage
         # would be measured against slides that are blank by construction --
         # reporting 0% understood for a deck OCR read perfectly well. Where a
