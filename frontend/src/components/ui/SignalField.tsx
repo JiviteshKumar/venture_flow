@@ -243,8 +243,16 @@ export default function SignalField() {
     <canvas
       ref={ref}
       aria-hidden="true"
-      // Above Ambience's light, below every page's content.
-      style={{ position: "fixed", inset: 0, zIndex: 1, pointerEvents: "none" }}
+      // Zero, exactly like Ambience, and above it only because it is rendered
+      // after it: among positioned elements that share a z-index, the later
+      // one in the DOM paints on top.
+      //
+      // Not 1. The app shell is deliberately transparent so the ambient
+      // layers show through it, and the sidebar is `position: relative` with
+      // no z-index of its own. A canvas at 1 therefore paints over the
+      // sidebar's own background, and the field was last seen drifting across
+      // the navigation.
+      style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}
     />
   );
 }
