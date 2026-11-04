@@ -6,7 +6,8 @@ import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import DemoGate from "./components/common/DemoGate";
 import Ambience from "./components/ui/Ambience";
-import Cursor from "./components/ui/Cursor";
+import SignalField from "./components/ui/SignalField";
+import RouteScan from "./components/ui/RouteScan";
 import Intro from "./components/ui/Intro";
 import RequireAuth from "./components/common/RequireAuth";
 
@@ -50,13 +51,19 @@ function App() {
         <DemoGate>
           <BrowserRouter>
             {/* Chrome that belongs to the whole application rather than to any
-                page: the entrance, the pointer, and the wipe between routes.
-                All three are inert under `prefers-reduced-motion` and on
-                touch, and none of them gate rendering -- the app is live
-                underneath the entrance the entire time it plays. */}
+                page: the light behind it, the resolving field over that, the
+                entrance, and the scan between routes. All of them are inert
+                with motion off, none intercepts a pointer event, and none
+                gates rendering -- the app is live underneath the entrance the
+                entire time it plays.
+
+                The pointer is the browser's own. A drawn cursor replaced
+                something every reader already knows how to read, and cost
+                more in hesitation than it returned in atmosphere. */}
             <Ambience />
+            <SignalField />
             <Intro />
-            <Cursor />
+            <RouteScan />
             <Routes>
               {/* Outside <Layout>: the sign-in screen is full-bleed and has no
                   sidebar, because there is nothing yet to navigate to. */}

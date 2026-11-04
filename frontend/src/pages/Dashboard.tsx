@@ -542,6 +542,85 @@ const Dashboard = () => {
                 )}
               </div>
             )}
+
+            {/* The space below the table was empty at every window size, and a
+                chart would have been dishonest here: with two or three
+                analyses a histogram invents a distribution out of nothing.
+
+                A spectrum does not. Every analysis is one mark on the scale it
+                was actually judged against, so the picture is truthful at one
+                report and still truthful at fifty -- it gains resolution
+                instead of changing meaning. The bands are the thresholds the
+                backend really applies in ventureflow_agent, not decoration:
+                75 and above can reach INVEST, 50 to 74 is more diligence,
+                below 50 is a pass. */}
+            {summary && (
+              <div style={{ marginTop: 26, paddingTop: 20, borderTop: "1px solid var(--line)" }}>
+                <div
+                  style={{
+                    display: "flex", alignItems: "baseline", gap: 10,
+                    marginBottom: 14, flexWrap: "wrap",
+                  }}
+                >
+                  <h2 style={{ font: "inherit", fontSize: 13, fontWeight: 600, color: "var(--text-2)", margin: 0 }}>
+                    Where these land
+                  </h2>
+                  <span style={{ fontSize: 12, color: "var(--text-3)" }}>
+                    every analysis on the scale it was judged against
+                  </span>
+                </div>
+
+                <div style={{ position: "relative", height: 58 }}>
+                  {/* The three decision bands. */}
+                  <div
+                    style={{
+                      position: "absolute", left: 0, right: 0, top: 18, height: 10,
+                      borderRadius: 5, overflow: "hidden", display: "flex",
+                      border: "1px solid var(--line)",
+                    }}
+                  >
+                    <span style={{ width: "50%", background: "var(--bad-quiet, rgba(190,45,38,.14))" }} />
+                    <span style={{ width: "25%", background: "var(--accent-quiet)" }} />
+                    <span style={{ width: "25%", background: "var(--good-quiet, rgba(4,120,87,.16))" }} />
+                  </div>
+
+                  {/* One mark per analysis. Positioned by score, so two decks
+                      with the same verdict still sit apart if they scored
+                      differently -- the verdict is a bucket, the score is not. */}
+                  {reports?.map((r) => (
+                    <span
+                      key={r.report_id}
+                      title={r.company + " — " + Math.round(r.final_score) + "/100 · " + r.recommendation}
+                      style={{
+                        position: "absolute",
+                        left: "calc(" + Math.max(0, Math.min(100, r.final_score)) + "% - 5px)",
+                        top: 13, width: 10, height: 20, borderRadius: 5,
+                        background: "var(--accent)",
+                        border: "2px solid var(--surface)",
+                        boxShadow: "0 0 0 1px var(--accent)",
+                      }}
+                    />
+                  ))}
+
+                  {/* The median, named, because a reader scanning a row of
+                      marks cannot tell the middle of them by eye. */}
+                  <span
+                    style={{
+                      position: "absolute", top: 36,
+                      left: "calc(" + Math.max(0, Math.min(100, summary.median)) + "% - 40px)",
+                      width: 80, textAlign: "center",
+                      fontSize: 11, color: "var(--text-3)",
+                    }}
+                  >
+                    median <b className="vf-num" style={{ color: "var(--text-2)" }}>{Math.round(summary.median)}</b>
+                  </span>
+
+                  <span style={{ position: "absolute", left: 0, top: 0, fontSize: 11, color: "var(--text-3)" }}>Pass</span>
+                  <span style={{ position: "absolute", left: "50%", top: 0, fontSize: 11, color: "var(--text-3)" }}>50 · Diligence</span>
+                  <span style={{ position: "absolute", right: 0, top: 0, fontSize: 11, color: "var(--text-3)" }}>75 · Invest</span>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
