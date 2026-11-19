@@ -1270,28 +1270,35 @@ const Analysis = () => {
 
         <div className="an-stage" data-mode="analytical">
           <div className="an-body">
-            {/* Everything qualifying this report, in one collapsed panel.
-                Six stacked full-width warnings stood here and in the top of
-                the Summary tab; ReliabilityStrip holds all six texts, intact,
-                behind their own headlines. */}
-            <Chapter
-              index="01"
-              title="How much we could read"
-              hint="Everything below rests on this."
-            >
-            <ReliabilityStrip
-              coverage={coverage}
-              provenance={extractionProvenance}
-              incompleteAnalysis={report.incomplete_analysis}
-              verificationDegraded={report.claims_verification_degraded}
-              evidenceSearchDegraded={report.evidence_search_degraded}
-              claimsUnverified={report.claims_unverified}
-            />
-            </Chapter>
-
             {/* ── SUMMARY ── */}
             {activeTab === "Summary" && (
               <div className="tab-content-enter" data-dir={tabDirection} key={activeTab}>
+                {/* Everything qualifying this report, in one collapsed panel.
+                    Six stacked full-width warnings stood here and in the top of
+                    the Summary tab; ReliabilityStrip holds all six texts,
+                    intact, behind their own headlines.
+
+                    It belongs INSIDE this tab, not above the switch. Standing
+                    outside it, the same coverage figure and the same two
+                    warnings opened every one of the five tabs, so a reader
+                    moving between them saw chapter 01 repeat itself four times
+                    and had to scroll past it to reach what they had clicked
+                    for. It qualifies the whole report, but it is read once. */}
+                <Chapter
+                  index="01"
+                  title="How much we could read"
+                  hint="Everything below rests on this."
+                >
+                  <ReliabilityStrip
+                    coverage={coverage}
+                    provenance={extractionProvenance}
+                    incompleteAnalysis={report.incomplete_analysis}
+                    verificationDegraded={report.claims_verification_degraded}
+                    evidenceSearchDegraded={report.evidence_search_degraded}
+                    claimsUnverified={report.claims_unverified}
+                  />
+                </Chapter>
+
                 {/* The trained model's score leads the summary. It is the one
                     number on this page that came from a fitted, calibrated
                     model rather than from an LLM or a hand-tuned formula, so
