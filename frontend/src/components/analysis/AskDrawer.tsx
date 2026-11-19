@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { MessageSquare, X } from "lucide-react";
+import { StickyNote, X } from "lucide-react";
 import { DURATION, EASE_OUT } from "../ui/Motion";
 
 /**
- * The chat and the notes, docked.
+ * The notes, docked.
  *
  * WHY THEY LEFT THE PAGE
  *
@@ -15,15 +15,20 @@ import { DURATION, EASE_OUT } from "../ui/Motion";
  * that scrolls sideways.
  *
  * Docking them costs one click and returns the page to a single measure,
- * which is what the chaptered layout needs. The button says what is behind
- * it, and the panel remembers nothing: it is the same chat, mounted once and
- * hidden, so a conversation survives being closed.
+ * which is what the chaptered layout needs.
+ *
+ * WHAT USED TO BE HERE
+ *
+ * A chat panel that answered questions from the deck's own text. It is gone.
+ * The report's whole argument is that an assertion should arrive with the
+ * evidence behind it, and a chat answer arrives with none -- so the one
+ * surface in the product that could not show its working sat on top of the
+ * one that can. What remains is the reader's own notes, which never claimed
+ * to be evidence.
  */
 export default function AskDrawer({
-  chat,
   notes,
 }: {
-  chat: ReactNode;
   notes: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -93,13 +98,12 @@ export default function AskDrawer({
         ref={buttonRef}
         type="button"
         className="ad-fab"
-        data-cursor="Ask"
         onClick={() => setOpen(true)}
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <MessageSquare size={16} />
-        Ask this deck
+        <StickyNote size={16} />
+        Notes
       </button>
 
       <AnimatePresence>
@@ -117,7 +121,7 @@ export default function AskDrawer({
               ref={panelRef}
               className="ad-panel"
               role="dialog"
-              aria-label="Ask this deck, and notes"
+              aria-label="Notes on this report"
               initial={reduced ? { opacity: 0 } : { x: "100%" }}
               animate={reduced ? { opacity: 1 } : { x: 0 }}
               exit={reduced ? { opacity: 0 } : { x: "100%" }}
@@ -135,7 +139,6 @@ export default function AskDrawer({
                 </button>
               </div>
               <div className="ad-body">
-                {chat}
                 {notes}
               </div>
             </motion.div>

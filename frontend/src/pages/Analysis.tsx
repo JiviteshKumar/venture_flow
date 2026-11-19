@@ -49,116 +49,6 @@ type ChatMessage = {
 // Panel, SLabel and ScoreBadge moved to components/ui/Panel.tsx so the
 // other screens can use the same surfaces instead of copying them.
 
-// ─── CHAT PANEL ──────────────────────────────────────────────────────────────
-
-function ChatPanel({ sessionId }: { sessionId: string | null }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "bot" as const, text: "Ask me anything about this deck — financials, risks, team, or market details." },
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const send = async (q: string) => {
-    if (!q.trim() || !sessionId || loading) return;
-    setMessages(m => [...m, { role: "user" as const, text: q }]);
-    setInput("");
-    setLoading(true);
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/chat`, {
-        method: "POST",
-        headers: authHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ session_id: sessionId, question: q }),
-      });
-      if (await handleSignedOut(res)) return;
-      const data = await res.json();
-      setMessages(m => [...m, {
-        role: "bot" as const,
-        text: data.has_data ? data.answer : "I don't have enough information in this document to answer that.",
-      }]);
-    } catch {
-      setMessages(m => [...m, { role: "bot" as const, text: "Error — make sure api.py is running." }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const suggestions = ["What is the ARR?", "Who are the founders?", "What is the runway?", "Key risks?"];
-
-  return (
-    <div
-      className="vf-card"
-      style={{ display: "flex", flexDirection: "column", maxHeight: 520 }}
-    >
-      <div style={{ padding: "13px 16px", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
-          Ask this deck
-        </div>
-        <div style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>
-          {sessionId
-            ? "Answered from the deck's own text only."
-            : "Available once an analysis has run."}
-        </div>
-      </div>
-
-      <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "88%" }}>
-            <div style={{
-              background: m.role === "user" ? "var(--accent)" : "#F7F8FA",
-              border: m.role === "bot" ? "1px solid rgba(15,23,42,0.08)" : "none",
-              borderRadius: m.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
-              padding: "9px 13px", fontSize: 12.5,
-              color: m.role === "user" ? "#fff" : "#374151",
-              lineHeight: 1.55, fontFamily: "var(--font-sans)",
-            }}>
-              {m.text}
-            </div>
-          </div>
-        ))}
-        {loading && (
-          <div style={{ alignSelf: "flex-start" }}>
-            <div style={{
-              background: "#F7F8FA", border: "1px solid rgba(15,23,42,0.08)",
-              borderRadius: "12px 12px 12px 4px", padding: "9px 13px",
-            }}>
-              <div style={{ display: "flex", gap: 4 }}>
-                {[0,1,2].map(i => (
-                  <motion.div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--text-2)" }}
-                    animate={{ opacity: [1, 0.3, 1] }} transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {messages.length === 1 && (
-        <div style={{ padding: "0 14px 10px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {suggestions.map(s => (
-            <button key={s} onClick={() => send(s)} disabled={!sessionId} className="an-chat-suggestion">
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <form onSubmit={e => { e.preventDefault(); send(input); }} style={{
-        padding: "10px 14px", borderTop: "1px solid rgba(15,23,42,0.08)", display: "flex", gap: 8,
-      }}>
-        <input
-          value={input} onChange={e => setInput(e.target.value)}
-          placeholder={sessionId ? "Ask about this deck…" : "Run analysis first"}
-          disabled={!sessionId || loading}
-          className="an-chat-input"
-        
-        />
-        <button type="submit" disabled={!sessionId || loading || !input.trim()} className="an-chat-send">
-          Send
-        </button>
-      </form>
-    </div>
-  );
-}
 
 type Comment = { id: string; author_name: string; body: string; created_at: string };
 
@@ -409,7 +299,7 @@ const Analysis = () => {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
-  const { report, sessionId } = useApp();
+  const { report } = useApp();
   const navigate = useNavigate();
 
   // If no report, show empty/loading
@@ -2059,7 +1949,6 @@ const Analysis = () => {
 
         {/* Docked rather than pinned beside the report -- see AskDrawer. */}
         <AskDrawer
-          chat={<ChatPanel sessionId={sessionId} />}
           notes={<CommentsPanel reportId={report.report_id ?? null} />}
         />
       </div>
