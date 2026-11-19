@@ -211,14 +211,32 @@ def test_the_caveat_states_that_similarity_is_lexical_not_semantic():
     assert "commercial laundry" in out["caveat"]
 
 
-def test_a_query_with_no_market_analogue_still_returns_a_full_set():
-    """Reserving places for the market population must not shrink the result
-    when that population has nothing to offer. A user asking about a bitcoin
-    wallet should not get three rows because Wikidata is thin on them."""
+def test_a_query_with_no_market_analogue_returns_only_genuine_matches():
+    """A thin market population must not be padded over.
+
+    This test used to assert the opposite -- that the result stayed a FULL set
+    when the market corpus had nothing to offer, refilled from whichever rows
+    were left. That is how Dropbox's deck came back with fifteen companies of
+    which two were about file sync: an auth company, a network monitor and a
+    quiz app made up the numbers, and nothing on the page said which were
+    which.
+
+    The contract now is the honest one. Every row returned clears the floor on
+    its own merit, and a query with few genuine analogues returns few rows.
+    """
     out = comparables.find_comparables(
         "A hosted bitcoin wallet for instant international payments with no "
         "transaction fees."
     )
     if not out.get("available") or out.get("no_close_matches"):
         pytest.skip("comparables unavailable or no matches")
-    assert len(out["comparables"]) >= 5
+
+    rows = out["comparables"]
+    assert rows, "a query with YC analogues should still return them"
+    # No row is in the list for any reason other than its own similarity.
+    assert all(r["similarity"] >= comparables.MIN_SIMILARITY for r in rows), (
+        "every row must clear the floor: "
+        f"{[(r['name'], r['similarity']) for r in rows if r['similarity'] < comparables.MIN_SIMILARITY]}"
+    )
+    # Best first, so a reader who stops after two rows has read the two best.
+    assert rows == sorted(rows, key=lambda r: -r["similarity"])

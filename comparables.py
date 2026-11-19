@@ -89,12 +89,24 @@ _DATA_DIR = Path(__file__).resolve().parent / "ml" / "data"
 YC_PATH = _DATA_DIR / "yc_comparables.jsonl"
 MARKET_PATH = _DATA_DIR / "market_dataset.jsonl"
 
-# Re-measured on the combined corpus rather than carried over. Second-best
-# similarity across 200 probes: YC alone ran min 0.498 / p25 0.638 / median
-# 0.706; combined ran min 0.498 / p25 0.652 / median 0.737. The distribution
-# barely moved, so the floor set for the YC corpus still sits just under the
-# genuine-match band and 0.50 stands.
-MIN_SIMILARITY = 0.50
+# 0.50 was set to sit "just under the genuine-match band". Re-measured against
+# five descriptions with real analogues in the corpus, the genuine band turns
+# out to start far higher than that:
+#
+#   file sync 0.666 | food delivery 0.669 | design tool 0.791
+#   cloud security 0.857 | payments 0.860          (best match per query)
+#
+# A floor of 0.50 therefore admitted a wide tail below every genuine match.
+# Dropbox's deck showed what that costs: its best match was 0.574, and the
+# fourteen rows between 0.50 and 0.574 filled the table with YC companies --
+# an auth company, a network monitor, a quiz app -- that have nothing to do
+# with file sync. The reader is told to "read the names, not the number", but
+# a table of fifteen wrong names is not improved by a caveat.
+#
+# 0.60 sits under every genuine best match above and over the noise tail. A
+# thin or vague description now clears nothing and the section says so, which
+# is the honest answer for a deck that did not say enough to match on.
+MIN_SIMILARITY = 0.60
 
 POPULATIONS = {
     "yc": {
@@ -321,18 +333,18 @@ def find_comparables(description: str, top_k: int = 6) -> dict[str, Any]:
         selected: list[dict] = []
         for key, found in results.items():
             selected.extend(found[:per_population])
-        # Refill any unused places from whichever population still has matches,
-        # so a query with no non-YC analogue still returns a full set rather
-        # than a short one.
-        if len(selected) < top_k:
-            already = {(row["population"], row["name"]) for row in selected}
-            leftovers = [
-                row for found in results.values() for row in found
-                if (row["population"], row["name"]) not in already
-            ]
-            leftovers.sort(key=lambda r: -r["similarity"])
-            selected.extend(leftovers[: top_k - len(selected)])
-
+        # Unused places are left unused.
+        #
+        # They used to be refilled from whichever population still had rows,
+        # "so a query with no non-YC analogue still returns a full set rather
+        # than a short one". That is the line to distrust: it treats a full
+        # table as the goal and lets the weakest matches in the corpus supply
+        # it. On Dropbox's deck it turned two mediocre matches into fifteen
+        # rows, thirteen of which were padding, and the reader cannot tell
+        # which two were real.
+        #
+        # A short list is a finding. Three genuine comparables are worth more
+        # than three genuine comparables buried in twelve that are not.
         selected.sort(key=lambda r: -r["similarity"])
 
         population_block = {
