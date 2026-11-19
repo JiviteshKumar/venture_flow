@@ -30,6 +30,7 @@ import RequireAuth from "./components/common/RequireAuth";
 const Dashboard = lazyPage(() => import("./pages/Dashboard"));
 const Analysis = lazyPage(() => import("./pages/Analysis"));
 const UploadDeck = lazyPage(() => import("./pages/UploadDeck"));
+const Activity = lazyPage(() => import("./pages/Activity"));
 const SignIn = lazyPage(() => import("./pages/SignIn"));
 const NotFound = lazyPage(() => import("./pages/NotFound"));
 
@@ -78,6 +79,7 @@ function App() {
                         <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
                         <Route path="/analysis" element={<RequireAuth><Analysis /></RequireAuth>} />
                         <Route path="/upload" element={<RequireAuth><UploadDeck /></RequireAuth>} />
+                        <Route path="/activity" element={<RequireAuth><Activity /></RequireAuth>} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </PageLoading>

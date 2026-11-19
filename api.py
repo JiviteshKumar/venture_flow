@@ -1042,6 +1042,57 @@ async def _issue_session(
     )
 
 
+class ActivityEvent(BaseModel):
+    occurred_at: str
+    kind: str
+    detail: str
+    url: str
+    ok: bool | None = None
+    job_id: str | None = None
+
+
+class ActivityResponse(BaseModel):
+    events: list[ActivityEvent]
+    retention_days: int
+
+
+@app.get("/activity", response_model=ActivityResponse)
+async def my_activity(request: Request, limit: int = 200) -> ActivityResponse:
+    """The caller's own session history, newest first.
+
+    SCOPED TO THE CALLER, AND ONLY BY THE SERVER
+
+    The user id comes from `require_user`, which reads it from the presented
+    session token. It is never taken from a query parameter, because a route
+    that accepts "whose activity do you want" is a route that will eventually
+    be asked for somebody else's. There is deliberately no way to request
+    another account's events through this API at all.
+
+    `limit` is clamped rather than trusted: an unbounded page size turns one
+    request into a table scan of ninety days.
+    """
+    user = await require_user(request)
+    rows = await run_in_threadpool(
+        db.activity_for_user, str(user["id"]), max(1, min(int(limit), 500))
+    )
+    return ActivityResponse(
+        events=[
+            ActivityEvent(
+                occurred_at=row["occurred_at"].isoformat(),
+                kind=row.get("kind") or "",
+                detail=row.get("detail") or "",
+                url=row.get("url") or "",
+                ok=row.get("ok"),
+                job_id=row.get("job_id"),
+            )
+            for row in rows
+        ],
+        # Sent with the data so the page states the window without a second
+        # copy of the number living in the frontend, where it would drift.
+        retention_days=db.ACTIVITY_RETENTION_DAYS,
+    )
+
+
 @app.post("/auth/logout", status_code=204)
 async def logout(request: Request):
     """Delete the presented session. Idempotent: logging out twice is fine, and
