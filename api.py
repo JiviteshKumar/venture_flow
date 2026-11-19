@@ -32,6 +32,7 @@ from company_name import clean as clean_company_name, strip_extension
 from chatbot import chat_with_document, store_document
 from config_check import check_configuration
 from config_check import enforce as enforce_configuration
+import db
 from db import (
     UserAlreadyExists,
     add_comment,
@@ -528,6 +529,20 @@ async def initialize_database_schema() -> None:
         # Analysis persistence will still return its existing clear 503 response.
         logger.exception("Neon schema migration unavailable during startup")
 
+    # Retention, swept at startup rather than on a timer. A managed host
+    # restarts often enough that a scheduler would be ceremony, and a sweep
+    # that runs late deletes exactly the rows a punctual one would have.
+    # Separate try: a failed sweep must not look like a failed migration.
+    try:
+        removed = await run_in_threadpool(db.purge_expired_activity)
+        if removed:
+            logger.info(
+                "Purged %s activity event(s) older than %s days",
+                removed, db.ACTIVITY_RETENTION_DAYS,
+            )
+    except Exception:
+        logger.warning("Activity retention sweep did not run", exc_info=True)
+
 
 @app.on_event("startup")
 async def reclaim_orphaned_jobs_at_startup() -> None:
@@ -969,7 +984,7 @@ async def register(request: RegisterRequest, http_request: Request):
             status_code=503, detail="Accounts are unavailable right now."
         ) from exc
 
-    return await _issue_session(user, http_request)
+    return await _issue_session(user, http_request, kind="register")
 
 
 @app.post("/auth/login", response_model=AuthResponse)
@@ -999,11 +1014,26 @@ async def login(request: LoginRequest, http_request: Request):
     return await _issue_session(row, http_request)
 
 
-async def _issue_session(user_row: dict, http_request: Request) -> AuthResponse:
+async def _issue_session(
+    user_row: dict, http_request: Request, kind: str = "signin"
+) -> AuthResponse:
     token, token_hash, expires = auth.new_session_token()
     await run_in_threadpool(
         create_session, token_hash=token_hash, user_id=str(user_row["id"]),
         expires_at=expires, user_agent=http_request.headers.get("user-agent", ""),
+    )
+    # The session hash, not the token: the token exists only in the client and
+    # this table is not the place to change that. The hash is what keys
+    # `user_sessions`, so an event can still be traced to the session that
+    # caused it for as long as that session exists.
+    await run_in_threadpool(
+        db.record_activity,
+        kind=kind,
+        detail=str(user_row.get("email") or ""),
+        user_id=str(user_row["id"]),
+        session_token_hash=token_hash,
+        ok=True,
+        meta={"user_agent": (http_request.headers.get("user-agent", "") or "")[:200]},
     )
     return AuthResponse(
         token=token,

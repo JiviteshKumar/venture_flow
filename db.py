@@ -14,6 +14,7 @@ from typing import Any
 import psycopg
 from dotenv import load_dotenv
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -1005,3 +1006,109 @@ def stats() -> dict[str, int]:
             "SELECT (SELECT count(*) FROM companies) AS companies, (SELECT count(*) FROM dd_reports) AS dd_reports, (SELECT count(*) FROM portfolio_investments) AS portfolio_investments"
         )
         return dict(cur.fetchone())
+
+
+# ── Activity events ──────────────────────────────────────────────────────────
+#
+# See migrations/012_activity_events.sql for what is kept and what is refused.
+# The short version: every search and fetch the pipeline makes, and the things
+# a person does with their account. Never a credential, never deck text.
+
+#: How long an event is kept. Ninety days, swept by `purge_expired_activity`.
+ACTIVITY_RETENTION_DAYS = 90
+
+
+def record_activity(
+    *,
+    kind: str,
+    detail: str = "",
+    url: str = "",
+    ok: bool | None = None,
+    user_id: str | None = None,
+    session_token_hash: str | None = None,
+    job_id: str | None = None,
+    meta: dict[str, Any] | None = None,
+) -> None:
+    """Write one event. Never raises.
+
+    This sits in the pipeline's hot path -- it is called once per web search
+    and once per page fetch, inside a run a person is watching -- so it must
+    not be able to fail the thing it is recording. An analysis that dies
+    because its audit log was unavailable would be a strictly worse product
+    than one whose audit log has a gap, and the gap is visible in the data
+    while the crash is only visible in a bug report.
+
+    So every failure here is swallowed and logged at debug. A missing row
+    means the database was unreachable at that moment, which is the same thing
+    the surrounding log lines will already be saying loudly.
+    """
+    try:
+        with connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO activity_events
+                    (user_id, session_token_hash, job_id, kind, detail, url, ok, meta)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    user_id,
+                    session_token_hash,
+                    job_id,
+                    kind,
+                    (detail or "")[:2000],
+                    (url or "")[:2000],
+                    ok,
+                    Jsonb(meta or {}),
+                ),
+            )
+    except Exception:  # pragma: no cover - exercised only when Neon is down
+        logger.debug("activity event %r not recorded", kind, exc_info=True)
+
+
+def purge_expired_activity(days: int = ACTIVITY_RETENTION_DAYS) -> int:
+    """Delete events older than the retention window. Returns rows removed.
+
+    Called at startup rather than on a timer: the service restarts often
+    enough on a managed host that a daily sweep is not worth a scheduler, and
+    a sweep that runs late deletes the same rows a sweep that runs on time
+    would have.
+    """
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            "DELETE FROM activity_events WHERE occurred_at < now() - make_interval(days => %s)",
+            (int(days),),
+        )
+        return cur.rowcount or 0
+
+
+def activity_for_job(job_id: str, limit: int = 500) -> list[dict[str, Any]]:
+    """Everything one analysis run did, oldest first -- the order it happened."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT occurred_at, kind, detail, url, ok, meta
+              FROM activity_events
+             WHERE job_id = %s
+             ORDER BY occurred_at ASC, id ASC
+             LIMIT %s
+            """,
+            (job_id, int(limit)),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+def activity_for_user(user_id: str, limit: int = 200) -> list[dict[str, Any]]:
+    """One person's own history, newest first. Scoped to the caller by the
+    route that uses it: this takes an id and trusts it."""
+    with connection() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT occurred_at, kind, detail, url, ok, job_id, meta
+              FROM activity_events
+             WHERE user_id = %s
+             ORDER BY occurred_at DESC, id DESC
+             LIMIT %s
+            """,
+            (user_id, int(limit)),
+        )
+        return [dict(row) for row in cur.fetchall()]
