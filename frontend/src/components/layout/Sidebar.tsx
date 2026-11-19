@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
-  Upload, LayoutDashboard, BarChart3, Zap, Activity, Menu, X, LogOut,
-} from "lucide-react";
+  Upload, LayoutDashboard, BarChart3, Zap, Activity, Menu, X, LogOut, History } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { formatElapsed, useElapsedSeconds } from "../../hooks/useElapsed";
 import { useAuth } from "../../context/AuthContext";
@@ -45,6 +44,7 @@ const Sidebar = () => {
     { name: "Upload Deck", path: "/upload", icon: Upload },
     { name: "Dashboard",   path: "/",       icon: LayoutDashboard },
     { name: "Analysis",    path: "/analysis", icon: BarChart3 },
+    { name: "Activity",    path: "/activity", icon: History },
   ];
 
   // Derive active deck display values from real report

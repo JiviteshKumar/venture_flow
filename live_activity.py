@@ -96,6 +96,32 @@ def record(kind: str, detail: str, *, url: str = "", ok: bool | None = None) -> 
             feed.append(entry)
     except Exception:
         pass
+    else:
+        _persist(kind, detail, url, ok, job_id)
+
+
+def _persist(kind: str, detail: str, url: str, ok: bool | None, job_id: str) -> None:
+    """Write the same event to `activity_events`, where it outlives the run.
+
+    The in-memory feed above exists to drive a progress display: it holds
+    eighty entries per job and four jobs, and a restart empties it. That is
+    the right shape for a spinner and the wrong shape for the record of what
+    the product actually read, which is the evidence trail behind a report
+    that claims to show its working.
+
+    Imported inside the function rather than at module scope. `db` opens a
+    connection pool on import, and this module is imported by the agents,
+    which are imported by scripts and tests that have no database and no need
+    of one. A module-level import would make a progress feed depend on Neon.
+    """
+    try:
+        import db
+
+        db.record_activity(kind=kind, detail=detail, url=url, ok=ok, job_id=job_id)
+    except Exception:
+        # Same contract as the feed itself: an analysis must not fail because
+        # the thing recording it did.
+        pass
 
 
 def recent(job_id: str, limit: int = 40) -> list[dict[str, Any]]:

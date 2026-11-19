@@ -985,6 +985,20 @@ export interface ActivityEntry {
 
 // ─── API CALLS ──────────────────────────────────────────────────────────────
 
+export interface ActivityEvent {
+  occurred_at: string;
+  kind: string;
+  detail: string;
+  url: string;
+  ok?: boolean | null;
+  job_id?: string | null;
+}
+
+export interface ActivityResponse {
+  events: ActivityEvent[];
+  retention_days: number;
+}
+
 export const api = {
   /** Create an account and sign in. There is no email verification step --
    *  this deployment has no email provider, and the API says so in
@@ -1075,6 +1089,13 @@ export const api = {
   getAnalysisStatus: async (jobId: string): Promise<AnalysisJob> => {
     const res = await apiClient.get<AnalysisJob>(`/analyze/status/${jobId}`, { timeout: 30_000 });
     return { ...res.data, report: res.data.report ? normalizeAnalyzeResponse(res.data.report) : null };
+  },
+
+  /** The caller's own session history. The server scopes this to whoever the
+   *  presented token belongs to -- there is no parameter for whose. */
+  myActivity: async (limit = 200): Promise<ActivityResponse> => {
+    const res = await apiClient.get<ActivityResponse>("/activity", { params: { limit } });
+    return res.data;
   },
 
   listReports: async (): Promise<ReportSummary[]> => {

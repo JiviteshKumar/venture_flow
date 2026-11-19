@@ -489,6 +489,22 @@ export default function SignIn() {
               {emailNote}
             </p>
           )}
+
+          {/* Said before the account is created, not buried in a policy page
+              reached from a footer. It is short because a notice nobody
+              finishes reading has not been given, and specific because
+              "we collect usage data" tells a reader nothing they can act on:
+              what is kept, what is not, and for how long are the three things
+              that actually answer the question. */}
+          <p className="si-note">
+            <ShieldCheck size={12} style={{ verticalAlign: "-2px", marginRight: 6 }} />
+            While you are signed in, VentureFlow records what happens in your
+            session — the analyses you run and every search and page the
+            pipeline opens on your behalf — so a report can show where its
+            evidence came from. Passwords are never stored in readable form and
+            your decks are not copied into this record. It is kept for 90 days,
+            then deleted.
+          </p>
         </FadeIn>
       </div>
     </div>
